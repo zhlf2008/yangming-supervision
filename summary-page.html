@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>数据汇总 - 阳明心学督察管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --ink-dark: #2D2D2D;
+      --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A;
+      --vermillion: #E63946;
+      --vermillion-light: #FEE2E4;
+      --gold: #D4A574;
+      --gold-light: #F5EDE4;
+      --border: #E8E4DF;
+      --shadow: rgba(45, 45, 45, 0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    ::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px 100px;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0 24px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      color: var(--ink-dark);
+    }
+
+    .back-btn:active {
+      background: var(--border);
+    }
+
+    .header-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink-dark);
+    }
+
+    /* Date Selector */
+    .date-selector {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .date-nav-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .date-nav-btn:active {
+      background: var(--border);
+    }
+
+    .date-current {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink-dark);
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .date-today {
+      font-size: 12px;
+      color: var(--vermillion);
+      padding: 6px 12px;
+      background: var(--vermillion-light);
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Summary Stats */
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .summary-stat {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 18px 12px;
+      text-align: center;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .summary-stat-value {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .summary-stat-value.high { color: #2E7D32; }
+    .summary-stat-value.medium { color: var(--ink-dark); }
+    .summary-stat-value.low { color: var(--vermillion); }
+
+    .summary-stat-label {
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+
+    /* Section Card */
+    .section {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .section-icon.online { background: var(--vermillion-light); }
+    .section-icon.assignment { background: var(--gold-light); }
+    .section-icon.video { background: #E0F2F1; }
+
+    .section-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink-dark);
+    }
+
+    /* Data Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+      background: var(--bg-primary);
+      font-weight: 500;
+      color: var(--ink-muted);
+      font-size: 12px;
+    }
+
+    .data-table td {
+      color: var(--ink-dark);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table .highlight {
+      font-weight: 600;
+    }
+
+    .data-table .rate-high { color: #2E7D32; }
+    .data-table .rate-medium { color: var(--ink-dark); }
+    .data-table .rate-low { color: var(--vermillion); }
+
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .combined-table th, .combined-table td {
+      white-space: nowrap;
+      min-width: 48px;
+    }
+
+    /* Two-column tables row */
+    .tables-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tables-row .section {
+      flex: none;
+      width: 100%;
+    }
+    .tables-row .section {
+      flex: none;
+      width: 100%;
+    }
+
+    /* Org Hierarchy Selector */
+    .org-selector {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .org-hierarchy {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .org-level {
+      padding: 8px 14px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--ink-dark);
+      border: 1px solid var(--border);
+    }
+
+    .org-level:first-child {
+      background: var(--vermillion-light);
+      border-color: var(--vermillion);
+      color: var(--vermillion);
+    }
+
+    .org-separator {
+      color: var(--ink-muted);
+      font-size: 12px;
+    }
+
+    .org-select {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-family: 'Noto Sans SC', sans-serif;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235C5C5C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
+    }
+
+    .org-select:focus {
+      outline: none;
+      border-color: var(--vermillion);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--ink-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 20px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--ink-muted);
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: var(--vermillion);
+    }
+
+    .nav-item:hover {
+      text-decoration: none;
+    }
+
+    .nav-icon {
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Animations */
+    .header { animation: fadeInDown 0.4s ease-out; }
+    .date-selector { animation: fadeInUp 0.4s ease-out 0.05s backwards; }
+    .summary-stats { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
+    .section { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <a href="index.html" class="back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </a>
+      <h1 class="header-title">数据汇总</h1>
+    </header>
+
+    <!-- Date Selector -->
+    <div class="date-selector">
+      <div class="date-nav">
+        <button class="date-nav-btn" onclick="changeDate(-1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <span class="date-current" id="dateCurrent">2026-04-21</span>
+        <button class="date-nav-btn" onclick="changeDate(1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      <button class="date-today" onclick="goToToday()">今天</button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="summary-stats" id="summaryStats">
+      <div class="summary-stat">
+        <div class="summary-stat-value" id="avgOnlineRate">--%</div>
+        <div class="summary-stat-label">平均上线率</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-value" id="avgHwRate">--%</div>
+        <div class="summary-stat-label">平均作业率</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-value" id="avgVideoRate">--%</div>
+        <div class="summary-stat-label">平均视频率</div>
+      </div>
+    </div>
+
+    <!-- Organization Selector -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">数据筛选</span>
+      </div>
+      <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
+        <option value="">全部</option>
+      </select>
+    </div>
+
+    <!-- Data Tables: two side-by-side -->
+    <div class="tables-row">
+      <!-- 上线率 Table -->
+      <section class="section">
+        <div class="section-header">
+          <span class="section-title">📊 上线率</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>小组</th>
+                <th>应到</th>
+                <th>实到</th>
+                <th>请假</th>
+                <th>视频</th>
+                <th>上线率</th>
+                <th>视频率</th>
+              </tr>
+            </thead>
+            <tbody id="onlineTableBody">
+              <tr><td colspan="7" class="empty-state">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 作业率 Table -->
+      <section class="section">
+        <div class="section-header">
+          <span class="section-title">📝 作业率</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>小组</th>
+                <th>应做</th>
+                <th>完成</th>
+                <th>作业率</th>
+              </tr>
+            </thead>
+            <tbody id="hwTableBody">
+              <tr><td colspan="4" class="empty-state">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">首页</span>
+    </a>
+    <a href="attendance-page.html" class="nav-item">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">考勤填报</span>
+    </a>
+    <a href="summary-page.html" class="nav-item active">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">数据汇总</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">个人中心</span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script>
+    let currentDate = new Date();
+    let currentUser = null;
+    let currentOrg = null;
+
+    async function init() {
+      await waitForDb();
+      await new Promise(r => setTimeout(r, 500));
+
+      // Check login
+      const userData = localStorage.getItem('supabase_user');
+      if (!userData) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      currentUser = JSON.parse(userData);
+
+      // Set initial date
+      document.getElementById('dateCurrent').textContent = formatDate(currentDate);
+
+      // Load organization selector based on user's scope
+      await loadOrgSelector();
+
+      // Load data for the current date and user's scope
+      await loadData();
+    }
+
+    // Get all descendant groups under a given org (recursively)
+    function getAllGroups(orgId, orgsMap) {
+      const directChildren = Object.values(orgsMap).filter(o => o.parent_id === orgId);
+      let groups = directChildren.filter(o => o.level === '小组');
+      const childOrgs = directChildren.filter(o => o.level !== '小组');
+      childOrgs.forEach(co => {
+        groups = groups.concat(getAllGroups(co.id, orgsMap));
+      });
+      return groups;
+    }
+
+    // Build full path for org
+    function buildOrgPath(orgId, orgsMap) {
+      const org = orgsMap[orgId];
+      if (!org) return '';
+      const parts = [org.name];
+      let pid = org.parent_id;
+      while (pid) {
+        const parent = orgsMap[pid];
+        if (parent) { parts.unshift(parent.name); pid = parent.parent_id; }
+        else break;
+      }
+      return parts.join(' - ');
+    }
+
+    let summaryOrgsMap = {};
+    let summaryOrgsList = [];
+
+    async function loadOrgSelector() {
+      const groupSelect = document.getElementById('groupSelect');
+      if (!groupSelect) return;
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+
+      // 小组督察/副督察只能看自己的小组，隐藏筛选器
+      if (role === '小组督察' || role === '小组副督察') {
+        groupSelect.closest('.section').style.display = 'none';
+        return;
+      }
+
+      const { data: orgs } = await window.db.from('organizations').select('*').order('level', { ascending: true });
+      if (!orgs) return;
+
+      // Build orgsMap
+      summaryOrgsMap = {};
+      summaryOrgsList = [];
+      orgs.forEach(o => { summaryOrgsMap[o.id] = o; });
+
+      // Determine accessible group IDs
+      let accessibleGroupIds = [];
+      if (role === '小组督察' || role === '小组副督察') {
+        accessibleGroupIds = userOrgId ? [userOrgId] : [];
+      } else if (role === '班级总督察' || role === '班级副总督察') {
+        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
+      } else if (role === '大班总督' || role === '大班副督') {
+        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
+      } else if (role === '管理员' || role === '地区督委') {
+        accessibleGroupIds = orgs.filter(o => o.level === '小组').map(o => o.id);
+      } else {
+        accessibleGroupIds = [];
+      }
+
+      // Build options: all accessible groups with full path, sorted
+      const groups = orgs.filter(o => o.level === '小组' && accessibleGroupIds.includes(o.id))
+        .map(g => ({ id: g.id, path: buildOrgPath(g.id, summaryOrgsMap) }))
+        .sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+
+      groupSelect.innerHTML = '<option value="">全部</option>' +
+        groups.map(g => `<option value="${g.id}">${g.path}</option>`).join('');
+    }
+
+    function onGroupChange(groupId) {
+      loadData();
+    }
+
+    async function loadData() {
+      const dateStr = formatDate(currentDate);
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+      const groupSelect = document.getElementById('groupSelect');
+      const selectedGroupId = groupSelect?.value ? parseInt(groupSelect.value) : null;
+
+      // Step 1: Get today's schedule IDs
+      let scheduleIds = [];
+      try {
+        const schedRes = await fetch(
+          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date&schedule_date=eq.${dateStr}`,
+          { headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' } }
+        );
+        const schedData = await schedRes.json();
+        scheduleIds = schedData?.map(s => s.id) || [];
+      } catch (e) { console.error(e); }
+
+      if (scheduleIds.length === 0) {
+        document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">今日无日程</td></tr>';
+        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">今日无日程</td></tr>';
+        document.getElementById('avgOnlineRate').textContent = '0.0%';
+        document.getElementById('avgHwRate').textContent = '0.0%';
+        document.getElementById('avgVideoRate').textContent = '0.0%';
+        return;
+      }
+
+      // Step 2: Build org filter (scope + selected group)
+      let orgFilter = '';
+      let accessibleGroupIds = [];
+
+      if (role === '小组督察' || role === '小组副督察') {
+        accessibleGroupIds = userOrgId ? [userOrgId] : [];
+      } else if (role === '班级总督察' || role === '班级副总督察') {
+        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
+      } else if (role === '大班总督' || role === '大班副督') {
+        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
+      } else if (role === '管理员' || role === '地区督委') {
+        accessibleGroupIds = Object.values(summaryOrgsMap).filter(o => o.level === '小组').map(o => o.id);
+      } else {
+        // 未知角色，无任何权限
+        accessibleGroupIds = [];
+      }
+
+      if (selectedGroupId) {
+        // Show only the selected group
+        if (!accessibleGroupIds.includes(selectedGroupId)) {
+          document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">无权限查看该小组数据</td></tr>';
+        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">无权限查看该小组数据</td></tr>';
+          return;
+        }
+        orgFilter = `organization_id=eq.${selectedGroupId}`;
+      } else {
+        // Show all accessible groups
+        const ids = accessibleGroupIds.filter(id => id != null);
+        if (ids.length === 0) {
+          // 无可查看的小组，显示空状态
+          document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">暂无可查看的数据</td></tr>';
+          document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">暂无可查看的数据</td></tr>';
+          document.getElementById('avgOnlineRate').textContent = '0.0%';
+          document.getElementById('avgHwRate').textContent = '0.0%';
+          document.getElementById('avgVideoRate').textContent = '0.0%';
+          return;
+        }
+        orgFilter = `organization_id=in.(${ids.join(',')})`;
+      }
+
+      // Step 3: Query attendance records
+      let recordsUrl = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/attendance_records?schedule_id=in.(${scheduleIds.join(',')})`;
+      if (orgFilter) recordsUrl += '&' + orgFilter;
+      recordsUrl += '&select=organization_id,fill_data';
+
+      let records = [];
+      try {
+        const recRes = await fetch(recordsUrl, {
+          headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
+        });
+        records = await recRes.json() || [];
+      } catch (e) { console.error(e); }
+
+      if (records.length === 0) {
+        document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">暂无数据</td></tr>';
+        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">暂无数据</td></tr>';
+        document.getElementById('avgOnlineRate').textContent = '0.0%';
+        document.getElementById('avgHwRate').textContent = '0.0%';
+        document.getElementById('avgVideoRate').textContent = '0.0%';
+        return;
+      }
+
+      // Step 4: Group by org
+      const groupStats = {};
+      records.forEach(r => {
+        const orgId = r.organization_id;
+        const fd = r.fill_data || {};
+        const yingdao = parseInt(fd['应到人数']) || 0;
+        const shidao = parseInt(fd['实到人数']) || 0;
+        const qingjia = parseInt(fd['请假人数']) || 0;
+        const shipin = parseInt(fd['视频人数']) || 0;
+        const yingzuo = parseInt(fd['应做作业人数']) || 0;
+        const zuowan = parseInt(fd['作业完成人数']) || 0;
+
+        if (!groupStats[orgId]) {
+          groupStats[orgId] = { yingdao: 0, shidao: 0, qingjia: 0, shipin: 0, yingzuo: 0, zuowan: 0 };
+        }
+        groupStats[orgId].yingdao += yingdao;
+        groupStats[orgId].shidao += shidao;
+        groupStats[orgId].qingjia += qingjia;
+        groupStats[orgId].shipin += shipin;
+        groupStats[orgId].yingzuo += yingzuo;
+        groupStats[orgId].zuowan += zuowan;
+      });
+
+      // Step 5: Build table rows + totals
+      let totalYd = 0, totalSd = 0, totalQj = 0, totalSp = 0, totalYz = 0, totalZw = 0;
+      let onlineRows = '', hwRows = '';
+      Object.entries(groupStats).forEach(([orgId, s]) => {
+        const path = buildOrgPath(parseInt(orgId), summaryOrgsMap) || summaryOrgsMap[orgId]?.name || '未知';
+        const groupName = path.split(' - ').pop();
+        const onlineRate = s.yingdao > 0 ? ((s.shidao / s.yingdao) * 100).toFixed(1) : '0.0';
+        const hwRate = s.yingzuo > 0 ? ((s.zuowan / s.yingzuo) * 100).toFixed(1) : '0.0';
+        const videoRate = s.shidao > 0 ? ((s.shipin / s.shidao) * 100).toFixed(1) : '0.0';
+
+        totalYd += s.yingdao; totalSd += s.shidao; totalQj += s.qingjia;
+        totalSp += s.shipin; totalYz += s.yingzuo; totalZw += s.zuowan;
+
+        onlineRows += `<tr>
+          <td style="text-align:left;">${groupName}</td>
+          <td>${s.yingdao}</td>
+          <td>${s.shidao}</td>
+          <td>${s.qingjia}</td>
+          <td>${s.shipin}</td>
+          <td class="highlight rate-${getRateClass(onlineRate)}">${onlineRate}%</td>
+          <td class="highlight rate-${getRateClass(videoRate)}">${videoRate}%</td>
+        </tr>`;
+
+        hwRows += `<tr>
+          <td style="text-align:left;">${groupName}</td>
+          <td>${s.yingzuo}</td>
+          <td>${s.zuowan}</td>
+          <td class="highlight rate-${getRateClass(hwRate)}">${hwRate}%</td>
+        </tr>`;
+      });
+
+      // Summary averages
+      const avgOnline = totalYd > 0 ? ((totalSd / totalYd) * 100).toFixed(1) : '0.0';
+      const avgHw = totalYz > 0 ? ((totalZw / totalYz) * 100).toFixed(1) : '0.0';
+      const avgVideo = totalSd > 0 ? ((totalSp / totalSd) * 100).toFixed(1) : '0.0';
+
+      document.getElementById('avgOnlineRate').textContent = avgOnline + '%';
+      document.getElementById('avgOnlineRate').className = 'summary-stat-value ' + getStatClass(avgOnline);
+      document.getElementById('avgHwRate').textContent = avgHw + '%';
+      document.getElementById('avgHwRate').className = 'summary-stat-value ' + getStatClass(avgHw);
+      document.getElementById('avgVideoRate').textContent = avgVideo + '%';
+      document.getElementById('avgVideoRate').className = 'summary-stat-value ' + getStatClass(avgVideo);
+
+      document.getElementById('onlineTableBody').innerHTML = onlineRows || '<tr><td colspan="7" class="empty-state">暂无数据</td></tr>';
+      document.getElementById('hwTableBody').innerHTML = hwRows || '<tr><td colspan="4" class="empty-state">暂无数据</td></tr>';
+    }
+
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function changeDate(delta) {
+      currentDate.setDate(currentDate.getDate() + delta);
+      document.getElementById('dateCurrent').textContent = formatDate(currentDate);
+      loadData();
+    }
+
+    function goToToday() {
+      currentDate = new Date();
+      document.getElementById('dateCurrent').textContent = formatDate(currentDate);
+      loadData();
+    }
+
+    function selectGroup(groupValue) {
+      onGroupChange(groupValue);
+    }
+
+    function goToProfile() {
+      window.location.href = 'profile.html';
+    }
+
+    // Helper function to get rate class
+    function getRateClass(rate) {
+      const num = parseFloat(rate);
+      if (num >= 90) return 'rate-high';
+      if (num >= 70) return 'rate-medium';
+      return 'rate-low';
+    }
+
+    // Helper function to get stat value class
+    function getStatClass(rate) {
+      const num = parseFloat(rate);
+      if (num >= 90) return 'high';
+      if (num >= 70) return 'medium';
+      return 'low';
+    }
+
+    init();
+  </script>
+</body>
+</html>

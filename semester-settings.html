@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>系统设置 - 阳明心学督察管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --ink-dark: #2D2D2D;
+      --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A;
+      --vermillion: #E63946;
+      --vermillion-light: #FEE2E4;
+      --gold: #D4A574;
+      --gold-light: #F5EDE4;
+      --border: #E8E4DF;
+      --shadow: rgba(45, 45, 45, 0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --green: #2E7D32;
+      --green-light: #E8F5E9;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px 16px 100px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--ink-dark);
+    }
+
+    .page-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--vermillion);
+      border-color: var(--vermillion);
+      color: white;
+    }
+
+    .section {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .add-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: white;
+      background: var(--vermillion);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Semester Card */
+    .semester-card {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .semester-card.current {
+      border-color: var(--vermillion);
+      background: var(--vermillion-light);
+    }
+
+    .semester-card.current::after {
+      content: '当前';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 11px;
+      color: var(--vermillion);
+      font-weight: 500;
+    }
+
+    .semester-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      padding-right: 60px;
+    }
+
+    .semester-dates {
+      font-size: 13px;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+
+    .semester-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+
+    .trial-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--gold-light);
+      color: var(--gold);
+      border-radius: 4px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .edit-btn, .delete-btn, .schedule-btn, .type-btn, .org-btn {
+      flex: 1;
+      padding: 8px;
+      font-size: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .edit-btn {
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+    }
+
+    .schedule-btn {
+      background: var(--gold-light);
+      color: var(--gold);
+    }
+
+    .type-btn {
+      background: #E3F2FD;
+      color: #1976D2;
+    }
+
+    .org-btn {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .delete-btn {
+      background: #FFEBEE;
+      color: var(--vermillion);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--ink-muted);
+      font-size: 14px;
+    }
+
+    /* Schedule Section */
+
+
+    .semester-selector {
+      margin-bottom: 16px;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235C5C5C' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border-radius: var(--radius) var(--radius) 0 0;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.show .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .form-item {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      outline: none;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--vermillion);
+    }
+
+    /* Toggle */
+    .toggle-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toggle-switch {
+      width: 48px;
+      height: 28px;
+      background: var(--border);
+      border-radius: 14px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-switch.active {
+      background: var(--vermillion);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(20px);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .modal-btn.cancel {
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+    }
+
+    .modal-btn.confirm {
+      background: var(--vermillion);
+      color: white;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--ink-dark);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 2000;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--ink-muted);
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: var(--vermillion);
+    }
+
+    .nav-icon {
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <a href="profile.html" class="back-btn">←</a>
+      <h1 class="page-title">设置</h1>
+    </div>
+
+    <!-- 学期列表 Section -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">学期列表</span>
+        <button class="add-btn" onclick="showSemesterModal()">+ 新增学期</button>
+      </div>
+      <div id="semesterList"></div>
+    </div>
+  </div>
+
+  <!-- 学期 Modal -->
+  <div id="semesterModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span id="semesterModalTitle" class="modal-title">新增学期</span>
+        <button class="modal-close" onclick="closeSemesterModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="semesterId">
+        <div class="form-item">
+          <label class="form-label">学期名称</label>
+          <input type="text" id="semesterName" class="form-input" placeholder="如：阳明心学第14期">
+        </div>
+        <div class="toggle-group">
+          <span class="toggle-label">启用试晨读</span>
+          <div id="trialToggle" class="toggle-switch" onclick="toggleTrial()"></div>
+        </div>
+        <div id="trialStartGroup" class="form-item" style="display: none;">
+          <label class="form-label">试晨读开始日期</label>
+          <input type="date" id="trialStart" class="form-input">
+        </div>
+        <div class="form-item">
+          <label class="form-label">正式开始日期</label>
+          <input type="date" id="semesterStart" class="form-input">
+        </div>
+        <div class="form-item">
+          <label class="form-label">结束日期</label>
+          <input type="date" id="semesterEnd" class="form-input">
+        </div>
+        <div class="toggle-group">
+          <span class="toggle-label">设为当前学期</span>
+          <div id="currentToggle" class="toggle-switch active" onclick="toggleCurrent()"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeSemesterModal()">取消</button>
+        <button class="modal-btn confirm" onclick="saveSemester()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">首页</span>
+    </a>
+    <a href="attendance-page.html" class="nav-item">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">考勤填报</span>
+    </a>
+    <a href="summary-page.html" class="nav-item">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">数据汇总</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">个人中心</span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script>
+    // 直接使用 window.db，在 waitForDb 后保证已初始化
+
+    let currentUser = null;
+    let semesters = [];
+    let isTrialEnabled = false;
+    let isCurrentEnabled = true;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    async function init() {
+      // 等待 db 就绪
+      await waitForDb();
+
+      const userData = localStorage.getItem('supabase_user');
+      if (!userData) {
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUser = JSON.parse(userData);
+      if (currentUser.role !== '管理员') {
+        showToast('只有管理员可以访问此页面');
+        setTimeout(() => window.location.href = 'index.html', 1500);
+        return;
+      }
+
+      await loadSemesters();
+    }
+
+    async function loadSemesters() {
+      const { data, error } = await window.db.from('semesters').select('*').order('start_date', { ascending: false });
+      if (error) { showToast('加载学期失败'); return; }
+      semesters = data || [];
+      renderSemesters();
+      updateSemesterSelector();
+    }
+
+    function updateSemesterSelector() {
+      // Kept for compatibility, schedule management now uses separate pages
+    }
+
+    function renderSemesters() {
+      const container = document.getElementById('semesterList');
+      if (semesters.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无学期，点击上方添加</div>';
+        return;
+      }
+      container.innerHTML = semesters.map(sem => `
+        <div class="semester-card ${sem.is_current === 1 ? 'current' : ''}">
+          <div class="semester-name">${sem.semester_name}${sem.trial_start_date ? '<span class="trial-badge">试晨读</span>' : ''}</div>
+          <div class="semester-dates">${sem.start_date} ~ ${sem.end_date}</div>
+          <div class="semester-meta">
+            <span>正式: ${sem.start_date}</span>
+            ${sem.trial_start_date ? `<span>试晨读: ${sem.trial_start_date}</span>` : ''}
+          </div>
+          <div class="item-actions">
+            <button class="edit-btn" onclick="editSemester('${sem.id}')">编辑</button>
+            <button class="schedule-btn" onclick="window.location.href='schedule-management.html?semester_id=${sem.id}'">日程</button>
+            <button class="type-btn" onclick="window.location.href='assessment-management.html?semester_id=${sem.id}'">考核</button>
+            <button class="org-btn" onclick="window.location.href='org-management.html?semester_id=${sem.id}'">组织</button>
+            <button class="delete-btn" onclick="deleteSemester('${sem.id}')">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Semester Modal
+    function showSemesterModal(sem = null) {
+      document.getElementById('semesterId').value = sem?.id || '';
+      document.getElementById('semesterName').value = sem?.semester_name || '';
+      document.getElementById('semesterStart').value = sem?.start_date || '';
+      document.getElementById('semesterEnd').value = sem?.end_date || '';
+      document.getElementById('trialStart').value = sem?.trial_start_date || '';
+      isTrialEnabled = !!sem?.trial_start_date;
+      isCurrentEnabled = sem?.is_current === 1;
+      document.getElementById('trialToggle').classList.toggle('active', isTrialEnabled);
+      document.getElementById('currentToggle').classList.toggle('active', isCurrentEnabled);
+      document.getElementById('trialStartGroup').style.display = isTrialEnabled ? 'block' : 'none';
+      document.getElementById('semesterModalTitle').textContent = sem ? '编辑学期' : '新增学期';
+      document.getElementById('semesterModal').classList.add('show');
+    }
+
+    function toggleTrial() {
+      isTrialEnabled = !isTrialEnabled;
+      document.getElementById('trialToggle').classList.toggle('active', isTrialEnabled);
+      document.getElementById('trialStartGroup').style.display = isTrialEnabled ? 'block' : 'none';
+    }
+
+    function toggleCurrent() {
+      isCurrentEnabled = !isCurrentEnabled;
+      document.getElementById('currentToggle').classList.toggle('active', isCurrentEnabled);
+    }
+
+    function closeSemesterModal() {
+      document.getElementById('semesterModal').classList.remove('show');
+    }
+
+    async function saveSemester() {
+      const id = document.getElementById('semesterId').value;
+      const semester_name = document.getElementById('semesterName').value.trim();
+      const start_date = document.getElementById('semesterStart').value;
+      const end_date = document.getElementById('semesterEnd').value;
+      const trial_start_date = isTrialEnabled ? document.getElementById('trialStart').value : null;
+
+      if (!semester_name || !start_date || !end_date) {
+        showToast('请填写完整信息');
+        return;
+      }
+
+      if (isCurrentEnabled) {
+        await window.db.from('semesters').update({ is_current: 0 }).eq('is_current', 1);
+      }
+
+      const data = { semester_name, start_date, end_date, trial_start_date, is_current: isCurrentEnabled ? 1 : 0 };
+      let error;
+      if (id) {
+        const { error: e } = await window.db.from('semesters').update(data).eq('id', id);
+        error = e;
+      } else {
+        const { error: e } = await window.db.from('semesters').insert(data);
+        error = e;
+      }
+
+      if (error) {
+        showToast('保存失败: ' + error.message);
+      } else {
+        showToast('保存成功');
+        closeSemesterModal();
+        await loadSemesters();
+      }
+    }
+
+    async function editSemester(id) {
+      const sem = semesters.find(s => s.id == id);
+      if (sem) showSemesterModal(sem);
+    }
+
+    async function deleteSemester(id) {
+      if (!confirm('确定删除？删除后无法恢复')) return;
+      const { error } = await window.db.from('semesters').delete().eq('id', id);
+      if (error) showToast('删除失败');
+      else { showToast('删除成功'); await loadSemesters(); }
+    }
+
+    init();
+  </script>
+</body>
+</html>

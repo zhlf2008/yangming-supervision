@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>考勤数据填报 - 阳明心学督察管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --ink-dark: #2D2D2D;
+      --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A;
+      --vermillion: #E63946;
+      --vermillion-light: #FEE2E4;
+      --gold: #D4A574;
+      --gold-light: #F5EDE4;
+      --border: #E8E4DF;
+      --shadow: rgba(45, 45, 45, 0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --green: #2E7D32;
+      --green-light: #E8F5E9;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px 16px 100px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--ink-dark);
+    }
+
+    .page-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    /* Header Card */
+    .header-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+      display: flex;
+      gap: 20px;
+    }
+
+    .header-left {
+      flex: 1;
+    }
+
+    .header-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--ink-dark);
+    }
+
+    .header-meta-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .header-meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      min-width: 160px;
+      border-left: 1px solid var(--border);
+      padding-left: 20px;
+    }
+
+    .org-info-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .org-info-label {
+      font-size: 12px;
+      color: var(--ink-muted);
+      width: 32px;
+      flex-shrink: 0;
+    }
+
+    .org-info-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-dark);
+    }
+
+    .meta-label {
+      font-size: 11px;
+      color: var(--ink-muted);
+    }
+
+    .meta-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .meta-value.date { font-family: 'Noto Serif SC', serif; }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* Section */
+    .section {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .section-icon.考勤 { background: var(--vermillion-light); }
+    .section-icon.作业 { background: var(--gold-light); }
+    .section-icon.其他 { background: var(--green-light); }
+
+    /* Form */
+    .form-item {
+      margin-bottom: 16px;
+    }
+
+    .form-item:last-child { margin-bottom: 0; }
+
+    .form-label {
+      font-size: 13px;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      outline: none;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--vermillion);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* Radio/Checkbox Group */
+    .radio-group, .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .radio-item, .checkbox-item {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      background: var(--bg-primary);
+      transition: all 0.2s;
+    }
+
+    .radio-item.selected, .checkbox-item.selected {
+      background: var(--vermillion-light);
+      border-color: var(--vermillion);
+      color: var(--vermillion);
+    }
+
+    .radio-item input, .checkbox-item input {
+      display: none;
+    }
+
+    /* Result Display */
+    .result-display {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .result-display.考勤 { background: var(--vermillion-light); }
+    .result-display.作业 { background: var(--gold-light); }
+    .result-display.其他 { background: var(--green-light); }
+
+    .result-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .result-value {
+      font-size: 18px;
+      font-weight: 600;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    /* Image Upload */
+    .image-upload {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .image-upload:hover {
+      border-color: var(--vermillion);
+    }
+
+    .image-upload-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .image-upload-text {
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+
+    .image-preview {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      background: var(--vermillion);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Stats Section */
+    .stats-section {
+      background: linear-gradient(135deg, var(--vermillion-light) 0%, var(--gold-light) 100%);
+    }
+
+    .stats-grid {
+      display: flex;
+      justify-content: space-around;
+      padding: 16px 0;
+    }
+
+    .stats-grid .stat-item {
+      text-align: center;
+    }
+
+    .stats-grid .stat-label {
+      font-size: 12px;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+
+    .stats-grid .stat-value {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink-dark);
+    }
+
+    /* New Form Layout */
+    .input-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .input-group {
+      flex: 1;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 12px;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+
+    .form-input.compact {
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+
+    .rate-row {
+      display: flex;
+      gap: 16px;
+      padding: 12px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+    }
+
+    .org-level-select {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+    }
+
+    .rate-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rate-item.large {
+      font-size: 18px;
+    }
+
+    .rate-label {
+      color: var(--ink-light);
+      font-size: 13px;
+    }
+
+    .rate-value {
+      font-family: 'Noto Serif SC', serif;
+      font-weight: 700;
+      color: var(--vermillion);
+      font-size: 16px;
+    }
+
+    .rate-item.large .rate-label {
+      font-size: 16px;
+      color: var(--ink-dark);
+    }
+
+    .rate-item.large .rate-value {
+      font-size: 24px;
+    }
+
+    .attendance-summary {
+      margin-top: 8px;
+    }
+
+    .org-display-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+
+    .org-line {
+      display: flex;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .org-line:last-child { border-bottom: none; }
+
+    .org-line-label {
+      font-size: 12px;
+      color: var(--ink-muted);
+      width: 40px;
+      flex-shrink: 0;
+    }
+
+    .org-line-value {
+      font-size: 14px;
+      color: var(--ink-dark);
+      font-weight: 500;
+    }
+
+    .org-level-select {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--ink-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 2000;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--ink-muted);
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active { color: var(--vermillion); }
+    .nav-icon { font-size: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <a href="index.html" class="back-btn">←</a>
+      <h1 class="page-title">考勤填报</h1>
+    </div>
+
+    <!-- Header Info -->
+    <div class="header-card">
+      <div class="header-left">
+        <div class="header-title" id="semesterName">加载中...</div>
+        <div class="header-meta-row">
+          <div class="header-meta-item">
+            <span class="meta-label">日期</span>
+            <span class="meta-value date" id="currentDate">--</span>
+          </div>
+          <div class="header-meta-item">
+            <span class="meta-label">星期</span>
+            <span class="meta-value" id="currentWeekday">--</span>
+          </div>
+          <div class="header-meta-item">
+            <span class="meta-label">填报人</span>
+            <span class="meta-value" id="reporterName">--</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="org-info-row">
+          <span class="org-info-label">大班</span>
+          <span class="org-info-value" id="bigClassName">--</span>
+        </div>
+        <div class="org-info-row">
+          <span class="org-info-label">班级</span>
+          <span class="org-info-value" id="className">--</span>
+        </div>
+        <div class="org-info-row">
+          <span class="org-info-label">小组</span>
+          <span class="org-info-value" id="groupName">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Organization Selector (single dropdown) -->
+    <div class="section" id="orgSelectorSection" style="display:none;">
+      <div class="section-title">
+        <span class="section-icon">🏢</span>
+        选择填报小组
+      </div>
+      <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
+        <option value="">加载中...</option>
+      </select>
+    </div>
+
+    <!-- Assessment Forms Container -->
+    <div id="formsContainer">
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <p>正在加载考核项目...</p>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button class="submit-btn" id="submitBtn" onclick="submitAttendance()">提交填报</button>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">首页</span>
+    </a>
+    <a href="attendance-page.html" class="nav-item active">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">考勤填报</span>
+    </a>
+    <a href="summary-page.html" class="nav-item">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">数据汇总</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">个人中心</span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script>
+    // 直接使用 window.db，在 waitForDb 后保证已初始化
+
+    const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+    let currentUser = null;
+    let currentSemester = null;
+    let currentSchedule = null;
+    let assessmentTypes = [];
+    let todayTypes = [];
+    let formData = {};
+    let orgs = []; // all organizations for path building and validation
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    async function init() {
+      // 等待 db 就绪
+      await waitForDb();
+
+      // Check login
+      const userData = localStorage.getItem('supabase_user');
+      if (!userData) {
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUser = JSON.parse(userData);
+
+      // Update header info
+      const today = new Date();
+      document.getElementById('currentDate').textContent = today.toISOString().split('T')[0];
+      document.getElementById('currentWeekday').textContent = weekDays[today.getDay()];
+      document.getElementById('reporterName').textContent = currentUser.name || '未知';
+
+      // 并行加载所有需要的数据
+      const [semesters, orgNameResult, orgsResult] = await Promise.all([
+        window.db.from('semesters').select('*').eq('is_current', 1).limit(1),
+        currentUser.organization_id
+          ? window.db.from('organizations').select('name').eq('id', currentUser.organization_id).single()
+          : Promise.resolve({ data: null }),
+        window.db.from('organizations').select('*').order('level', { ascending: true })
+      ]);
+
+      currentSemester = semesters.data?.[0] || null;
+      if (currentSemester) {
+        document.getElementById('semesterName').textContent = currentSemester.semester_name;
+      } else {
+        document.getElementById('semesterName').textContent = '暂无当前学期';
+      }
+
+      // Update org name (orgName element may not exist in all pages)
+      const orgNameEl = document.getElementById('orgName');
+      if (orgNameEl) {
+        if (orgNameResult.data) {
+          orgNameEl.textContent = orgNameResult.data.name;
+        } else {
+          orgNameEl.textContent = '未分配';
+        }
+      }
+
+      // Load organization selector and today's schedule in parallel
+      orgs = orgsResult.data || [];
+document.getElementById('orgSelectorSection').style.display = 'block';
+      loadOrgSelector(orgs);
+      await loadTodaySchedule();
+    }
+
+    // Build full path name for an organization: 大班-班级-小组
+    function buildOrgPath(orgId, orgs) {
+      const org = orgs.find(o => o.id === orgId);
+      if (!org) return '';
+      const parts = [org.name];
+      let pid = org.parent_id;
+      while (pid) {
+        const parent = orgs.find(o => o.id === pid);
+        if (parent) { parts.unshift(parent.name); pid = parent.parent_id; }
+        else break;
+      }
+      return parts.join(' - ');
+    }
+
+    // Load organization selector (single dropdown, full path, sorted)
+    function loadOrgSelector(orgs) {
+      const groupSelect = document.getElementById('groupSelect');
+      if (!groupSelect) { console.error('groupSelect element not found'); return; }
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+
+      if (!orgs || orgs.length === 0) {
+        groupSelect.innerHTML = '<option value="">无组织</option>';
+        return;
+      }
+
+      let selectableGroupIds = new Set();
+
+      if (role === '小组督察' || role === '小组副督察') {
+        const myOrg = orgs.find(o => o.id === userOrgId);
+        if (myOrg && myOrg.level === '小组') selectableGroupIds.add(myOrg.id);
+      } else if (role === '班级总督察' || role === '班级副总督察') {
+        if (userOrgId) {
+          orgs.filter(o => o.parent_id === userOrgId && o.level === '小组')
+            .forEach(g => selectableGroupIds.add(g.id));
+        }
+      } else if (role === '大班总督' || role === '大班副督') {
+        if (userOrgId) {
+          getAllChildOrgs(userOrgId, orgs).filter(o => o.level === '小组')
+            .forEach(g => selectableGroupIds.add(g.id));
+        }
+      } else if (role === '管理员' || role === '地区督委') {
+        orgs.filter(o => o.level === '小组').forEach(g => selectableGroupIds.add(g.id));
+      }
+
+      if (selectableGroupIds.size === 0) {
+        groupSelect.innerHTML = '<option value="">无权限填报的小组</option>';
+        return;
+      }
+
+      const groups = orgs.filter(o => selectableGroupIds.has(o.id))
+        .map(g => ({ id: g.id, path: buildOrgPath(g.id, orgs) }))
+        .sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+
+      groupSelect.innerHTML = '<option value="">请选择小组</option>' +
+        groups.map(g => `<option value="${g.id}">${g.path}</option>`).join('');
+
+      if (userOrgId && selectableGroupIds.has(userOrgId)) {
+        groupSelect.value = userOrgId;
+        onGroupChange(String(userOrgId));
+      }
+    }
+
+    async function onGroupChange(groupId) {
+      const bigClassName = document.getElementById('bigClassName');
+      const className = document.getElementById('className');
+      const groupName = document.getElementById('groupName');
+
+      if (!groupId) {
+        if (bigClassName) bigClassName.textContent = '--';
+        if (className) className.textContent = '--';
+        if (groupName) groupName.textContent = '--';
+        return;
+      }
+
+      const group = orgs.find(o => o.id === parseInt(groupId));
+      if (!group) return;
+
+      const cls = group.parent_id ? orgs.find(o => o.id === group.parent_id) : null;
+      const bigClass = cls?.parent_id ? orgs.find(o => o.id === cls.parent_id) : null;
+
+      if (bigClassName) bigClassName.textContent = bigClass?.name || '--';
+      if (className) className.textContent = cls?.name || '--';
+      if (groupName) groupName.textContent = group.name;
+
+      // Reload forms for the selected group and check for existing record
+      await loadTodaySchedule(groupId);
+    }
+
+    // Get all child organizations recursively
+    function getAllChildOrgs(parentId, orgs) {
+      const children = orgs.filter(o => o.parent_id === parentId);
+      let result = [];
+      children.forEach(c => {
+        result.push(c);
+        result = result.concat(getAllChildOrgs(c.id, orgs));
+      });
+      return result;
+    }
+
+    async function loadTodaySchedule(selectedGroupId) {
+      if (!currentSemester) {
+        document.getElementById('formsContainer').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <p>暂无当前学期，请先在设置中创建学期</p>
+          </div>`;
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+
+      // Query today's schedule
+      const { data: schedules } = await window.db.from('schedules')
+        .select('*')
+        .eq('semester_id', currentSemester.id)
+        .eq('schedule_date', today);
+
+      currentSchedule = schedules?.find(s => s.schedule_date === today);
+
+      if (!currentSchedule) {
+        document.getElementById('formsContainer').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <p>今日暂无日程安排</p>
+          </div>`;
+        return;
+      }
+
+      // Get assessment type IDs from schedule
+      const itemIds = currentSchedule.item_ids ? currentSchedule.item_ids.split(',').filter(Boolean).map(Number) : [];
+
+      if (itemIds.length === 0) {
+        document.getElementById('formsContainer').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>今日未设置考核项目</p>
+          </div>`;
+        return;
+      }
+
+      // Load assessment types
+      await loadAssessmentForms(itemIds, selectedGroupId);
+    }
+
+    async function loadAssessmentForms(itemIds, selectedGroupId) {
+      // Load only the assessment types we need
+      const { data: types, error } = await window.db.from('assessment_types').select('*');
+      if (error || !types) {
+        document.getElementById('formsContainer').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>加载考核项目失败</p>
+          </div>`;
+        return;
+      }
+      assessmentTypes = types;
+
+      todayTypes = assessmentTypes.filter(t => itemIds.includes(t.id));
+
+      if (todayTypes.length === 0) {
+        document.getElementById('formsContainer').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>考核项目不存在</p>
+          </div>`;
+        return;
+      }
+
+      // Field name to element ID mapping for recalcRates
+      const fieldIds = {
+        '应到人数': 'yingdao', '实到人数': 'shidao',
+        '请假人数': 'qingjia', '视频人数': 'shipin',
+        '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
+      };
+
+      // Build field map from today's types
+      const fieldMap = {};
+      const requiredFields = new Set();
+      todayTypes.forEach(type => {
+        Object.entries(type.fields || {}).forEach(([fn, fcfg]) => {
+          const eid = fieldIds[fn];
+          if (eid) {
+            fieldMap[fn] = eid;
+            if (String(fcfg).includes('必填')) requiredFields.add(eid);
+          }
+        });
+      });
+
+      // Initialize formData
+      formData = {};
+      Object.values(fieldIds).forEach(id => formData[id] = '');
+
+      // Render the new layout (use DB fields for labels/required, fixed IDs for input)
+      let html = '';
+
+      // === 上线率 Section ===
+      html += `<div class="section">
+        <div class="section-title">
+          <span class="section-icon 考勤">📊</span>
+          上线率
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label class="input-label">${requiredFields.has('yingdao') ? '应到人数 *' : '应到人数'}</label>
+            <input type="number" class="form-input compact" id="yingdao" placeholder="0" oninput="recalcRates()">
+          </div>
+          <div class="input-group">
+            <label class="input-label">${requiredFields.has('shidao') ? '实到人数 *' : '实到人数'}</label>
+            <input type="number" class="form-input compact" id="shidao" placeholder="0" oninput="recalcRates()">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label class="input-label">${requiredFields.has('qingjia') ? '请假人数 *' : '请假人数'}</label>
+            <input type="number" class="form-input compact" id="qingjia" placeholder="0" oninput="recalcRates()">
+          </div>
+          <div class="input-group">
+            <label class="input-label">${requiredFields.has('shipin') ? '视频人数 *' : '视频人数'}</label>
+            <input type="number" class="form-input compact" id="shipin" placeholder="0" oninput="recalcRates()">
+          </div>
+        </div>
+        <div class="rate-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="rate-item">
+            <span class="rate-label">上线率：</span>
+            <span class="rate-value" id="liveOnlineRate">--</span>
+          </div>
+          <div class="rate-item" style="text-align:right;">
+            <span class="rate-label">视频率：</span>
+            <span class="rate-value" id="liveVideoRate">--</span>
+          </div>
+        </div>
+      </div>`;
+
+      // === 作业率 Section ===
+      html += `<div class="section">
+        <div class="section-title">
+          <span class="section-icon 作业">📝</span>
+          作业率
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label class="input-label">${requiredFields.has('yingzuo') ? '应做作业人数 *' : '应做作业人数'}</label>
+            <input type="number" class="form-input compact" id="yingzuo" placeholder="0" oninput="recalcRates()">
+          </div>
+          <div class="input-group">
+            <label class="input-label">${requiredFields.has('zuowan') ? '作业完成人数 *' : '作业完成人数'}</label>
+            <input type="number" class="form-input compact" id="zuowan" placeholder="0" oninput="recalcRates()">
+          </div>
+        </div>
+        <div class="rate-row">
+          <div class="rate-item">
+            <span class="rate-label">作业率：</span>
+            <span class="rate-value" id="liveHwRate">--</span>
+          </div>
+        </div>
+      </div>`;
+
+      // === 出勤率 Section ===
+      html += `<div class="section attendance-summary">
+        <div class="rate-row total">
+          <div class="rate-item large">
+            <span class="rate-label">今日出勤率：</span>
+            <span class="rate-value" id="liveTotalRate">--</span>
+          </div>
+        </div>
+      </div>`;
+
+      document.getElementById('formsContainer').innerHTML = html;
+
+      // If a group is selected, check for existing record and pre-fill
+      if (selectedGroupId && currentSchedule) {
+        const { data: existingRecords } = await window.db.from('attendance_records')
+          .select('fill_data')
+          .eq('schedule_id', currentSchedule.id)
+          .eq('organization_id', parseInt(selectedGroupId))
+          .limit(1);
+        if (existingRecords && existingRecords.length > 0) {
+          const fd = existingRecords[0].fill_data || {};
+          Object.entries(fieldIds).forEach(([name, id]) => {
+            const el = document.getElementById(id);
+            if (el && fd[name] !== undefined && fd[name] !== null) {
+              el.value = fd[name];
+              formData[id] = String(fd[name]);
+            }
+          });
+          recalcRates();
+        }
+      }
+    }
+
+    // Evaluate a formula string like "实到人数/应到人数" using current input values
+    // Returns percentage (0-100) as string or null if invalid
+    function calcFormula(formula, values) {
+      if (!formula) return null;
+      let expr = formula.trim();
+
+      // Field name -> element ID mapping
+      const nameToId = {
+        '应到人数': 'yingdao', '实到人数': 'shidao',
+        '请假人数': 'qingjia', '视频人数': 'shipin',
+        '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
+      };
+
+      // Replace field names with values wrapped in parens to prevent code injection
+      Object.keys(nameToId).forEach(name => {
+        expr = expr.replace(new RegExp(name, 'g'), `(${values[nameToId[name]] ?? 0})`);
+      });
+
+      try {
+        const result = new Function('return ' + expr)();
+        return typeof result === 'number' && isFinite(result) ? result : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Recalculate rates when form changes
+    function recalcRates() {
+      const getVal = (id) => parseInt(document.getElementById(id)?.value) || 0;
+      const values = {
+        yingdao: getVal('yingdao'),
+        shidao: getVal('shidao'),
+        qingjia: getVal('qingjia'),
+        shipin: getVal('shipin'),
+        yingzuo: getVal('yingzuo'),
+        zuowan: getVal('zuowan')
+      };
+
+      // Find formulas for each rate type from today's assessment types
+      let onlineFormula = null, videoFormula = null, hwFormula = null;
+
+      todayTypes.forEach(type => {
+        // Try to match by field names in formula
+        if (type.formula) {
+          const f = type.formula;
+          if (f.includes('实到人数') && f.includes('应到人数')) onlineFormula = f;
+          else if (f.includes('视频人数') && f.includes('实到人数')) videoFormula = f;
+          else if (f.includes('完成人数') && f.includes('应做')) hwFormula = f;
+        }
+      });
+
+      // Only multiply by 100 if formula does NOT already contain "*100" (avoid double-scale)
+      const hasMult100 = (f) => f && (f.includes('*100') || f.includes('×100'));
+
+      const onlineRate = onlineFormula != null
+        ? (calcFormula(onlineFormula, values) ?? 0) * (hasMult100(onlineFormula) ? 1 : 100)
+        : 0;
+      const videoRate = videoFormula != null
+        ? (calcFormula(videoFormula, values) ?? 0) * (hasMult100(videoFormula) ? 1 : 100)
+        : 0;
+      const hwRate = hwFormula != null
+        ? (calcFormula(hwFormula, values) ?? 0) * (hasMult100(hwFormula) ? 1 : 100)
+        : 0;
+
+      // 出勤率 = (上线率 + 作业率) / 2
+      const totalRate = ((onlineRate + hwRate) / 2).toFixed(1);
+
+      const el = document.getElementById('liveOnlineRate');
+      if (el) el.textContent = onlineRate.toFixed(1) + '%';
+      const vr = document.getElementById('liveVideoRate');
+      if (vr) vr.textContent = videoRate.toFixed(1) + '%';
+      const hr = document.getElementById('liveHwRate');
+      if (hr) hr.textContent = hwRate.toFixed(1) + '%';
+      const tr = document.getElementById('liveTotalRate');
+      if (tr) tr.textContent = totalRate + '%';
+    }
+
+    function selectRadio(fieldId, value) {
+      formData[fieldId] = value;
+      // Update UI
+      document.querySelectorAll(`[name="${fieldId}"]`).forEach(el => {
+        el.closest('.radio-item').classList.remove('selected');
+      });
+      document.querySelector(`[name="${fieldId}"][value="${value}"]`).closest('.radio-item').classList.add('selected');
+    }
+
+    function toggleCheckbox(fieldId, value, el) {
+      if (!formData[fieldId]) formData[fieldId] = [];
+      const idx = formData[fieldId].indexOf(value);
+      if (idx === -1) {
+        formData[fieldId].push(value);
+        el.classList.add('selected');
+      } else {
+        formData[fieldId].splice(idx, 1);
+        el.classList.remove('selected');
+      }
+      el.querySelector('input').checked = el.classList.contains('selected');
+    }
+
+    function handleImageUpload(fieldId, input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById(fieldId + '_preview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          formData[fieldId] = e.target.result; // Store as base64
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    async function submitAttendance() {
+      if (!currentSchedule) {
+        showToast('今日无日程安排');
+        return;
+      }
+
+      const groupSelect = document.getElementById('groupSelect');
+      const selectedOrgId = groupSelect.value;
+
+      if (!selectedOrgId) {
+        showToast('请选择小组');
+        return;
+      }
+
+      // Validate it's a 小组
+      const selectedOrg = orgs.find(o => o.id === parseInt(selectedOrgId));
+      if (!selectedOrg || selectedOrg.level !== '小组') {
+        showToast('必须选择到小组才能提交');
+        return;
+      }
+
+      const getVal = (id) => document.getElementById(id)?.value;
+      const getInt = (id) => parseInt(getVal(id)) || 0;
+
+      const yingdao = getInt('yingdao');
+      const shidao = getInt('shidao');
+      const qingjia = getInt('qingjia');
+      const shipin = getInt('shipin');
+      const yingzuo = getInt('yingzuo');
+      const zuowan = getInt('zuowan');
+
+      // 1. Validate: 实到人数 + 请假人数 <= 应到人数
+      if (shidao + qingjia > yingdao) {
+        showToast('实到人数 + 请假人数不能超过应到人数');
+        return;
+      }
+      // 2. Validate: 视频人数 <= 实到人数
+      if (shipin > shidao) {
+        showToast('视频人数不能超过实到人数');
+        return;
+      }
+      // 3. Validate: 作业完成人数 <= 应做作业人数
+      if (zuowan > yingzuo) {
+        showToast('作业完成人数不能超过应做作业人数');
+        return;
+      }
+
+      // 4. Validate rates <= 100% using actual formulas from DB
+      const values = { yingdao, shidao, qingjia, shipin, yingzuo, zuowan };
+      let onlineFormula = null, videoFormula = null, hwFormula = null;
+      todayTypes.forEach(type => {
+        const f = type.formula;
+        if (f && f.includes('实到人数') && f.includes('应到人数')) onlineFormula = f;
+        else if (f && f.includes('视频人数') && f.includes('实到人数')) videoFormula = f;
+        else if (f && f.includes('完成人数') && f.includes('应做')) hwFormula = f;
+      });
+
+      const calcRate = (f) => {
+        if (!f) return null;
+        let expr = f;
+        const nameToId = {
+          '应到人数': 'yingdao', '实到人数': 'shidao',
+          '请假人数': 'qingjia', '视频人数': 'shipin',
+          '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
+        };
+        Object.keys(nameToId).forEach(name => {
+          expr = expr.replace(new RegExp(name, 'g'), `(${values[nameToId[name]] ?? 0})`);
+        });
+        try { const r = new Function('return ' + expr)(); return typeof r === 'number' && isFinite(r) ? r : null; }
+        catch { return null; }
+      };
+
+      const rates = [];
+      if (onlineFormula) { const r = calcRate(onlineFormula); if (r !== null && r > 100) rates.push('上线率'); }
+      if (videoFormula) { const r = calcRate(videoFormula); if (r !== null && r > 100) rates.push('视频率'); }
+      if (hwFormula) { const r = calcRate(hwFormula); if (r !== null && r > 100) rates.push('作业率'); }
+      if (rates.length > 0) {
+        showToast(rates.join('、') + '不能超过100%');
+        return;
+      }
+
+      // Check required fields
+      let missingRequired = false;
+      todayTypes.forEach(type => {
+        Object.entries(type.fields || {}).forEach(([fn, fcfg]) => {
+          const fieldId = {
+            '应到人数': 'yingdao', '实到人数': 'shidao',
+            '请假人数': 'qingjia', '视频人数': 'shipin',
+            '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
+          }[fn];
+          if (String(fcfg).includes('必填') && (getVal(fieldId) === '' || getVal(fieldId) === null)) {
+            missingRequired = true;
+          }
+        });
+      });
+
+      if (missingRequired) {
+        showToast('请填写所有必填项');
+        return;
+      }
+
+      // Build fill_data using DB field names as keys
+      const fillData = {
+        '应到人数': yingdao,
+        '实到人数': shidao,
+        '请假人数': qingjia,
+        '视频人数': shipin,
+        '应做作业人数': yingzuo,
+        '作业完成人数': zuowan
+      };
+
+      const submission = {
+        schedule_id: currentSchedule.id,
+        semester_id: currentSemester.id,
+        fill_user_id: currentUser.id,
+        organization_id: parseInt(selectedOrgId),
+        fill_data: fillData,
+        created_at: new Date().toISOString()
+      };
+
+      const { error } = await window.db.from('attendance_records').insert(submission);
+
+      if (error) {
+        showToast('提交失败: ' + error.message);
+        console.error('Submit error:', error);
+      } else {
+        showToast('提交成功！');
+        ['yingdao','shidao','qingjia','shipin','yingzuo','zuowan'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        recalcRates();
+      }
+    }
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>

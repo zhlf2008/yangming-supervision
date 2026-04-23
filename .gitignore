@@ -1,0 +1,29 @@
+# Temporary files
+*.xlsx
+*.xls
+*.json
+*.txt
+*.py
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OpenCode
+.opencode/

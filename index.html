@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>阳明心学督察管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --ink-dark: #2D2D2D;
+      --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A;
+      --vermillion: #E63946;
+      --vermillion-light: #FEE2E4;
+      --gold: #D4A574;
+      --gold-light: #F5EDE4;
+      --border: #E8E4DF;
+      --shadow: rgba(45, 45, 45, 0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px 100px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 32px 20px 24px;
+      position: relative;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--vermillion) 0%, var(--gold) 100%);
+      border-radius: 2px;
+    }
+
+    .header-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--ink-dark);
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+
+    /* User Card */
+    .user-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .user-card:active {
+      transform: scale(0.98);
+    }
+
+    .user-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--vermillion-light) 0%, var(--gold-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 22px;
+      color: var(--vermillion);
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink-dark);
+      margin-bottom: 4px;
+    }
+
+    .user-role {
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+
+    .user-arrow {
+      width: 24px;
+      height: 24px;
+      color: var(--ink-muted);
+    }
+
+    /* Section Title */
+    .section-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink-dark);
+      margin-bottom: 14px;
+      padding-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 3px;
+      height: 16px;
+      background: linear-gradient(180deg, var(--vermillion) 0%, var(--gold) 100%);
+      border-radius: 2px;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .action-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 24px 18px;
+      text-align: center;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .action-card:active {
+      transform: scale(0.96);
+    }
+
+    .action-card:hover {
+      text-decoration: none;
+    }
+
+    .action-icon {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 14px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+
+    .action-icon.attendance {
+      background: linear-gradient(135deg, var(--vermillion-light) 0%, #FFECED 100%);
+    }
+
+    .action-icon.summary {
+      background: linear-gradient(135deg, var(--gold-light) 0%, #FBF7F2 100%);
+    }
+
+    .action-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-dark);
+      margin-bottom: 6px;
+    }
+
+    .action-desc {
+      font-size: 12px;
+      color: var(--ink-muted);
+      line-height: 1.4;
+    }
+
+    /* Stats Preview */
+    .stats-preview {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .stats-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-dark);
+    }
+
+    .stats-date {
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+    }
+
+    .stat-value {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-value.high { color: #2E7D32; }
+    .stat-value.medium { color: var(--ink-dark); }
+    .stat-value.low { color: var(--vermillion); }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--ink-muted);
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 20px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--ink-muted);
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: var(--vermillion);
+    }
+
+    .nav-item:hover {
+      text-decoration: none;
+    }
+
+    .nav-icon {
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Decorative */
+    .seal {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      opacity: 0.12;
+    }
+
+    /* Animations */
+    .header { animation: fadeInDown 0.5s ease-out; }
+    .user-card { animation: fadeInUp 0.5s ease-out 0.1s backwards; }
+    .action-card:nth-child(1) { animation: fadeInUp 0.5s ease-out 0.15s backwards; }
+    .action-card:nth-child(2) { animation: fadeInUp 0.5s ease-out 0.2s backwards; }
+    .stats-preview { animation: fadeInUp 0.5s ease-out 0.25s backwards; }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="header-title">阳明心学督察管理系统</h1>
+      <p class="header-subtitle">阳明心学 · 第14期</p>
+    </header>
+
+    <!-- User Card -->
+    <div class="user-card">
+      <a href="profile.html" style="display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit;">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">加载中...</div>
+          <div class="user-role" id="userRole">加载中...</div>
+        </div>
+        <svg class="user-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Quick Actions -->
+    <h2 class="section-title">快捷入口</h2>
+    <div class="quick-actions">
+      <a href="attendance-page.html" class="action-card">
+        <div class="action-icon attendance">📋</div>
+        <div class="action-title">考勤填报</div>
+        <div class="action-desc">每日考勤数据录入</div>
+      </a>
+      <a href="summary-page.html" class="action-card">
+        <div class="action-icon summary">📊</div>
+        <div class="action-title">数据汇总</div>
+        <div class="action-desc">查看统计数据</div>
+      </a>
+    </div>
+
+    <!-- Stats Preview -->
+    <div class="stats-preview">
+      <div class="stats-header">
+        <span class="stats-title">今日概况</span>
+        <span class="stats-date" id="statsDate">--</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value high" id="statOnline">--</div>
+          <div class="stat-label">上线率</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value medium" id="statHomework">--</div>
+          <div class="stat-label">作业率</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value high" id="statVideo">--</div>
+          <div class="stat-label">视频率</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item active">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">首页</span>
+    </a>
+    <a href="attendance-page.html" class="nav-item">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">考勤填报</span>
+    </a>
+    <a href="summary-page.html" class="nav-item">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">数据汇总</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">个人中心</span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script>
+    // Wait for Supabase db to be ready
+    async function init() {
+      await waitForDb();
+      await new Promise(r => setTimeout(r, 500));
+
+      // Load user info from localStorage
+      const userData = localStorage.getItem('supabase_user');
+      if (!userData) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const profile = JSON.parse(userData);
+      const userName = profile.name || '未知';
+      const userRole = profile.role || '';
+
+      // Update user card
+      document.getElementById('userName').textContent = userName;
+      document.getElementById('userAvatar').textContent = userName.charAt(0);
+
+      // Update role display
+      const roleMap = {
+        '管理员': '管理员',
+        '地区督委': '地区督委',
+        '大班总督': '大班总督',
+        '大班副督': '大班副督',
+        '班级总督察': '班级总督察',
+        '班级副总督察': '班级副总督察',
+        '小组督察': '小组督察',
+        '小组副督察': '小组副督察'
+      };
+      document.querySelector('.user-role').textContent = roleMap[userRole] || userRole;
+
+      // Load organization info
+      if (profile.organization_id) {
+        const orgData = localStorage.getItem('supabase_user');
+        const org = profile.organizations;
+        if (org) {
+          document.querySelector('.user-role').textContent += ' · ' + org.name;
+        }
+      }
+
+      // Load current semester and update subtitle
+      await loadCurrentSemester();
+
+      // Load today's stats based on user's scope
+      await loadTodayStats(profile);
+    }
+
+      // Load today's stats for the user's scope
+    async function loadCurrentSemester() {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await window.db.from('semesters').select('semester_name').lte('start_date', today).gte('end_date', today).single();
+      if (data) {
+        document.querySelector('.header-subtitle').textContent = data.semester_name;
+      }
+    }
+
+    async function loadTodayStats(profile) {
+      const today = new Date().toISOString().split('T')[0];
+      const dateStr = today; // YYYY-MM-DD
+
+      // Get today's schedule IDs
+      let scheduleIds = [];
+      try {
+        const schedRes = await fetch(
+          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date&schedule_date=eq.${dateStr}&is_valid=eq.1`,
+          { headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' } }
+        );
+        const schedData = await schedRes.json();
+        scheduleIds = schedData?.map(s => s.id) || [];
+      } catch (e) { console.error(e); }
+
+      if (scheduleIds.length === 0) {
+        document.getElementById('statOnline').textContent = '0%';
+        document.getElementById('statHomework').textContent = '0%';
+        document.getElementById('statVideo').textContent = '0%';
+        document.getElementById('statsDate').textContent = today + ' (无日程)';
+        return;
+      }
+
+      // Build org scope filter based on role
+      const role = profile.role;
+      const userOrgId = profile.organization_id;
+
+      // Get all orgs for building scope
+      let orgsMap = {};
+      try {
+        const orgRes = await fetch(
+          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/organizations?select=id,name,parent_id,level`,
+          { headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' } }
+        );
+        const orgs = await orgRes.json() || [];
+        orgs.forEach(o => orgsMap[o.id] = o);
+      } catch (e) { console.error(e); }
+
+      // Get all groups under an org (recursive)
+      function getAllGroups(orgId) {
+        const directChildren = Object.values(orgsMap).filter(o => o.parent_id === orgId);
+        let groups = directChildren.filter(o => o.level === '小组');
+        const childOrgs = directChildren.filter(o => o.level !== '小组');
+        childOrgs.forEach(co => { groups = groups.concat(getAllGroups(co.id)); });
+        return groups;
+      }
+
+      let accessibleGroupIds = [];
+      if (role === '小组督察' || role === '小组副督察') {
+        accessibleGroupIds = [userOrgId];
+      } else if (role === '班级总督察' || role === '班级副总督察') {
+        accessibleGroupIds = getAllGroups(userOrgId).map(g => g.id);
+      } else if (role === '大班总督' || role === '大班副督') {
+        accessibleGroupIds = getAllGroups(userOrgId).map(g => g.id);
+      } else {
+        accessibleGroupIds = Object.values(orgsMap).filter(o => o.level === '小组').map(o => o.id);
+      }
+
+      const ids = accessibleGroupIds.filter(id => id != null);
+      if (ids.length === 0) {
+        document.getElementById('statOnline').textContent = '0%';
+        document.getElementById('statHomework').textContent = '0%';
+        document.getElementById('statVideo').textContent = '0%';
+        document.getElementById('statsDate').textContent = today;
+        return;
+      }
+
+      // Query attendance records
+      let recordsUrl = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/attendance_records?schedule_id=in.(${scheduleIds.join(',')})&organization_id=in.(${ids.join(',')})&select=fill_data`;
+      let records = [];
+      try {
+        const recRes = await fetch(recordsUrl, {
+          headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
+        });
+        records = await recRes.json() || [];
+      } catch (e) { console.error(e); }
+
+      if (records.length === 0) {
+        document.getElementById('statOnline').textContent = '0%';
+        document.getElementById('statHomework').textContent = '0%';
+        document.getElementById('statVideo').textContent = '0%';
+        document.getElementById('statsDate').textContent = today;
+        return;
+      }
+
+      // Aggregate totals from fill_data
+      let totalYd = 0, totalSd = 0, totalYz = 0, totalZw = 0, totalSp = 0;
+      records.forEach(r => {
+        const fd = r.fill_data || {};
+        totalYd += parseInt(fd['应到人数']) || 0;
+        totalSd += parseInt(fd['实到人数']) || 0;
+        totalYz += parseInt(fd['应做作业人数']) || 0;
+        totalZw += parseInt(fd['作业完成人数']) || 0;
+        totalSp += parseInt(fd['视频人数']) || 0;
+      });
+
+      const onlineRate = totalYd > 0 ? ((totalSd / totalYd) * 100).toFixed(1) : '0.0';
+      const homeworkRate = totalYz > 0 ? ((totalZw / totalYz) * 100).toFixed(1) : '0.0';
+      const videoRate = totalSd > 0 ? ((totalSp / totalSd) * 100).toFixed(1) : '0.0';
+
+      document.getElementById('statOnline').textContent = onlineRate + '%';
+      document.getElementById('statHomework').textContent = homeworkRate + '%';
+      document.getElementById('statVideo').textContent = videoRate + '%';
+      document.getElementById('statsDate').textContent = today;
+    }
+
+    init();
+  </script>
+</body>
+</html>

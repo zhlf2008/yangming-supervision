@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>登录 - 阳明心学督察管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* 默认隐藏注册tab，由 checkRegistrationSetting() 动态控制 */
+    #registerTab { display: none; }
+    #registerForm { display: none; }
+
+    :root {
+      --bg-primary: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --ink-dark: #2D2D2D;
+      --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A;
+      --vermillion: #E63946;
+      --vermillion-light: #FEE2E4;
+      --gold: #D4A574;
+      --gold-light: #F5EDE4;
+      --border: #E8E4DF;
+      --shadow: rgba(45, 45, 45, 0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .login-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, var(--vermillion-light) 0%, var(--gold-light) 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+    }
+
+    .login-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--ink-dark);
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      font-size: 14px;
+      color: var(--ink-muted);
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      box-shadow: 0 4px 20px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 13px;
+      color: var(--ink-light);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-family: 'Noto Sans SC', sans-serif;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-primary);
+      color: var(--ink-dark);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--vermillion);
+      background: var(--bg-card);
+      box-shadow: 0 0 0 3px var(--vermillion-light);
+    }
+
+    .input-field::placeholder {
+      color: var(--ink-muted);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-family: 'Noto Sans SC', sans-serif;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, var(--vermillion) 0%, #C62828 100%);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(230, 57, 70, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 8px;
+    }
+
+    .login-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+    }
+
+    .login-btn:disabled {
+      background: #CCC;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .error-msg {
+      color: var(--vermillion);
+      font-size: 13px;
+      margin-top: 12px;
+      text-align: center;
+      display: none;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+
+    .tab-switch {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      background: var(--bg-primary);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--ink-muted);
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--vermillion);
+      border-color: var(--vermillion);
+      color: white;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid white;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .version {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <div class="login-logo">📋</div>
+      <h1 class="login-title">阳明心学督察管理系统</h1>
+      <p class="login-subtitle">考勤数据管理系统</p>
+    </div>
+
+    <div class="login-card">
+      <!-- Tab 切换 -->
+      <div class="tab-switch">
+        <button class="tab-btn active" id="loginTab" onclick="switchTab('login')">登录</button>
+        <button class="tab-btn" id="registerTab" onclick="switchTab('register')">注册</button>
+      </div>
+
+      <!-- 登录表单 -->
+      <div id="loginForm">
+        <div class="input-group">
+          <label class="input-label">手机号</label>
+          <input type="tel" class="input-field" id="phone" placeholder="请输入手机号" maxlength="11">
+        </div>
+        <div class="input-group">
+          <label class="input-label">密码</label>
+          <input type="password" class="input-field" id="password" placeholder="请输入密码">
+        </div>
+        <button class="login-btn" id="loginBtn" onclick="handleLogin()">登 录</button>
+        <p class="error-msg" id="errorMsg"></p>
+      </div>
+
+      <!-- 注册表单 -->
+      <div id="registerForm" style="display:none;">
+        <div class="input-group">
+          <label class="input-label">姓名</label>
+          <input type="text" class="input-field" id="regName" placeholder="请输入姓名">
+        </div>
+        <div class="input-group">
+          <label class="input-label">手机号</label>
+          <input type="tel" class="input-field" id="regPhone" placeholder="请输入手机号" maxlength="11">
+        </div>
+        <div class="input-group">
+          <label class="input-label">密码</label>
+          <input type="password" class="input-field" id="regPassword" placeholder="请输入密码（6位以上）">
+        </div>
+        <div class="input-group">
+          <label class="input-label">确认密码</label>
+          <input type="password" class="input-field" id="regPassword2" placeholder="请再次输入密码">
+        </div>
+        <button class="login-btn" id="registerBtn" onclick="handleRegister()">注 册</button>
+        <p class="error-msg" id="regErrorMsg"></p>
+      </div>
+    </div>
+
+    <p class="version">v1.0.0</p>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script>
+    const { createClient } = supabase;
+    const db = createClient(supabaseConfig.url, supabaseConfig.anonKey);
+
+    const phoneInput = document.getElementById('phone');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    // 回车登录
+    passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+
+    async function handleLogin() {
+      const phone = phoneInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!phone || phone.length !== 11) {
+        showError('请输入正确的手机号');
+        return;
+      }
+      if (!password) {
+        showError('请输入密码');
+        return;
+      }
+
+      setLoading(true);
+      hideError();
+
+      try {
+        // 1. 使用邮箱登录
+        const email = `p${phone}@supabase.io`;
+        const { data: authData, error: authError } = await db.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (authError) throw authError;
+
+        // 2. 获取用户 profile
+        const { data: profile, error: profileError } = await db
+          .from('profiles')
+          .select('*, organizations(*)')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        // 3. 保存用户信息
+        localStorage.setItem('supabase_session', JSON.stringify(authData.session));
+        localStorage.setItem('supabase_user', JSON.stringify(profile));
+        localStorage.setItem('currentUser', profile.name);
+
+        // 4. 跳转到首页
+        window.location.href = 'index.html';
+
+      } catch (error) {
+        console.error('Login error:', error);
+        if (error.message.includes('Invalid login credentials')) {
+          showError('手机号或密码错误');
+        } else if (error.message.includes('not found')) {
+          showError('该手机号未注册');
+        } else {
+          showError('登录失败，请重试');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Tab 切换
+    function switchTab(tab) {
+      const allowReg = localStorage.getItem('system_allow_registration') === 'true';
+      if (!allowReg && tab === 'register') {
+        showError('注册已关闭，请联系管理员');
+        return;
+      }
+      document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+      document.getElementById('registerTab').classList.toggle('active', tab === 'register');
+      document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('registerForm').style.display = (tab === 'register' && allowReg) ? 'block' : 'none';
+      hideError();
+      hideRegError();
+    }
+
+    // 根据设置隐藏注册tab
+    function checkRegistrationSetting() {
+      const allowReg = localStorage.getItem('system_allow_registration') === 'true';
+      const registerTab = document.getElementById('registerTab');
+      const registerForm = document.getElementById('registerForm');
+      if (!allowReg) {
+        registerTab.style.display = 'none';
+        registerForm.style.display = 'none';
+        // 确保登录表单显示
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('loginTab').classList.add('active');
+        document.getElementById('registerTab').classList.remove('active');
+      }
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.add('show');
+    }
+
+    function hideError() {
+      errorMsg.classList.remove('show');
+    }
+
+    function showRegError(msg) {
+      document.getElementById('regErrorMsg').textContent = msg;
+      document.getElementById('regErrorMsg').classList.add('show');
+    }
+
+    function hideRegError() {
+      document.getElementById('regErrorMsg').classList.remove('show');
+    }
+
+    function setLoading(loading) {
+      loginBtn.disabled = loading;
+      loginBtn.innerHTML = loading ? '<span class="loading"></span>登录中...' : '登 录';
+    }
+
+    // 注册处理
+    async function handleRegister() {
+      const name = document.getElementById('regName').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const password2 = document.getElementById('regPassword2').value;
+
+      if (!name) {
+        showRegError('请输入姓名');
+        return;
+      }
+      if (!phone || phone.length !== 11) {
+        showRegError('请输入正确的手机号');
+        return;
+      }
+      if (!password || password.length < 6) {
+        showRegError('密码至少6位');
+        return;
+      }
+      if (password !== password2) {
+        showRegError('两次密码不一致');
+        return;
+      }
+
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span>注册中...';
+      hideRegError();
+
+      try {
+        // 1. 创建 Auth 用户（使用邮箱格式）
+        const email = `p${phone}@supabase.io`;
+        const { data: authData, error: authError } = await db.auth.signUp({
+          email: email,
+          password: password
+        });
+
+        if (authError) throw authError;
+
+        // 2. 插入 profiles 表
+        const { error: profileError } = await db.from('profiles').insert({
+          id: authData.user.id,
+          name: name,
+          phone: phone,
+          role: '小组督察'  // 默认角色
+        });
+
+        if (profileError) {
+          console.error('Profile insert error:', profileError);
+          // 不阻断注册，profile可以后续补
+        }
+
+        // 3. 保存 session
+        if (authData.session) {
+          localStorage.setItem('supabase_session', JSON.stringify(authData.session));
+        }
+
+        // 4. 自动登录
+        const { data: profile } = await db
+          .from('profiles')
+          .select('*, organizations(*)')
+          .eq('id', authData.user.id)
+          .single();
+
+        localStorage.setItem('supabase_user', JSON.stringify(profile));
+        localStorage.setItem('currentUser', name);
+
+        alert('注册成功！');
+        window.location.href = 'index.html';
+
+      } catch (error) {
+        console.error('Register error:', error);
+        if (error.message.includes('already registered')) {
+          showRegError('该手机号已注册');
+        } else {
+          showRegError('注册失败: ' + error.message);
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '注 册';
+      }
+    }
+
+    // 检查是否已登录
+    async function checkLogin() {
+      const session = JSON.parse(localStorage.getItem('supabase_session') || 'null');
+      if (session) {
+        // 验证 session 是否有效
+        const { data, error } = await db.auth.getUser(session.access_token);
+        if (!error && data.user) {
+          window.location.href = 'index.html';
+        }
+      }
+    }
+    checkRegistrationSetting();
+    checkLogin();
+  </script>
+</body>
+</html>

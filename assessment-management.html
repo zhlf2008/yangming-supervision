@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>考核项目管理 - 阳明心学督察管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --ink-dark: #2D2D2D;
+      --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A;
+      --vermillion: #E63946;
+      --vermillion-light: #FEE2E4;
+      --gold: #D4A574;
+      --gold-light: #F5EDE4;
+      --border: #E8E4DF;
+      --shadow: rgba(45, 45, 45, 0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --green: #2E7D32;
+      --green-light: #E8F5E9;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg-primary); color: var(--ink-dark); min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
+    .page-title { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 600; }
+    .section-desc { font-size: 13px; color: var(--ink-muted); margin-bottom: 16px; }
+    .add-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--vermillion); border: none; border-radius: 6px; cursor: pointer; margin-bottom: 16px; }
+    .type-card { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; background: var(--bg-card); }
+    .type-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .type-name { font-size: 14px; font-weight: 600; }
+    .type-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+    .type-badge.template { background: var(--vermillion-light); color: var(--vermillion); }
+    .type-badge.active { background: var(--green-light); color: var(--green); }
+    .type-fields { font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
+    .type-formula { font-size: 12px; color: var(--ink-light); font-family: monospace; margin-top: 4px; }
+    .field-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .field-tag { font-size: 11px; padding: 2px 6px; background: var(--bg-primary); border-radius: 3px; color: var(--ink-light); }
+    .field-tag .required { color: var(--vermillion); margin-left: 2px; }
+    .type-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .edit-btn, .delete-btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: none; }
+    .edit-btn { background: var(--bg-primary); color: var(--ink-dark); border: 1px solid var(--border); }
+    .delete-btn { background: var(--vermillion-light); color: var(--vermillion); }
+    .empty-state { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 14px; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s; }
+    .modal-overlay.show { opacity: 1; visibility: visible; }
+    .modal { background: var(--bg-card); border-radius: var(--radius) var(--radius) 0 0; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; }
+    .modal-overlay.show .modal { transform: translateY(0); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 16px; font-weight: 600; }
+    .modal-close { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-primary); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .modal-body { padding: 20px; }
+    .form-item { margin-bottom: 16px; }
+    .form-label { font-size: 13px; color: var(--ink-light); margin-bottom: 6px; display: block; }
+    .form-input, .form-select { width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--ink-dark); outline: none; }
+    .form-input:focus, .form-select:focus { border-color: var(--vermillion); }
+    .toggle-group { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .toggle-switch { width: 48px; height: 28px; background: var(--border); border-radius: 14px; position: relative; cursor: pointer; transition: background 0.2s; }
+    .toggle-switch.active { background: var(--vermillion); }
+    .toggle-switch::after { content: ''; position: absolute; width: 24px; height: 24px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .toggle-switch.active::after { transform: translateX(20px); }
+    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .modal-btn { flex: 1; padding: 12px; font-size: 14px; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; }
+    .modal-btn.cancel { background: var(--bg-primary); color: var(--ink-dark); }
+    .modal-btn.confirm { background: var(--vermillion); color: white; }
+    .field-editor { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px; }
+    .field-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+    .field-item:last-child { margin-bottom: 0; }
+    .field-name { flex: 1; min-width: 80px; padding: 8px; font-size: 13px; border: 1px solid var(--border); border-radius: 6px; }
+    .field-type { width: 80px; padding: 8px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: white; }
+    .field-required { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-muted); }
+    .field-required input { width: 16px; height: 16px; }
+    .field-remove { width: 28px; height: 28px; border-radius: 50%; background: var(--vermillion-light); color: var(--vermillion); border: none; cursor: pointer; font-size: 16px; }
+    .add-field-btn { width: 100%; padding: 10px; border: 1px dashed var(--border); border-radius: 8px; background: transparent; color: var(--ink-muted); font-size: 13px; cursor: pointer; margin-top: 8px; }
+    .add-field-btn:hover { border-color: var(--vermillion); color: var(--vermillion); }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--ink-dark); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    /* Nav */
+    .bottom-nav { display: flex; justify-content: center; gap: 8px; padding: 16px 0; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border); z-index: 100; }
+    .nav-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); font-size: 14px; cursor: pointer; color: var(--ink-dark); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <a href="semester-settings.html" class="back-btn">←</a>
+      <h1 class="page-title">考核项目管理</h1>
+    </div>
+    <p class="section-desc">管理考勤填报的考核项目模板。设为"模板"的项目会在生成日程时自动添加。</p>
+    <button class="add-btn" onclick="showTypeModal()">+ 新增考核项目</button>
+    <div id="typeList"><div class="empty-state">加载中...</div></div>
+  </div>
+
+  <!-- Type Modal -->
+  <div id="typeModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span id="typeModalTitle" class="modal-title">新增考核项目</span>
+        <button class="modal-close" onclick="closeTypeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="typeId">
+        <div class="form-item">
+          <label class="form-label">项目名称</label>
+          <input type="text" id="typeName" class="form-input" placeholder="如：考勤率、作业率">
+        </div>
+        <div class="form-item">
+          <label class="form-label">填报字段</label>
+          <div id="fieldList" class="field-editor"></div>
+          <button class="add-field-btn" onclick="addField()">+ 添加字段</button>
+        </div>
+        <div class="form-item">
+          <label class="form-label">计算公式（可选）</label>
+          <input type="text" id="typeFormula" class="form-input" placeholder="如：(实到人数/应到人数)*100">
+        </div>
+        <div class="toggle-group">
+          <span class="toggle-label">设为模板（新增日程时自动添加）</span>
+          <div id="templateToggle" class="toggle-switch active" onclick="toggleTemplate()"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeTypeModal()">取消</button>
+        <button class="modal-btn confirm" onclick="saveType()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/supabase-config.js"></script>
+  <script>
+    let assessmentTypes = [];
+    let editingType = null;
+    let fieldList = [];
+    let isTemplateEnabled = true;
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    async function init() {
+      await loadAssessmentTypes();
+    }
+
+    async function loadAssessmentTypes() {
+      const { data, error } = await window.db.from('assessment_types').select('*').order('id');
+      if (error) { showToast('加载考核项目失败'); return; }
+      assessmentTypes = data || [];
+      renderAssessmentTypes();
+    }
+
+    function renderAssessmentTypes() {
+      const container = document.getElementById('typeList');
+      if (assessmentTypes.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无考核项目，点击上方添加</div>';
+        return;
+      }
+      container.innerHTML = assessmentTypes.map(type => {
+        const fields = type.fields || {};
+        const fieldsList = Object.entries(fields).map(([name, val]) => {
+          const isRequired = String(val).includes('必填');
+          return `<span class="field-tag">${name}${isRequired ? '<span class="required">*</span>' : ''}</span>`;
+        }).join('');
+        return `
+          <div class="type-card">
+            <div class="type-header">
+              <span class="type-name">${type.type_name}</span>
+              <span class="type-badge ${type.is_template === 1 ? 'template' : 'active'}">${type.is_template === 1 ? '模板' : '启用'}</span>
+            </div>
+            <div class="type-fields">字段：${Object.keys(fields).join('、') || '无'}</div>
+            ${type.formula ? `<div class="type-formula">${type.formula}</div>` : ''}
+            <div class="field-tags">${fieldsList}</div>
+            <div class="type-actions">
+              <button class="edit-btn" onclick="editType('${type.id}')">编辑</button>
+              <button class="delete-btn" onclick="deleteType('${type.id}')">删除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showTypeModal(type = null) {
+      editingType = type;
+      document.getElementById('typeId').value = type?.id || '';
+      document.getElementById('typeName').value = type?.type_name || '';
+      document.getElementById('typeFormula').value = type?.formula || '';
+      isTemplateEnabled = type?.is_template !== 0;
+      document.getElementById('templateToggle').classList.toggle('active', isTemplateEnabled);
+      fieldList = [];
+      if (type?.fields) {
+        Object.entries(type.fields).forEach(([name, val]) => {
+          const valStr = String(val);
+          let ftype = 'text';
+          let required = false;
+          let options = '';
+          if (valStr.includes('数字')) ftype = 'number';
+          else if (valStr.includes('单选')) ftype = 'radio';
+          else if (valStr.includes('多选')) ftype = 'checkbox';
+          else if (valStr.includes('图片')) ftype = 'image';
+          required = valStr.includes('必填');
+          const eqIdx = valStr.indexOf('=');
+          if (eqIdx !== -1) options = valStr.substring(eqIdx + 1);
+          fieldList.push({ name, type: ftype, required, options });
+        });
+      }
+      renderFieldList();
+      document.getElementById('typeModalTitle').textContent = type ? '编辑考核项目' : '新增考核项目';
+      document.getElementById('typeModal').classList.add('show');
+    }
+
+    function renderFieldList() {
+      const container = document.getElementById('fieldList');
+      container.innerHTML = fieldList.map((f, i) => `
+        <div class="field-item">
+          <input type="text" class="field-name" placeholder="字段名" value="${f.name}" onchange="updateField(${i}, 'name', this.value)">
+          <select class="field-type" onchange="updateField(${i}, 'type', this.value)">
+            <option value="text" ${f.type === 'text' ? 'selected' : ''}>文本</option>
+            <option value="number" ${f.type === 'number' ? 'selected' : ''}>数字</option>
+            <option value="radio" ${f.type === 'radio' ? 'selected' : ''}>单选</option>
+            <option value="checkbox" ${f.type === 'checkbox' ? 'selected' : ''}>多选</option>
+            <option value="image" ${f.type === 'image' ? 'selected' : ''}>图片</option>
+          </select>
+          <label class="field-required">
+            <input type="checkbox" ${f.required ? 'checked' : ''} onchange="updateField(${i}, 'required', this.checked)">
+            必填
+          </label>
+          <button class="field-remove" onclick="removeField(${i})">×</button>
+        </div>
+        ${['radio', 'checkbox'].includes(f.type) ? `
+          <div class="field-item" style="padding-left: 36px;">
+            <input type="text" class="field-name" placeholder="选项用逗号分隔，如：优秀,良好,及格" value="${f.options}" onchange="updateField(${i}, 'options', this.value)" style="flex: 1;">
+          </div>
+        ` : ''}
+      `).join('');
+    }
+
+    function addField() {
+      fieldList.push({ name: '', type: 'text', required: false, options: '' });
+      renderFieldList();
+    }
+
+    function removeField(index) {
+      fieldList.splice(index, 1);
+      renderFieldList();
+    }
+
+    function updateField(index, key, value) {
+      fieldList[index][key] = value;
+    }
+
+    function toggleTemplate() {
+      isTemplateEnabled = !isTemplateEnabled;
+      document.getElementById('templateToggle').classList.toggle('active', isTemplateEnabled);
+    }
+
+    function closeTypeModal() {
+      document.getElementById('typeModal').classList.remove('show');
+      editingType = null;
+    }
+
+    async function saveType() {
+      const id = document.getElementById('typeId').value;
+      const type_name = document.getElementById('typeName').value.trim();
+      const formula = document.getElementById('typeFormula').value.trim();
+      if (!type_name) { showToast('请输入项目名称'); return; }
+      const typePrefix = { text: '文本', number: '数字', radio: '单选', checkbox: '多选', image: '图片' };
+      const fields = {};
+      fieldList.forEach(f => {
+        if (f.name.trim()) {
+          let val = typePrefix[f.type] || '文本';
+          if (f.required) val += '+必填';
+          if (['radio', 'checkbox'].includes(f.type) && f.options?.trim()) val += '=' + f.options.trim();
+          fields[f.name.trim()] = val;
+        }
+      });
+      const data = { type_name, fields, formula, is_template: isTemplateEnabled ? 1 : 0 };
+      let error;
+      if (id) {
+        const { error: e } = await window.db.from('assessment_types').update(data).eq('id', id);
+        error = e;
+      } else {
+        const { error: e } = await window.db.from('assessment_types').insert(data);
+        error = e;
+      }
+      if (error) showToast('保存失败: ' + error.message);
+      else { showToast('保存成功'); closeTypeModal(); await loadAssessmentTypes(); }
+    }
+
+    async function editType(id) {
+      const type = assessmentTypes.find(t => t.id == id);
+      if (type) showTypeModal(type);
+    }
+
+    async function deleteType(id) {
+      if (!confirm('确定删除？删除后无法恢复')) return;
+      const { error } = await window.db.from('assessment_types').delete().eq('id', id);
+      if (error) showToast('删除失败');
+      else { showToast('删除成功'); await loadAssessmentTypes(); }
+    }
+
+    async function waitForDb() {
+      while (!window.db) await new Promise(r => setTimeout(r, 100));
+    }
+
+    waitForDb().then(init);
+  </script>
+</body>
+</html>
