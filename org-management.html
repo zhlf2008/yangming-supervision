@@ -45,17 +45,17 @@
     .add-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--vermillion); border: none; border-radius: 6px; cursor: pointer; }
     .tree-container { max-height: 60vh; overflow-y: auto; }
     .tree-node { margin-bottom: 4px; }
-    .tree-node-content { display: flex; flex-wrap: wrap; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: var(--bg-primary); margin-bottom: 2px; gap: 8px; }
+    .tree-node-content { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: var(--bg-primary); margin-bottom: 2px; gap: 8px; flex-shrink: 0; }
     .tree-node-content:hover { background: #F0EFED; }
     .tree-node-content.level-0 { background: #FFF8E1; border-left: 3px solid #FFB300; padding-left: 12px; }
     .tree-node-content.level-1 { background: #E8F5E9; border-left: 3px solid #4CAF50; padding-left: 12px; }
     .tree-node-content.level-2 { background: #E3F2FD; border-left: 3px solid #2196F3; padding-left: 12px; }
-    .tree-expand-btn { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 12px; color: var(--ink-muted); transition: transform 0.2s; }
+    .tree-expand-btn { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; margin-right: 4px; font-size: 10px; color: var(--ink-muted); transition: transform 0.2s; flex-shrink: 0; }
     .tree-expand-btn.expanded { transform: rotate(90deg); }
     .tree-expand-btn.hidden { visibility: hidden; }
     .tree-node-name { flex: 1; font-size: 14px; font-weight: 500; }
     .tree-node-level { font-size: 11px; color: var(--ink-muted); padding: 2px 6px; background: rgba(0,0,0,0.05); border-radius: 3px; margin-right: 8px; }
-    .tree-node-actions { display: flex; gap: 4px; opacity: 1; transition: opacity 0.2s; width: 100%; justify-content: flex-end; padding-top: 4px; }
+    .tree-node-actions { display: flex; gap: 4px; opacity: 1; transition: opacity 0.2s; flex-shrink: 0; }
     .tree-btn { padding: 4px 8px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.9); }
     .tree-btn-add { background: var(--vermillion); color: white; }
     .tree-btn-edit { background: var(--gold-light); color: var(--gold); }
@@ -281,6 +281,16 @@
       });
     }
 
+    // 获取组织及其所有下级的总人数
+    function getTotalUsersCount(orgId) {
+      let count = users.filter(u => u.organization_id === orgId).length;
+      const children = organizations.filter(o => o.parent_id === orgId);
+      children.forEach(child => {
+        count += getTotalUsersCount(child.id);
+      });
+      return count;
+    }
+
     function renderOrgTree() {
       const container = document.getElementById('orgTree');
       if (organizations.length === 0) {
@@ -299,7 +309,7 @@
           <div class="tree-node-content level-0" onclick="toggleNode('${bigclassId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
             <span class="tree-node-name">${bigclass.name}</span>
-            <span class="tree-node-level">大班 ${bigclassUsers.length}人</span>
+            <span class="tree-node-level">${getTotalUsersCount(bigclass.id)}人</span>
             <div class="tree-node-actions">
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('class', ${bigclass.id})">+班级</button>
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${bigclass.id})">+人员</button>
@@ -327,7 +337,7 @@
           <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
             <span class="tree-node-name">${cls.name}</span>
-            <span class="tree-node-level">班级 ${classUsers.length}人</span>
+            <span class="tree-node-level">${getTotalUsersCount(cls.id)}人</span>
             <div class="tree-node-actions">
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${cls.id})">+人员</button>
@@ -355,7 +365,7 @@
           <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
             <span class="tree-node-name">${group.name}</span>
-            <span class="tree-node-level">小组 ${groupUsers.length}人</span>
+            <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>
             <div class="tree-node-actions">
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
               <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${group.id})">编辑</button>
