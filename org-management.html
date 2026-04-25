@@ -45,7 +45,7 @@
     .add-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--vermillion); border: none; border-radius: 6px; cursor: pointer; }
     .tree-container { max-height: 60vh; overflow-y: auto; }
     .tree-node { margin-bottom: 4px; }
-    .tree-node-content { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: var(--bg-primary); margin-bottom: 2px; }
+    .tree-node-content { display: flex; flex-wrap: wrap; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: var(--bg-primary); margin-bottom: 2px; gap: 8px; }
     .tree-node-content:hover { background: #F0EFED; }
     .tree-node-content.level-0 { background: #FFF8E1; border-left: 3px solid #FFB300; padding-left: 12px; }
     .tree-node-content.level-1 { background: #E8F5E9; border-left: 3px solid #4CAF50; padding-left: 36px; }
@@ -55,7 +55,7 @@
     .tree-expand-btn.hidden { visibility: hidden; }
     .tree-node-name { flex: 1; font-size: 14px; font-weight: 500; }
     .tree-node-level { font-size: 11px; color: var(--ink-muted); padding: 2px 6px; background: rgba(0,0,0,0.05); border-radius: 3px; margin-right: 8px; }
-    .tree-node-actions { display: flex; gap: 4px; opacity: 1; transition: opacity 0.2s; }
+    .tree-node-actions { display: flex; gap: 4px; opacity: 1; transition: opacity 0.2s; width: 100%; justify-content: flex-end; padding-top: 4px; }
     .tree-btn { padding: 4px 8px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.9); }
     .tree-btn-add { background: var(--vermillion); color: white; }
     .tree-btn-edit { background: var(--gold-light); color: var(--gold); }
