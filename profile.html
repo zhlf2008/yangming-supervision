@@ -833,39 +833,6 @@
         document.getElementById('profileOrgCount').textContent = groupIds.size;
       }
     }
-      }
-
-      const { count, error } = await query;
-      document.getElementById('profileFillCount').textContent = count || 0;
-
-      // Get all records for rate calculation
-      const { data: records } = await window.db.from('attendance_records').select('fill_data');
-      if (records && records.length > 0) {
-        let total = records.length;
-        let onlineCount = 0;
-        records.forEach(r => {
-          const fillData = r.fill_data || {};
-          if (fillData.online_status === '是' || fillData.online_status === true) onlineCount++;
-        });
-        const onlineRate = total > 0 ? ((onlineCount / total) * 100).toFixed(0) : '0';
-        document.getElementById('profileOnlineRate').textContent = onlineRate + '%';
-      } else {
-        document.getElementById('profileOnlineRate').textContent = '--';
-      }
-
-      // Count organizations user is responsible for
-      if (profile.role === '小组督察' || profile.role === '小组副督察') {
-        document.getElementById('profileOrgCount').textContent = '1';
-      } else if (profile.role === '班级总督察' || profile.role === '班级副总督察') {
-        const { data: childGroups } = await window.db.from('organizations').select('id', { count: 'exact' }).eq('parent_id', profile.organization_id);
-        document.getElementById('profileOrgCount').textContent = (childGroups?.length || 0) + 1;
-      } else if (profile.role === '大班总督' || profile.role === '大班副督') {
-        const { data: childOrgs } = await window.db.from('organizations').select('id', { count: 'exact' }).or(`parent_id.eq.${profile.organization_id},id.eq.${profile.organization_id}`);
-        document.getElementById('profileOrgCount').textContent = childOrgs?.length || 0;
-      } else {
-        document.getElementById('profileOrgCount').textContent = '--';
-      }
-    }
 
     function goToSettings() {
       window.location.href = 'semester-settings.html';
