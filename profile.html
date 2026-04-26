@@ -593,11 +593,11 @@
         </div>
         <div class="profile-stat">
           <div class="profile-stat-value" id="profileOnlineRate">--</div>
-          <div class="profile-stat-label">平均上线率</div>
+          <div class="profile-stat-label">平均出勤率</div>
         </div>
         <div class="profile-stat">
           <div class="profile-stat-value" id="profileOrgCount">--</div>
-          <div class="profile-stat-label">负责班级</div>
+          <div class="profile-stat-label">管辖小组</div>
         </div>
       </div>
     </div>
@@ -795,17 +795,43 @@
     }
 
     async function loadProfileStats(profile) {
-      // Get user's attendance records count
-      let query = window.db.from('attendance_records').select('*', { count: 'exact', head: true });
+      // 1. 填报次数（本账户提交的）
+      var { count: fillCount } = await window.db.from('attendance_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('fill_user_id', profile.id);
+      document.getElementById('profileFillCount').textContent = fillCount || 0;
 
-      if (profile.role === '小组督察' || profile.role === '小组副督察') {
-        query = query.eq('organization_id', profile.organization_id);
-      } else if (profile.role === '班级总督察' || profile.role === '班级副总督察') {
-        const { data: childOrgs } = await window.db.from('organizations').select('id').or(`id.eq.${profile.organization_id},parent_id.eq.${profile.organization_id}`);
-        const orgIds = childOrgs?.map(o => o.id) || [];
-        if (orgIds.length > 0) {
-          query = query.in('organization_id', orgIds);
-        }
+      // 2. 平均出勤率（所有自己提交的记录）
+      var { data: myRecords } = await window.db.from('attendance_records')
+        .select('fill_data')
+        .eq('fill_user_id', profile.id);
+      if (myRecords && myRecords.length > 0) {
+        var totalYd=0, totalSd=0, totalYz=0, totalZw=0;
+        myRecords.forEach(function(r) {
+          var fd = r.fill_data || {};
+          totalYd += parseInt(fd['应到人数']) || 0;
+          totalSd += parseInt(fd['实到人数']) || 0;
+          totalYz += parseInt(fd['应做作业人数']) || 0;
+          totalZw += parseInt(fd['作业完成人数']) || 0;
+        });
+        var onlineRate = totalYd>0 ? (totalSd/totalYd*100).toFixed(0) : '--';
+        var hwRate = totalYz>0 ? (totalZw/totalYz*100).toFixed(0) : '--';
+        document.getElementById('profileOnlineRate').textContent = (onlineRate==='--'&&hwRate==='--')?'--':((parseFloat(onlineRate)||0)+(parseFloat(hwRate)||0))/2 + '%';
+      } else {
+        document.getElementById('profileOnlineRate').textContent = '--';
+      }
+
+      // 3. 管辖小组数
+      if (profile.role === '管理员' || profile.role === '地区督委') {
+        var { count: groupCount } = await window.db.from('organizations')
+          .select('*', { count: 'exact', head: true })
+          .eq('level', '小组');
+        document.getElementById('profileOrgCount').textContent = groupCount || 0;
+      } else {
+        var { data: allOrgs } = await window.db.from('organizations').select('*');
+        var groupIds = getAccessibleGroupIds(profile.role, profile.organization_id, allOrgs||[]);
+        document.getElementById('profileOrgCount').textContent = groupIds.size;
+      }
       } else if (profile.role === '大班总督' || profile.role === '大班副督') {
         const { data: childOrgs } = await window.db.from('organizations').select('id').or(`parent_id.eq.${profile.organization_id},id.eq.${profile.organization_id}`);
         const orgIds = childOrgs?.map(o => o.id) || [];
