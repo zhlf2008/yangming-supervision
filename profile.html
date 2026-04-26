@@ -832,12 +832,7 @@
         var groupIds = getAccessibleGroupIds(profile.role, profile.organization_id, allOrgs||[]);
         document.getElementById('profileOrgCount').textContent = groupIds.size;
       }
-      } else if (profile.role === '大班总督' || profile.role === '大班副督') {
-        const { data: childOrgs } = await window.db.from('organizations').select('id').or(`parent_id.eq.${profile.organization_id},id.eq.${profile.organization_id}`);
-        const orgIds = childOrgs?.map(o => o.id) || [];
-        if (orgIds.length > 0) {
-          query = query.in('organization_id', orgIds);
-        }
+    }
       }
 
       const { count, error } = await query;
