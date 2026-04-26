@@ -566,11 +566,41 @@
       </div>
       <div class="input-row">
         <div class="input-group">
-          <label class="input-label">大班</label>
-          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+          <label class="input-label">地区</label>
+          <select class="form-select" id="regionSelect" onchange="onRegionChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
             <option value="">请选择</option>
           </select>
         </div>
+        <div class="input-group">
+          <label class="input-label">大班</label>
+          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">系</label>
+          <select class="form-select" id="xiSelect" onchange="onXiChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">班级</label>
+          <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">小组</label>
+          <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="input-group" style="visibility:hidden">
+          <label class="input-label">&nbsp;</label>
+        </div>
+      </div>
         <div class="input-group">
           <label class="input-label">班级</label>
           <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
@@ -694,194 +724,200 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       await loadTodaySchedule();
     }
 
-    // Build full path name for an organization: 大班-班级-小组 -- now in utils.js
+    // ---- 五级级联选择器 ----
 
-    // Load organization selector (three-level cascade)
+    // Get child orgs of a given level under a parent
+    function getChildren(parentId, childLevel, orgs) {
+      return orgs.filter(function (o) { return o.parent_id === parentId && o.level === childLevel; });
+    }
+
+    // Walk up the tree from a group to get ancestor IDs
+    function getAncestorOfLevel(groupId, level, orgs) {
+      var org = orgs.find(function (o) { return o.id === groupId; });
+      while (org) {
+        if (org.level === level) return org;
+        if (!org.parent_id) break;
+        org = orgs.find(function (o) { return o.id === org.parent_id; });
+      }
+      return null;
+    }
+
+    // Populate select, auto-select if single option
+    function populateSelect(selectId, items, preselectId) {
+      var sel = document.getElementById(selectId);
+      sel.innerHTML = (items.length === 1 ? '' : '<option value="">请选择</option>') +
+        items.map(function (item) { return '<option value="' + item.id + '">' + item.name + '</option>'; }).join('');
+      if (preselectId) { sel.value = preselectId; }
+    }
+
+    // Initialize all 5 selects from group scope
     function loadOrgSelector(orgs) {
-      const role = currentUser.role;
-      const userOrgId = currentUser.organization_id;
+      var role = currentUser.role;
+      var userOrgId = currentUser.organization_id;
 
-      if (!orgs || orgs.length === 0) {
-        return;
-      }
+      if (!orgs || orgs.length === 0) return;
 
-      const bigClassSelect = document.getElementById('bigClassSelect');
-      const classSelect = document.getElementById('classSelect');
-      const groupSelect = document.getElementById('groupSelect');
-
-      let selectableGroupIds = new Set();
-
-      if (role === '小组督察' || role === '小组副督察') {
-        const myOrg = orgs.find(o => o.id === userOrgId);
-        if (myOrg && myOrg.level === '小组') selectableGroupIds.add(myOrg.id);
-      } else if (role === '班级总督察' || role === '班级副总督察') {
-        if (userOrgId) {
-          orgs.filter(o => o.parent_id === userOrgId && o.level === '小组')
-            .forEach(g => selectableGroupIds.add(g.id));
-        }
-      } else if (role === '大班总督' || role === '大班副督') {
-        if (userOrgId) {
-          getAllChildOrgs(userOrgId, orgs).filter(o => o.level === '小组')
-            .forEach(g => selectableGroupIds.add(g.id));
-        }
-      } else if (role === '管理员' || role === '地区督委') {
-        orgs.filter(o => o.level === '小组').forEach(g => selectableGroupIds.add(g.id));
-      }
-
+      var selectableGroupIds = getAccessibleGroupIds(role, userOrgId, orgs);
       if (selectableGroupIds.size === 0) {
-        bigClassSelect.innerHTML = '<option value="">无权限填报的小组</option>';
-        classSelect.innerHTML = '<option value="">--</option>';
-        groupSelect.innerHTML = '<option value="">--</option>';
+        document.getElementById('regionSelect').innerHTML = '<option value="">无权限</option>';
         return;
       }
 
-      const groups = orgs.filter(o => selectableGroupIds.has(o.id));
-      const bigClasses = [...new Set(groups.map(g => {
-        const cls = orgs.find(o => o.id === g.parent_id);
-        return cls ? orgs.find(o => o.id === cls.parent_id) : null;
-      }).filter(Boolean).map(o => o.id))].map(id => orgs.find(o => o.id === id));
+      var groups = orgs.filter(function (o) { return selectableGroupIds.has(o.id); });
 
-      bigClassSelect.innerHTML = (bigClasses.length === 1 ? '' : '<option value="">请选择</option>') +
-        bigClasses.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+      // Get regions: parent-less or parents of level 地区
+      var regionIds = new Set();
+      groups.forEach(function (g) {
+        var region = getAncestorOfLevel(g.id, '地区', orgs);
+        if (region) regionIds.add(region.id);
+      });
+      var regions = [...regionIds].map(function (id) { return orgs.find(function (o) { return o.id === id; }); }).filter(Boolean);
 
-      classSelect.innerHTML = '';
-      groupSelect.innerHTML = '';
+      populateSelect('regionSelect', regions);
+      document.getElementById('bigClassSelect').innerHTML = '';
+      document.getElementById('xiSelect').innerHTML = '';
+      document.getElementById('classSelect').innerHTML = '';
+      document.getElementById('groupSelect').innerHTML = '';
 
+      // Preselect user's own group
       if (userOrgId && selectableGroupIds.has(userOrgId)) {
-        const userGroup = orgs.find(o => o.id === userOrgId);
+        var userGroup = orgs.find(function (o) { return o.id === userOrgId; });
         if (userGroup && userGroup.level === '小组') {
-          const cls = orgs.find(o => o.id === userGroup.parent_id);
-          const bigClass = cls ? orgs.find(o => o.id === cls.parent_id) : null;
-          if (bigClass) {
-            bigClassSelect.value = bigClass.id;
-            onBigClassChange(String(bigClass.id), userOrgId);
-          }
+          cascadeFromGroup(userGroup, orgs);
+          return;
         }
-      } else if (bigClasses.length === 1) {
-        // 只有一个大班，自动选中
-        bigClassSelect.value = bigClasses[0].id;
-        onBigClassChange(String(bigClasses[0].id));
+      }
+      // Only one region → auto-select
+      if (regions.length === 1) {
+        document.getElementById('regionSelect').value = regions[0].id;
+        onRegionChange(String(regions[0].id));
       }
     }
 
-    function onBigClassChange(bigClassId, preselectGroupId) {
-      const classSelect = document.getElementById('classSelect');
-      const groupSelect = document.getElementById('groupSelect');
-      const role = currentUser.role;
-      const userOrgId = currentUser.organization_id;
+    function cascadeFromGroup(group, orgs) {
+      var chain = [group];
+      var cur = group;
+      while (cur && cur.parent_id) {
+        cur = orgs.find(function (o) { return o.id === cur.parent_id; });
+        if (cur) chain.unshift(cur);
+      }
+      // chain is [region, bigclass, xi, class, group]
+      var region = chain.find(function (o) { return o.level === '地区'; });
+      var bigCls = chain.find(function (o) { return o.level === '大班'; });
+      var xi = chain.find(function (o) { return o.level === '系'; });
+      var cls = chain.find(function (o) { return o.level === '班级'; });
 
-      classSelect.innerHTML = '';
-      groupSelect.innerHTML = '';
+      var regions = orgs.filter(function (o) { return o.level === '地区'; });
+      populateSelect('regionSelect', regions, region ? region.id : null);
 
-      if (!bigClassId) {
-        document.getElementById('bigClassName').textContent = '--';
-        document.getElementById('className').textContent = '--';
-        document.getElementById('groupName').textContent = '--';
-        return;
+      if (region) onRegionChange(String(region.id), bigCls ? String(bigCls.id) : null, xi ? String(xi.id) : null, cls ? String(cls.id) : null, String(group.id));
+    }
+
+    function onRegionChange(regionId, preselectBig, preselectXi, preselectClass, preselectGroup) {
+      var bigSelect = document.getElementById('bigClassSelect');
+      var xiSelect = document.getElementById('xiSelect');
+      var classSelect = document.getElementById('classSelect');
+      var groupSelect = document.getElementById('groupSelect');
+      xiSelect.innerHTML = ''; classSelect.innerHTML = ''; groupSelect.innerHTML = '';
+
+      if (!regionId) return;
+
+      var items = getChildren(parseInt(regionId), '大班', orgs);
+      var role = currentUser.role;
+      var userOrgId = currentUser.organization_id;
+
+      // Limit to user's scope
+      if (role === '大班总督' || role === '大班副督') {
+        items = items.filter(function (o) { return o.id === userOrgId; });
       }
 
-      const bigClass = orgs.find(o => o.id === parseInt(bigClassId));
-      document.getElementById('bigClassName').textContent = bigClass?.name || '--';
+      populateSelect('bigClassSelect', items, preselectBig);
 
-      let classIds = new Set();
-      orgs.filter(o => o.parent_id === parseInt(bigClassId) && o.level === '班级')
-        .forEach(c => classIds.add(c.id));
+      if (preselectBig) onBigClassChange(preselectBig, preselectXi, preselectClass, preselectGroup);
+      else if (items.length === 1) { document.getElementById('bigClassSelect').value = items[0].id; onBigClassChange(String(items[0].id)); }
+    }
+
+    function onBigClassChange(bigClassId, preselectXi, preselectClass, preselectGroup) {
+      var xiSelect = document.getElementById('xiSelect');
+      var classSelect = document.getElementById('classSelect');
+      var groupSelect = document.getElementById('groupSelect');
+      xiSelect.innerHTML = ''; classSelect.innerHTML = ''; groupSelect.innerHTML = '';
+
+      if (!bigClassId) return;
+
+      var items = getChildren(parseInt(bigClassId), '系', orgs);
+      var role = currentUser.role;
+      var userOrgId = currentUser.organization_id;
+
+      if (role === '系总督' || role === '系督察') {
+        items = items.filter(function (o) { return o.id === userOrgId; });
+      }
+
+      populateSelect('xiSelect', items, preselectXi);
+
+      if (preselectXi) onXiChange(preselectXi, preselectClass, preselectGroup);
+      else if (items.length === 1) { document.getElementById('xiSelect').value = items[0].id; onXiChange(String(items[0].id)); }
+    }
+
+    function onXiChange(xiId, preselectClass, preselectGroup) {
+      var classSelect = document.getElementById('classSelect');
+      var groupSelect = document.getElementById('groupSelect');
+      classSelect.innerHTML = ''; groupSelect.innerHTML = '';
+
+      if (!xiId) return;
+
+      var items = getChildren(parseInt(xiId), '班级', orgs);
+      var role = currentUser.role;
+      var userOrgId = currentUser.organization_id;
 
       if (role === '班级总督察' || role === '班级副总督察') {
-        if (userOrgId) {
-          const userOrg = orgs.find(o => o.id === userOrgId);
-          if (userOrg && userOrg.level === '班级' && classIds.has(userOrgId)) {
-            classIds = new Set([userOrgId]);
-          }
-        }
-      } else if (role === '小组督察' || role === '小组副督察') {
-        const userGroup = orgs.find(o => o.id === userOrgId);
-        if (userGroup && userGroup.level === '小组') {
-          const cls = orgs.find(o => o.id === userGroup.parent_id);
-          if (cls && classIds.has(cls.id)) {
-            classIds = new Set([cls.id]);
-          }
-        }
+        items = items.filter(function (o) { return o.id === userOrgId; });
       }
 
-      const classes = [...classIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
-      classSelect.innerHTML = (classes.length === 1 ? '' : '<option value="">请选择</option>') +
-        classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      populateSelect('classSelect', items, preselectClass);
 
-      // 只有一个班级时自动选中，有预选组时优先
-      if (preselectGroupId) {
-        const preselectGroup = orgs.find(o => o.id === preselectGroupId);
-        if (preselectGroup) {
-          const preselectClass = orgs.find(o => o.id === preselectGroup.parent_id);
-          if (preselectClass) {
-            classSelect.value = preselectClass.id;
-            onClassChange(String(preselectClass.id), preselectGroupId);
-          }
-        }
-      } else if (classes.length === 1) {
-        classSelect.value = classes[0].id;
-        onClassChange(String(classes[0].id));
-      }
+      if (preselectClass) onClassChange(preselectClass, preselectGroup);
+      else if (items.length === 1) { document.getElementById('classSelect').value = items[0].id; onClassChange(String(items[0].id)); }
     }
 
-    function onClassChange(classId, preselectGroupId) {
-      const groupSelect = document.getElementById('groupSelect');
-      const role = currentUser.role;
-      const userOrgId = currentUser.organization_id;
-
+    function onClassChange(classId, preselectGroup) {
+      var groupSelect = document.getElementById('groupSelect');
       groupSelect.innerHTML = '';
 
-      if (!classId) {
-        document.getElementById('className').textContent = '--';
-        document.getElementById('groupName').textContent = '--';
-        return;
-      }
+      if (!classId) return;
 
-      const cls = orgs.find(o => o.id === parseInt(classId));
-      document.getElementById('className').textContent = cls?.name || '--';
-
-      let groupIds = new Set();
-      orgs.filter(o => o.parent_id === parseInt(classId) && o.level === '小组')
-        .forEach(g => groupIds.add(g.id));
+      var items = getChildren(parseInt(classId), '小组', orgs);
+      var role = currentUser.role;
+      var userOrgId = currentUser.organization_id;
 
       if (role === '小组督察' || role === '小组副督察') {
-        const userOrg = orgs.find(o => o.id === userOrgId);
-        if (userOrg && userOrg.level === '小组' && groupIds.has(userOrgId)) {
-          groupIds = new Set([userOrgId]);
-        }
+        items = items.filter(function (o) { return o.id === userOrgId; });
       }
 
-      const groups = [...groupIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
-      groupSelect.innerHTML = (groups.length === 1 ? '' : '<option value="">请选择</option>') +
-        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+      populateSelect('groupSelect', items, preselectGroup);
 
-      if (preselectGroupId) {
-        groupSelect.value = preselectGroupId;
-        onGroupChange(String(preselectGroupId));
-      } else if (groups.length === 1) {
-        groupSelect.value = groups[0].id;
-        onGroupChange(String(groups[0].id));
-      }
+      if (preselectGroup) onGroupChange(preselectGroup);
+      else if (items.length === 1) { document.getElementById('groupSelect').value = items[0].id; onGroupChange(String(items[0].id)); }
     }
 
     async function onGroupChange(groupId) {
-      const groupName = document.getElementById('groupName');
+      if (!groupId) return;
 
-      if (!groupId) {
-        if (groupName) groupName.textContent = '--';
-        return;
-      }
-
-      const group = orgs.find(o => o.id === parseInt(groupId));
+      var group = orgs.find(function (o) { return o.id === parseInt(groupId); });
       if (!group) return;
 
-      if (groupName) groupName.textContent = group.name;
+      var path = buildOrgPath(group.id, orgs);
+      var bigClassName = document.getElementById('bigClassName');
+      var className = document.getElementById('className');
+      var groupName = document.getElementById('groupName');
 
-      // Reload forms for the selected group and check for existing record
+      // Update header display with full path
+      if (bigClassName) bigClassName.textContent = '--';
+      if (className) className.textContent = '--';
+      if (groupName) groupName.textContent = path;
+
       await loadTodaySchedule(groupId);
     }
-
-    // Get all child organizations recursively -- now in utils.js
 
     async function loadTodaySchedule(selectedGroupId) {
       if (!currentSemester) {
