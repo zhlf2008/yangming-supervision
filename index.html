@@ -658,6 +658,8 @@
 
       groups.forEach(function (g) {
         var gd = groupData[g.id] || { yd: 0, sd: 0, yz: 0, zw: 0, sp: 0 };
+        // 过滤掉没有任何填报数据的小组
+        if (gd.yd === 0 && gd.sd === 0 && gd.yz === 0 && gd.zw === 0 && gd.sp === 0) return;
         var online = gd.yd > 0 ? (gd.sd / gd.yd * 100).toFixed(1) : '--';
         var video = gd.sd > 0 ? (gd.sp / gd.sd * 100).toFixed(1) : '--';
         var hw = gd.yz > 0 ? (gd.zw / gd.yz * 100).toFixed(1) : '--';
