@@ -393,7 +393,7 @@
 
     <!-- Quick Actions -->
     <h2 class="section-title">快捷入口</h2>
-    <div class="quick-actions">
+    <div class="quick-actions" id="quickActions">
       <a href="attendance-page.html" class="action-card">
         <div class="action-icon attendance">📋</div>
         <div class="action-title">考勤填报</div>
@@ -472,6 +472,34 @@
       document.getElementById('userName').textContent = userName;
       document.getElementById('userAvatar').textContent = userName.charAt(0);
 
+      // 根据角色追加管理入口
+      if (userRole === '管理员' || userRole === '地区督委') {
+        document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
+          <a href="org-management.html" class="action-card">
+            <div class="action-icon summary">🏢</div>
+            <div class="action-title">组织架构</div>
+            <div class="action-desc">管理组织与人员</div>
+          </a>
+          <a href="semester-settings.html" class="action-card">
+            <div class="action-icon attendance">📅</div>
+            <div class="action-title">学期设置</div>
+            <div class="action-desc">管理学期与试晨读</div>
+          </a>
+          <a href="assessment-management.html" class="action-card">
+            <div class="action-icon summary">📝</div>
+            <div class="action-title">考核项目</div>
+            <div class="action-desc">配置考核模板</div>
+          </a>
+        `);
+      } else if (userRole === '大班总督' || userRole === '大班副督' || userRole === '班级总督察' || userRole === '班级副总督察' || userRole === '小组督察' || userRole === '小组副督察') {
+        document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
+          <a href="org-management.html" class="action-card">
+            <div class="action-icon summary">🏢</div>
+            <div class="action-title">组织架构</div>
+            <div class="action-desc">管理组织与人员</div>
+          </a>
+        `);
+      }
       // Update role display
       const roleMap = {
         '管理员': '管理员',
