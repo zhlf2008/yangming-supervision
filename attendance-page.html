@@ -588,22 +588,20 @@
       <div class="input-row">
         <div class="input-group">
           <label class="input-label">大班</label>
-          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
-            <option value="">请选择大班</option>
+          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
           </select>
         </div>
         <div class="input-group">
           <label class="input-label">班级</label>
-          <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
-            <option value="">请先选择大班</option>
+          <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
           </select>
         </div>
-      </div>
-      <div class="input-row">
         <div class="input-group">
           <label class="input-label">小组</label>
-          <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
-            <option value="">请先选择班级</option>
+          <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
           </select>
         </div>
       </div>
@@ -764,11 +762,11 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         return cls ? orgs.find(o => o.id === cls.parent_id) : null;
       }).filter(Boolean).map(o => o.id))].map(id => orgs.find(o => o.id === id));
 
-      bigClassSelect.innerHTML = '<option value="">请选择大班</option>' +
+      bigClassSelect.innerHTML = '<option value="">请选择</option>' +
         bigClasses.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
 
-      classSelect.innerHTML = '<option value="">请先选择大班</option>';
-      groupSelect.innerHTML = '<option value="">请先选择班级</option>';
+      classSelect.innerHTML = '<option value="">请选择</option>';
+      groupSelect.innerHTML = '<option value="">请选择</option>';
 
       if (userOrgId && selectableGroupIds.has(userOrgId)) {
         const userGroup = orgs.find(o => o.id === userOrgId);
@@ -789,8 +787,8 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
 
-      classSelect.innerHTML = '<option value="">请选择班级</option>';
-      groupSelect.innerHTML = '<option value="">请先选择班级</option>';
+      classSelect.innerHTML = '<option value="">请选择</option>';
+      groupSelect.innerHTML = '<option value="">请选择</option>';
 
       if (!bigClassId) {
         document.getElementById('bigClassName').textContent = '--';
@@ -824,7 +822,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
 
       const classes = [...classIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
-      classSelect.innerHTML = '<option value="">请选择班级</option>' +
+      classSelect.innerHTML = '<option value="">请选择</option>' +
         classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
       if (preselectGroupId) {
@@ -844,7 +842,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
 
-      groupSelect.innerHTML = '<option value="">请选择小组</option>';
+      groupSelect.innerHTML = '<option value="">请选择</option>';
 
       if (!classId) {
         document.getElementById('className').textContent = '--';
@@ -867,7 +865,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
 
       const groups = [...groupIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
-      groupSelect.innerHTML = '<option value="">请选择小组</option>' +
+      groupSelect.innerHTML = '<option value="">请选择</option>' +
         groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
 
       if (preselectGroupId) {
@@ -1208,7 +1206,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const selectedOrgId = groupSelect.value;
 
       if (!selectedOrgId) {
-        showToast('请选择小组');
+        showToast('请选择');
         return;
       }
 
