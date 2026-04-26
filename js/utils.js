@@ -5,6 +5,22 @@
 
 (function () {
   document.documentElement.style.overflowY = 'scroll';
+  // 稳定导航栏位置，防止切换页面时抖动
+  document.addEventListener('DOMContentLoaded', function () {
+    var navEl = document.querySelector('.bottom-nav');
+    if (navEl) {
+      navEl.style.transform = 'translateZ(0)';
+      navEl.style.willChange = 'transform';
+    }
+  });
+  // 如果 DOM 已经加载完，直接执行
+  if (document.readyState !== 'loading') {
+    var navEl = document.querySelector('.bottom-nav');
+    if (navEl) {
+      navEl.style.transform = 'translateZ(0)';
+      navEl.style.willChange = 'transform';
+    }
+  }
 })();
 
 // ---- Toast ----
