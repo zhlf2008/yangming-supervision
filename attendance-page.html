@@ -72,65 +72,47 @@
     .header-card {
       background: var(--bg-card);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 16px 18px;
       margin-bottom: 16px;
       box-shadow: 0 2px 12px var(--shadow);
       border: 1px solid var(--border);
-      display: flex;
-      gap: 20px;
-    }
-
-    .header-left {
-      flex: 1;
     }
 
     .header-title {
       font-family: 'Noto Serif SC', serif;
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       color: var(--ink-dark);
+      text-align: center;
     }
 
-    .header-meta-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    .header-info-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 12px;
+      row-gap: 8px;
     }
 
-    .header-meta-item {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
+    .info-item {
+      display: contents;
     }
 
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 8px;
-      min-width: 160px;
-      border-left: 1px solid var(--border);
-      padding-left: 20px;
-    }
-
-    .org-info-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .org-info-label {
-      font-size: 12px;
+    .info-label {
+      font-size: 13px;
       color: var(--ink-muted);
-      width: 32px;
-      flex-shrink: 0;
+      white-space: nowrap;
     }
 
-    .org-info-value {
-      font-size: 14px;
+    .info-value {
+      font-size: 13px;
       font-weight: 500;
       color: var(--ink-dark);
+      text-align: right;
+    }
+
+    .meta-value.date {
+      font-family: 'Noto Serif SC', serif;
     }
 
     .meta-label {
@@ -547,36 +529,14 @@
 
     <!-- Header Info -->
     <div class="header-card">
-      <div class="header-left">
-        <div class="header-title" id="semesterName">加载中...</div>
-        <div class="header-meta-row">
-          <div class="header-meta-item">
-            <span class="meta-label">日期</span>
-            <span class="meta-value date" id="currentDate">--</span>
-          </div>
-          <div class="header-meta-item">
-            <span class="meta-label">星期</span>
-            <span class="meta-value" id="currentWeekday">--</span>
-          </div>
-          <div class="header-meta-item">
-            <span class="meta-label">填报人</span>
-            <span class="meta-value" id="reporterName">--</span>
-          </div>
-        </div>
-      </div>
-      <div class="header-right">
-        <div class="org-info-row">
-          <span class="org-info-label">大班</span>
-          <span class="org-info-value" id="bigClassName">--</span>
-        </div>
-        <div class="org-info-row">
-          <span class="org-info-label">班级</span>
-          <span class="org-info-value" id="className">--</span>
-        </div>
-        <div class="org-info-row">
-          <span class="org-info-label">小组</span>
-          <span class="org-info-value" id="groupName">--</span>
-        </div>
+      <div class="header-title" id="semesterName">加载中...</div>
+      <div class="header-info-grid">
+        <span class="info-label">日期</span><span class="info-value meta-value date" id="currentDate">--</span>
+        <span class="info-label">大班</span><span class="info-value" id="bigClassName">--</span>
+        <span class="info-label">星期</span><span class="info-value" id="currentWeekday">--</span>
+        <span class="info-label">班级</span><span class="info-value" id="className">--</span>
+        <span class="info-label">填报人</span><span class="info-value" id="reporterName">--</span>
+        <span class="info-label">小组</span><span class="info-value" id="groupName">--</span>
       </div>
     </div>
 
