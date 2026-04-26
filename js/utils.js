@@ -96,6 +96,11 @@ function getAccessibleGroupIds(role, userOrgId, orgs) {
   if (role === '小组督察' || role === '小组副督察') {
     var myOrg = orgs.find(function (o) { return o.id === userOrgId; });
     if (myOrg && myOrg.level === '小组') groupIds.add(myOrg.id);
+  } else if (role === '系总督' || role === '系督察') {
+    if (userOrgId) {
+      getAllChildOrgs(userOrgId, orgs).filter(function (o) { return o.level === '小组'; })
+        .forEach(function (g) { groupIds.add(g.id); });
+    }
   } else if (role === '班级总督察' || role === '班级副总督察') {
     if (userOrgId) {
       getDirectChildrenOrgs(userOrgId, orgs).filter(function (o) { return o.level === '小组'; })
@@ -129,15 +134,18 @@ function getParentOrgId(role, userOrgId, orgs) {
 function sortUsers(users) {
   return users.slice().sort(function (a, b) {
     function roleOrder(r) {
+      if (!r) return 99;
       if (r.includes('管理员')) return 0;
       if (r.includes('地区督委')) return 1;
-      if (r.includes('总督')) return 2;
-      if (r.includes('副督')) return 3;
-      if (r.includes('总督察')) return 4;
-      if (r.includes('副总督察')) return 5;
-      if (r.includes('督察')) return 6;
-      if (r.includes('副督察')) return 7;
-      return 8;
+      if (r.includes('大班总督')) return 2;
+      if (r.includes('大班副督')) return 3;
+      if (r.includes('系总督')) return 4;
+      if (r.includes('系督察')) return 5;
+      if (r.includes('班级总督察')) return 6;
+      if (r.includes('班级副总督察')) return 7;
+      if (r.includes('小组督察')) return 8;
+      if (r.includes('小组副督察')) return 9;
+      return 10;
     }
     var oa = roleOrder(a.role || '');
     var ob = roleOrder(b.role || '');
