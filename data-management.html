@@ -65,12 +65,20 @@
 
     async function loadRecords() {
       var date = document.getElementById('dateFilter').value;
-      var query = window.db.from('attendance_records').select('*').order('created_at', { ascending: false }).limit(500);
-      if (date) query = query.eq('schedule_id', '(select schedule_date from schedules where schedule_date="' + date + '")');
+      var { data, error } = await window.db.from('attendance_records')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
 
-      var { data, error } = await query;
-      if (error) { document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败</div>'; return; }
+      if (error) { document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败: ' + error.message + '</div>'; return; }
       records = data || [];
+
+      // 按日期筛选
+      if (date) {
+        var { data: scheds } = await window.db.from('schedules').select('id').eq('schedule_date', date);
+        var schedIds = (scheds || []).map(function(s){return s.id;});
+        records = records.filter(function(r){return schedIds.indexOf(r.schedule_id) !== -1;});
+      }
 
       if (records.length === 0) { document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无记录</div>'; return; }
 
