@@ -536,6 +536,16 @@
             <div class="action-desc">配置考核模板</div>
           </a>
         `);
+        var { data: currentSem } = await window.db.from('semesters').select('id').eq('is_current', 1).single();
+        if (currentSem) {
+          document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
+            <a href="schedule-management.html?semester_id=${currentSem.id}" class="action-card">
+              <div class="action-icon summary">📅</div>
+              <div class="action-title">日程管理</div>
+              <div class="action-desc">管理每日考核日程</div>
+            </a>
+          `);
+        }
       } else if (userRole === '大班总督' || userRole === '大班副督' || userRole === '班级总督察' || userRole === '班级副总督察' || userRole === '小组督察' || userRole === '小组副督察') {
         document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
           <a href="org-management.html" class="action-card">
