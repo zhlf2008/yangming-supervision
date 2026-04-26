@@ -259,11 +259,35 @@
       color: var(--ink-muted);
     }
 
-    .stats-grid {
+    .carousel-wrapper {
+      overflow: hidden;
+      touch-action: pan-y;
+    }
+    .carousel-track {
+      display: flex;
+      transition: transform 0.3s ease;
+    }
+    .carousel-slide {
+      flex: 0 0 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
+      padding: 0 4px;
     }
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .carousel-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .carousel-dot.active { background: var(--vermillion); }
 
     .stat-item {
       text-align: center;
@@ -271,17 +295,47 @@
       background: var(--bg-primary);
       border-radius: var(--radius-sm);
     }
-
     .stat-value {
       font-family: 'Noto Serif SC', serif;
       font-size: 24px;
       font-weight: 700;
       margin-bottom: 4px;
     }
-
     .stat-value.high { color: #2E7D32; }
     .stat-value.medium { color: var(--ink-dark); }
     .stat-value.low { color: var(--vermillion); }
+    .stat-label {
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+    .carousel-group-name {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-dark);
+      margin-bottom: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--ink-muted);
+      cursor: pointer;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .carousel-arrow.left { left: 4px; }
+    .carousel-arrow.right { right: 4px; }
 
     .stat-label {
       font-size: 11px;
@@ -406,26 +460,17 @@
       </a>
     </div>
 
-    <!-- Stats Preview -->
-    <div class="stats-preview">
+    <!-- Stats Preview - 小组轮播 -->
+    <div class="stats-preview" id="statsPreview">
       <div class="stats-header">
         <span class="stats-title">今日概况</span>
         <span class="stats-date" id="statsDate">--</span>
       </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-value high" id="statOnline">--</div>
-          <div class="stat-label">上线率</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value medium" id="statHomework">--</div>
-          <div class="stat-label">作业率</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value high" id="statVideo">--</div>
-          <div class="stat-label">视频率</div>
-        </div>
+      <div class="carousel-wrapper" id="carouselWrapper">
+        <div class="carousel-track" id="carouselTrack"></div>
       </div>
+      <div class="carousel-dots" id="carouselDots"></div>
+      <div class="carousel-empty" id="carouselEmpty" style="display:none;text-align:center;padding:20px;color:var(--ink-muted);">暂无数据</div>
     </div>
   </div>
 
@@ -538,102 +583,140 @@
       }
     }
 
+    var carouselData = [];
+    var carouselIndex = 0;
+    var touchStartX = 0;
+
     async function loadTodayStats(profile) {
-      const today = new Date().toISOString().split('T')[0];
-      const dateStr = today; // YYYY-MM-DD
+      var today = new Date().toISOString().split('T')[0];
+      var role = profile.role;
+      var userOrgId = profile.organization_id;
 
-      // Get today's schedule IDs
-      let scheduleIds = [];
-      try {
-        const schedRes = await fetch(
-          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date&schedule_date=eq.${dateStr}&is_valid=eq.1`,
-          { headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' } }
-        );
-        const schedData = await schedRes.json();
-        scheduleIds = schedData?.map(s => s.id) || [];
-      } catch (e) { console.error(e); }
+      var { data: orgs } = await window.db.from('organizations').select('id,name,parent_id,level');
+      orgs = orgs || [];
 
-      if (scheduleIds.length === 0) {
-        document.getElementById('statOnline').textContent = '0%';
-        document.getElementById('statHomework').textContent = '0%';
-        document.getElementById('statVideo').textContent = '0%';
-        document.getElementById('statsDate').textContent = today + ' (无日程)';
-        return;
-      }
+      var accessibleGroupIds = getAccessibleGroupIds(role, userOrgId, orgs);
+      var groups = [...accessibleGroupIds].map(function (id) { return orgs.find(function (o) { return o.id === id; }); }).filter(Boolean);
 
-      // Build org scope filter based on role
-      const role = profile.role;
-      const userOrgId = profile.organization_id;
-
-      // Get all orgs for building scope
-      let orgsMap = {};
-      try {
-        const orgRes = await fetch(
-          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/organizations?select=id,name,parent_id,level`,
-          { headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' } }
-        );
-        const orgs = await orgRes.json() || [];
-        orgs.forEach(o => orgsMap[o.id] = o);
-      } catch (e) { console.error(e); }
-
-      let accessibleGroupIds = [];
-      if (role === '小组督察' || role === '小组副督察') {
-        accessibleGroupIds = [userOrgId];
-      } else if (role === '班级总督察' || role === '班级副总督察') {
-        accessibleGroupIds = getAllGroups(userOrgId, Object.values(orgsMap)).map(g => g.id);
-      } else if (role === '大班总督' || role === '大班副督') {
-        accessibleGroupIds = getAllGroups(userOrgId, Object.values(orgsMap)).map(g => g.id);
-      } else {
-        accessibleGroupIds = Object.values(orgsMap).filter(o => o.level === '小组').map(o => o.id);
-      }
-
-      const ids = accessibleGroupIds.filter(id => id != null);
-      if (ids.length === 0) {
-        document.getElementById('statOnline').textContent = '0%';
-        document.getElementById('statHomework').textContent = '0%';
-        document.getElementById('statVideo').textContent = '0%';
+      if (groups.length === 0) {
         document.getElementById('statsDate').textContent = today;
+        document.getElementById('carouselEmpty').style.display = 'block';
         return;
       }
 
-      // Query attendance records
-      let recordsUrl = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/attendance_records?schedule_id=in.(${scheduleIds.join(',')})&organization_id=in.(${ids.join(',')})&select=fill_data`;
-      let records = [];
-      try {
-        const recRes = await fetch(recordsUrl, {
-          headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
-        });
-        records = await recRes.json() || [];
-      } catch (e) { console.error(e); }
-
-      if (records.length === 0) {
-        document.getElementById('statOnline').textContent = '0%';
-        document.getElementById('statHomework').textContent = '0%';
-        document.getElementById('statVideo').textContent = '0%';
-        document.getElementById('statsDate').textContent = today;
-        return;
-      }
-
-      // Aggregate totals from fill_data
-      let totalYd = 0, totalSd = 0, totalYz = 0, totalZw = 0, totalSp = 0;
-      records.forEach(r => {
-        const fd = r.fill_data || {};
-        totalYd += parseInt(fd['应到人数']) || 0;
-        totalSd += parseInt(fd['实到人数']) || 0;
-        totalYz += parseInt(fd['应做作业人数']) || 0;
-        totalZw += parseInt(fd['作业完成人数']) || 0;
-        totalSp += parseInt(fd['视频人数']) || 0;
+      // 按组织路径排序
+      groups.sort(function (a, b) {
+        return buildOrgPath(a.id, orgs).localeCompare(buildOrgPath(b.id, orgs), 'zh-CN');
       });
 
-      const onlineRate = totalYd > 0 ? ((totalSd / totalYd) * 100).toFixed(1) : '0.0';
-      const homeworkRate = totalYz > 0 ? ((totalZw / totalYz) * 100).toFixed(1) : '0.0';
-      const videoRate = totalSd > 0 ? ((totalSp / totalSd) * 100).toFixed(1) : '0.0';
-
-      document.getElementById('statOnline').textContent = onlineRate + '%';
-      document.getElementById('statHomework').textContent = homeworkRate + '%';
-      document.getElementById('statVideo').textContent = videoRate + '%';
+      var groupIds = groups.map(function (g) { return g.id; });
       document.getElementById('statsDate').textContent = today;
+
+      // 查今天的日程
+      var { data: schedules } = await window.db.from('schedules').select('id,schedule_date').eq('schedule_date', today).eq('is_valid', 1);
+      if (!schedules || schedules.length === 0) {
+        renderCarousel(groups, []);
+        return;
+      }
+      var scheduleIds = schedules.map(function (s) { return s.id; });
+
+      // 查记录
+      var { data: records } = await window.db.from('attendance_records')
+        .select('schedule_id,organization_id,fill_data')
+        .in('schedule_id', scheduleIds)
+        .in('organization_id', groupIds);
+
+      records = records || [];
+
+      // 按小组聚合
+      var groupData = {};
+      groups.forEach(function (g) {
+        groupData[g.id] = { name: buildOrgPath(g.id, orgs), yd: 0, sd: 0, yz: 0, zw: 0, sp: 0 };
+      });
+      records.forEach(function (r) {
+        var fd = r.fill_data || {};
+        var gd = groupData[r.organization_id];
+        if (gd) {
+          gd.yd += parseInt(fd['应到人数']) || 0;
+          gd.sd += parseInt(fd['实到人数']) || 0;
+          gd.yz += parseInt(fd['应做作业人数']) || 0;
+          gd.zw += parseInt(fd['作业完成人数']) || 0;
+          gd.sp += parseInt(fd['视频人数']) || 0;
+        }
+      });
+
+      renderCarousel(groups, groupData);
     }
+
+    function renderCarousel(groups, groupData) {
+      var track = document.getElementById('carouselTrack');
+      var dots = document.getElementById('carouselDots');
+      var empty = document.getElementById('carouselEmpty');
+
+      carouselData = [];
+      carouselIndex = 0;
+
+      groups.forEach(function (g) {
+        var gd = groupData[g.id] || { yd: 0, sd: 0, yz: 0, zw: 0, sp: 0 };
+        var online = gd.yd > 0 ? (gd.sd / gd.yd * 100).toFixed(1) : '--';
+        var video = gd.sd > 0 ? (gd.sp / gd.sd * 100).toFixed(1) : '--';
+        var hw = gd.yz > 0 ? (gd.zw / gd.yz * 100).toFixed(1) : '--';
+        carouselData.push({ name: gd.name, online: online, video: video, hw: hw });
+      });
+
+      if (carouselData.length === 0) {
+        empty.style.display = 'block';
+        track.innerHTML = '';
+        dots.innerHTML = '';
+        return;
+      }
+      empty.style.display = 'none';
+
+      // 生成 slide HTML
+      var slidesHtml = carouselData.map(function (d) {
+        return '<div class="carousel-slide">' +
+          '<div class="stat-item"><div class="stat-value high">' + d.online + (d.online !== '--' ? '%' : '') + '</div><div class="stat-label">上线率</div></div>' +
+          '<div class="stat-item"><div class="stat-value medium">' + d.hw + (d.hw !== '--' ? '%' : '') + '</div><div class="stat-label">作业率</div></div>' +
+          '<div class="stat-item"><div class="stat-value high">' + d.video + (d.video !== '--' ? '%' : '') + '</div><div class="stat-label">视频率</div></div>' +
+          '</div>';
+      }).join('');
+
+      track.innerHTML = slidesHtml;
+      dots.innerHTML = carouselData.map(function (_, i) {
+        return '<span class="carousel-dot' + (i === 0 ? ' active' : '') + '" onclick="goToSlide(' + i + ')"></span>';
+      }).join('');
+
+      updateCarousel();
+    }
+
+    function updateCarousel() {
+      var track = document.getElementById('carouselTrack');
+      track.style.transform = 'translateX(-' + (carouselIndex * 100) + '%)';
+      var dots = document.querySelectorAll('.carousel-dot');
+      dots.forEach(function (d, i) { d.classList.toggle('active', i === carouselIndex); });
+    }
+
+    function goToSlide(i) {
+      if (i < 0) i = carouselData.length - 1;
+      if (i >= carouselData.length) i = 0;
+      carouselIndex = i;
+      updateCarousel();
+    }
+
+    function prevSlide() { goToSlide(carouselIndex - 1); }
+    function nextSlide() { goToSlide(carouselIndex + 1); }
+
+    // 触摸滑动
+    document.getElementById('carouselWrapper').addEventListener('touchstart', function (e) {
+      touchStartX = e.touches[0].clientX;
+    });
+    document.getElementById('carouselWrapper').addEventListener('touchend', function (e) {
+      var diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) nextSlide();
+        else prevSlide();
+      }
+    });
 
     init();
   </script>
