@@ -206,10 +206,10 @@
           <label class="form-label">密码</label>
           <input type="password" id="userPassword" class="form-input" placeholder="请输入密码" minlength="6">
         </div>
-        <div class="form-item">
-          <label class="form-label">角色</label>
-          <select id="userRole" class="form-select"></select>
-        </div>
+          <div class="form-item">
+            <label class="form-label">角色（可多选）</label>
+            <div id="userRole" class="checkbox-group" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          </div>
         <div class="form-item">
           <label class="form-label">所属组织</label>
           <div id="userOrgDisplay" style="padding:10px 12px;background:var(--bg-primary);border-radius:8px;font-size:14px;color:var(--ink-dark);"></div>
@@ -295,7 +295,7 @@
       const userOrgId = currentUser.organization_id;
       managedOrgIds = new Set();
 
-      if (role === '管理员' || role === '地区督委') {
+      if (role.includes('管理员') || role.includes('地区督委')) {
         organizations.forEach(o => managedOrgIds.add(o.id));
         return;
       }
@@ -305,17 +305,17 @@
 
       managedRootOrg = userOrg;
 
-      if (role === '大班总督' || role === '大班副督') {
+      if (role.includes('大班总督') || role.includes('大班副督')) {
         if (userOrg.level === '大班') {
           getAllChildOrgs(userOrgId, organizations).forEach(o => managedOrgIds.add(o.id));
           managedOrgIds.add(userOrgId);
         }
-      } else if (role === '班级总督察' || role === '班级副总督察') {
+      } else if (role.includes('班级总督察') || role.includes('班级副总督察')) {
         if (userOrg.level === '班级') {
           getAllChildOrgs(userOrgId, organizations).forEach(o => managedOrgIds.add(o.id));
           managedOrgIds.add(userOrgId);
         }
-      } else if (role === '小组督察' || role === '小组副督察') {
+      } else if (role.includes('小组督察' || role.includes('小组副督察') {
         if (userOrg.level === '小组') {
           managedOrgIds.add(userOrgId);
         }
@@ -338,7 +338,7 @@
     async function loadUsers() {
       let query = window.db.from('profiles').select('*, organizations(name)').order('created_at', { ascending: false });
       // 非管理员只加载管辖范围内的用户
-      if (managedOrgIds.size > 0 && !(currentUser.role === '管理员' || currentUser.role === '地区督委')) {
+      if (managedOrgIds.size > 0 && !(currentUser.role.includes('管理员') || currentUser.role.includes('地区督委'))) {
         query = query.in('organization_id', [...managedOrgIds]);
       }
       const { data, error } = await query;
@@ -379,22 +379,22 @@
       const role = currentUser.role;
       let html = '';
 
-      if (role === '管理员' || role === '地区督委') {
+      if (role.includes('管理员') || role.includes('地区督委')) {
         // 管理员：显示全部大班
         byLevel['大班'].forEach(bigclass => {
           html += renderBigClassNode(bigclass, byLevel);
         });
-      } else if (role === '大班总督' || role === '大班副督') {
+      } else if (role.includes('大班总督' || role.includes('大班副督') {
         // 大班级：只显示自己的大班
         if (managedRootOrg && managedRootOrg.level === '大班') {
           html += renderBigClassNode(managedRootOrg, byLevel);
         }
-      } else if (role === '班级总督察' || role === '班级副总督察') {
+      } else if (role.includes('班级总督察' || role.includes('班级副总督察') {
         // 班级级：显示自己的班级（作为根）
         if (managedRootOrg && managedRootOrg.level === '班级') {
           html += renderClassAsRoot(managedRootOrg, byLevel);
         }
-      } else if (role === '小组督察' || role === '小组副督察') {
+      } else if (role.includes('小组督察' || role.includes('小组副督察') {
         // 小组级：显示自己的小组（作为根）
         if (managedRootOrg && managedRootOrg.level === '小组') {
           html += renderGroupAsRoot(managedRootOrg);
@@ -533,7 +533,7 @@
       if (orgUsers.length === 0) return `<div class="empty-state" style="padding:8px 12px;font-size:13px;">暂无人员</div>`;
       return orgUsers.map(u => `<div class="user-item" style="padding-left: 24px; border-left: 2px solid var(--border); margin-left: 12px;">
         <div class="user-info">
-          <div class="user-name">${u.name}<span class="user-role ${u.role}">${u.role}</span></div>
+          <div class="user-name">${u.name}${(u.role||'').split(',').map(function(r){return '<span class="user-role '+r+'">'+r+'</span>';}).join('')}</div>
           <div class="user-meta">${u.phone}</div>
         </div>
         <div class="item-actions">
@@ -687,8 +687,8 @@
       }
     }
 
-    function renderAllRoles(defaultRole) {
-      const allRoles = [
+    function renderAllRoles(defaultRoles) {
+      var allRoles = [
         { value: '管理员', label: '管理员' },
         { value: '地区督委', label: '地区督委' },
         { value: '大班总督', label: '大班总督' },
@@ -698,13 +698,17 @@
         { value: '小组督察', label: '小组督察' },
         { value: '小组副督察', label: '小组副督察' }
       ];
-      const select = document.getElementById('userRole');
-      select.innerHTML = allRoles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
-      if (defaultRole) select.value = defaultRole;
+      var selected = (defaultRoles || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      var container = document.getElementById('userRole');
+      container.innerHTML = allRoles.map(function (r) {
+        var checked = selected.indexOf(r.value) !== -1 ? ' checked' : '';
+        return '<label class="checkbox-item' + (checked ? ' selected' : '') + '" onclick="this.querySelector(\'input\').click()">' +
+          '<input type="checkbox" value="' + r.value + '"' + checked + '>' + r.label + '</label>';
+      }).join('');
     }
 
-    function filterRolesByOrgLevel(level, defaultRole) {
-      const roleMap = {
+    function filterRolesByOrgLevel(level, defaultRoles) {
+      var roleMap = {
         '大班': [
           { value: '大班总督', label: '大班总督' },
           { value: '大班副督', label: '大班副督' }
@@ -718,15 +722,22 @@
           { value: '小组副督察', label: '小组副督察' }
         ]
       };
-      const roles = roleMap[level] || [];
-      const select = document.getElementById('userRole');
-      select.innerHTML = roles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
-      // 优先使用传入的 defaultRole，否则选第一个
-      if (defaultRole && roles.some(r => r.value === defaultRole)) {
-        select.value = defaultRole;
-      } else if (roles.length > 0) {
-        select.value = roles[0].value;
-      }
+      var roles = roleMap[level] || [];
+      var selected = (defaultRoles || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      var container = document.getElementById('userRole');
+      container.innerHTML = roles.map(function (r) {
+        var checked = selected.indexOf(r.value) !== -1 ? ' checked' : '';
+        return '<label class="checkbox-item' + (checked ? ' selected' : '') + '" onclick="this.querySelector(\'input\').click()">' +
+          '<input type="checkbox" value="' + r.value + '"' + checked + '>' + r.label + '</label>';
+      }).join('');
+    }
+
+    // 获取选中的角色，逗号拼接
+    function getSelectedRoles() {
+      var boxes = document.querySelectorAll('#userRole input[type=checkbox]:checked');
+      var vals = [];
+      boxes.forEach(function (cb) { vals.push(cb.value); });
+      return vals.join(',');
     }
 
     // 构建组织的完整路径名称 -- now in utils.js
@@ -736,7 +747,7 @@
       const name = document.getElementById('userName').value.trim();
       const phone = document.getElementById('userPhone').value.trim();
       const password = document.getElementById('userPassword').value;
-      const role = document.getElementById('userRole').value;
+      const role = getSelectedRoles();
       const orgId = document.getElementById('userOrgId').value || null;
 
       if (!name) { showToast('请输入姓名'); return; }

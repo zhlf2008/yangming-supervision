@@ -93,20 +93,20 @@ function buildOrgPathFromMap(orgId, orgsMap) {
 function getAccessibleGroupIds(role, userOrgId, orgs) {
   var groupIds = new Set();
 
-  if (role === '小组督察' || role === '小组副督察') {
+  if (role.includes('小组督察' || role.includes('小组副督察') {
     var myOrg = orgs.find(function (o) { return o.id === userOrgId; });
     if (myOrg && myOrg.level === '小组') groupIds.add(myOrg.id);
-  } else if (role === '班级总督察' || role === '班级副总督察') {
+  } else if (role.includes('班级总督察' || role.includes('班级副总督察') {
     if (userOrgId) {
       getDirectChildrenOrgs(userOrgId, orgs).filter(function (o) { return o.level === '小组'; })
         .forEach(function (g) { groupIds.add(g.id); });
     }
-  } else if (role === '大班总督' || role === '大班副督') {
+  } else if (role.includes('大班总督' || role.includes('大班副督') {
     if (userOrgId) {
       getAllChildOrgs(userOrgId, orgs).filter(function (o) { return o.level === '小组'; })
         .forEach(function (g) { groupIds.add(g.id); });
     }
-  } else if (role === '管理员' || role === '地区督委') {
+  } else if (role.includes('管理员' || role.includes('地区督委') {
     orgs.filter(function (o) { return o.level === '小组'; }).forEach(function (g) { groupIds.add(g.id); });
   }
 
@@ -115,10 +115,10 @@ function getAccessibleGroupIds(role, userOrgId, orgs) {
 
 // 根据角色获取上级组织 ID
 function getParentOrgId(role, userOrgId, orgs) {
-  if (role === '班级总督察' || role === '班级副总督察') {
+  if (role.includes('班级总督察' || role.includes('班级副总督察') {
     return userOrgId; // 班级本身
   }
-  if (role === '大班总督' || role === '大班副督') {
+  if (role.includes('大班总督' || role.includes('大班副督') {
     return userOrgId; // 大班本身
   }
   return null;
