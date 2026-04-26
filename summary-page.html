@@ -265,6 +265,8 @@
     .data-table .rate-medium { color: var(--ink-dark); }
     .data-table .rate-low { color: var(--vermillion); }
 
+    .period-tab.active { background: var(--vermillion) !important; color: white !important; border-color: var(--vermillion) !important; }
+
     .table-scroll {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -486,6 +488,11 @@
       <div class="section-header">
         <span class="section-title">数据筛选</span>
       </div>
+      <div class="period-tabs" style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="period-tab active" onclick="switchPeriod('today', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">今日</button>
+        <button class="period-tab" onclick="switchPeriod('week', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">本周</button>
+        <button class="period-tab" onclick="switchPeriod('lastWeek', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">上周</button>
+      </div>
       <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
         <option value="">全部</option>
       </select>
@@ -568,6 +575,7 @@
     let currentDate = new Date();
     let currentUser = null;
     let currentOrg = null;
+    var currentPeriod = 'today';
 
     async function init() {
       await waitForDb();
@@ -646,18 +654,49 @@
       loadData();
     }
 
+    function switchPeriod(period, el) {
+      currentPeriod = period;
+      document.querySelectorAll('.period-tab').forEach(function(t){t.classList.remove('active');});
+      el.classList.add('active');
+      loadData();
+    }
+
     async function loadData() {
-      const dateStr = formatDate(currentDate);
       const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
       const groupSelect = document.getElementById('groupSelect');
       const selectedGroupId = groupSelect?.value ? parseInt(groupSelect.value) : null;
 
+      var today = new Date();
+      var dateStart, dateEnd;
+      if (currentPeriod === 'today') {
+        dateStart = dateEnd = today.toISOString().split('T')[0];
+      } else if (currentPeriod === 'week') {
+        var dow = today.getDay();
+        var mondayOffset = dow === 0 ? -6 : 1 - dow;
+        dateStart = new Date(today);
+        dateStart.setDate(today.getDate() + mondayOffset);
+        dateStart = dateStart.toISOString().split('T')[0];
+        dateEnd = today.toISOString().split('T')[0];
+      } else if (currentPeriod === 'lastWeek') {
+        var dow2 = today.getDay();
+        var lastMondayOffset = dow2 === 0 ? -13 : -6 - dow2;
+        var lastSundayOffset = dow2 === 0 ? -7 : -dow2;
+        dateStart = new Date(today);
+        dateStart.setDate(today.getDate() + lastMondayOffset);
+        dateStart = dateStart.toISOString().split('T')[0];
+        dateEnd = new Date(today);
+        dateEnd.setDate(today.getDate() + lastSundayOffset);
+        dateEnd = dateEnd.toISOString().split('T')[0];
+      }
+
+      const dateStr = formatDate(currentDate);
+
       // Step 1: Get today's schedule IDs
       let scheduleIds = [];
       try {
         const schedRes = await fetch(
-          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date&schedule_date=eq.${dateStr}`,
+          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date&schedule_date=gte.${dateStart}&schedule_date=lte.${dateEnd}`,
           { headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' } }
         );
         const schedData = await schedRes.json();
