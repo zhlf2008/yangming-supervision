@@ -1325,7 +1325,9 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         console.error('Submit error:', error);
       } else {
         showToast('提交成功！');
-        logAction('考勤提交', selectedOrg.name + ' - ' + (currentSemester?.semester_name || ''), '上线率:' + onlineCalc + ', 作业率:' + hwCalc);
+        var ol = yingdao>0 ? (shidao/yingdao*100).toFixed(1) : '0.0';
+        var hl = yingzuo>0 ? (zuowan/yingzuo*100).toFixed(1) : '0.0';
+        logAction('考勤提交', selectedOrg.name, '上线率:' + ol + '%, 作业率:' + hl + '%');
         ['yingdao','shidao','qingjia','shipin','yingzuo','zuowan'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';

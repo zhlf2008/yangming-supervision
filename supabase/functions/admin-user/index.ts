@@ -29,7 +29,8 @@ Deno.serve(async (req) => {
   };
 
   try {
-    const { action, userId, email, name, password, delay } = await req.json();
+    const body = await req.json();
+    const { action, userId, email, name, password, phone } = body;
 
     switch (action) {
 
@@ -75,7 +76,7 @@ Deno.serve(async (req) => {
 
       // 批量生成日程（服务端执行避免前端卡死）
       case 'generateSchedules': {
-        const { semester_id, start_date, end_date, trial_start_date } = req.body || {};
+        const { semester_id, start_date, end_date, trial_start_date } = body;
         if (!semester_id) return new Response(JSON.stringify({ error: '缺少 semester_id' }), { headers, status: 400 });
 
         const { data: templates } = await adminClient.from('assessment_types').select('id').eq('is_template', 1);

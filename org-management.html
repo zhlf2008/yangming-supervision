@@ -741,32 +741,6 @@
       });
     }
 
-    function filterRolesByOrgLevel(level, defaultRole) {
-      const roleMap = {
-        '大班': [
-          { value: '大班总督', label: '大班总督' },
-          { value: '大班副督', label: '大班副督' }
-        ],
-        '班级': [
-          { value: '班级总督察', label: '班级总督察' },
-          { value: '班级副总督察', label: '班级副总督察' }
-        ],
-        '小组': [
-          { value: '小组督察', label: '小组督察' },
-          { value: '小组副督察', label: '小组副督察' }
-        ]
-      };
-      const roles = roleMap[level] || [];
-      const select = document.getElementById('userRole');
-      select.innerHTML = roles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
-      // 优先使用传入的 defaultRole，否则选第一个
-      if (defaultRole && roles.some(r => r.value === defaultRole)) {
-        select.value = defaultRole;
-      } else if (roles.length > 0) {
-        select.value = roles[0].value;
-      }
-    }
-
     // 构建组织的完整路径名称 -- now in utils.js
 
     async function saveUser() {
