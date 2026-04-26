@@ -4,8 +4,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || 'https://whvjfurrkusdwujjodwc.supabase.co';
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const SUPABASE_URL = 'https://whvjfurrkusdwujjodwc.supabase.co';
+const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndodmpmdXJya3VzZHd1ampvZHdjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njc3NDA4MCwiZXhwIjoyMDkyMzUwMDgwfQ.xkSsbr5Gv8F82bhneevGUJ1V0Pq4jB5uPkR3jAVAJKQ';
 
 const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
