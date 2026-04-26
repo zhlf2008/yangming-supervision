@@ -293,6 +293,9 @@
     }
 
     /* Org Hierarchy Selector */
+    .input-row { display: flex; gap: 12px; margin-bottom: 12px; }
+    .input-group { flex: 1; }
+    .input-label { display: block; font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
     .org-selector {
       background: var(--bg-card);
       border-radius: var(--radius);
@@ -493,9 +496,26 @@
         <button class="period-tab" onclick="switchPeriod('week', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">本周</button>
         <button class="period-tab" onclick="switchPeriod('lastWeek', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">上周</button>
       </div>
-      <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
-        <option value="">全部</option>
-      </select>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="input-group">
+          <label class="input-label">大班</label>
+          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">班级</label>
+          <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">小组</label>
+          <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">全部</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- Data Tables: two side-by-side -->
@@ -608,46 +628,59 @@
     let summaryOrgsList = [];
 
     async function loadOrgSelector() {
-      const groupSelect = document.getElementById('groupSelect');
-      if (!groupSelect) return;
-      const role = currentUser.role;
-      const userOrgId = currentUser.organization_id;
+      var bigSelect = document.getElementById('bigClassSelect');
+      if (!bigSelect) return;
+      var role = currentUser.role;
+      var userOrgId = currentUser.organization_id;
 
-      // 小组督察/副督察只能看自己的小组，隐藏筛选器
       if (role === '小组督察' || role === '小组副督察') {
-        groupSelect.closest('.section').style.display = 'none';
+        bigSelect.closest('.section').querySelector('.section-header').style.display = 'none';
+        bigSelect.closest('#bigClassSelect').parentElement.parentElement.style.display = 'none';
+        document.querySelectorAll('.period-tab').forEach(function(t){t.parentElement.style.display='none';});
         return;
       }
 
-      const { data: orgs } = await window.db.from('organizations').select('*').order('level', { ascending: true });
+      var { data: orgs } = await window.db.from('organizations').select('*').order('level', { ascending: true });
       if (!orgs) return;
-
-      // Build orgsMap
       summaryOrgsMap = {};
-      summaryOrgsList = [];
-      orgs.forEach(o => { summaryOrgsMap[o.id] = o; });
+      summaryOrgsList = orgs;
+      orgs.forEach(function (o) { summaryOrgsMap[o.id] = o; });
 
-      // Determine accessible group IDs
-      let accessibleGroupIds = [];
-      if (role === '小组督察' || role === '小组副督察') {
-        accessibleGroupIds = userOrgId ? [userOrgId] : [];
-      } else if (role === '班级总督察' || role === '班级副总督察') {
-        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, Object.values(summaryOrgsMap)).map(g => g.id) : [];
-      } else if (role === '大班总督' || role === '大班副督') {
-        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, Object.values(summaryOrgsMap)).map(g => g.id) : [];
-      } else if (role === '管理员' || role === '地区督委') {
-        accessibleGroupIds = orgs.filter(o => o.level === '小组').map(o => o.id);
-      } else {
-        accessibleGroupIds = [];
-      }
+      var bigClasses = orgs.filter(function (o) { return o.level === '大班'; });
+      bigSelect.innerHTML = '<option value="">全部</option>' +
+        bigClasses.map(function (b) { return '<option value="' + b.id + '">' + b.name + '</option>'; }).join('');
+    }
 
-      // Build options: all accessible groups with full path, sorted
-      const groups = orgs.filter(o => o.level === '小组' && accessibleGroupIds.includes(o.id))
-        .map(g => ({ id: g.id, path: buildOrgPathFromMap(g.id, summaryOrgsMap) }))
-        .sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+    function onBigClassChange(bigClassId) {
+      var classSelect = document.getElementById('classSelect');
+      var groupSelect = document.getElementById('groupSelect');
+      classSelect.innerHTML = '<option value="">全部</option>';
+      groupSelect.innerHTML = '<option value="">全部</option>';
+      document.getElementById('groupSelect').value = '';
 
+      if (!bigClassId) { loadData(); return; }
+
+      var classes = summaryOrgsList.filter(function (o) {
+        return o.parent_id === parseInt(bigClassId) && o.level === '班级';
+      });
+      classSelect.innerHTML = '<option value="">全部</option>' +
+        classes.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+      loadData();
+    }
+
+    function onClassChange(classId) {
+      var groupSelect = document.getElementById('groupSelect');
+      groupSelect.innerHTML = '<option value="">全部</option>';
+      document.getElementById('groupSelect').value = '';
+
+      if (!classId) { loadData(); return; }
+
+      var groups = summaryOrgsList.filter(function (o) {
+        return o.parent_id === parseInt(classId) && o.level === '小组';
+      });
       groupSelect.innerHTML = '<option value="">全部</option>' +
-        groups.map(g => `<option value="${g.id}">${g.path}</option>`).join('');
+        groups.map(function (g) { return '<option value="' + g.id + '">' + g.name + '</option>'; }).join('');
+      loadData();
     }
 
     function onGroupChange(groupId) {
@@ -662,10 +695,36 @@
     }
 
     async function loadData() {
-      const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
-      const groupSelect = document.getElementById('groupSelect');
-      const selectedGroupId = groupSelect?.value ? parseInt(groupSelect.value) : null;
+
+      // 根据级联选择计算需要显示的小组范围
+      var groupId = document.getElementById('groupSelect')?.value;
+      var classId = !groupId ? document.getElementById('classSelect')?.value : null;
+      var bigClassId = !groupId && !classId ? document.getElementById('bigClassSelect')?.value : null;
+
+      // 先把所有小组列出来
+      var allGroups = summaryOrgsList.filter(function (o) { return o.level === '小组'; });
+      var targetGroupIds;
+      if (groupId) {
+        targetGroupIds = [parseInt(groupId)];
+      } else if (classId) {
+        targetGroupIds = allGroups.filter(function (g) { return g.parent_id === parseInt(classId); }).map(function (g) { return g.id; });
+      } else if (bigClassId) {
+        var bigClassGroups = getAllGroups(parseInt(bigClassId), summaryOrgsList).filter(function (o) { return o.level === '小组'; });
+        targetGroupIds = bigClassGroups.map(function (g) { return g.id; });
+      } else {
+        // 全部：根据角色限制
+        var role2 = currentUser.role;
+        if (role2 === '小组督察' || role2 === '小组副督察') {
+          targetGroupIds = userOrgId ? [userOrgId] : [];
+        } else if (role2 === '班级总督察' || role2 === '班级副总督察') {
+          targetGroupIds = getAllGroups(userOrgId, summaryOrgsList).filter(function (o) { return o.level === '小组'; }).map(function (g) { return g.id; });
+        } else if (role2 === '大班总督' || role2 === '大班副督') {
+          targetGroupIds = getAllGroups(userOrgId, summaryOrgsList).filter(function (o) { return o.level === '小组'; }).map(function (g) { return g.id; });
+        } else {
+          targetGroupIds = allGroups.map(function (g) { return g.id; });
+        }
+      }
 
       var today = new Date();
       var dateStart, dateEnd;
@@ -712,45 +771,16 @@
         return;
       }
 
-      // Step 2: Build org filter (scope + selected group)
-      let orgFilter = '';
-      let accessibleGroupIds = [];
-
-      if (role === '小组督察' || role === '小组副督察') {
-        accessibleGroupIds = userOrgId ? [userOrgId] : [];
-      } else if (role === '班级总督察' || role === '班级副总督察') {
-        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, Object.values(summaryOrgsMap)).map(g => g.id) : [];
-      } else if (role === '大班总督' || role === '大班副督') {
-        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, Object.values(summaryOrgsMap)).map(g => g.id) : [];
-      } else if (role === '管理员' || role === '地区督委') {
-        accessibleGroupIds = Object.values(summaryOrgsMap).filter(o => o.level === '小组').map(o => o.id);
-      } else {
-        // 未知角色，无任何权限
-        accessibleGroupIds = [];
+      // Step 2: Build org filter
+      if (targetGroupIds.length === 0) {
+        document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">暂无可查看的数据</td></tr>';
+        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">暂无可查看的数据</td></tr>';
+        document.getElementById('avgOnlineRate').textContent = '0.0%';
+        document.getElementById('avgHwRate').textContent = '0.0%';
+        document.getElementById('avgVideoRate').textContent = '0.0%';
+        return;
       }
-
-      if (selectedGroupId) {
-        // Show only the selected group
-        if (!accessibleGroupIds.includes(selectedGroupId)) {
-          document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">无权限查看该小组数据</td></tr>';
-        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">无权限查看该小组数据</td></tr>';
-          return;
-        }
-        orgFilter = `organization_id=eq.${selectedGroupId}`;
-      } else {
-        // Show all accessible groups
-        const ids = accessibleGroupIds.filter(id => id != null);
-        if (ids.length === 0) {
-          // 无可查看的小组，显示空状态
-          document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">暂无可查看的数据</td></tr>';
-          document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">暂无可查看的数据</td></tr>';
-          document.getElementById('avgOnlineRate').textContent = '0.0%';
-          document.getElementById('avgHwRate').textContent = '0.0%';
-          document.getElementById('avgVideoRate').textContent = '0.0%';
-          return;
-        }
-        orgFilter = `organization_id=in.(${ids.join(',')})`;
-      }
+      var orgFilter = 'organization_id=in.(' + targetGroupIds.join(',') + ')';
 
       // Step 3: Query attendance records
       let recordsUrl = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/attendance_records?schedule_id=in.(${scheduleIds.join(',')})`;
