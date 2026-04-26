@@ -676,7 +676,7 @@
 
       // 生成 slide HTML
       var slidesHtml = carouselData.map(function (d) {
-        return '<div class="carousel-slide">' +
+        return '<div class="carousel-slide"><div class="carousel-group-name">' + d.name + '</div>' +
           '<div class="stat-item"><div class="stat-value high">' + d.online + (d.online !== '--' ? '%' : '') + '</div><div class="stat-label">上线率</div></div>' +
           '<div class="stat-item"><div class="stat-value medium">' + d.hw + (d.hw !== '--' ? '%' : '') + '</div><div class="stat-label">作业率</div></div>' +
           '<div class="stat-item"><div class="stat-value high">' + d.video + (d.video !== '--' ? '%' : '') + '</div><div class="stat-label">视频率</div></div>' +
