@@ -70,6 +70,7 @@
       // 先查记录
       var { data: records, error } = await window.db.from('attendance_records')
         .select('*')
+        .eq('fill_user_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(200);
 

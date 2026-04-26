@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>数据管理 - 阳明心学督察管理系统</title>
+  <style>
+    :root { --bg-primary: #FAFAF8; --bg-card: #FFFFFF; --ink-dark: #2D2D2D; --ink-light: #5C5C5C; --ink-muted: #8A8A8A; --vermillion: #E63946; --border: #E8E4DF; --radius: 16px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg-primary); color: var(--ink-dark); min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
+    .page-title { font-size: 18px; font-weight: 600; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+    .filter-bar input { flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-card); }
+    .filter-bar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-card); }
+    .filter-bar button { padding: 6px 12px; border: none; border-radius: 6px; background: var(--vermillion); color: #fff; font-size: 12px; cursor: pointer; }
+    .record-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; position: relative; }
+    .record-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .record-user { font-size: 14px; font-weight: 500; }
+    .record-date { font-size: 11px; color: var(--ink-muted); white-space: nowrap; }
+    .record-org { font-size: 12px; color: var(--ink-muted); margin-bottom: 6px; }
+    .record-stats { display: flex; gap: 14px; font-size: 12px; }
+    .record-stat span { font-weight: 600; }
+    .record-del { position: absolute; right: 10px; top: 10px; font-size: 12px; color: var(--vermillion); cursor: pointer; text-decoration: underline; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-muted); }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--ink-muted); padding: 8px 20px; cursor: pointer; }
+    .nav-item.active { color: var(--vermillion); }
+    .nav-icon { font-size: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <a href="index.html" class="back-btn">←</a>
+      <h1 class="page-title">数据管理</h1>
+    </div>
+    <div class="filter-bar">
+      <input type="date" id="dateFilter" onchange="loadRecords()" style="width:130px;">
+      <button onclick="loadRecords()">刷新</button>
+    </div>
+    <div id="recordList"><div class="empty-state">加载中...</div></div>
+  </div>
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">首页</span></a>
+    <a href="attendance-page.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">考勤填报</span></a>
+    <a href="summary-page.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">数据汇总</span></a>
+    <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">个人中心</span></a>
+  </nav>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    var records = [];
+
+    async function init() {
+      var user = checkLogin();
+      if (!user) return;
+      if (user.role !== '管理员' && user.role !== '地区督委') { alert('无权访问'); window.location.href = 'index.html'; return; }
+      await waitForDb();
+      document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+      await loadRecords();
+    }
+
+    async function loadRecords() {
+      var date = document.getElementById('dateFilter').value;
+      var query = window.db.from('attendance_records').select('*').order('created_at', { ascending: false }).limit(500);
+      if (date) query = query.eq('schedule_id', '(select schedule_date from schedules where schedule_date="' + date + '")');
+
+      var { data, error } = await query;
+      if (error) { document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败</div>'; return; }
+      records = data || [];
+
+      if (records.length === 0) { document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无记录</div>'; return; }
+
+      // 查关联数据
+      var userIds = [...new Set(records.map(function(r){return r.fill_user_id;}).filter(Boolean))];
+      var orgIds = [...new Set(records.map(function(r){return r.organization_id;}))];
+      var scheduleIds = [...new Set(records.map(function(r){return r.schedule_id;}))];
+
+      var [{data:profiles},{data:orgs},{data:schedules}] = await Promise.all([
+        userIds.length > 0 ? window.db.from('profiles').select('id,name').in('id', userIds) : Promise.resolve({data:[]}),
+        window.db.from('organizations').select('id,name').in('id', orgIds),
+        window.db.from('schedules').select('id,schedule_date').in('id', scheduleIds)
+      ]);
+      var userMap = {}; (profiles||[]).forEach(function(p){userMap[p.id]=p.name;});
+      var orgMap = {}; (orgs||[]).forEach(function(o){orgMap[o.id]=o.name;});
+      var dateMap = {}; (schedules||[]).forEach(function(s){dateMap[s.id]=s.schedule_date;});
+
+      renderList(userMap, orgMap, dateMap);
+    }
+
+    function renderList(userMap, orgMap, dateMap) {
+      var html = '';
+      records.forEach(function(r) {
+        var fd = r.fill_data || {};
+        var yd = parseInt(fd['应到人数'])||0, sd = parseInt(fd['实到人数'])||0;
+        var yz = parseInt(fd['应做作业人数'])||0, zw = parseInt(fd['作业完成人数'])||0, sp = parseInt(fd['视频人数'])||0;
+        var online = yd>0?(sd/yd*100).toFixed(1):'0.0';
+        var hw = yz>0?(zw/yz*100).toFixed(1):'0.0';
+        var video = sd>0?(sp/sd*100).toFixed(1):'0.0';
+        var dateStr = dateMap[r.schedule_id]||(r.created_at||'').slice(0,10);
+        var timeStr = r.created_at?new Date(r.created_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}):'';
+        html += '<div class="record-item">'+
+          '<span class="record-del" onclick="delRecord('+r.id+')">删除</span>'+
+          '<div class="record-header"><span class="record-user">'+(userMap[r.fill_user_id]||'')+'</span><span class="record-date">'+dateStr+' '+timeStr+'</span></div>'+
+          '<div class="record-org">'+(orgMap[r.organization_id]||'')+'</div>'+
+          '<div class="record-stats">'+
+          '<div class="record-stat">上线 '+online+'%</div>'+
+          '<div class="record-stat">作业 '+hw+'%</div>'+
+          '<div class="record-stat">视频 '+video+'%</div>'+
+          '</div></div>';
+      });
+      document.getElementById('recordList').innerHTML = html;
+    }
+
+    async function delRecord(id) {
+      if (!confirm('确定删除？')) return;
+      await window.db.from('attendance_records').delete().eq('id', id);
+      logAction('删除填报记录', 'id:'+id);
+      await loadRecords();
+    }
+
+    init();
+  </script>
+</body>
+</html>
