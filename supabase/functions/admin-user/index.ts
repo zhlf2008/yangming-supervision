@@ -41,6 +41,22 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ success: true }), { headers });
       }
 
+      // 创建用户（管理员用 service_role 创建，不受前端 IP 限流）
+      case 'createUser': {
+        if (!email || !password) return new Response(JSON.stringify({ error: '缺少 email 或 password' }), { headers, status: 400 });
+        const createParams = {
+          email: email,
+          password: password,
+          email_confirm: true,
+          user_metadata: {}
+        };
+        if (name) createParams.user_metadata.name = name;
+        if (phone) createParams.user_metadata.phone = phone;
+        const { data, error } = await adminClient.auth.admin.createUser(createParams);
+        if (error) return new Response(JSON.stringify({ error: error.message }), { headers, status: 500 });
+        return new Response(JSON.stringify({ success: true, userId: data.user.id }), { headers });
+      }
+
       // 更新用户（邮箱、姓名、密码）
       case 'updateUser': {
         if (!userId) return new Response(JSON.stringify({ error: '缺少 userId' }), { headers, status: 400 });

@@ -178,6 +178,11 @@ var adminApi = {
     return adminApi._call('deleteUser', { userId: userId });
   },
 
+  // 创建 Auth 用户（管理员代理，不受限流）
+  createUser: function (params) {
+    return adminApi._call('createUser', params);
+  },
+
   // 更新 Auth 用户（邮箱、密码等）
   updateUser: function (userId, params) {
     return adminApi._call('updateUser', Object.assign({ userId: userId }, params));

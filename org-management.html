@@ -596,29 +596,24 @@
       // 新建模式：先创建 auth.users，再创建 profiles
       const data = { name, phone, role, organization_id: orgId };
 
-      // 如果有密码，创建 auth.users
+      // 如果有密码，通过 Edge Function 创建 auth.users（不受前端 IP 限流）
       if (password && password.length >= 6) {
         try {
           const email = `p${phone}@supabase.io`;
-          const { data: authData, error: authError } = await window.supabaseClient.auth.signUp({
-            email: email,
-            password: password
-          });
+          const result = await adminApi.createUser({ email: email, password: password, name: name, phone: phone });
 
-          if (authError) {
-            if (authError.message.includes('429') || authError.status === 429) {
-              showToast('请求过于频繁，请等待 30-60 分钟后再试');
+          if (result.error) {
+            if (result.error.includes('already been registered')) {
+              showToast('该手机号已注册，如需重建请先删除');
             } else {
-              showToast('创建账户失败: ' + authError.message);
+              showToast('创建账户失败: ' + result.error);
             }
             return;
           }
 
-          // 使用 auth.users 的 id 创建 profile
-          data.id = authData.user.id;
-          console.log('[org-management] creating profile with:', data);
+          // 使用返回的 userId 创建 profile
+          data.id = result.userId;
           const { error: profileError } = await window.db.from('profiles').insert(data);
-          console.log('[org-management] profileError:', profileError);
           if (profileError) {
             showToast('创建档案失败，但账户已创建');
           } else {
