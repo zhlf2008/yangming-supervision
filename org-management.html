@@ -121,7 +121,7 @@
     <div class="section">
       <div class="section-header">
         <span class="section-title">组织架构</span>
-        <button class="add-btn" onclick="showAddOrgModal('bigclass')">+ 添加大班</button>
+        <button class="add-btn" id="addBigClassBtn" onclick="showAddOrgModal('bigclass')">+ 添加大班</button>
       </div>
       <div id="orgTree" class="tree-container"><div class="empty-state">加载中...</div></div>
     </div>
@@ -236,21 +236,59 @@
       document.getElementById('allowRegToggle').checked = allowReg;
     }
 
+    // 当前用户有权管理的组织 ID 集合（及其所有下级）
+    let managedOrgIds = new Set();
+    // 当前用户的可管理根组织（用于判定层级）
+    let managedRootOrg = null;
+
     async function init() {
       const userData = localStorage.getItem('supabase_user');
-      if (!userData) {
-        window.location.href = 'login.html';
-        return;
-      }
+      if (!userData) { window.location.href = 'login.html'; return; }
       currentUser = JSON.parse(userData);
-      // 只有管理员可以访问此页面
-      if (currentUser.role !== '管理员') {
-        showToast('只有管理员可以访问此页面');
-        setTimeout(() => window.location.href = 'index.html', 1500);
+
+      initRegistrationToggle();
+      await loadOrganizations();
+      calcManagedScope();
+      // 非管理员隐藏添加大班按钮和注册开关
+      const role = currentUser.role;
+      if (role !== '管理员' && role !== '地区督委') {
+        document.getElementById('addBigClassBtn').style.display = 'none';
+        document.querySelector('.settings-bar').style.display = 'none';
+      }
+      await loadUsers();
+    }
+
+    // 根据角色计算用户可管理的组织范围
+    function calcManagedScope() {
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+      managedOrgIds = new Set();
+
+      if (role === '管理员' || role === '地区督委') {
+        organizations.forEach(o => managedOrgIds.add(o.id));
         return;
       }
-      initRegistrationToggle();
-      await Promise.all([loadOrganizations(), loadUsers()]);
+
+      const userOrg = organizations.find(o => o.id === userOrgId);
+      if (!userOrg) return;
+
+      managedRootOrg = userOrg;
+
+      if (role === '大班总督' || role === '大班副督') {
+        if (userOrg.level === '大班') {
+          getAllChildOrgs(userOrgId, organizations).forEach(o => managedOrgIds.add(o.id));
+          managedOrgIds.add(userOrgId);
+        }
+      } else if (role === '班级总督察' || role === '班级副总督察') {
+        if (userOrg.level === '班级') {
+          getAllChildOrgs(userOrgId, organizations).forEach(o => managedOrgIds.add(o.id));
+          managedOrgIds.add(userOrgId);
+        }
+      } else if (role === '小组督察' || role === '小组副督察') {
+        if (userOrg.level === '小组') {
+          managedOrgIds.add(userOrgId);
+        }
+      }
     }
 
     async function loadOrganizations() {
@@ -267,7 +305,12 @@
     }
 
     async function loadUsers() {
-      const { data, error } = await window.db.from('profiles').select('*, organizations(name)').order('created_at', { ascending: false });
+      let query = window.db.from('profiles').select('*, organizations(name)').order('created_at', { ascending: false });
+      // 非管理员只加载管辖范围内的用户
+      if (managedOrgIds.size > 0 && !(currentUser.role === '管理员' || currentUser.role === '地区督委')) {
+        query = query.in('organization_id', [...managedOrgIds]);
+      }
+      const { data, error } = await query;
       if (error) { showToast('加载用户失败'); return; }
       users = data || [];
       renderOrgTree();
@@ -301,49 +344,120 @@
       const levelOrder = { '大班': 0, '班级': 1, '小组': 2 };
       const byLevel = { '大班': [], '班级': [], '小组': [] };
       organizations.forEach(org => { if (byLevel[org.level]) byLevel[org.level].push(org); });
+
+      const role = currentUser.role;
       let html = '';
-      byLevel['大班'].forEach(bigclass => {
-        const bigclassId = `bigclass-${bigclass.id}`;
-        const isExpanded = expandedNodes.has(bigclassId);
-        const bigclassUsers = users.filter(u => u.organization_id === bigclass.id);
-        html += `<div class="tree-node">
-          <div class="tree-node-content level-0" onclick="toggleNode('${bigclassId}')">
-            <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
-            <span class="tree-node-name">${bigclass.name}</span>
-            <span class="tree-node-level">${getTotalUsersCount(bigclass.id)}人</span>
-            <div class="tree-node-actions">
-              <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('class', ${bigclass.id})">+班级</button>
-              <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${bigclass.id})">+人员</button>
-              <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${bigclass.id})">编辑</button>
-              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${bigclass.id})">删除</button>
-            </div>
+
+      if (role === '管理员' || role === '地区督委') {
+        // 管理员：显示全部大班
+        byLevel['大班'].forEach(bigclass => {
+          html += renderBigClassNode(bigclass, byLevel);
+        });
+      } else if (role === '大班总督' || role === '大班副督') {
+        // 大班级：只显示自己的大班
+        if (managedRootOrg && managedRootOrg.level === '大班') {
+          html += renderBigClassNode(managedRootOrg, byLevel);
+        }
+      } else if (role === '班级总督察' || role === '班级副总督察') {
+        // 班级级：显示自己的班级（作为根）
+        if (managedRootOrg && managedRootOrg.level === '班级') {
+          html += renderClassAsRoot(managedRootOrg, byLevel);
+        }
+      } else if (role === '小组督察' || role === '小组副督察') {
+        // 小组级：显示自己的小组（作为根）
+        if (managedRootOrg && managedRootOrg.level === '小组') {
+          html += renderGroupAsRoot(managedRootOrg);
+        }
+      }
+
+      container.innerHTML = html || '<div class="empty-state">暂无管理权限</div>';
+    }
+
+    function renderBigClassNode(bigclass, byLevel) {
+      const bigclassId = `bigclass-${bigclass.id}`;
+      const isExpanded = expandedNodes.has(bigclassId);
+      const canManage = managedOrgIds.has(bigclass.id);
+      return `<div class="tree-node">
+        <div class="tree-node-content level-0" onclick="toggleNode('${bigclassId}')">
+          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="tree-node-name">${bigclass.name}</span>
+          <span class="tree-node-level">${getTotalUsersCount(bigclass.id)}人</span>
+          <div class="tree-node-actions">
+            ${canManage ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('class', ${bigclass.id})">+班级</button>
+            <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${bigclass.id})">+人员</button>
+            <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${bigclass.id})">编辑</button>
+            <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${bigclass.id})">删除</button>` : ''}
           </div>
-          <div class="tree-children ${isExpanded ? '' : 'collapsed'}">
-            ${renderOrgUserSection(bigclass.id)}
-            ${renderClassLevel(bigclass.id, byLevel)}
+        </div>
+        <div class="tree-children ${isExpanded ? '' : 'collapsed'}">
+          ${renderOrgUserSection(bigclass.id)}
+          ${renderClassLevel(bigclass.id, byLevel)}
+        </div>
+      </div>`;
+    }
+
+    function renderClassAsRoot(cls, byLevel) {
+      const classId = `class-${cls.id}`;
+      const isExpanded = expandedNodes.has(classId);
+      const bigClass = organizations.find(o => o.id === cls.parent_id);
+      const canManage = managedOrgIds.has(cls.id);
+      let label = cls.name;
+      if (bigClass) label = bigClass.name + ' - ' + label;
+      return `<div class="tree-node">
+        <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
+          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="tree-node-name">${label}</span>
+          <span class="tree-node-level">${getTotalUsersCount(cls.id)}人</span>
+          <div class="tree-node-actions">
+            ${canManage ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
+            <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${cls.id})">+人员</button>` : ''}
           </div>
-        </div>`;
-      });
-      container.innerHTML = html;
+        </div>
+        <div class="tree-children ${isExpanded ? '' : 'collapsed'}">
+          ${renderOrgUserSection(cls.id)}
+          ${renderGroupLevel(cls.id, byLevel)}
+        </div>
+      </div>`;
+    }
+
+    function renderGroupAsRoot(group) {
+      const groupId = `group-${group.id}`;
+      const isExpanded = expandedNodes.has(groupId);
+      const path = buildOrgPath(group.id, organizations);
+      return `<div class="tree-node">
+        <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
+          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="tree-node-name">${path}</span>
+          <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>
+          <div class="tree-node-actions">
+            <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
+          </div>
+        </div>
+        <div class="tree-children ${isExpanded ? '' : 'collapsed'}">
+          ${renderOrgUserSection(group.id)}
+        </div>
+      </div>`;
     }
 
     function renderClassLevel(bigclassId, byLevel) {
       let html = '';
-      const classes = byLevel['班级'].filter(c => c.parent_id === bigclassId).sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+      const classes = byLevel['班级']
+        .filter(c => c.parent_id === bigclassId && managedOrgIds.has(c.id))
+        .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
       classes.forEach(cls => {
         const classId = `class-${cls.id}`;
         const isExpanded = expandedNodes.has(classId);
-        const classUsers = users.filter(u => u.organization_id === cls.id);
+        const canManage = managedOrgIds.has(cls.id);
         html += `<div class="tree-node">
           <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
             <span class="tree-node-name">${cls.name}</span>
             <span class="tree-node-level">${getTotalUsersCount(cls.id)}人</span>
             <div class="tree-node-actions">
-              <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
+              ${canManage ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${cls.id})">+人员</button>
               <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${cls.id})">编辑</button>
-              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${cls.id})">删除</button>
+              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${cls.id})">删除</button>` : ''}
             </div>
           </div>
           <div class="tree-children ${isExpanded ? '' : 'collapsed'}">
@@ -357,20 +471,22 @@
 
     function renderGroupLevel(classId, byLevel) {
       let html = '';
-      const groups = byLevel['小组'].filter(g => g.parent_id === classId).sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+      const groups = byLevel['小组']
+        .filter(g => g.parent_id === classId && managedOrgIds.has(g.id))
+        .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
       groups.forEach(group => {
         const groupId = `group-${group.id}`;
         const isExpanded = expandedNodes.has(groupId);
-        const groupUsers = users.filter(u => u.organization_id === group.id);
+        const canManage = managedOrgIds.has(group.id);
         html += `<div class="tree-node">
           <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
             <span class="tree-node-name">${group.name}</span>
             <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>
             <div class="tree-node-actions">
-              <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
+              ${canManage ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
               <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${group.id})">编辑</button>
-              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${group.id})">删除</button>
+              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${group.id})">删除</button>` : ''}
             </div>
           </div>
           <div class="tree-children ${isExpanded ? '' : 'collapsed'}">
@@ -608,6 +724,11 @@
             } else {
               showToast('创建账户失败: ' + result.error);
             }
+            return;
+          }
+
+          if (!result.userId) {
+            showToast('创建账户失败: 未返回用户ID，请确认 Edge Function 代码已正确部署');
             return;
           }
 
