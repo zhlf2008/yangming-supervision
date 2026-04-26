@@ -91,6 +91,14 @@
       var orgMap = {};
       (orgs || []).forEach(function(o) { orgMap[o.id] = o.name; });
 
+      // 加载填报人信息
+      var userIds = [...new Set(records.map(function(r) { return r.fill_user_id; }).filter(Boolean))];
+      var userMap = {};
+      if (userIds.length > 0) {
+        var { data: profiles } = await window.db.from('profiles').select('id,name').in('id', userIds);
+        (profiles || []).forEach(function(p) { userMap[p.id] = p.name; });
+      }
+
       document.getElementById('infoCount').textContent = records.length + '条记录';
 
       var html = '';
@@ -113,7 +121,7 @@
           '<span class="record-date">' + dateStr + '</span>' +
           '<span class="record-time">' + timeStr + '</span>' +
           '</div>' +
-          '<div class="record-org">' + orgName + '</div>' +
+          '<div class="record-org">' + (userMap[r.fill_user_id] || '') + ' · ' + orgName + '</div>' +
           '<div class="record-stats">' +
           '<div class="record-stat">上线率<span class="up"> ' + online + '%</span></div>' +
           '<div class="record-stat">作业率<span class="mid"> ' + hw + '%</span></div>' +
