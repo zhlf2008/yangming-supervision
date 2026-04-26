@@ -214,9 +214,12 @@
 
     async function delRecord(id){
       if(!confirm('确定删除？'))return;
-      await window.db.from('attendance_records').delete().eq('id',id);
+      var { error } = await window.db.from('attendance_records').delete().eq('id',id);
+      if(error){ alert('删除失败: '+error.message); return; }
       logAction('删除填报记录','id:'+id);
-      await loadRecords();
+      // 从本地列表移除，避免等待网络重载
+      allRecords = allRecords.filter(function(r){return r.id !== id;});
+      loadRecords();
     }
 
     init();
