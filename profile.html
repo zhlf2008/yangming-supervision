@@ -786,7 +786,7 @@
       }
 
       // 检查是否是管理员，显示设置入口
-      if (profile.role.includes('管理员') {
+      if (profile.role === '管理员') {
         document.getElementById('adminMenuItem').style.display = 'flex';
       }
 
@@ -798,15 +798,15 @@
       // Get user's attendance records count
       let query = window.db.from('attendance_records').select('*', { count: 'exact', head: true });
 
-      if (profile.role.includes('小组督察' || profile.role.includes('小组副督察') {
+      if (profile.role === '小组督察' || profile.role === '小组副督察') {
         query = query.eq('organization_id', profile.organization_id);
-      } else if (profile.role.includes('班级总督察' || profile.role.includes('班级副总督察') {
+      } else if (profile.role === '班级总督察' || profile.role === '班级副总督察') {
         const { data: childOrgs } = await window.db.from('organizations').select('id').or(`id.eq.${profile.organization_id},parent_id.eq.${profile.organization_id}`);
         const orgIds = childOrgs?.map(o => o.id) || [];
         if (orgIds.length > 0) {
           query = query.in('organization_id', orgIds);
         }
-      } else if (profile.role.includes('大班总督' || profile.role.includes('大班副督') {
+      } else if (profile.role === '大班总督' || profile.role === '大班副督') {
         const { data: childOrgs } = await window.db.from('organizations').select('id').or(`parent_id.eq.${profile.organization_id},id.eq.${profile.organization_id}`);
         const orgIds = childOrgs?.map(o => o.id) || [];
         if (orgIds.length > 0) {
@@ -833,12 +833,12 @@
       }
 
       // Count organizations user is responsible for
-      if (profile.role.includes('小组督察' || profile.role.includes('小组副督察') {
+      if (profile.role === '小组督察' || profile.role === '小组副督察') {
         document.getElementById('profileOrgCount').textContent = '1';
-      } else if (profile.role.includes('班级总督察' || profile.role.includes('班级副总督察') {
+      } else if (profile.role === '班级总督察' || profile.role === '班级副总督察') {
         const { data: childGroups } = await window.db.from('organizations').select('id', { count: 'exact' }).eq('parent_id', profile.organization_id);
         document.getElementById('profileOrgCount').textContent = (childGroups?.length || 0) + 1;
-      } else if (profile.role.includes('大班总督' || profile.role.includes('大班副督') {
+      } else if (profile.role === '大班总督' || profile.role === '大班副督') {
         const { data: childOrgs } = await window.db.from('organizations').select('id', { count: 'exact' }).or(`parent_id.eq.${profile.organization_id},id.eq.${profile.organization_id}`);
         document.getElementById('profileOrgCount').textContent = childOrgs?.length || 0;
       } else {

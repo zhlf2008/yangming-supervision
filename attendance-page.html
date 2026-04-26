@@ -711,20 +711,20 @@ document.getElementById('orgSelectorSection').style.display = 'block';
 
       let selectableGroupIds = new Set();
 
-      if (role.includes('小组督察' || role.includes('小组副督察') {
+      if (role === '小组督察' || role === '小组副督察') {
         const myOrg = orgs.find(o => o.id === userOrgId);
         if (myOrg && myOrg.level === '小组') selectableGroupIds.add(myOrg.id);
-      } else if (role.includes('班级总督察' || role.includes('班级副总督察') {
+      } else if (role === '班级总督察' || role === '班级副总督察') {
         if (userOrgId) {
           orgs.filter(o => o.parent_id === userOrgId && o.level === '小组')
             .forEach(g => selectableGroupIds.add(g.id));
         }
-      } else if (role.includes('大班总督' || role.includes('大班副督') {
+      } else if (role === '大班总督' || role === '大班副督') {
         if (userOrgId) {
           getAllChildOrgs(userOrgId, orgs).filter(o => o.level === '小组')
             .forEach(g => selectableGroupIds.add(g.id));
         }
-      } else if (role.includes('管理员' || role.includes('地区督委') {
+      } else if (role === '管理员' || role === '地区督委') {
         orgs.filter(o => o.level === '小组').forEach(g => selectableGroupIds.add(g.id));
       }
 
@@ -787,14 +787,14 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       orgs.filter(o => o.parent_id === parseInt(bigClassId) && o.level === '班级')
         .forEach(c => classIds.add(c.id));
 
-      if (role.includes('班级总督察' || role.includes('班级副总督察') {
+      if (role === '班级总督察' || role === '班级副总督察') {
         if (userOrgId) {
           const userOrg = orgs.find(o => o.id === userOrgId);
           if (userOrg && userOrg.level === '班级' && classIds.has(userOrgId)) {
             classIds = new Set([userOrgId]);
           }
         }
-      } else if (role.includes('小组督察' || role.includes('小组副督察') {
+      } else if (role === '小组督察' || role === '小组副督察') {
         const userGroup = orgs.find(o => o.id === userOrgId);
         if (userGroup && userGroup.level === '小组') {
           const cls = orgs.find(o => o.id === userGroup.parent_id);
@@ -844,7 +844,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       orgs.filter(o => o.parent_id === parseInt(classId) && o.level === '小组')
         .forEach(g => groupIds.add(g.id));
 
-      if (role.includes('小组督察' || role.includes('小组副督察') {
+      if (role === '小组督察' || role === '小组副督察') {
         const userOrg = orgs.find(o => o.id === userOrgId);
         if (userOrg && userOrg.level === '小组' && groupIds.has(userOrgId)) {
           groupIds = new Set([userOrgId]);
