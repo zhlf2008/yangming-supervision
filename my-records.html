@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>我的填报记录 - 阳明心学督察管理系统</title>
+  <style>
+    :root {
+      --bg-primary: #FAFAF8; --bg-card: #FFFFFF; --ink-dark: #2D2D2D; --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A; --vermillion: #E63946; --border: #E8E4DF; --radius: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg-primary); color: var(--ink-dark); min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
+    .page-title { font-family: 'Noto Serif SC', serif; font-size: 18px; font-weight: 600; }
+    .record-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+    .record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .record-date { font-size: 14px; font-weight: 500; }
+    .record-time { font-size: 11px; color: var(--ink-muted); }
+    .record-org { font-size: 12px; color: var(--ink-muted); margin-bottom: 8px; }
+    .record-stats { display: flex; gap: 16px; font-size: 13px; }
+    .record-stat span { font-weight: 600; font-family: 'Noto Serif SC', serif; }
+    .record-stat .up { color: #2E7D32; }
+    .record-stat .mid { color: var(--ink-dark); }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-muted); font-size: 14px; }
+    .info-bar { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+    .info-bar span { font-size: 13px; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--ink-muted); padding: 8px 20px; cursor: pointer; }
+    .nav-item.active { color: var(--vermillion); }
+    .nav-icon { font-size: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <a href="profile.html" class="back-btn">←</a>
+      <h1 class="page-title">我的填报记录</h1>
+    </div>
+    <div class="info-bar">
+      <span id="infoName">加载中...</span>
+      <span id="infoCount" style="color:var(--ink-muted);"></span>
+    </div>
+    <div id="recordList">
+      <div class="empty-state">加载中...</div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">首页</span></a>
+    <a href="attendance-page.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">考勤填报</span></a>
+    <a href="summary-page.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">数据汇总</span></a>
+    <a href="profile.html" class="nav-item active"><span class="nav-icon">👤</span><span class="nav-label">个人中心</span></a>
+  </nav>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    var currentUser = null;
+
+    async function init() {
+      currentUser = checkLogin();
+      if (!currentUser) return;
+      document.getElementById('infoName').textContent = currentUser.name || '';
+      await waitForDb();
+      await loadRecords();
+    }
+
+    async function loadRecords() {
+      var { data: records, error } = await window.db.from('attendance_records')
+        .select('*, schedules(schedule_date)')
+        .eq('fill_user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (error) {
+        document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败</div>';
+        return;
+      }
+      if (!records || records.length === 0) {
+        document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无填报记录</div>';
+        document.getElementById('infoCount').textContent = '0条';
+        return;
+      }
+
+      // 加载组织信息
+      var orgIds = [...new Set(records.map(function(r) { return r.organization_id; }))];
+      var { data: orgs } = await window.db.from('organizations').select('id,name').in('id', orgIds);
+      var orgMap = {};
+      (orgs || []).forEach(function(o) { orgMap[o.id] = o.name; });
+
+      document.getElementById('infoCount').textContent = records.length + '条记录';
+
+      var html = '';
+      records.forEach(function (r) {
+        var fd = r.fill_data || {};
+        var yd = parseInt(fd['应到人数']) || 0;
+        var sd = parseInt(fd['实到人数']) || 0;
+        var yz = parseInt(fd['应做作业人数']) || 0;
+        var zw = parseInt(fd['作业完成人数']) || 0;
+        var sp = parseInt(fd['视频人数']) || 0;
+        var online = yd > 0 ? (sd / yd * 100).toFixed(1) : '0.0';
+        var hw = yz > 0 ? (zw / yz * 100).toFixed(1) : '0.0';
+        var video = sd > 0 ? (sp / sd * 100).toFixed(1) : '0.0';
+        var dateStr = r.schedules ? r.schedules.schedule_date : (r.created_at || '').slice(0, 10);
+        var timeStr = r.created_at ? new Date(r.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) : '';
+        var orgName = orgMap[r.organization_id] || '';
+
+        html += '<div class="record-item">' +
+          '<div class="record-header">' +
+          '<span class="record-date">' + dateStr + '</span>' +
+          '<span class="record-time">' + timeStr + '</span>' +
+          '</div>' +
+          '<div class="record-org">' + orgName + '</div>' +
+          '<div class="record-stats">' +
+          '<div class="record-stat">上线率<span class="up"> ' + online + '%</span></div>' +
+          '<div class="record-stat">作业率<span class="mid"> ' + hw + '%</span></div>' +
+          '<div class="record-stat">视频率<span class="up"> ' + video + '%</span></div>' +
+          '</div>' +
+          '</div>';
+      });
+      document.getElementById('recordList').innerHTML = html;
+    }
+
+    init();
+  </script>
+</body>
+</html>
