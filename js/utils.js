@@ -150,15 +150,14 @@ function sortUsers(users) {
 
 async function logout() {
   try {
-    if (window.supabaseClient) {
+    if (window.supabaseClient && window.supabaseClient.auth) {
       await window.supabaseClient.auth.signOut();
     }
-  } catch (e) {
-    console.error('Sign out error:', e);
-  }
+  } catch (e) {}
   localStorage.removeItem('supabase_session');
   localStorage.removeItem('supabase_user');
-  window.location.href = 'login.html';
+  localStorage.removeItem('currentUser');
+  window.location.replace('login.html');
 }
 
 // ---- adminApi（通过 Edge Function 代理管理员操作） ----
