@@ -777,8 +777,8 @@
     </a>
   </nav>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
+  <script src="js/supabase-config.js"></script>
+<script src="js/utils.js"></script>
 <script>
     async function init() {
       await waitForDb();
@@ -959,7 +959,6 @@
 
         console.log('[saveProfileInfo] profile:', profile);
         console.log('[saveProfileInfo] userId:', userId);
-        console.log('[saveProfileInfo] window.supabaseAdmin:', window.supabaseAdmin);
 
         // 比较原始值（profile.phone 可能是 null vs 空字符串）
         const originalPhone = profile.phone || '';
@@ -977,25 +976,12 @@
         // 如果手机号变化，先更新 auth.users（登录凭证）
         if (phoneChanged || name !== profile.name) {
           console.log('[saveProfileInfo] updating auth.users');
-          if (!window.supabaseAdmin) {
-            console.error('[saveProfileInfo] supabaseAdmin not initialized!');
-            showToast('系统错误：admin 客户端未初始化', 'error');
-            saveBtn.disabled = false;
-            saveBtn.textContent = '保存';
-            return;
-          }
           const newEmail = `p${phone}@supabase.io`;
           console.log('[saveProfileInfo] newEmail:', newEmail);
-          const { error: authError } = await window.supabaseAdmin.auth.admin.updateUserById(userId, {
-            email: newEmail,
-            data: {
-              name: name,
-              phone: phone
-            }
-          });
-          console.log('[saveProfileInfo] authError:', authError);
-          if (authError) {
-            showToast('更新登录信息失败：' + authError.message, 'error');
+          const result = await adminApi.updateUser(userId, { email: newEmail, name: name, phone: phone });
+          console.log('[saveProfileInfo] adminApi updateUser result:', result);
+          if (result.error) {
+            showToast('更新登录信息失败：' + result.error, 'error');
             saveBtn.disabled = false;
             saveBtn.textContent = '保存';
             return;
@@ -1146,24 +1132,6 @@
 
     function showAbout() {
       alert('阳明心学督察管理系统\n版本：v1.0.0\n\n基于阳明心学教育理念\n打造智能化督察管理体系');
-    }
-
-    async function logout() {
-      if (confirm('确定要退出登录吗？')) {
-        // Clear localStorage
-        localStorage.removeItem('supabase_session');
-        localStorage.removeItem('supabase_user');
-        localStorage.removeItem('currentUser');
-
-        // Sign out from Supabase
-        try {
-          const { error } = await window.supabaseClient.auth.signOut();
-        } catch (e) {
-          console.error('Sign out error:', e);
-        }
-
-        window.location.href = 'login.html';
-      }
     }
 
     init();

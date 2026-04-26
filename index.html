@@ -449,8 +449,8 @@
     </a>
   </nav>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
+  <script src="js/supabase-config.js"></script>
+<script src="js/utils.js"></script>
 <script>
     // Wait for Supabase db to be ready
     async function init() {
@@ -548,22 +548,13 @@
         orgs.forEach(o => orgsMap[o.id] = o);
       } catch (e) { console.error(e); }
 
-      // Get all groups under an org (recursive)
-      function getAllGroups(orgId) {
-        const directChildren = Object.values(orgsMap).filter(o => o.parent_id === orgId);
-        let groups = directChildren.filter(o => o.level === '小组');
-        const childOrgs = directChildren.filter(o => o.level !== '小组');
-        childOrgs.forEach(co => { groups = groups.concat(getAllGroups(co.id)); });
-        return groups;
-      }
-
       let accessibleGroupIds = [];
       if (role === '小组督察' || role === '小组副督察') {
         accessibleGroupIds = [userOrgId];
       } else if (role === '班级总督察' || role === '班级副总督察') {
-        accessibleGroupIds = getAllGroups(userOrgId).map(g => g.id);
+        accessibleGroupIds = getAllGroups(userOrgId, Object.values(orgsMap)).map(g => g.id);
       } else if (role === '大班总督' || role === '大班副督') {
-        accessibleGroupIds = getAllGroups(userOrgId).map(g => g.id);
+        accessibleGroupIds = getAllGroups(userOrgId, Object.values(orgsMap)).map(g => g.id);
       } else {
         accessibleGroupIds = Object.values(orgsMap).filter(o => o.level === '小组').map(o => o.id);
       }

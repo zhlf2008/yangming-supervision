@@ -195,6 +195,7 @@
   <div id="toast" class="toast"></div>
 
   <script src="js/supabase-config.js"></script>
+<script src="js/utils.js"></script>
   <script>
 
     let organizations = [];
@@ -486,7 +487,7 @@
       const orgId = defaultOrgId;
       if (orgId) {
         document.getElementById('userOrgId').value = orgId;
-        const path = buildOrgPath(orgId);
+        const path = buildOrgPath(orgId, organizations);
         document.getElementById('userOrgDisplay').textContent = path;
         // 根据组织层级过滤角色
         const org = organizations.find(o => o.id === orgId);
@@ -510,7 +511,7 @@
       document.getElementById('userModalTitle').textContent = '编辑人员';
       if (user.organization_id) {
         const org = organizations.find(o => o.id === user.organization_id);
-        document.getElementById('userOrgDisplay').textContent = buildOrgPath(user.organization_id);
+        document.getElementById('userOrgDisplay').textContent = buildOrgPath(user.organization_id, organizations);
         document.getElementById('userOrgId').value = user.organization_id;
         // 根据组织层级过滤角色，并默认选中用户当前角色
         filterRolesByOrgLevel(org?.level, user.role);
@@ -569,18 +570,7 @@
       }
     }
 
-    function buildOrgPath(orgId) {
-      const org = organizations.find(o => o.id === orgId);
-      if (!org) return '';
-      const parts = [org.name];
-      let pid = org.parent_id;
-      while (pid) {
-        const parent = organizations.find(o => o.id === pid);
-        if (parent) { parts.unshift(parent.name); pid = parent.parent_id; }
-        else break;
-      }
-      return parts.join(' - ');
-    }
+    // 构建组织的完整路径名称 -- now in utils.js
 
     async function saveUser() {
       const id = document.getElementById('userId').value;
@@ -646,11 +636,6 @@
       else { showToast('删除成功'); await loadUsers(); }
     }
 
-    async function waitForDb() {
-      while (!window.db) await new Promise(r => setTimeout(r, 100));
-    }
-
     waitForDb().then(init);
-  </script>
 </body>
 </html>

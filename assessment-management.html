@@ -140,6 +140,7 @@
   <div id="toast" class="toast"></div>
 
   <script src="js/supabase-config.js"></script>
+<script src="js/utils.js"></script>
   <script>
     let assessmentTypes = [];
     let editingType = null;
@@ -310,10 +311,6 @@
       const { error } = await window.db.from('assessment_types').delete().eq('id', id);
       if (error) showToast('删除失败');
       else { showToast('删除成功'); await loadAssessmentTypes(); }
-    }
-
-    async function waitForDb() {
-      while (!window.db) await new Promise(r => setTimeout(r, 100));
     }
 
     waitForDb().then(init);

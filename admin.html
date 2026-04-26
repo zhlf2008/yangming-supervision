@@ -646,8 +646,8 @@
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
+<script src="js/utils.js"></script>
   <script>
     // 直接使用 window.db，在 waitForDb 后保证已初始化
 
@@ -659,13 +659,7 @@
     let editingOrg = null;
     let editingUser = null;
 
-    // Toast提示
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
-    }
+    // Toast提示 -- now in utils.js
 
     // Tab切换
     // 初始化
@@ -765,19 +759,7 @@
       container.innerHTML = html;
     }
 
-    // 构建组织的完整路径名称
-    function buildOrgPath(orgId) {
-      const org = organizations.find(o => o.id === orgId);
-      if (!org) return '';
-      const parts = [org.name];
-      let pid = org.parent_id;
-      while (pid) {
-        const parent = organizations.find(o => o.id === pid);
-        if (parent) { parts.unshift(parent.name); pid = parent.parent_id; }
-        else break;
-      }
-      return parts.join(' - ');
-    }
+    // 构建组织的完整路径名称 -- now in utils.js
 
     // 获取某个组织下所有子组织（递归）
     function getChildOrgIds(orgId, level) {
@@ -1110,7 +1092,7 @@
         const org = organizations.find(o => o.id === defaultOrgId);
         if (org) {
           // Build full path name
-          const path = buildOrgPath(defaultOrgId);
+          const path = buildOrgPath(defaultOrgId, organizations);
           const display = document.querySelector('#userOrgCascader .cascader-display');
           display.innerHTML = `<span class="cascader-tag">${path}<span class="cascader-tag-remove" onclick="event.stopPropagation(); clearUserOrgCascader()">×</span></span>`;
           display.classList.remove('placeholder');
@@ -1319,11 +1301,10 @@
       if (!confirm('确定删除该人员？删除后无法恢复。')) return;
 
       try {
-        // 1. 先删除 auth.users（需要 service_role key）
-        const { error: authError } = await window.supabaseAdmin.auth.admin.deleteUser(id);
-        if (authError) {
-          console.error('Auth deletion error:', authError);
-          // 继续尝试删除 profiles，因为 auth.users 可能已经不存在
+        // 1. 通过 Edge Function 删除 auth.users
+        var result = await adminApi.deleteUser(id);
+        if (result.error) {
+          console.error('Auth deletion error:', result.error);
         }
 
         // 2. 删除 profiles 表记录

@@ -717,19 +717,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       await loadTodaySchedule();
     }
 
-    // Build full path name for an organization: 大班-班级-小组
-    function buildOrgPath(orgId, orgs) {
-      const org = orgs.find(o => o.id === orgId);
-      if (!org) return '';
-      const parts = [org.name];
-      let pid = org.parent_id;
-      while (pid) {
-        const parent = orgs.find(o => o.id === pid);
-        if (parent) { parts.unshift(parent.name); pid = parent.parent_id; }
-        else break;
-      }
-      return parts.join(' - ');
-    }
+    // Build full path name for an organization: 大班-班级-小组 -- now in utils.js
 
     // Load organization selector (three-level cascade)
     function loadOrgSelector(orgs) {
@@ -905,16 +893,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       await loadTodaySchedule(groupId);
     }
 
-    // Get all child organizations recursively
-    function getAllChildOrgs(parentId, orgs) {
-      const children = orgs.filter(o => o.parent_id === parentId);
-      let result = [];
-      children.forEach(c => {
-        result.push(c);
-        result = result.concat(getAllChildOrgs(c.id, orgs));
-      });
-      return result;
-    }
+    // Get all child organizations recursively -- now in utils.js
 
     async function loadTodaySchedule(selectedGroupId) {
       if (!currentSemester) {
@@ -1339,7 +1318,8 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         created_at: new Date().toISOString()
       };
 
-      const { error } = await window.db.from('attendance_records').insert(submission);
+      // upsert 防止重复提交（同小组同一天只保留最新记录）
+      const { error } = await window.db.from('attendance_records').upsert(submission, { onConflict: 'schedule_id, organization_id' });
 
       if (error) {
         showToast('提交失败: ' + error.message);
