@@ -12,10 +12,12 @@
     .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
     .page-title { font-size: 18px; font-weight: 600; }
-    .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
-    .filter-bar input { flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-card); }
-    .filter-bar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-card); }
-    .filter-bar button { padding: 6px 12px; border: none; border-radius: 6px; background: var(--vermillion); color: #fff; font-size: 12px; cursor: pointer; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .input-group { flex: 1; }
+    .input-label { display: block; font-size: 11px; color: var(--ink-muted); margin-bottom: 3px; }
+    .period-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .period-tab { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-card); cursor: pointer; text-align: center; }
+    .period-tab.active { background: var(--vermillion); color: #fff; border-color: var(--vermillion); }
     .record-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; position: relative; }
     .record-header { display: flex; justify-content: space-between; margin-bottom: 4px; padding-right: 42px; }
     .record-user { font-size: 14px; font-weight: 500; }
@@ -37,11 +39,32 @@
       <a href="index.html" class="back-btn">←</a>
       <h1 class="page-title">数据管理</h1>
     </div>
-    <div class="filter-bar">
-      <input type="date" id="dateFilter" onchange="loadRecords()" style="width:130px;">
-      <button onclick="loadRecords()">刷新</button>
+    <div class="period-tabs">
+      <button class="period-tab active" onclick="switchPeriod('all',this)">全部</button>
+      <button class="period-tab" onclick="switchPeriod('week',this)">本周</button>
+      <button class="period-tab" onclick="switchPeriod('lastWeek',this)">上周</button>
+      <button class="period-tab" onclick="switchPeriod('month',this)">本月</button>
     </div>
-    <div id="dateTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">大班</label>
+        <select id="bigClassSelect" onchange="onOrgFilterChange()" style="width:100%;padding:5px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);">
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">班级</label>
+        <select id="classSelect" onchange="onOrgFilterChange()" style="width:100%;padding:5px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);">
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">小组</label>
+        <select id="groupSelect" onchange="onOrgFilterChange()" style="width:100%;padding:5px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);">
+          <option value="">全部</option>
+        </select>
+      </div>
+    </div>
     <div id="recordList"><div class="empty-state">加载中...</div></div>
   </div>
   <nav class="bottom-nav">
@@ -53,109 +76,143 @@
   <script src="js/supabase-config.js"></script>
   <script src="js/utils.js"></script>
   <script>
-    var records = [];
+    var allRecords = [];
+    var orgsList = [];
+    var currentPeriod = 'all';
 
     async function init() {
       var user = checkLogin();
       if (!user) return;
       if (user.role !== '管理员' && user.role !== '地区督委') { alert('无权访问'); window.location.href = 'index.html'; return; }
       await waitForDb();
-      document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+
+      // 加载组织数据（用于级联）
+      var { data: orgs } = await window.db.from('organizations').select('*');
+      orgsList = orgs || [];
+      var bigClasses = orgsList.filter(function(o){return o.level==='大班';});
+      document.getElementById('bigClassSelect').innerHTML = '<option value="">全部</option>'+
+        bigClasses.map(function(b){return '<option value="'+b.id+'">'+b.name+'</option>';}).join('');
+
       await loadRecords();
     }
 
+    function onOrgFilterChange() {
+      var bigId = document.getElementById('bigClassSelect').value;
+      var classSelect = document.getElementById('classSelect');
+      var groupSelect = document.getElementById('groupSelect');
+      
+      if (!bigId) { classSelect.innerHTML = '<option value="">全部</option>'; groupSelect.innerHTML = '<option value="">全部</option>'; loadRecords(); return; }
+
+      var classes = orgsList.filter(function(o){return o.parent_id===parseInt(bigId)&&o.level==='班级';});
+      classSelect.innerHTML = '<option value="">全部</option>'+
+        classes.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
+
+      var classId = classSelect.value;
+      if (!classId) { groupSelect.innerHTML = '<option value="">全部</option>'; loadRecords(); return; }
+
+      var groups = orgsList.filter(function(o){return o.parent_id===parseInt(classId)&&o.level==='小组';});
+      groupSelect.innerHTML = '<option value="">全部</option>'+
+        groups.map(function(g){return '<option value="'+g.id+'">'+g.name+'</option>';}).join('');
+
+      loadRecords();
+    }
+
+    function switchPeriod(period, el) {
+      currentPeriod = period;
+      document.querySelectorAll('.period-tab').forEach(function(t){t.classList.remove('active');});
+      el.classList.add('active');
+      loadRecords();
+    }
+
     async function loadRecords() {
-      var date = document.getElementById('dateFilter').value;
       var { data, error } = await window.db.from('attendance_records')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(500);
+      if (error) { document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败</div>'; return; }
+      allRecords = data || [];
 
-      if (error) { document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败: ' + error.message + '</div>'; return; }
-      records = data || [];
-
-      // 按日期筛选
-      if (date) {
-        var { data: scheds } = await window.db.from('schedules').select('id').eq('schedule_date', date);
-        var schedIds = (scheds || []).map(function(s){return s.id;});
-        records = records.filter(function(r){return schedIds.indexOf(r.schedule_id) !== -1;});
+      // 按周次过滤
+      if (currentPeriod !== 'all') {
+        var range = getPeriodRange(currentPeriod);
+        if (range) {
+          var { data: scheds } = await window.db.from('schedules')
+            .select('id').gte('schedule_date', range.start).lte('schedule_date', range.end);
+          var schedIds = (scheds||[]).map(function(s){return s.id;});
+          allRecords = allRecords.filter(function(r){return schedIds.indexOf(r.schedule_id)!==-1;});
+        }
       }
 
-      if (records.length === 0) { document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无记录</div>'; return; }
+      // 按组织过滤
+      var groupId = document.getElementById('groupSelect').value;
+      var classId = !groupId ? document.getElementById('classSelect').value : null;
+      var bigClassId = !groupId && !classId ? document.getElementById('bigClassSelect').value : null;
 
-      // 查关联数据
-      var userIds = [...new Set(records.map(function(r){return r.fill_user_id;}).filter(Boolean))];
-      var orgIds = [...new Set(records.map(function(r){return r.organization_id;}))];
-      var scheduleIds = [...new Set(records.map(function(r){return r.schedule_id;}))];
+      if (groupId) {
+        allRecords = allRecords.filter(function(r){return r.organization_id===parseInt(groupId);});
+      } else if (classId) {
+        var grpIds = orgsList.filter(function(o){return o.parent_id===parseInt(classId)&&o.level==='小组';}).map(function(g){return g.id;});
+        allRecords = allRecords.filter(function(r){return grpIds.indexOf(r.organization_id)!==-1;});
+      } else if (bigClassId) {
+        var allChildGrps = getAllGroups(parseInt(bigClassId), orgsList).filter(function(o){return o.level==='小组';}).map(function(g){return g.id;});
+        allRecords = allRecords.filter(function(r){return allChildGrps.indexOf(r.organization_id)!==-1;});
+      }
 
+      if (allRecords.length === 0) { document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无匹配记录</div>'; return; }
+
+      var userIds = [...new Set(allRecords.map(function(r){return r.fill_user_id;}).filter(Boolean))];
+      var orgIds = [...new Set(allRecords.map(function(r){return r.organization_id;}))];
+      var scheduleIds = [...new Set(allRecords.map(function(r){return r.schedule_id;}))];
       var [{data:profiles},{data:orgs},{data:schedules}] = await Promise.all([
-        userIds.length > 0 ? window.db.from('profiles').select('id,name').in('id', userIds) : Promise.resolve({data:[]}),
-        window.db.from('organizations').select('id,name').in('id', orgIds),
-        window.db.from('schedules').select('id,schedule_date').in('id', scheduleIds)
+        userIds.length>0?window.db.from('profiles').select('id,name').in('id',userIds):Promise.resolve({data:[]}),
+        window.db.from('organizations').select('id,name').in('id',orgIds),
+        window.db.from('schedules').select('id,schedule_date').in('id',scheduleIds)
       ]);
-      var userMap = {}; (profiles||[]).forEach(function(p){userMap[p.id]=p.name;});
-      var orgMap = {}; (orgs||[]).forEach(function(o){orgMap[o.id]=o.name;});
-      var dateMap = {}; (schedules||[]).forEach(function(s){dateMap[s.id]=s.schedule_date;});
+      var userMap={}; (profiles||[]).forEach(function(p){userMap[p.id]=p.name;});
+      var orgMap={}; (orgs||[]).forEach(function(o){orgMap[o.id]=o.name;});
+      var dateMap={}; (schedules||[]).forEach(function(s){dateMap[s.id]=s.schedule_date;});
 
-      renderList(userMap, orgMap, dateMap);
-      loadDateTags();
-    }
-
-    function loadDateTags() {
-      // 获取所有有记录的日期，按倒序排列
-      var dates = [...new Set(records.map(function(r){
-        return (r.created_at||'').slice(0,10);
-      }))].sort().reverse();
-
-      if (dates.length === 0) {
-        document.getElementById('dateTags').innerHTML = '';
-        return;
-      }
-
-      var currentDate = new Date().toISOString().split('T')[0];
-      var html = '';
-      dates.forEach(function(d) {
-        var isToday = d === currentDate;
-        var style = isToday ? 'background:var(--vermillion);color:#fff;border-color:var(--vermillion);' : 'background:var(--bg-card);';
-        html += '<span onclick="filterByDate(\''+d+'\')" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);font-size:11px;cursor:pointer;'+style+'">'+
-          d.slice(5) + (isToday?' 今天':'') + '</span>';
-      });
-      document.getElementById('dateTags').innerHTML = html;
-    }
-
-    function filterByDate(date) {
-      document.getElementById('dateFilter').value = date;
-      loadRecords();
-    }
-
-    function renderList(userMap, orgMap, dateMap) {
-      var html = '';
-      records.forEach(function(r) {
-        var fd = r.fill_data || {};
-        var yd = parseInt(fd['应到人数'])||0, sd = parseInt(fd['实到人数'])||0;
-        var yz = parseInt(fd['应做作业人数'])||0, zw = parseInt(fd['作业完成人数'])||0, sp = parseInt(fd['视频人数'])||0;
-        var online = yd>0?(sd/yd*100).toFixed(1):'0.0';
-        var hw = yz>0?(zw/yz*100).toFixed(1):'0.0';
-        var video = sd>0?(sp/sd*100).toFixed(1):'0.0';
-        var dateStr = dateMap[r.schedule_id]||(r.created_at||'').slice(0,10);
-        var timeStr = r.created_at?new Date(r.created_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}):'';
-        html += '<div class="record-item">'+
+      var html='';
+      allRecords.forEach(function(r){
+        var fd=r.fill_data||{};
+        var yd=parseInt(fd['应到人数'])||0,sd=parseInt(fd['实到人数'])||0;
+        var yz=parseInt(fd['应做作业人数'])||0,zw=parseInt(fd['作业完成人数'])||0,sp=parseInt(fd['视频人数'])||0;
+        var online=yd>0?(sd/yd*100).toFixed(1):'0.0',hw=yz>0?(zw/yz*100).toFixed(1):'0.0',video=sd>0?(sp/sd*100).toFixed(1):'0.0';
+        var dateStr=dateMap[r.schedule_id]||(r.created_at||'').slice(0,10);
+        var timeStr=r.created_at?new Date(r.created_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}):'';
+        html+='<div class="record-item">'+
           '<span class="record-del" onclick="delRecord('+r.id+')">删除</span>'+
           '<div class="record-header"><span class="record-user">'+(userMap[r.fill_user_id]||'')+'</span><span class="record-date">'+dateStr+' '+timeStr+'</span></div>'+
           '<div class="record-org">'+(orgMap[r.organization_id]||'')+'</div>'+
-          '<div class="record-stats">'+
-          '<div class="record-stat">上线 '+online+'%</div>'+
-          '<div class="record-stat">作业 '+hw+'%</div>'+
-          '<div class="record-stat">视频 '+video+'%</div>'+
-          '</div></div>';
+          '<div class="record-stats"><div class="record-stat">上线 '+online+'%</div><div class="record-stat">作业 '+hw+'%</div><div class="record-stat">视频 '+video+'%</div></div></div>';
       });
-      document.getElementById('recordList').innerHTML = html;
+      document.getElementById('recordList').innerHTML=html;
     }
 
-    async function delRecord(id) {
-      if (!confirm('确定删除？')) return;
-      await window.db.from('attendance_records').delete().eq('id', id);
-      logAction('删除填报记录', 'id:'+id);
+    function getPeriodRange(period) {
+      var now=new Date(),today=now.toISOString().split('T')[0];
+      if (period==='week'){
+        var dow=now.getDay(),monOff=dow===0?-6:1-dow;
+        var mon=new Date(now);mon.setDate(now.getDate()+monOff);
+        return {start:mon.toISOString().split('T')[0],end:today};
+      }
+      if (period==='lastWeek'){
+        var dow2=now.getDay(),lmOff=dow2===0?-13:-6-dow2,lsOff=dow2===0?-7:-dow2;
+        var lm=new Date(now);lm.setDate(now.getDate()+lmOff);
+        var ls=new Date(now);ls.setDate(now.getDate()+lsOff);
+        return {start:lm.toISOString().split('T')[0],end:ls.toISOString().split('T')[0]};
+      }
+      if (period==='month'){
+        var ms=new Date(now.getFullYear(),now.getMonth(),1);
+        return {start:ms.toISOString().split('T')[0],end:today};
+      }
+      return null;
+    }
+
+    async function delRecord(id){
+      if(!confirm('确定删除？'))return;
+      await window.db.from('attendance_records').delete().eq('id',id);
+      logAction('删除填报记录','id:'+id);
       await loadRecords();
     }
 
