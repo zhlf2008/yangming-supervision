@@ -268,7 +268,11 @@
 
     async function generateSchedules() {
       if (!currentSemester) return;
-      if (!confirm('将根据学期日期范围自动生成每日日程，确定继续？')) return;
+      var hasExisting = schedules && schedules.length > 0;
+      var msg = hasExisting
+        ? '已有 ' + schedules.length + ' 天日程，重新生成将覆盖已有配置（含手动调整），确定继续？'
+        : '将根据学期日期范围自动生成每日日程，确定继续？';
+      if (!confirm(msg)) return;
       var start = new Date(currentSemester.start_date);
       var end = new Date(currentSemester.end_date);
       var trialStart = currentSemester.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
