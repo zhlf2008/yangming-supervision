@@ -80,38 +80,52 @@
 
     .header-title {
       font-family: 'Noto Serif SC', serif;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 600;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       color: var(--ink-dark);
-      text-align: center;
     }
 
-    .header-info-grid {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      column-gap: 12px;
-      row-gap: 8px;
+    .header-body {
+      display: flex;
+      gap: 16px;
     }
 
-    .info-item {
-      display: contents;
+    .header-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .info-label {
-      font-size: 13px;
+    .header-col + .header-col {
+      border-left: 1px solid var(--border);
+      padding-left: 16px;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .header-label {
+      font-size: 12px;
       color: var(--ink-muted);
-      white-space: nowrap;
+      width: 42px;
+      flex-shrink: 0;
     }
 
-    .info-value {
+    .header-value {
       font-size: 13px;
       font-weight: 500;
       color: var(--ink-dark);
-      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .meta-value.date {
+    .header-value.date {
       font-family: 'Noto Serif SC', serif;
     }
 
@@ -530,13 +544,17 @@
     <!-- Header Info -->
     <div class="header-card">
       <div class="header-title" id="semesterName">加载中...</div>
-      <div class="header-info-grid">
-        <span class="info-label">日期</span><span class="info-value meta-value date" id="currentDate">--</span>
-        <span class="info-label">大班</span><span class="info-value" id="bigClassName">--</span>
-        <span class="info-label">星期</span><span class="info-value" id="currentWeekday">--</span>
-        <span class="info-label">班级</span><span class="info-value" id="className">--</span>
-        <span class="info-label">填报人</span><span class="info-value" id="reporterName">--</span>
-        <span class="info-label">小组</span><span class="info-value" id="groupName">--</span>
+      <div class="header-body">
+        <div class="header-col">
+          <div class="header-row"><span class="header-label">日期</span><span class="header-value date" id="currentDate">--</span></div>
+          <div class="header-row"><span class="header-label">星期</span><span class="header-value" id="currentWeekday">--</span></div>
+          <div class="header-row"><span class="header-label">填报人</span><span class="header-value" id="reporterName">--</span></div>
+        </div>
+        <div class="header-col">
+          <div class="header-row"><span class="header-label">大班</span><span class="header-value" id="bigClassName">--</span></div>
+          <div class="header-row"><span class="header-label">班级</span><span class="header-value" id="className">--</span></div>
+          <div class="header-row"><span class="header-label">小组</span><span class="header-value" id="groupName">--</span></div>
+        </div>
       </div>
     </div>
 
