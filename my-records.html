@@ -67,21 +67,24 @@
     }
 
     async function loadRecords() {
+      // 先查记录
       var { data: records, error } = await window.db.from('attendance_records')
-        .select('*, schedules(schedule_date)')
+        .select('*')
         .eq('fill_user_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (error) {
-        document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败</div>';
-        return;
-      }
-      if (!records || records.length === 0) {
+      if (error || !records || records.length === 0) {
         document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无填报记录</div>';
         document.getElementById('infoCount').textContent = '0条';
         return;
       }
+
+      // 查日程日期
+      var scheduleIds = [...new Set(records.map(function(r) { return r.schedule_id; }))];
+      var { data: schedules } = await window.db.from('schedules').select('id,schedule_date').in('id', scheduleIds);
+      var dateMap = {};
+      (schedules || []).forEach(function(s) { dateMap[s.id] = s.schedule_date; });
 
       // 加载组织信息
       var orgIds = [...new Set(records.map(function(r) { return r.organization_id; }))];
@@ -102,7 +105,7 @@
         var online = yd > 0 ? (sd / yd * 100).toFixed(1) : '0.0';
         var hw = yz > 0 ? (zw / yz * 100).toFixed(1) : '0.0';
         var video = sd > 0 ? (sp / sd * 100).toFixed(1) : '0.0';
-        var dateStr = r.schedules ? r.schedules.schedule_date : (r.created_at || '').slice(0, 10);
+        var dateStr = dateMap[r.schedule_id] || (r.created_at || '').slice(0, 10);
         var timeStr = r.created_at ? new Date(r.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) : '';
         var orgName = orgMap[r.organization_id] || '';
 
