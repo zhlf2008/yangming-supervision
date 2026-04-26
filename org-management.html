@@ -698,9 +698,46 @@
         { value: '小组督察', label: '小组督察' },
         { value: '小组副督察', label: '小组副督察' }
       ];
+      const roles = filterRolesByCurrentUser(allRoles);
       const select = document.getElementById('userRole');
-      select.innerHTML = allRoles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
+      select.innerHTML = roles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
       if (defaultRole) select.value = defaultRole;
+    }
+
+    function filterRolesByOrgLevel(level, defaultRole) {
+      const roleMap = {
+        '大班': [
+          { value: '大班总督', label: '大班总督' },
+          { value: '大班副督', label: '大班副督' }
+        ],
+        '班级': [
+          { value: '班级总督察', label: '班级总督察' },
+          { value: '班级副总督察', label: '班级副总督察' }
+        ],
+        '小组': [
+          { value: '小组督察', label: '小组督察' },
+          { value: '小组副督察', label: '小组副督察' }
+        ]
+      };
+      var roles = roleMap[level] || [];
+      roles = filterRolesByCurrentUser(roles);
+      const select = document.getElementById('userRole');
+      select.innerHTML = roles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
+      if (defaultRole && roles.some(r => r.value === defaultRole)) {
+        select.value = defaultRole;
+      } else if (roles.length > 0) {
+        select.value = roles[0].value;
+      }
+    }
+
+    // 过滤角色：只显示不高于当前登录用户级别的角色
+    function filterRolesByCurrentUser(roles) {
+      var myRoleIdx = ROLE_HIERARCHY.indexOf(currentUser.role);
+      if (myRoleIdx === -1) myRoleIdx = ROLE_HIERARCHY.length;
+      return roles.filter(function (r) {
+        var idx = ROLE_HIERARCHY.indexOf(r.value);
+        return idx === -1 || idx >= myRoleIdx;
+      });
     }
 
     function filterRolesByOrgLevel(level, defaultRole) {
