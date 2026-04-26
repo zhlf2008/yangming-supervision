@@ -610,16 +610,17 @@
       if (id) { const { error: e } = await window.db.from('organizations').update(data).eq('id', id); error = e; }
       else { const { error: e } = await window.db.from('organizations').insert(data); error = e; }
       if (error) showToast('保存失败: ' + error.message);
-      else { showToast('保存成功'); closeOrgModal(); await loadOrganizations(); }
+      else { showToast('保存成功'); logAction('组织修改', name); closeOrgModal(); await loadOrganizations(); }
     }
 
     async function deleteOrg(id) {
       if (!confirm('确定删除？')) return;
       const hasChildren = organizations.some(o => o.parent_id === id);
       if (hasChildren) { showToast('请先删除下级组织'); return; }
+      const orgName = (organizations.find(o => o.id === id) || {}).name || '';
       const { error } = await window.db.from('organizations').delete().eq('id', id);
       if (error) showToast('删除失败');
-      else { showToast('删除成功'); await loadOrganizations(); }
+      else { showToast('删除成功'); logAction('删除组织', orgName + ' id:' + id); await loadOrganizations(); }
     }
 
     // User modal - first arg (parentOrgId) is deprecated, use second arg for defaultOrgId
@@ -785,7 +786,7 @@
         const data = { name, phone, role, organization_id: orgId };
         const { error } = await window.db.from('profiles').update(data).eq('id', id);
         if (error) showToast('保存失败: ' + error.message);
-        else { showToast('保存成功'); closeUserModal(); await loadUsers(); }
+        else { showToast('保存成功'); logAction('编辑人员', phone + ' ' + name + ' ' + role); closeUserModal(); await loadUsers(); }
         return;
       }
 
@@ -819,6 +820,7 @@
             showToast('创建档案失败，但账户已创建');
           } else {
             showToast('添加成功！初始密码：' + password);
+            logAction('添加人员', phone + ' ' + name + ' ' + role);
           }
         } catch (e) {
           showToast('添加失败: ' + e.message);
@@ -831,6 +833,8 @@
 
     async function deleteUser(id) {
       if (!confirm('确定删除？')) return;
+      var userInfo = users.find(u => u.id === id);
+      var userName = userInfo ? (userInfo.name + ' ' + userInfo.phone) : id;
       // 1. 尝试删除 auth.users（不阻塞，如果不存在忽略）
       try {
         var authResult = await adminApi.deleteUser(id);
@@ -841,7 +845,7 @@
       // 2. 删除 profiles 记录
       const { error } = await window.db.from('profiles').delete().eq('id', id);
       if (error) showToast('删除失败');
-      else { showToast('删除成功'); await loadUsers(); }
+      else { showToast('删除成功'); logAction('删除人员', userName); await loadUsers(); }
     }
 
     waitForDb().then(init);

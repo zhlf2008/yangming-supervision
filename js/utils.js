@@ -192,7 +192,23 @@ var adminApi = {
   }
 };
 
-// ---- 检查登录状态 ----
+// ---- 操作日志 ----
+
+function logAction(action, target, detail) {
+  var user = getCurrentUser();
+  if (!user || !window.db) return;
+  var entry = {
+    user_id: user.id,
+    user_name: user.name || '',
+    action: action,
+    target: target || '',
+    detail: detail || ''
+  };
+  // 异步写入，不阻塞主流程
+  try {
+    return window.db.from('audit_logs').insert(entry);
+  } catch (e) { /* silent */ }
+}
 
 function checkLogin() {
   var userData = localStorage.getItem('supabase_user');

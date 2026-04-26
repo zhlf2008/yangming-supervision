@@ -1325,6 +1325,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         console.error('Submit error:', error);
       } else {
         showToast('提交成功！');
+        logAction('考勤提交', selectedOrg.name + ' - ' + (currentSemester?.semester_name || ''), '上线率:' + onlineCalc + ', 作业率:' + hwCalc);
         ['yingdao','shidao','qingjia','shipin','yingzuo','zuowan'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';

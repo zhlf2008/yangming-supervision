@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>操作日志 - 阳明心学督察管理系统</title>
+  <style>
+    :root {
+      --bg-primary: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --ink-dark: #2D2D2D;
+      --ink-light: #5C5C5C;
+      --ink-muted: #8A8A8A;
+      --vermillion: #E63946;
+      --border: #E8E4DF;
+      --radius: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg-primary); color: var(--ink-dark); min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
+    .page-title { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 600; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .filter-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); font-size: 12px; cursor: pointer; color: var(--ink-muted); }
+    .filter-btn.active { background: var(--vermillion); color: #fff; border-color: var(--vermillion); }
+    .log-list { display: flex; flex-direction: column; gap: 8px; }
+    .log-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .log-action { font-size: 13px; font-weight: 500; }
+    .log-time { font-size: 11px; color: var(--ink-muted); }
+    .log-user { font-size: 12px; color: var(--ink-light); }
+    .log-detail { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+    .log-action.考勤提交 { color: #2E7D32; }
+    .log-action.添加人员 { color: #1565C0; }
+    .log-action.编辑人员 { color: #1565C0; }
+    .log-action.删除人员 { color: var(--vermillion); }
+    .log-action.组织修改 { color: #EF6C00; }
+    .log-action.删除组织 { color: var(--vermillion); }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-muted); }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--ink-muted); padding: 8px 20px; cursor: pointer; }
+    .nav-item.active { color: var(--vermillion); }
+    .nav-icon { font-size: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <a href="index.html" class="back-btn">←</a>
+      <h1 class="page-title">操作日志</h1>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterLogs('all', this)">全部</button>
+      <button class="filter-btn" onclick="filterLogs('考勤提交', this)">考勤</button>
+      <button class="filter-btn" onclick="filterLogs('添加人员', this)">人员</button>
+      <button class="filter-btn" onclick="filterLogs('组织修改', this)">组织</button>
+    </div>
+    <div id="logList" class="log-list">
+      <div class="empty-state">加载中...</div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">首页</span></a>
+    <a href="attendance-page.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">考勤填报</span></a>
+    <a href="summary-page.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">数据汇总</span></a>
+    <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">个人中心</span></a>
+  </nav>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    var currentFilter = 'all';
+    var allLogs = [];
+
+    async function init() {
+      var user = checkLogin();
+      if (!user) return;
+      if (user.role !== '管理员' && user.role !== '地区督委') {
+        alert('无权访问');
+        window.location.href = 'index.html';
+        return;
+      }
+      await waitForDb();
+      await loadLogs();
+    }
+
+    async function loadLogs() {
+      var { data, error } = await window.db.from('audit_logs')
+        .select('*').order('created_at', { ascending: false }).limit(200);
+      if (error) {
+        document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败</div>';
+        return;
+      }
+      allLogs = data || [];
+      renderLogs();
+    }
+
+    function filterLogs(type, el) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+      el.classList.add('active');
+      renderLogs();
+    }
+
+    function renderLogs() {
+      var filtered = currentFilter === 'all'
+        ? allLogs
+        : allLogs.filter(function (l) { return l.action === currentFilter || l.action.includes(currentFilter); });
+      var container = document.getElementById('logList');
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无日志</div>';
+        return;
+      }
+      container.innerHTML = filtered.map(function (l) {
+        var time = new Date(l.created_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        var detail = l.detail || '';
+        if (l.target) detail = l.target + (detail ? ' - ' + detail : '');
+        return '<div class="log-item">' +
+          '<div class="log-header">' +
+          '<span class="log-action ' + l.action + '">' + l.action + '</span>' +
+          '<span class="log-time">' + time + '</span>' +
+          '</div>' +
+          '<div class="log-user">' + (l.user_name || '系统') + '</div>' +
+          (detail ? '<div class="log-detail">' + detail + '</div>' : '') +
+          '</div>';
+      }).join('');
+    }
+
+    init();
+  </script>
+</body>
+</html>
