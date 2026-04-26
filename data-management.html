@@ -25,7 +25,7 @@
     .record-org { font-size: 12px; color: var(--ink-muted); margin-bottom: 6px; }
     .record-stats { display: flex; gap: 14px; font-size: 12px; }
     .record-stat span { font-weight: 600; }
-    .record-del { position: absolute; right: 10px; top: 10px; font-size: 12px; color: var(--vermillion); cursor: pointer; text-decoration: underline; }
+    .record-del { position: absolute; right: 10px; top: 10px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); background: #fff; color: var(--vermillion); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
     .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-muted); }
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
     .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--ink-muted); padding: 8px 20px; cursor: pointer; }
@@ -169,8 +169,11 @@
         window.db.from('schedules').select('id,schedule_date').in('id',scheduleIds)
       ]);
       var userMap={}; (profiles||[]).forEach(function(p){userMap[p.id]=p.name;});
-      var orgMap={}; (orgs||[]).forEach(function(o){orgMap[o.id]=o.name;});
       var dateMap={}; (schedules||[]).forEach(function(s){dateMap[s.id]=s.schedule_date;});
+
+      // 构建组织完整路径
+      var orgPathMap={};
+      (orgs||[]).forEach(function(o){orgPathMap[o.id]=buildOrgPath(o.id,orgsList);});
 
       var html='';
       allRecords.forEach(function(r){
@@ -181,9 +184,9 @@
         var dateStr=dateMap[r.schedule_id]||(r.created_at||'').slice(0,10);
         var timeStr=r.created_at?new Date(r.created_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}):'';
         html+='<div class="record-item">'+
-          '<span class="record-del" onclick="delRecord('+r.id+')">删除</span>'+
+          '<span class="record-del" onclick="delRecord('+r.id+')">✕</span>'+
           '<div class="record-header"><span class="record-user">'+(userMap[r.fill_user_id]||'')+'</span><span class="record-date">'+dateStr+' '+timeStr+'</span></div>'+
-          '<div class="record-org">'+(orgMap[r.organization_id]||'')+'</div>'+
+          '<div class="record-org">'+(orgPathMap[r.organization_id]||'')+'</div>'+
           '<div class="record-stats"><div class="record-stat">上线 '+online+'%</div><div class="record-stat">作业 '+hw+'%</div><div class="record-stat">视频 '+video+'%</div></div></div>';
       });
       document.getElementById('recordList').innerHTML=html;
