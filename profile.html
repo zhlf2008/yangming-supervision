@@ -583,7 +583,7 @@
     <!-- Profile Card -->
     <div class="profile-card">
       <div class="profile-avatar" id="profileAvatar">?</div>
-      <div class="profile-name" id="profileName">加载中...</div>
+      <div class="profile-name" id="profileName">加载�?..</div>
       <div class="profile-role" id="profileRole">-</div>
       <div class="profile-phone" id="profilePhone" style="font-size:12px;color:#8A8A8A;margin-top:4px;">-</div>
       <div class="profile-stats">
@@ -593,7 +593,7 @@
         </div>
         <div class="profile-stat">
           <div class="profile-stat-value" id="profileOnlineRate">--</div>
-          <div class="profile-stat-label">平均上线率</div>
+          <div class="profile-stat-label">平均上线�?/div>
         </div>
         <div class="profile-stat">
           <div class="profile-stat-value" id="profileOrgCount">--</div>
@@ -641,10 +641,10 @@
         </svg>
       </div>
       <div class="menu-item" onclick="showHelp()">
-        <div class="menu-item-icon help">❓</div>
+        <div class="menu-item-icon help">�?/div>
         <div class="menu-item-content">
-          <div class="menu-item-title">帮助与反馈</div>
-          <div class="menu-item-desc">遇到问题？联系我们</div>
+          <div class="menu-item-title">帮助与反�?/div>
+          <div class="menu-item-desc">遇到问题？联系我�?/div>
         </div>
         <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6"></polyline>
@@ -654,7 +654,7 @@
         <div class="menu-item-icon about">ℹ️</div>
         <div class="menu-item-content">
           <div class="menu-item-title">关于系统</div>
-          <div class="menu-item-desc">版本信息与相关说明</div>
+          <div class="menu-item-desc">版本信息与相关说�?/div>
         </div>
         <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6"></polyline>
@@ -667,7 +667,7 @@
       <div class="menu-item" onclick="logout()">
         <div class="menu-item-icon logout">🚪</div>
         <div class="menu-item-content">
-          <div class="menu-item-title" style="color: var(--vermillion);">退出登录</div>
+          <div class="menu-item-title" style="color: var(--vermillion);">退出登�?/div>
           <div class="menu-item-desc">切换其他账号</div>
         </div>
         <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -699,11 +699,11 @@
         <div class="modal-tab-content active" id="contentInfo">
           <div class="form-group">
             <label class="form-label">姓名</label>
-            <input type="text" class="form-input" id="editName" placeholder="请输入姓名" maxlength="20">
+            <input type="text" class="form-input" id="editName" placeholder="请输入姓�? maxlength="20">
             <div class="form-error" id="nameError"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">手机号</label>
+            <label class="form-label">手机�?/label>
             <input type="tel" class="form-input" id="editPhone" placeholder="请输入手机号" maxlength="11">
             <div class="form-error" id="phoneError"></div>
           </div>
@@ -713,17 +713,17 @@
         <div class="modal-tab-content" id="contentPassword">
           <div class="form-group">
             <label class="form-label">当前密码</label>
-            <input type="password" class="form-input" id="currentPassword" placeholder="请输入当前密码">
+            <input type="password" class="form-input" id="currentPassword" placeholder="请输入当前密�?>
             <div class="form-error" id="currentPwdError"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">新密码</label>
-            <input type="password" class="form-input" id="newPassword" placeholder="请输入新密码（至少6位）" minlength="6">
-            <div class="form-hint">密码长度至少6位</div>
+            <label class="form-label">新密�?/label>
+            <input type="password" class="form-input" id="newPassword" placeholder="请输入新密码（至�?位）" minlength="6">
+            <div class="form-hint">密码长度至少6�?/div>
             <div class="form-error" id="newPwdError"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">确认新密码</label>
+            <label class="form-label">确认新密�?/label>
             <input type="password" class="form-input" id="confirmPassword" placeholder="请再次输入新密码">
             <div class="form-error" id="confirmPwdError"></div>
           </div>
@@ -748,7 +748,7 @@
     </a>
     <a href="summary-page.html" class="nav-item">
       <span class="nav-icon">📊</span>
-      <span class="nav-label">数据汇总</span>
+      <span class="nav-label">数据汇�?/span>
     </a>
     <a href="profile.html" class="nav-item active">
       <span class="nav-icon">👤</span>
@@ -786,7 +786,7 @@
       }
 
       // 检查是否是管理员，显示设置入口
-      if (profile.role.includes('管理员') {
+      if (profile.role.includes('管理�?) {
         document.getElementById('adminMenuItem').style.display = 'flex';
       }
 
@@ -798,15 +798,15 @@
       // Get user's attendance records count
       let query = window.db.from('attendance_records').select('*', { count: 'exact', head: true });
 
-      if (profile.role.includes('小组督察' || profile.role.includes('小组副督察') {
+      if (profile.role.includes('小组督察') || profile.role.includes('小组副督�?) {
         query = query.eq('organization_id', profile.organization_id);
-      } else if (profile.role.includes('班级总督察' || profile.role.includes('班级副总督察') {
+      } else if (profile.role.includes('班级总督�? || profile.role.includes('班级副总督�?) {
         const { data: childOrgs } = await window.db.from('organizations').select('id').or(`id.eq.${profile.organization_id},parent_id.eq.${profile.organization_id}`);
         const orgIds = childOrgs?.map(o => o.id) || [];
         if (orgIds.length > 0) {
           query = query.in('organization_id', orgIds);
         }
-      } else if (profile.role.includes('大班总督' || profile.role.includes('大班副督') {
+      } else if (profile.role.includes('大班总督') || profile.role.includes('大班副督') {
         const { data: childOrgs } = await window.db.from('organizations').select('id').or(`parent_id.eq.${profile.organization_id},id.eq.${profile.organization_id}`);
         const orgIds = childOrgs?.map(o => o.id) || [];
         if (orgIds.length > 0) {
@@ -824,7 +824,7 @@
         let onlineCount = 0;
         records.forEach(r => {
           const fillData = r.fill_data || {};
-          if (fillData.online_status === '是' || fillData.online_status === true) onlineCount++;
+          if (fillData.online_status === '�? || fillData.online_status === true) onlineCount++;
         });
         const onlineRate = total > 0 ? ((onlineCount / total) * 100).toFixed(0) : '0';
         document.getElementById('profileOnlineRate').textContent = onlineRate + '%';
@@ -833,12 +833,12 @@
       }
 
       // Count organizations user is responsible for
-      if (profile.role.includes('小组督察' || profile.role.includes('小组副督察') {
+      if (profile.role.includes('小组督察') || profile.role.includes('小组副督�?) {
         document.getElementById('profileOrgCount').textContent = '1';
-      } else if (profile.role.includes('班级总督察' || profile.role.includes('班级副总督察') {
+      } else if (profile.role.includes('班级总督�? || profile.role.includes('班级副总督�?) {
         const { data: childGroups } = await window.db.from('organizations').select('id', { count: 'exact' }).eq('parent_id', profile.organization_id);
         document.getElementById('profileOrgCount').textContent = (childGroups?.length || 0) + 1;
-      } else if (profile.role.includes('大班总督' || profile.role.includes('大班副督') {
+      } else if (profile.role.includes('大班总督') || profile.role.includes('大班副督') {
         const { data: childOrgs } = await window.db.from('organizations').select('id', { count: 'exact' }).or(`parent_id.eq.${profile.organization_id},id.eq.${profile.organization_id}`);
         document.getElementById('profileOrgCount').textContent = childOrgs?.length || 0;
       } else {
@@ -857,7 +857,7 @@
       document.getElementById('editName').value = profile.name || '';
       document.getElementById('editPhone').value = profile.phone || '';
 
-      // 重置表单状态
+      // 重置表单状�?
       clearEditErrors();
       switchEditTab('info');
 
@@ -915,13 +915,13 @@
       let hasError = false;
 
       if (!name) {
-        document.getElementById('nameError').textContent = '请输入姓名';
+        document.getElementById('nameError').textContent = '请输入姓�?;
         document.getElementById('nameError').classList.add('show');
         hasError = true;
       }
 
       if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
-        document.getElementById('phoneError').textContent = '请输入正确的手机号';
+        document.getElementById('phoneError').textContent = '请输入正确的手机�?;
         document.getElementById('phoneError').classList.add('show');
         hasError = true;
       }
@@ -930,7 +930,7 @@
 
       const saveBtn = document.getElementById('saveBtn');
       saveBtn.disabled = true;
-      saveBtn.textContent = '保存中...';
+      saveBtn.textContent = '保存�?..';
 
       try {
         const profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
@@ -939,11 +939,11 @@
         console.log('[saveProfileInfo] profile:', profile);
         console.log('[saveProfileInfo] userId:', userId);
 
-        // 比较原始值（profile.phone 可能是 null vs 空字符串）
+        // 比较原始值（profile.phone 可能�?null vs 空字符串�?
         const originalPhone = profile.phone || '';
         const phoneChanged = phone !== originalPhone;
 
-        // 如果没有变化，直接关闭
+        // 如果没有变化，直接关�?
         if (name === profile.name && !phoneChanged) {
           showToast('没有修改');
           closeEditModal();
@@ -952,7 +952,7 @@
           return;
         }
 
-        // 如果手机号变化，先更新 auth.users（登录凭证）
+        // 如果手机号变化，先更�?auth.users（登录凭证）
         if (phoneChanged || name !== profile.name) {
           console.log('[saveProfileInfo] updating auth.users');
           const newEmail = `p${phone}@supabase.io`;
@@ -960,7 +960,7 @@
           const result = await adminApi.updateUser(userId, { email: newEmail, name: name, phone: phone });
           console.log('[saveProfileInfo] adminApi updateUser result:', result);
           if (result.error) {
-            showToast('更新登录信息失败：' + result.error, 'error');
+            showToast('更新登录信息失败�? + result.error, 'error');
             saveBtn.disabled = false;
             saveBtn.textContent = '保存';
             return;
@@ -976,7 +976,7 @@
           updateData.phone = phone || null;
         }
 
-        // 更新 profiles 表
+        // 更新 profiles �?
         console.log('[saveProfileInfo] updating profiles with:', updateData);
         const { error } = await window.db
           .from('profiles')
@@ -1001,7 +1001,7 @@
 
       } catch (err) {
         console.error('Update profile error:', err);
-        showToast('更新失败：' + (err.message || '请重试'), 'error');
+        showToast('更新失败�? + (err.message || '请重�?), 'error');
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = '保存';
@@ -1018,7 +1018,7 @@
       let hasError = false;
 
       if (!currentPassword) {
-        document.getElementById('currentPwdError').textContent = '请输入当前密码';
+        document.getElementById('currentPwdError').textContent = '请输入当前密�?;
         document.getElementById('currentPwdError').classList.add('show');
         hasError = true;
       }
@@ -1028,13 +1028,13 @@
         document.getElementById('newPwdError').classList.add('show');
         hasError = true;
       } else if (newPassword.length < 6) {
-        document.getElementById('newPwdError').textContent = '密码长度至少6位';
+        document.getElementById('newPwdError').textContent = '密码长度至少6�?;
         document.getElementById('newPwdError').classList.add('show');
         hasError = true;
       }
 
       if (newPassword !== confirmPassword) {
-        document.getElementById('confirmPwdError').textContent = '两次输入的密码不一致';
+        document.getElementById('confirmPwdError').textContent = '两次输入的密码不一�?;
         document.getElementById('confirmPwdError').classList.add('show');
         hasError = true;
       }
@@ -1043,19 +1043,19 @@
 
       const saveBtn = document.getElementById('saveBtn');
       saveBtn.disabled = true;
-      saveBtn.textContent = '保存中...';
+      saveBtn.textContent = '保存�?..';
 
       try {
         // 验证当前密码 - 通过重新登录验证
         const profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
-        // 邮箱格式为 p{phone}@supabase.io
+        // 邮箱格式�?p{phone}@supabase.io
         const phone = profile.phone;
         if (!phone) {
-          throw new Error('无法获取用户手机号信息');
+          throw new Error('无法获取用户手机号信�?);
         }
         const email = `p${phone}@supabase.io`;
 
-        // 尝试用当前密码登录验证
+        // 尝试用当前密码登录验�?
         const { error: signInError } = await window.supabaseClient.auth.signInWithPassword({
           email: email,
           password: currentPassword
@@ -1067,7 +1067,7 @@
           throw signInError;
         }
 
-        // 密码验证通过，更新密码
+        // 密码验证通过，更新密�?
         const { error: updateError } = await window.supabaseClient.auth.updateUser({
           password: newPassword
         });
@@ -1085,7 +1085,7 @@
       } catch (err) {
         console.error('Update password error:', err);
         if (!err.message.includes('当前密码')) {
-          showToast('修改失败：' + (err.message || '请重试'), 'error');
+          showToast('修改失败�? + (err.message || '请重�?), 'error');
         }
       } finally {
         saveBtn.disabled = false;
