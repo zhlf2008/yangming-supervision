@@ -742,7 +742,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }).filter(Boolean).map(o => o.id))].map(id => orgs.find(o => o.id === id));
 
       bigClassSelect.innerHTML = (bigClasses.length === 1 ? '' : '<option value="">请选择</option>') +
-        bigClasses.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+        bigClasses.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
 
       classSelect.innerHTML = '';
       groupSelect.innerHTML = '';
@@ -806,7 +806,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
 
       const classes = [...classIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
       classSelect.innerHTML = (classes.length === 1 ? '' : '<option value="">请选择</option>') +
-        classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        classes.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
       // 只有一个班级时自动选中，有预选组时优先
       if (preselectGroupId) {
@@ -853,7 +853,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
 
       const groups = [...groupIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
       groupSelect.innerHTML = (groups.length === 1 ? '' : '<option value="">请选择</option>') +
-        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        groups.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(g => `<option value="${g.id}">${g.name}</option>`).join('');
 
       if (preselectGroupId) {
         groupSelect.value = preselectGroupId;
