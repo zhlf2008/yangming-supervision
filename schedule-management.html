@@ -48,8 +48,8 @@
     .day-info { display: flex; align-items: center; gap: 6px; min-width: 70px; }
     .day-date { font-weight: 600; font-size: 14px; color: var(--ink-dark); }
     .day-week { font-size: 11px; color: var(--ink-muted); }
-    .day-items-row { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; }
-    .item-check { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 12px; font-size: 12px; cursor: pointer; background: var(--bg-primary); color: var(--ink-muted); border: 1px solid var(--border); transition: background 0.15s, color 0.15s, border-color 0.15s; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .day-items-row { flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; -webkit-overflow-scrolling: touch; }
+    .item-check { flex-shrink: 0; display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 10px; font-size: 11px; cursor: pointer; background: var(--bg-primary); color: var(--ink-muted); border: 1px solid var(--border); transition: background 0.15s, color 0.15s, border-color 0.15s; user-select: none; -webkit-tap-highlight-color: transparent; }
     .item-check.checked { background: var(--vermillion-light); color: var(--vermillion); border-color: var(--vermillion); }
     .item-check input { margin: 0 4px 0 0; pointer-events: none; }
     .no-items { font-size: 12px; color: var(--ink-muted); }
