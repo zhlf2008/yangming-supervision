@@ -606,7 +606,11 @@
           });
 
           if (authError) {
-            showToast('创建账户失败: ' + authError.message);
+            if (authError.message.includes('429') || authError.status === 429) {
+              showToast('请求过于频繁，请等待 30-60 分钟后再试');
+            } else {
+              showToast('创建账户失败: ' + authError.message);
+            }
             return;
           }
 
