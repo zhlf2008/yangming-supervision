@@ -695,8 +695,6 @@
       } else {
         showToast('保存成功');
         closeSemesterModal();
-        // 重新生成该学期的日程
-        await regenerateSchedules(data, id);
         await loadSemesters();
       }
     }
@@ -704,45 +702,6 @@
     async function editSemester(id) {
       const sem = semesters.find(s => s.id == id);
       if (sem) showSemesterModal(sem);
-    }
-
-    async function regenerateSchedules(semester, existingId) {
-      var start = new Date(semester.start_date);
-      var end = new Date(semester.end_date);
-      var trialStart = semester.trial_start_date ? new Date(semester.trial_start_date) : null;
-      var semesterId = existingId ? parseInt(existingId) : null;
-
-      // 新建学期还没有 id，延迟到第一次日程管理页手动生成
-      if (!semesterId) return;
-
-      var { data: templates } = await window.db.from('assessment_types').select('id').eq('is_template', 1);
-      var itemIds = templates ? templates.map(function (t) { return t.id; }).join(',') : '';
-      var toInsert = [];
-      var current = trialStart ? new Date(trialStart) : new Date(start);
-      var jumped = false;
-
-      while (current <= end) {
-        toInsert.push({
-          semester_id: semesterId,
-          schedule_date: current.toISOString().split('T')[0],
-          week_day: current.getDay() + 1,
-          item_ids: itemIds,
-          is_valid: 1
-        });
-        current.setDate(current.getDate() + 1);
-        if (trialStart && !jumped && current.getTime() >= start.getTime()) {
-          current = new Date(start.getTime());
-          jumped = true;
-        }
-      }
-
-      // 删除旧日程（已不在新日期范围内的）
-      await window.db.from('schedules').delete().eq('semester_id', semesterId);
-
-      // 插入新日程
-      if (toInsert.length > 0) {
-        await window.db.from('schedules').upsert(toInsert, { onConflict: 'semester_id, schedule_date' });
-      }
     }
 
     async function deleteSemester(id) {

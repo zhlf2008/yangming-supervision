@@ -132,15 +132,15 @@
       const formalStart = currentSemester?.start_date ? new Date(currentSemester.start_date) : null;
       const trialStart = currentSemester?.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
 
-      // Group by week: detect week start (Sunday = start of week)
+      // Group by week: Monday as start of week
       const weeks = [];
       let currentWeek = null;
       schedules.forEach(s => {
         const date = new Date(s.schedule_date);
-        // Find the Sunday that starts this week
         const dayOfWeek = date.getDay();
+        const daysFromMonday = (dayOfWeek + 6) % 7;
         const weekStart = new Date(date);
-        weekStart.setDate(weekStart.getDate() - dayOfWeek);
+        weekStart.setDate(weekStart.getDate() - daysFromMonday);
         weekStart.setHours(0, 0, 0, 0);
         const weekKey = weekStart.toISOString().split('T')[0];
         if (!currentWeek || currentWeek.key !== weekKey) {
