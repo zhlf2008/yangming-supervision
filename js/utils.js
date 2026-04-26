@@ -3,6 +3,10 @@
 // 所有页面通过 <script src="js/utils.js"></script> 引入
 // ============================================================
 
+(function () {
+  document.documentElement.style.overflowY = 'scroll';
+})();
+
 // ---- Toast ----
 
 function showToast(msg, duration) {
