@@ -587,6 +587,12 @@
     </div>
 
     <!-- Assessment Forms Container -->
+    <div class="section" id="filledTip" style="display:none;background:var(--green-light);">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span>✅ 今日已填报，可修改后重新提交</span>
+        <span style="font-size:12px;color:var(--ink-muted);" id="filledTime"></span>
+      </div>
+    </div>
     <div id="formsContainer">
       <div class="empty-state">
         <div class="empty-state-icon">📋</div>
@@ -1056,11 +1062,13 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       // If a group is selected, check for existing record and pre-fill
       if (selectedGroupId && currentSchedule) {
         const { data: existingRecords } = await window.db.from('attendance_records')
-          .select('fill_data')
+          .select('fill_data,created_at')
           .eq('schedule_id', currentSchedule.id)
           .eq('organization_id', parseInt(selectedGroupId))
           .limit(1);
         if (existingRecords && existingRecords.length > 0) {
+          document.getElementById('filledTip').style.display = 'block';
+          document.getElementById('filledTime').textContent = '提交时间: ' + new Date(existingRecords[0].created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
           const fd = existingRecords[0].fill_data || {};
           Object.entries(fieldIds).forEach(([name, id]) => {
             const el = document.getElementById(id);
@@ -1070,6 +1078,9 @@ document.getElementById('orgSelectorSection').style.display = 'block';
             }
           });
           recalcRates();
+        } else {
+          document.getElementById('filledTip').style.display = 'none';
+          document.getElementById('filledTime').textContent = '';
         }
       }
     }
