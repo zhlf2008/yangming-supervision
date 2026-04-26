@@ -762,11 +762,11 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         return cls ? orgs.find(o => o.id === cls.parent_id) : null;
       }).filter(Boolean).map(o => o.id))].map(id => orgs.find(o => o.id === id));
 
-      bigClassSelect.innerHTML = '<option value="">请选择</option>' +
+      bigClassSelect.innerHTML = (bigClasses.length === 1 ? '' : '<option value="">请选择</option>') +
         bigClasses.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
 
-      classSelect.innerHTML = '<option value="">请选择</option>';
-      groupSelect.innerHTML = '<option value="">请选择</option>';
+      classSelect.innerHTML = '';
+      groupSelect.innerHTML = '';
 
       if (userOrgId && selectableGroupIds.has(userOrgId)) {
         const userGroup = orgs.find(o => o.id === userOrgId);
@@ -778,6 +778,10 @@ document.getElementById('orgSelectorSection').style.display = 'block';
             onBigClassChange(String(bigClass.id), userOrgId);
           }
         }
+      } else if (bigClasses.length === 1) {
+        // 只有一个大班，自动选中
+        bigClassSelect.value = bigClasses[0].id;
+        onBigClassChange(String(bigClasses[0].id));
       }
     }
 
@@ -787,8 +791,8 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
 
-      classSelect.innerHTML = '<option value="">请选择</option>';
-      groupSelect.innerHTML = '<option value="">请选择</option>';
+      classSelect.innerHTML = '';
+      groupSelect.innerHTML = '';
 
       if (!bigClassId) {
         document.getElementById('bigClassName').textContent = '--';
@@ -822,9 +826,10 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
 
       const classes = [...classIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
-      classSelect.innerHTML = '<option value="">请选择</option>' +
+      classSelect.innerHTML = (classes.length === 1 ? '' : '<option value="">请选择</option>') +
         classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
+      // 只有一个班级时自动选中，有预选组时优先
       if (preselectGroupId) {
         const preselectGroup = orgs.find(o => o.id === preselectGroupId);
         if (preselectGroup) {
@@ -834,6 +839,9 @@ document.getElementById('orgSelectorSection').style.display = 'block';
             onClassChange(String(preselectClass.id), preselectGroupId);
           }
         }
+      } else if (classes.length === 1) {
+        classSelect.value = classes[0].id;
+        onClassChange(String(classes[0].id));
       }
     }
 
@@ -842,7 +850,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
 
-      groupSelect.innerHTML = '<option value="">请选择</option>';
+      groupSelect.innerHTML = '';
 
       if (!classId) {
         document.getElementById('className').textContent = '--';
@@ -865,12 +873,15 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
 
       const groups = [...groupIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
-      groupSelect.innerHTML = '<option value="">请选择</option>' +
+      groupSelect.innerHTML = (groups.length === 1 ? '' : '<option value="">请选择</option>') +
         groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
 
       if (preselectGroupId) {
         groupSelect.value = preselectGroupId;
         onGroupChange(String(preselectGroupId));
+      } else if (groups.length === 1) {
+        groupSelect.value = groups[0].id;
+        onGroupChange(String(groups[0].id));
       }
     }
 
