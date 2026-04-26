@@ -212,23 +212,7 @@
         </div>
         <div class="form-item">
           <label class="form-label">所属组织</label>
-          <div class="input-row" style="margin-bottom:0;">
-            <div class="input-group">
-              <select class="org-level-select" id="userBigClass" onchange="onUserBigClassChange(this.value)" style="font-size:12px;">
-                <option value="">大班</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <select class="org-level-select" id="userClass" onchange="onUserClassChange(this.value)" style="font-size:12px;">
-                <option value="">班级</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <select class="org-level-select" id="userGroup" onchange="onUserGroupChange(this.value)" style="font-size:12px;">
-                <option value="">小组</option>
-              </select>
-            </div>
-          </div>
+          <div id="userOrgDisplay" style="padding:10px 12px;background:var(--bg-primary);border-radius:8px;font-size:14px;color:var(--ink-dark);"></div>
           <input type="hidden" id="userOrgId">
         </div>
       </div>
@@ -646,12 +630,20 @@
       document.getElementById('userPhone').value = '';
       document.getElementById('userPassword').value = '';
       document.getElementById('userRole').value = '小组督察';
-      initUserOrgCascade(null);
       // defaultOrgId is passed as second argument
-      if (defaultOrgId) {
-        preselectUserOrg(defaultOrgId);
+      const orgId = defaultOrgId;
+      if (orgId) {
+        document.getElementById('userOrgId').value = orgId;
+        const path = buildOrgPath(orgId, organizations);
+        document.getElementById('userOrgDisplay').textContent = path;
+        // 根据组织层级过滤角色
+        const org = organizations.find(o => o.id === orgId);
+        filterRolesByOrgLevel(org?.level);
+      } else {
+        document.getElementById('userOrgId').value = '';
+        document.getElementById('userOrgDisplay').textContent = '未指定';
+        renderAllRoles();
       }
-      renderAllRoles();
       document.getElementById('userModalTitle').textContent = '添加人员';
       document.getElementById('userModal').classList.add('show');
       // 新建人员时，如果已有手机号则自动填入后6位密码
@@ -667,144 +659,18 @@
       document.getElementById('userName').value = user.name;
       document.getElementById('userPhone').value = user.phone;
       document.getElementById('userModalTitle').textContent = '编辑人员';
-      initUserOrgCascade(user.organization_id);
-      // 根据组织层级过滤角色，并默认选中用户当前角色
       if (user.organization_id) {
         const org = organizations.find(o => o.id === user.organization_id);
+        document.getElementById('userOrgDisplay').textContent = buildOrgPath(user.organization_id, organizations);
+        document.getElementById('userOrgId').value = user.organization_id;
+        // 根据组织层级过滤角色，并默认选中用户当前角色
         filterRolesByOrgLevel(org?.level, user.role);
       } else {
+        document.getElementById('userOrgDisplay').textContent = '未指定';
+        document.getElementById('userOrgId').value = '';
         renderAllRoles(user.role);
       }
       document.getElementById('userModal').classList.add('show');
-    }
-
-    // ---- 用户编辑弹窗的组织级联选择器 ----
-
-    function initUserOrgCascade(preselectOrgId) {
-      var bigSelect = document.getElementById('userBigClass');
-      var classSelect = document.getElementById('userClass');
-      var groupSelect = document.getElementById('userGroup');
-      var orgIdInput = document.getElementById('userOrgId');
-
-      classSelect.innerHTML = '<option value="">班级</option>';
-      groupSelect.innerHTML = '<option value="">小组</option>';
-      orgIdInput.value = '';
-
-      // 从管辖范围中提取大班
-      var bigClassIds = new Set();
-      organizations.forEach(function (o) {
-        if (o.level === '大班' && managedOrgIds.has(o.id)) bigClassIds.add(o.id);
-      });
-      var bigClasses = [...bigClassIds].map(function (id) { return organizations.find(function (o) { return o.id === id; }); }).filter(Boolean);
-
-      bigSelect.innerHTML = '<option value="">大班</option>' +
-        bigClasses.map(function (b) { return '<option value="' + b.id + '">' + b.name + '</option>'; }).join('');
-
-      if (preselectOrgId) preselectUserOrg(preselectOrgId);
-    }
-
-    function preselectUserOrg(orgId) {
-      var org = organizations.find(function (o) { return o.id === orgId; });
-      if (!org) return;
-      var chain = [org];
-      var cur = org;
-      while (cur && cur.parent_id) {
-        cur = organizations.find(function (o) { return o.id === cur.parent_id; });
-        if (cur) chain.unshift(cur);
-      }
-      var bigCls = chain.find(function (o) { return o.level === '大班'; });
-      var cls = chain.find(function (o) { return o.level === '班级'; });
-      var grp = chain.find(function (o) { return o.level === '小组'; });
-
-      if (bigCls) {
-        document.getElementById('userBigClass').value = bigCls.id;
-        onUserBigClassChange(String(bigCls.id));
-        if (cls) {
-          document.getElementById('userClass').value = cls.id;
-          onUserClassChange(String(cls.id));
-          if (grp) {
-            document.getElementById('userGroup').value = grp.id;
-            document.getElementById('userOrgId').value = grp.id;
-          }
-        }
-      } else if (org.level === '大班') {
-        document.getElementById('userBigClass').value = org.id;
-        onUserBigClassChange(String(org.id));
-        document.getElementById('userOrgId').value = org.id;
-      } else if (org.level === '班级') {
-        // 班级直接在管辖范围内，跳过系
-        if (managedOrgIds.has(org.id)) {
-          document.getElementById('userOrgId').value = org.id;
-          // 尝试找到它的父大班来设置级联
-          var parentBig = organizations.find(function (o) { return o.id === org.parent_id && o.level === '大班'; });
-          if (parentBig) {
-            document.getElementById('userBigClass').value = parentBig.id;
-            onUserBigClassChange(String(parentBig.id));
-            document.getElementById('userClass').value = org.id;
-            onUserClassChange(String(org.id));
-          }
-        }
-      } else if (org.level === '小组') {
-        if (managedOrgIds.has(org.id)) {
-          document.getElementById('userOrgId').value = org.id;
-        }
-      }
-    }
-
-    function onUserBigClassChange(bigClassId) {
-      var classSelect = document.getElementById('userClass');
-      var groupSelect = document.getElementById('userGroup');
-      classSelect.innerHTML = '<option value="">班级</option>';
-      groupSelect.innerHTML = '<option value="">小组</option>';
-      document.getElementById('userOrgId').value = '';
-
-      if (!bigClassId) return;
-
-      var classes = organizations.filter(function (o) {
-        return o.parent_id === parseInt(bigClassId) && o.level === '班级' && managedOrgIds.has(o.id);
-      });
-      classSelect.innerHTML = '<option value="">班级</option>' +
-        classes.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
-
-      // 如果是班级级别的用户，允许选中大班
-      if (currentUser.role === '班级总督察' || currentUser.role === '班级副总督察') {
-        var userBig = organizations.find(function (o) { return o.id === parseInt(bigClassId); });
-        if (userBig && classes.length === 0) {
-          document.getElementById('userOrgId').value = bigClassId;
-          filterRolesByOrgLevel('大班');
-        }
-      }
-    }
-
-    function onUserClassChange(classId) {
-      var groupSelect = document.getElementById('userGroup');
-      groupSelect.innerHTML = '<option value="">小组</option>';
-      document.getElementById('userOrgId').value = '';
-
-      if (!classId) return;
-
-      var groups = organizations.filter(function (o) {
-        return o.parent_id === parseInt(classId) && o.level === '小组' && managedOrgIds.has(o.id);
-      });
-      groupSelect.innerHTML = '<option value="">小组</option>' +
-        groups.map(function (g) { return '<option value="' + g.id + '">' + g.name + '</option>'; }).join('');
-
-      if (groups.length === 0) {
-        // 无下属小组，所选班级即为组织
-        document.getElementById('userOrgId').value = classId;
-        var cls = organizations.find(function (o) { return o.id === parseInt(classId); });
-        filterRolesByOrgLevel(cls?.level);
-      } else {
-        var cls = organizations.find(function (o) { return o.id === parseInt(classId); });
-        filterRolesByOrgLevel(cls?.level);
-      }
-    }
-
-    function onUserGroupChange(groupId) {
-      if (!groupId) { document.getElementById('userOrgId').value = ''; return; }
-      document.getElementById('userOrgId').value = groupId;
-      var group = organizations.find(function (o) { return o.id === parseInt(groupId); });
-      filterRolesByOrgLevel(group?.level);
     }
 
     function closeUserModal() {
