@@ -41,6 +41,7 @@
       <input type="date" id="dateFilter" onchange="loadRecords()" style="width:130px;">
       <button onclick="loadRecords()">刷新</button>
     </div>
+    <div id="dateTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
     <div id="recordList"><div class="empty-state">加载中...</div></div>
   </div>
   <nav class="bottom-nav">
@@ -97,6 +98,34 @@
       var dateMap = {}; (schedules||[]).forEach(function(s){dateMap[s.id]=s.schedule_date;});
 
       renderList(userMap, orgMap, dateMap);
+      loadDateTags();
+    }
+
+    function loadDateTags() {
+      // 获取所有有记录的日期，按倒序排列
+      var dates = [...new Set(records.map(function(r){
+        return (r.created_at||'').slice(0,10);
+      }))].sort().reverse();
+
+      if (dates.length === 0) {
+        document.getElementById('dateTags').innerHTML = '';
+        return;
+      }
+
+      var currentDate = new Date().toISOString().split('T')[0];
+      var html = '';
+      dates.forEach(function(d) {
+        var isToday = d === currentDate;
+        var style = isToday ? 'background:var(--vermillion);color:#fff;border-color:var(--vermillion);' : 'background:var(--bg-card);';
+        html += '<span onclick="filterByDate(\''+d+'\')" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);font-size:11px;cursor:pointer;'+style+'">'+
+          d.slice(5) + (isToday?' 今天':'') + '</span>';
+      });
+      document.getElementById('dateTags').innerHTML = html;
+    }
+
+    function filterByDate(date) {
+      document.getElementById('dateFilter').value = date;
+      loadRecords();
     }
 
     function renderList(userMap, orgMap, dateMap) {
