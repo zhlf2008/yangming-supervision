@@ -65,7 +65,7 @@
       z-index: 1;
       max-width: 480px;
       margin: 0 auto;
-      padding: 16px 16px 100px;
+      padding: 20px 16px 100px;
       min-height: calc(100vh - 64px);
     }
 
@@ -265,8 +265,6 @@
     .data-table .rate-medium { color: var(--ink-dark); }
     .data-table .rate-low { color: var(--vermillion); }
 
-    .period-tab.active { background: var(--vermillion) !important; color: white !important; border-color: var(--vermillion) !important; }
-
     .table-scroll {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -293,9 +291,6 @@
     }
 
     /* Org Hierarchy Selector */
-    .input-row { display: flex; gap: 12px; margin-bottom: 12px; }
-    .input-group { flex: 1; }
-    .input-label { display: block; font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
     .org-selector {
       background: var(--bg-card);
       border-radius: var(--radius);
@@ -395,19 +390,11 @@
       cursor: pointer;
       text-decoration: none;
       color: var(--ink-muted);
-      transition: color 0.2s, background-color 0.2s;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      user-select: none;
+      transition: color 0.2s;
     }
 
     .nav-item.active {
       color: var(--vermillion);
-    }
-
-    .nav-item:active {
-      background-color: rgba(0, 0, 0, 0.05);
-      opacity: 0.7;
     }
 
     .nav-item:hover {
@@ -415,7 +402,8 @@
     }
 
     .nav-icon {
-      font-size: 20px;
+      font-size: 22px;
+      margin-bottom: 2px;
     }
 
     .nav-label {
@@ -449,40 +437,32 @@
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </a>
-      <h1 class="header-title">汇总</h1>
+      <h1 class="header-title">数据汇总</h1>
     </header>
 
-    <!-- Date Selector -->
+    <!-- Week Selector -->
     <div class="date-selector">
       <div class="date-nav">
-        <button class="date-nav-btn" onclick="changeDate(-1)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <span class="date-current" id="dateCurrent">2026-04-21</span>
-        <button class="date-nav-btn" onclick="changeDate(1)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
+        <button class="date-nav-btn" onclick="changeWeek(-1)">◀</button>
+        <span class="date-current" id="dateCurrent">本周</span>
+        <button class="date-nav-btn" onclick="changeWeek(1)">▶</button>
       </div>
-      <button class="date-today" onclick="goToToday()">今天</button>
+      <button class="date-today" onclick="goToCurrentWeek()">本周</button>
     </div>
 
     <!-- Summary Stats -->
     <div class="summary-stats" id="summaryStats">
       <div class="summary-stat">
+        <div class="summary-stat-value" id="avgAttendanceRate">--%</div>
+        <div class="summary-stat-label">本周平均出勤率</div>
+      </div>
+      <div class="summary-stat">
         <div class="summary-stat-value" id="avgOnlineRate">--%</div>
-        <div class="summary-stat-label">平均上线率</div>
+        <div class="summary-stat-label">本周平均上线率</div>
       </div>
       <div class="summary-stat">
         <div class="summary-stat-value" id="avgHwRate">--%</div>
-        <div class="summary-stat-label">平均作业率</div>
-      </div>
-      <div class="summary-stat">
-        <div class="summary-stat-value" id="avgVideoRate">--%</div>
-        <div class="summary-stat-label">平均视频率</div>
+        <div class="summary-stat-label">本周平均作业率</div>
       </div>
     </div>
 
@@ -491,82 +471,31 @@
       <div class="section-header">
         <span class="section-title">数据筛选</span>
       </div>
-      <div class="period-tabs" style="display:flex;gap:8px;margin-bottom:12px;">
-        <button class="period-tab active" onclick="switchPeriod('today', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">今日</button>
-        <button class="period-tab" onclick="switchPeriod('week', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">本周</button>
-        <button class="period-tab" onclick="switchPeriod('lastWeek', this)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);font-size:13px;cursor:pointer;">上周</button>
-      </div>
-      <div class="input-row" style="margin-bottom:0;">
-        <div class="input-group">
-          <label class="input-label">大班</label>
-          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
-            <option value="">全部</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label class="input-label">班级</label>
-          <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
-            <option value="">全部</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label class="input-label">小组</label>
-          <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:6px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
-            <option value="">全部</option>
-          </select>
-        </div>
-      </div>
+      <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
+        <option value="">全部</option>
+      </select>
     </div>
 
-    <!-- Data Tables: two side-by-side -->
-    <div class="tables-row">
-      <!-- 上线率 Table -->
-      <section class="section">
-        <div class="section-header">
-          <span class="section-title">📊 上线率</span>
-        </div>
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>小组</th>
-                <th>应到</th>
-                <th>实到</th>
-                <th>请假</th>
-                <th>视频</th>
-                <th>上线率</th>
-                <th>视频率</th>
-              </tr>
-            </thead>
-            <tbody id="onlineTableBody">
-              <tr><td colspan="7" class="empty-state">暂无数据</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- 作业率 Table -->
-      <section class="section">
-        <div class="section-header">
-          <span class="section-title">📝 作业率</span>
-        </div>
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>小组</th>
-                <th>应做</th>
-                <th>完成</th>
-                <th>作业率</th>
-              </tr>
-            </thead>
-            <tbody id="hwTableBody">
-              <tr><td colspan="4" class="empty-state">暂无数据</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+    <!-- Weekly Data Table -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-title">📅 本周各小组出勤率</span>
+      </div>
+      <div class="table-scroll" style="overflow-x:auto;">
+        <table class="data-table" style="min-width:700px;">
+          <thead>
+            <tr id="weekDayHeader">
+              <th>小组</th>
+              <th>今天</th>
+              <th>周平均</th>
+            </tr>
+          </thead>
+          <tbody id="weeklyTableBody">
+            <tr><td colspan="9" class="empty-state">加载中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <!-- Bottom Navigation -->
@@ -577,25 +506,23 @@
     </a>
     <a href="attendance-page.html" class="nav-item">
       <span class="nav-icon">📋</span>
-      <span class="nav-label">考勤</span>
+      <span class="nav-label">考勤填报</span>
     </a>
     <a href="summary-page.html" class="nav-item active">
       <span class="nav-icon">📊</span>
-      <span class="nav-label">汇总</span>
+      <span class="nav-label">数据汇总</span>
     </a>
     <a href="profile.html" class="nav-item">
       <span class="nav-icon">👤</span>
-      <span class="nav-label">我的</span>
+      <span class="nav-label">个人中心</span>
     </a>
   </nav>
 
-  <script src="js/supabase-config.js"></script>
-<script src="js/utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script>
-    let currentDate = new Date();
     let currentUser = null;
     let currentOrg = null;
-    var currentPeriod = 'today';
 
     async function init() {
       await waitForDb();
@@ -610,295 +537,323 @@
 
       currentUser = JSON.parse(userData);
 
-      // Set initial date
-      document.getElementById('dateCurrent').textContent = formatDate(currentDate);
-
       // Load organization selector based on user's scope
       await loadOrgSelector();
 
-      // Load data for the current date and user's scope
+      // Load data for the current week
       await loadData();
     }
 
-    // Get all descendant groups under a given org (recursively) -- now in utils.js
+    // Get all descendant groups under a given org (recursively)
+    function getAllGroups(orgId, orgsMap) {
+      const directChildren = Object.values(orgsMap).filter(o => o.parent_id === orgId);
+      let groups = directChildren.filter(o => o.level === '小组');
+      const childOrgs = directChildren.filter(o => o.level !== '小组');
+      childOrgs.forEach(co => {
+        groups = groups.concat(getAllGroups(co.id, orgsMap));
+      });
+      return groups;
+    }
 
-    // Build full path for org -- now in utils.js
+    // Build full path for org
+    function buildOrgPath(orgId, orgsMap) {
+      const org = orgsMap[orgId];
+      if (!org) return '';
+      const parts = [org.name];
+      let pid = org.parent_id;
+      while (pid) {
+        const parent = orgsMap[pid];
+        if (parent) { parts.unshift(parent.name); pid = parent.parent_id; }
+        else break;
+      }
+      return parts.join(' - ');
+    }
 
     let summaryOrgsMap = {};
     let summaryOrgsList = [];
 
     async function loadOrgSelector() {
-      var bigSelect = document.getElementById('bigClassSelect');
-      if (!bigSelect) return;
-      var role = currentUser.role;
-      var userOrgId = currentUser.organization_id;
+      const groupSelect = document.getElementById('groupSelect');
+      if (!groupSelect) return;
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
 
+      // 小组督察/副督察只能看自己的小组，隐藏筛选器
       if (role === '小组督察' || role === '小组副督察') {
-        bigSelect.closest('.section').querySelector('.section-header').style.display = 'none';
-        bigSelect.closest('#bigClassSelect').parentElement.parentElement.style.display = 'none';
-        document.querySelectorAll('.period-tab').forEach(function(t){t.parentElement.style.display='none';});
+        groupSelect.closest('.section').style.display = 'none';
         return;
       }
 
-      var { data: orgs } = await window.db.from('organizations').select('*').order('level', { ascending: true });
+      const { data: orgs } = await window.db.from('organizations').select('*').order('level', { ascending: true });
       if (!orgs) return;
+
+      // Build orgsMap
       summaryOrgsMap = {};
-      summaryOrgsList = orgs;
-      orgs.forEach(function (o) { summaryOrgsMap[o.id] = o; });
+      summaryOrgsList = [];
+      orgs.forEach(o => { summaryOrgsMap[o.id] = o; });
 
-      var bigClasses = orgs.filter(function (o) { return o.level === '大班'; });
-      bigSelect.innerHTML = '<option value="">全部</option>' +
-        bigClasses.map(function (b) { return '<option value="' + b.id + '">' + b.name + '</option>'; }).join('');
-    }
+      // Determine accessible group IDs
+      let accessibleGroupIds = [];
+      if (role === '小组督察' || role === '小组副督察') {
+        accessibleGroupIds = userOrgId ? [userOrgId] : [];
+      } else if (role === '班级总督察' || role === '班级副总督察') {
+        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
+      } else if (role === '大班总督' || role === '大班副督') {
+        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
+      } else if (role === '管理员' || role === '地区督委') {
+        accessibleGroupIds = orgs.filter(o => o.level === '小组').map(o => o.id);
+      } else {
+        accessibleGroupIds = [];
+      }
 
-    function onBigClassChange(bigClassId) {
-      var classSelect = document.getElementById('classSelect');
-      var groupSelect = document.getElementById('groupSelect');
-      classSelect.innerHTML = '<option value="">全部</option>';
-      groupSelect.innerHTML = '<option value="">全部</option>';
-      document.getElementById('groupSelect').value = '';
+      // Build options: all accessible groups with full path, sorted
+      const groups = orgs.filter(o => o.level === '小组' && accessibleGroupIds.includes(o.id))
+        .map(g => ({ id: g.id, path: buildOrgPath(g.id, summaryOrgsMap) }))
+        .sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
 
-      if (!bigClassId) { loadData(); return; }
-
-      var classes = summaryOrgsList.filter(function (o) {
-        return o.parent_id === parseInt(bigClassId) && o.level === '班级';
-      });
-      classSelect.innerHTML = '<option value="">全部</option>' +
-        classes.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
-      loadData();
-    }
-
-    function onClassChange(classId) {
-      var groupSelect = document.getElementById('groupSelect');
-      groupSelect.innerHTML = '<option value="">全部</option>';
-      document.getElementById('groupSelect').value = '';
-
-      if (!classId) { loadData(); return; }
-
-      var groups = summaryOrgsList.filter(function (o) {
-        return o.parent_id === parseInt(classId) && o.level === '小组';
-      });
       groupSelect.innerHTML = '<option value="">全部</option>' +
-        groups.map(function (g) { return '<option value="' + g.id + '">' + g.name + '</option>'; }).join('');
+        groups.map(g => `<option value="${g.id}">${g.path}</option>`).join('');
+    }
+
+    // Week navigation state
+    let weekOffset = 0;
+
+    function getWeekRange(offset) {
+      const now = new Date();
+      const day = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+      monday.setHours(0, 0, 0, 0);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+      return { monday, sunday };
+    }
+
+    function formatDate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dt = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dt}`;
+    }
+
+    function changeWeek(delta) {
+      weekOffset += delta;
       loadData();
     }
 
-    function onGroupChange(groupId) {
+    function goToCurrentWeek() {
+      weekOffset = 0;
       loadData();
     }
 
-    function switchPeriod(period, el) {
-      currentPeriod = period;
-      document.querySelectorAll('.period-tab').forEach(function(t){t.classList.remove('active');});
-      el.classList.add('active');
-      loadData();
+    // Formula calculation helper (same logic as attendance form)
+    function calcRate(formula, values) {
+      if (!formula) return null;
+      let expr = formula.trim();
+      const nameToId = {
+        '应到人数': 'yingdao', '实到人数': 'shidao', '请假人数': 'qingjia',
+        '视频人数': 'shipin', '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
+      };
+      Object.keys(nameToId).forEach(name => {
+        expr = expr.replace(new RegExp(name, 'g'), `(${values[nameToId[name]] ?? 0})`);
+      });
+      try {
+        const r = new Function('return ' + expr)();
+        return typeof r === 'number' && isFinite(r) ? r : null;
+      } catch { return null; }
     }
 
     async function loadData() {
+      const { monday, sunday } = getWeekRange(weekOffset);
+      const today = formatDate(new Date());
+      const weekStart = formatDate(monday);
+      const weekEnd = formatDate(sunday);
+      document.getElementById('dateCurrent').textContent = `${monday.getMonth()+1}/${monday.getDate()} - ${sunday.getMonth()+1}/${sunday.getDate()}`;
+
+      // Get formulas from assessment_types
+      let atypes = [];
+      try {
+        const res = await fetch(`https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/assessment_types?select=id,type_name,formula`, {
+          headers: { apikey: 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', Authorization: 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
+        });
+        atypes = await res.json() || [];
+      } catch (e) { console.error(e); }
+
+      const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
 
-      // 根据级联选择计算需要显示的小组范围
-      var groupId = document.getElementById('groupSelect')?.value;
-      var classId = !groupId ? document.getElementById('classSelect')?.value : null;
-      var bigClassId = !groupId && !classId ? document.getElementById('bigClassSelect')?.value : null;
-
-      // 先把所有小组列出来
-      var allGroups = summaryOrgsList.filter(function (o) { return o.level === '小组'; });
-      var targetGroupIds;
-      if (groupId) {
-        targetGroupIds = [parseInt(groupId)];
-      } else if (classId) {
-        targetGroupIds = allGroups.filter(function (g) { return g.parent_id === parseInt(classId); }).map(function (g) { return g.id; });
-      } else if (bigClassId) {
-        var bigClassGroups = getAllGroups(parseInt(bigClassId), summaryOrgsList).filter(function (o) { return o.level === '小组'; });
-        targetGroupIds = bigClassGroups.map(function (g) { return g.id; });
-      } else {
-        // 全部：根据角色限制
-        var role2 = currentUser.role;
-        if (role2 === '小组督察' || role2 === '小组副督察') {
-          targetGroupIds = userOrgId ? [userOrgId] : [];
-        } else if (role2 === '班级总督察' || role2 === '班级副总督察') {
-          targetGroupIds = getAllGroups(userOrgId, summaryOrgsList).filter(function (o) { return o.level === '小组'; }).map(function (g) { return g.id; });
-        } else if (role2 === '大班总督' || role2 === '大班副督') {
-          targetGroupIds = getAllGroups(userOrgId, summaryOrgsList).filter(function (o) { return o.level === '小组'; }).map(function (g) { return g.id; });
-        } else {
-          targetGroupIds = allGroups.map(function (g) { return g.id; });
-        }
-      }
-
-      var today = new Date();
-      var dateStart, dateEnd;
-      if (currentPeriod === 'today') {
-        dateStart = dateEnd = today.toISOString().split('T')[0];
-      } else if (currentPeriod === 'week') {
-        var dow = today.getDay();
-        var mondayOffset = dow === 0 ? -6 : 1 - dow;
-        dateStart = new Date(today);
-        dateStart.setDate(today.getDate() + mondayOffset);
-        dateStart = dateStart.toISOString().split('T')[0];
-        dateEnd = today.toISOString().split('T')[0];
-      } else if (currentPeriod === 'lastWeek') {
-        var dow2 = today.getDay();
-        var lastMondayOffset = dow2 === 0 ? -13 : -6 - dow2;
-        var lastSundayOffset = dow2 === 0 ? -7 : -dow2;
-        dateStart = new Date(today);
-        dateStart.setDate(today.getDate() + lastMondayOffset);
-        dateStart = dateStart.toISOString().split('T')[0];
-        dateEnd = new Date(today);
-        dateEnd.setDate(today.getDate() + lastSundayOffset);
-        dateEnd = dateEnd.toISOString().split('T')[0];
-      }
-
-      const dateStr = formatDate(currentDate);
-
-      // Step 1: Get today's schedule IDs
+      // Query week's schedules
       let scheduleIds = [];
       try {
-        const schedRes = await fetch(
-          `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date&schedule_date=gte.${dateStart}&schedule_date=lte.${dateEnd}`,
-          { headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' } }
-        );
+        const url = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date,item_ids&schedule_date=gte.${weekStart}&schedule_date=lte.${weekEnd}`;
+        const schedRes = await fetch(url, {
+          headers: { apikey: 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', Authorization: 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
+        });
         const schedData = await schedRes.json();
-        scheduleIds = schedData?.map(s => s.id) || [];
+        scheduleIds = schedData || [];
       } catch (e) { console.error(e); }
 
       if (scheduleIds.length === 0) {
-        document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">今日无日程</td></tr>';
-        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">今日无日程</td></tr>';
-        document.getElementById('avgOnlineRate').textContent = '0.0%';
-        document.getElementById('avgHwRate').textContent = '0.0%';
-        document.getElementById('avgVideoRate').textContent = '0.0%';
+        showEmpty('本周无日程');
         return;
       }
 
-      // Step 2: Build org filter
-      if (targetGroupIds.length === 0) {
-        document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">暂无可查看的数据</td></tr>';
-        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">暂无可查看的数据</td></tr>';
-        document.getElementById('avgOnlineRate').textContent = '0.0%';
-        document.getElementById('avgHwRate').textContent = '0.0%';
-        document.getElementById('avgVideoRate').textContent = '0.0%';
-        return;
+      // Build schedule map for date→item_ids lookup
+      const schedMap = {};
+      scheduleIds.forEach(s => { schedMap[s.schedule_date] = s; });
+
+      // Build org filter
+      let accessibleGroupIds = [];
+      if (role === '小组督察' || role === '小组副督察') {
+        accessibleGroupIds = userOrgId ? [userOrgId] : [];
+      } else if (['班级总督察','班级副总督察','大班总督','大班副督'].includes(role)) {
+        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
+      } else if (['管理员','地区督委'].includes(role)) {
+        accessibleGroupIds = Object.values(summaryOrgsMap).filter(o => o.level === '小组').map(o => o.id);
+      } else { accessibleGroupIds = []; }
+
+      const selectedGroupId = document.getElementById('groupSelect')?.value ? parseInt(document.getElementById('groupSelect').value) : null;
+      let orgFilter = '';
+      if (selectedGroupId) {
+        if (!accessibleGroupIds.includes(selectedGroupId)) { showEmpty('无权限查看'); return; }
+        orgFilter = `organization_id=eq.${selectedGroupId}`;
+      } else {
+        const ids = accessibleGroupIds.filter(id => id != null);
+        if (ids.length === 0) { showEmpty('暂无可查看数据'); return; }
+        orgFilter = `organization_id=in.(${ids.join(',')})`;
       }
-      var orgFilter = 'organization_id=in.(' + targetGroupIds.join(',') + ')';
 
-      // Step 3: Query attendance records
-      let recordsUrl = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/attendance_records?schedule_id=in.(${scheduleIds.join(',')})`;
-      if (orgFilter) recordsUrl += '&' + orgFilter;
-      recordsUrl += '&select=organization_id,fill_data';
-
+      // Query attendance records for the week
+      const sIds = scheduleIds.map(s => s.id);
       let records = [];
       try {
-        const recRes = await fetch(recordsUrl, {
-          headers: { 'apikey': 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', 'Authorization': 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
+        const url = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/attendance_records?select=organization_id,fill_data,schedule_id&schedule_id=in.(${sIds.join(',')})&${orgFilter}`;
+        const recRes = await fetch(url, {
+          headers: { apikey: 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', Authorization: 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
         });
         records = await recRes.json() || [];
       } catch (e) { console.error(e); }
 
-      if (records.length === 0) {
-        document.getElementById('onlineTableBody').innerHTML = '<tr><td colspan="7" class="empty-state">暂无数据</td></tr>';
-        document.getElementById('hwTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">暂无数据</td></tr>';
-        document.getElementById('avgOnlineRate').textContent = '0.0%';
-        document.getElementById('avgHwRate').textContent = '0.0%';
-        document.getElementById('avgVideoRate').textContent = '0.0%';
-        return;
-      }
+      if (records.length === 0) { showEmpty('本周暂无数据'); return; }
 
-      // Step 4: Group by org
-      const groupStats = {};
+      // Group by org → day → rates
+      // orgStats[orgId] = { days: { 'YYYY-MM-DD': { online, hw, video, attendance } } }
+      const orgStats = {};
       records.forEach(r => {
         const orgId = r.organization_id;
+        const schedule = schedMap[schedMap[r.schedule_id]?.schedule_date]; // need reverse lookup
+        // Find schedule for this record
+        const sched = scheduleIds.find(s => s.id === r.schedule_id);
+        if (!sched) return;
+        const date = sched.schedule_date;
+        const itemIds = sched.item_ids ? sched.item_ids.split(',').map(Number) : [];
+
         const fd = r.fill_data || {};
-        const yingdao = parseInt(fd['应到人数']) || 0;
-        const shidao = parseInt(fd['实到人数']) || 0;
-        const qingjia = parseInt(fd['请假人数']) || 0;
-        const shipin = parseInt(fd['视频人数']) || 0;
-        const yingzuo = parseInt(fd['应做作业人数']) || 0;
-        const zuowan = parseInt(fd['作业完成人数']) || 0;
+        const values = {
+          yingdao: parseInt(fd['应到人数']) || 0,
+          shidao: parseInt(fd['实到人数']) || 0,
+          qingjia: parseInt(fd['请假人数']) || 0,
+          shipin: parseInt(fd['视频人数']) || 0,
+          yingzuo: parseInt(fd['应做作业人数']) || 0,
+          zuowan: parseInt(fd['作业完成人数']) || 0
+        };
 
-        if (!groupStats[orgId]) {
-          groupStats[orgId] = { yingdao: 0, shidao: 0, qingjia: 0, shipin: 0, yingzuo: 0, zuowan: 0 };
-        }
-        groupStats[orgId].yingdao += yingdao;
-        groupStats[orgId].shidao += shidao;
-        groupStats[orgId].qingjia += qingjia;
-        groupStats[orgId].shipin += shipin;
-        groupStats[orgId].yingzuo += yingzuo;
-        groupStats[orgId].zuowan += zuowan;
+        if (!orgStats[orgId]) orgStats[orgId] = { days: {} };
+        if (!orgStats[orgId].days[date]) orgStats[orgId].days[date] = { online: null, hw: null, video: null, attendanceRate: null };
+
+        // Match item_ids to assessment types and calculate rates
+        const activeTypes = atypes.filter(t => itemIds.includes(t.id));
+        let onlineForm = null, hwForm = null, videoForm = null;
+        activeTypes.forEach(t => {
+          if (t.formula && t.formula.includes('实到人数') && t.formula.includes('应到人数')) onlineForm = t.formula;
+          else if (t.formula && t.formula.includes('视频人数')) videoForm = t.formula;
+          else if (t.formula && t.formula.includes('完成人数') && t.formula.includes('应做')) hwForm = t.formula;
+        });
+
+        const hasMult100 = f => f && (f.includes('*100') || f.includes('×100'));
+        const onlineR = onlineForm ? (calcRate(onlineForm, values) ?? 0) * (hasMult100(onlineForm) ? 1 : 100) : null;
+        const hwR = hwForm ? (calcRate(hwForm, values) ?? 0) * (hasMult100(hwForm) ? 1 : 100) : null;
+        const videoR = videoForm ? (calcRate(videoForm, values) ?? 0) * (hasMult100(videoForm) ? 1 : 100) : null;
+
+        // 出勤率 = 上线率和作业率的平均值
+        let attSum = 0, attCount = 0;
+        if (onlineR !== null) { attSum += onlineR; attCount++; }
+        if (hwR !== null) { attSum += hwR; attCount++; }
+        const attR = attCount > 0 ? attSum / attCount : null;
+
+        orgStats[orgId].days[date] = { online: onlineR, hw: hwR, video: videoR, attendanceRate: attR };
       });
 
-      // Step 5: Build table rows + totals
-      let totalYd = 0, totalSd = 0, totalQj = 0, totalSp = 0, totalYz = 0, totalZw = 0;
-      let onlineRows = '', hwRows = '';
-      Object.entries(groupStats).forEach(([orgId, s]) => {
-        const path = buildOrgPathFromMap(parseInt(orgId), summaryOrgsMap) || summaryOrgsMap[orgId]?.name || '未知';
+      // Build header - show Mon-Sun dates
+      const dayHeaders = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        dayHeaders.push(d);
+      }
+      const headerHtml = `<th>小组</th><th>今天</th>${dayHeaders.map(d => `<th>${d.getMonth()+1}/${d.getDate()}</th>`).join('')}<th>周平均</th>`;
+      document.getElementById('weekDayHeader').innerHTML = headerHtml;
+
+      // Build table rows
+      let rows = '';
+      let totalOnlineSum = 0, totalHwSum = 0, totalAttSum = 0, totalAttCount = 0, totalOnlineCount = 0, totalHwCount = 0;
+
+      Object.entries(orgStats).forEach(([orgId, stat]) => {
+        const path = buildOrgPath(parseInt(orgId), summaryOrgsMap) || summaryOrgsMap[orgId]?.name || '未知';
         const groupName = path.split(' - ').pop();
-        const onlineRate = s.yingdao > 0 ? ((s.shidao / s.yingdao) * 100).toFixed(1) : '0.0';
-        const hwRate = s.yingzuo > 0 ? ((s.zuowan / s.yingzuo) * 100).toFixed(1) : '0.0';
-        const videoRate = s.shidao > 0 ? ((s.shipin / s.shidao) * 100).toFixed(1) : '0.0';
 
-        totalYd += s.yingdao; totalSd += s.shidao; totalQj += s.qingjia;
-        totalSp += s.shipin; totalYz += s.yingzuo; totalZw += s.zuowan;
+        let todayRate = null;
+        let weeklySum = 0, weeklyCount = 0;
+        let dailyCells = '';
 
-        onlineRows += `<tr>
+        dayHeaders.forEach(d => {
+          const ds = formatDate(d);
+          const day = stat.days[ds];
+          let cell = '<td class="highlight">--</td>';
+          if (day && day.attendanceRate !== null) {
+            const rate = day.attendanceRate.toFixed(1);
+            cell = `<td class="highlight rate-${rate >= 60 ? (rate >= 90 ? 'high' : 'mid') : 'low'}">${rate}%</td>`;
+            if (ds === today) todayRate = day.attendanceRate;
+            weeklySum += day.attendanceRate;
+            weeklyCount++;
+          }
+          dailyCells += cell;
+        });
+
+        const weeklyAvg = weeklyCount > 0 ? (weeklySum / weeklyCount).toFixed(1) : '--';
+        const todayDisplay = todayRate !== null ? todayRate.toFixed(1) + '%' : '--';
+
+        if (todayRate !== null) { totalAttSum += todayRate; totalAttCount++; }
+        if (weeklyCount > 0) { /* track for overall average */ }
+
+        rows += `<tr>
           <td style="text-align:left;">${groupName}</td>
-          <td>${s.yingdao}</td>
-          <td>${s.shidao}</td>
-          <td>${s.qingjia}</td>
-          <td>${s.shipin}</td>
-          <td class="highlight rate-${getRateClass(onlineRate)}">${onlineRate}%</td>
-          <td class="highlight rate-${getRateClass(videoRate)}">${videoRate}%</td>
-        </tr>`;
-
-        hwRows += `<tr>
-          <td style="text-align:left;">${groupName}</td>
-          <td>${s.yingzuo}</td>
-          <td>${s.zuowan}</td>
-          <td class="highlight rate-${getRateClass(hwRate)}">${hwRate}%</td>
+          <td class="highlight rate-${todayRate !== null ? (todayRate >= 90 ? 'high' : todayRate >= 60 ? 'mid' : 'low') : ''}">${todayDisplay}</td>
+          ${dailyCells}
+          <td class="highlight rate-${weeklyAvg !== '--' ? (parseFloat(weeklyAvg) >= 90 ? 'high' : parseFloat(weeklyAvg) >= 60 ? 'mid' : 'low') : ''}">${weeklyAvg !== '--' ? weeklyAvg + '%' : '--'}</td>
         </tr>`;
       });
 
-      // Summary averages
-      const avgOnline = totalYd > 0 ? ((totalSd / totalYd) * 100).toFixed(1) : '0.0';
-      const avgHw = totalYz > 0 ? ((totalZw / totalYz) * 100).toFixed(1) : '0.0';
-      const avgVideo = totalSd > 0 ? ((totalSp / totalSd) * 100).toFixed(1) : '0.0';
+      document.getElementById('weeklyTableBody').innerHTML = rows || '<tr><td colspan="9" class="empty-state">暂无数据</td></tr>';
 
-      document.getElementById('avgOnlineRate').textContent = avgOnline + '%';
-      document.getElementById('avgOnlineRate').className = 'summary-stat-value ' + getStatClass(avgOnline);
-      document.getElementById('avgHwRate').textContent = avgHw + '%';
-      document.getElementById('avgHwRate').className = 'summary-stat-value ' + getStatClass(avgHw);
-      document.getElementById('avgVideoRate').textContent = avgVideo + '%';
-      document.getElementById('avgVideoRate').className = 'summary-stat-value ' + getStatClass(avgVideo);
-
-      document.getElementById('onlineTableBody').innerHTML = onlineRows || '<tr><td colspan="7" class="empty-state">暂无数据</td></tr>';
-      document.getElementById('hwTableBody').innerHTML = hwRows || '<tr><td colspan="4" class="empty-state">暂无数据</td></tr>';
+      // Summary stats
+      const overallOnline = 0; // TODO
+      const overallHw = 0;
+      const overallAtt = totalAttCount > 0 ? (totalAttSum / totalAttCount).toFixed(1) : '--';
+      document.getElementById('avgAttendanceRate').textContent = overallAtt !== '--' ? overallAtt + '%' : '--';
+      document.getElementById('avgOnlineRate').textContent = '--';
+      document.getElementById('avgHwRate').textContent = '--';
     }
 
-    function formatDate(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+    function showEmpty(msg) {
+      document.getElementById('weeklyTableBody').innerHTML = `<tr><td colspan="9" class="empty-state">${msg}</td></tr>`;
+      document.getElementById('avgAttendanceRate').textContent = '--';
+      document.getElementById('avgOnlineRate').textContent = '--';
+      document.getElementById('avgHwRate').textContent = '--';
     }
 
-    function changeDate(delta) {
-      currentDate.setDate(currentDate.getDate() + delta);
-      document.getElementById('dateCurrent').textContent = formatDate(currentDate);
-      loadData();
-    }
-
-    function goToToday() {
-      currentDate = new Date();
-      document.getElementById('dateCurrent').textContent = formatDate(currentDate);
-      loadData();
-    }
-
-    function selectGroup(groupValue) {
-      onGroupChange(groupValue);
-    }
-
-    function goToProfile() {
-      window.location.href = 'profile.html';
+    function onGroupChange(groupId) { loadData(); }
     }
 
     // Helper function to get rate class
