@@ -72,64 +72,61 @@
     .header-card {
       background: var(--bg-card);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 16px 18px;
       margin-bottom: 16px;
       box-shadow: 0 2px 12px var(--shadow);
       border: 1px solid var(--border);
-      display: flex;
-      gap: 20px;
-    }
-
-    .header-left {
-      flex: 1;
     }
 
     .header-title {
       font-family: 'Noto Serif SC', serif;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 600;
       margin-bottom: 12px;
       color: var(--ink-dark);
     }
 
-    .header-meta-row {
+    .header-body {
       display: flex;
       gap: 16px;
     }
 
-    .header-meta-item {
+    .header-col {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
     }
 
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 8px;
-      min-width: 160px;
+    .header-col + .header-col {
       border-left: 1px solid var(--border);
-      padding-left: 20px;
+      padding-left: 16px;
     }
 
-    .org-info-row {
+    .header-row {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 8px;
     }
 
-    .org-info-label {
+    .header-label {
       font-size: 12px;
       color: var(--ink-muted);
-      width: 32px;
+      width: 42px;
       flex-shrink: 0;
     }
 
-    .org-info-value {
-      font-size: 14px;
+    .header-value {
+      font-size: 13px;
       font-weight: 500;
       color: var(--ink-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-value.date {
+      font-family: 'Noto Serif SC', serif;
     }
 
     .meta-label {
@@ -526,10 +523,14 @@
       color: var(--ink-muted);
       padding: 8px 20px;
       cursor: pointer;
-      transition: color 0.2s;
+      transition: color 0.2s, background-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
     }
 
     .nav-item.active { color: var(--vermillion); }
+    .nav-item:active { background-color: rgba(0, 0, 0, 0.05); opacity: 0.7; }
     .nav-icon { font-size: 20px; }
   </style>
 </head>
@@ -537,56 +538,61 @@
   <div class="container">
     <div class="page-header">
       <a href="index.html" class="back-btn">←</a>
-      <h1 class="page-title">考勤填报</h1>
+      <h1 class="page-title">考勤</h1>
     </div>
 
     <!-- Header Info -->
     <div class="header-card">
-      <div class="header-left">
-        <div class="header-title" id="semesterName">加载中...</div>
-        <div class="header-meta-row">
-          <div class="header-meta-item">
-            <span class="meta-label">日期</span>
-            <span class="meta-value date" id="currentDate">--</span>
-          </div>
-          <div class="header-meta-item">
-            <span class="meta-label">星期</span>
-            <span class="meta-value" id="currentWeekday">--</span>
-          </div>
-          <div class="header-meta-item">
-            <span class="meta-label">填报人</span>
-            <span class="meta-value" id="reporterName">--</span>
-          </div>
+      <div class="header-title" id="semesterName">加载中...</div>
+      <div class="header-body">
+        <div class="header-col">
+          <div class="header-row"><span class="header-label">日期</span><span class="header-value date" id="currentDate">--</span></div>
+          <div class="header-row"><span class="header-label">星期</span><span class="header-value" id="currentWeekday">--</span></div>
+          <div class="header-row"><span class="header-label">填报人</span><span class="header-value" id="reporterName">--</span></div>
         </div>
-      </div>
-      <div class="header-right">
-        <div class="org-info-row">
-          <span class="org-info-label">大班</span>
-          <span class="org-info-value" id="bigClassName">--</span>
-        </div>
-        <div class="org-info-row">
-          <span class="org-info-label">班级</span>
-          <span class="org-info-value" id="className">--</span>
-        </div>
-        <div class="org-info-row">
-          <span class="org-info-label">小组</span>
-          <span class="org-info-value" id="groupName">--</span>
+        <div class="header-col">
+          <div class="header-row"><span class="header-label">大班</span><span class="header-value" id="bigClassName">--</span></div>
+          <div class="header-row"><span class="header-label">班级</span><span class="header-value" id="className">--</span></div>
+          <div class="header-row"><span class="header-label">小组</span><span class="header-value" id="groupName">--</span></div>
         </div>
       </div>
     </div>
 
-    <!-- Organization Selector (single dropdown) -->
+    <!-- Organization Selector (three-level cascade) -->
     <div class="section" id="orgSelectorSection" style="display:none;">
       <div class="section-title">
         <span class="section-icon">🏢</span>
         选择填报小组
       </div>
-      <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
-        <option value="">加载中...</option>
-      </select>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">大班</label>
+          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">班级</label>
+          <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">小组</label>
+          <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:6px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- Assessment Forms Container -->
+    <div class="section" id="filledTip" style="display:none;background:var(--green-light);">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span>✅ 今日已填报，可修改后重新提交</span>
+        <span style="font-size:12px;color:var(--ink-muted);" id="filledTime"></span>
+      </div>
+    </div>
     <div id="formsContainer">
       <div class="empty-state">
         <div class="empty-state-icon">📋</div>
@@ -609,15 +615,15 @@
     </a>
     <a href="attendance-page.html" class="nav-item active">
       <span class="nav-icon">📋</span>
-      <span class="nav-label">考勤填报</span>
+      <span class="nav-label">考勤</span>
     </a>
     <a href="summary-page.html" class="nav-item">
       <span class="nav-icon">📊</span>
-      <span class="nav-label">数据汇总</span>
+      <span class="nav-label">汇总</span>
     </a>
     <a href="profile.html" class="nav-item">
       <span class="nav-icon">👤</span>
-      <span class="nav-label">个人中心</span>
+      <span class="nav-label">我的</span>
     </a>
   </nav>
 
@@ -703,31 +709,20 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       await loadTodaySchedule();
     }
 
-    // Build full path name for an organization: 大班-班级-小组
-    function buildOrgPath(orgId, orgs) {
-      const org = orgs.find(o => o.id === orgId);
-      if (!org) return '';
-      const parts = [org.name];
-      let pid = org.parent_id;
-      while (pid) {
-        const parent = orgs.find(o => o.id === pid);
-        if (parent) { parts.unshift(parent.name); pid = parent.parent_id; }
-        else break;
-      }
-      return parts.join(' - ');
-    }
+    // Build full path name for an organization: 大班-班级-小组 -- now in utils.js
 
-    // Load organization selector (single dropdown, full path, sorted)
+    // Load organization selector (three-level cascade)
     function loadOrgSelector(orgs) {
-      const groupSelect = document.getElementById('groupSelect');
-      if (!groupSelect) { console.error('groupSelect element not found'); return; }
       const role = currentUser.role;
       const userOrgId = currentUser.organization_id;
 
       if (!orgs || orgs.length === 0) {
-        groupSelect.innerHTML = '<option value="">无组织</option>';
         return;
       }
+
+      const bigClassSelect = document.getElementById('bigClassSelect');
+      const classSelect = document.getElementById('classSelect');
+      const groupSelect = document.getElementById('groupSelect');
 
       let selectableGroupIds = new Set();
 
@@ -749,31 +744,145 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
 
       if (selectableGroupIds.size === 0) {
-        groupSelect.innerHTML = '<option value="">无权限填报的小组</option>';
+        bigClassSelect.innerHTML = '<option value="">无权限填报的小组</option>';
+        classSelect.innerHTML = '<option value="">--</option>';
+        groupSelect.innerHTML = '<option value="">--</option>';
         return;
       }
 
-      const groups = orgs.filter(o => selectableGroupIds.has(o.id))
-        .map(g => ({ id: g.id, path: buildOrgPath(g.id, orgs) }))
-        .sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+      const groups = orgs.filter(o => selectableGroupIds.has(o.id));
+      const bigClasses = [...new Set(groups.map(g => {
+        const cls = orgs.find(o => o.id === g.parent_id);
+        return cls ? orgs.find(o => o.id === cls.parent_id) : null;
+      }).filter(Boolean).map(o => o.id))].map(id => orgs.find(o => o.id === id));
 
-      groupSelect.innerHTML = '<option value="">请选择小组</option>' +
-        groups.map(g => `<option value="${g.id}">${g.path}</option>`).join('');
+      bigClassSelect.innerHTML = (bigClasses.length === 1 ? '' : '<option value="">请选择</option>') +
+        bigClasses.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+
+      classSelect.innerHTML = '';
+      groupSelect.innerHTML = '';
 
       if (userOrgId && selectableGroupIds.has(userOrgId)) {
-        groupSelect.value = userOrgId;
-        onGroupChange(String(userOrgId));
+        const userGroup = orgs.find(o => o.id === userOrgId);
+        if (userGroup && userGroup.level === '小组') {
+          const cls = orgs.find(o => o.id === userGroup.parent_id);
+          const bigClass = cls ? orgs.find(o => o.id === cls.parent_id) : null;
+          if (bigClass) {
+            bigClassSelect.value = bigClass.id;
+            onBigClassChange(String(bigClass.id), userOrgId);
+          }
+        }
+      } else if (bigClasses.length === 1) {
+        // 只有一个大班，自动选中
+        bigClassSelect.value = bigClasses[0].id;
+        onBigClassChange(String(bigClasses[0].id));
+      }
+    }
+
+    function onBigClassChange(bigClassId, preselectGroupId) {
+      const classSelect = document.getElementById('classSelect');
+      const groupSelect = document.getElementById('groupSelect');
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+
+      classSelect.innerHTML = '';
+      groupSelect.innerHTML = '';
+
+      if (!bigClassId) {
+        document.getElementById('bigClassName').textContent = '--';
+        document.getElementById('className').textContent = '--';
+        document.getElementById('groupName').textContent = '--';
+        return;
+      }
+
+      const bigClass = orgs.find(o => o.id === parseInt(bigClassId));
+      document.getElementById('bigClassName').textContent = bigClass?.name || '--';
+
+      let classIds = new Set();
+      orgs.filter(o => o.parent_id === parseInt(bigClassId) && o.level === '班级')
+        .forEach(c => classIds.add(c.id));
+
+      if (role === '班级总督察' || role === '班级副总督察') {
+        if (userOrgId) {
+          const userOrg = orgs.find(o => o.id === userOrgId);
+          if (userOrg && userOrg.level === '班级' && classIds.has(userOrgId)) {
+            classIds = new Set([userOrgId]);
+          }
+        }
+      } else if (role === '小组督察' || role === '小组副督察') {
+        const userGroup = orgs.find(o => o.id === userOrgId);
+        if (userGroup && userGroup.level === '小组') {
+          const cls = orgs.find(o => o.id === userGroup.parent_id);
+          if (cls && classIds.has(cls.id)) {
+            classIds = new Set([cls.id]);
+          }
+        }
+      }
+
+      const classes = [...classIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
+      classSelect.innerHTML = (classes.length === 1 ? '' : '<option value="">请选择</option>') +
+        classes.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+      // 只有一个班级时自动选中，有预选组时优先
+      if (preselectGroupId) {
+        const preselectGroup = orgs.find(o => o.id === preselectGroupId);
+        if (preselectGroup) {
+          const preselectClass = orgs.find(o => o.id === preselectGroup.parent_id);
+          if (preselectClass) {
+            classSelect.value = preselectClass.id;
+            onClassChange(String(preselectClass.id), preselectGroupId);
+          }
+        }
+      } else if (classes.length === 1) {
+        classSelect.value = classes[0].id;
+        onClassChange(String(classes[0].id));
+      }
+    }
+
+    function onClassChange(classId, preselectGroupId) {
+      const groupSelect = document.getElementById('groupSelect');
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+
+      groupSelect.innerHTML = '';
+
+      if (!classId) {
+        document.getElementById('className').textContent = '--';
+        document.getElementById('groupName').textContent = '--';
+        return;
+      }
+
+      const cls = orgs.find(o => o.id === parseInt(classId));
+      document.getElementById('className').textContent = cls?.name || '--';
+
+      let groupIds = new Set();
+      orgs.filter(o => o.parent_id === parseInt(classId) && o.level === '小组')
+        .forEach(g => groupIds.add(g.id));
+
+      if (role === '小组督察' || role === '小组副督察') {
+        const userOrg = orgs.find(o => o.id === userOrgId);
+        if (userOrg && userOrg.level === '小组' && groupIds.has(userOrgId)) {
+          groupIds = new Set([userOrgId]);
+        }
+      }
+
+      const groups = [...groupIds].map(id => orgs.find(o => o.id === id)).filter(Boolean);
+      groupSelect.innerHTML = (groups.length === 1 ? '' : '<option value="">请选择</option>') +
+        groups.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+
+      if (preselectGroupId) {
+        groupSelect.value = preselectGroupId;
+        onGroupChange(String(preselectGroupId));
+      } else if (groups.length === 1) {
+        groupSelect.value = groups[0].id;
+        onGroupChange(String(groups[0].id));
       }
     }
 
     async function onGroupChange(groupId) {
-      const bigClassName = document.getElementById('bigClassName');
-      const className = document.getElementById('className');
       const groupName = document.getElementById('groupName');
 
       if (!groupId) {
-        if (bigClassName) bigClassName.textContent = '--';
-        if (className) className.textContent = '--';
         if (groupName) groupName.textContent = '--';
         return;
       }
@@ -781,27 +890,13 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const group = orgs.find(o => o.id === parseInt(groupId));
       if (!group) return;
 
-      const cls = group.parent_id ? orgs.find(o => o.id === group.parent_id) : null;
-      const bigClass = cls?.parent_id ? orgs.find(o => o.id === cls.parent_id) : null;
-
-      if (bigClassName) bigClassName.textContent = bigClass?.name || '--';
-      if (className) className.textContent = cls?.name || '--';
       if (groupName) groupName.textContent = group.name;
 
       // Reload forms for the selected group and check for existing record
       await loadTodaySchedule(groupId);
     }
 
-    // Get all child organizations recursively
-    function getAllChildOrgs(parentId, orgs) {
-      const children = orgs.filter(o => o.parent_id === parentId);
-      let result = [];
-      children.forEach(c => {
-        result.push(c);
-        result = result.concat(getAllChildOrgs(c.id, orgs));
-      });
-      return result;
-    }
+    // Get all child organizations recursively -- now in utils.js
 
     async function loadTodaySchedule(selectedGroupId) {
       if (!currentSemester) {
@@ -814,7 +909,6 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
 
       const today = getToday();
-      console.log('[attendance] today local date:', today);
 
       // Query today's schedule
       const { data: schedules } = await window.db.from('schedules')
@@ -822,9 +916,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         .eq('semester_id', currentSemester.id)
         .eq('schedule_date', today);
 
-      console.log('[attendance] schedules returned:', schedules?.length, 'schedules');
       currentSchedule = schedules?.find(s => s.schedule_date === today);
-      console.log('[attendance] currentSchedule:', currentSchedule);
 
       if (!currentSchedule) {
         document.getElementById('formsContainer').innerHTML = `
@@ -837,7 +929,6 @@ document.getElementById('orgSelectorSection').style.display = 'block';
 
       // Get assessment type IDs from schedule
       const itemIds = currentSchedule.item_ids ? currentSchedule.item_ids.split(',').filter(Boolean).map(Number) : [];
-      console.log('[attendance] itemIds from schedule:', itemIds);
 
       if (itemIds.length === 0) {
         document.getElementById('formsContainer').innerHTML = `
@@ -998,11 +1089,13 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       // If a group is selected, check for existing record and pre-fill
       if (selectedGroupId && currentSchedule) {
         const { data: existingRecords } = await window.db.from('attendance_records')
-          .select('fill_data')
+          .select('fill_data,created_at')
           .eq('schedule_id', currentSchedule.id)
           .eq('organization_id', parseInt(selectedGroupId))
           .limit(1);
         if (existingRecords && existingRecords.length > 0) {
+          document.getElementById('filledTip').style.display = 'block';
+          document.getElementById('filledTime').textContent = '提交时间: ' + new Date(existingRecords[0].created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
           const fd = existingRecords[0].fill_data || {};
           Object.entries(fieldIds).forEach(([name, id]) => {
             const el = document.getElementById(id);
@@ -1012,6 +1105,9 @@ document.getElementById('orgSelectorSection').style.display = 'block';
             }
           });
           recalcRates();
+        } else {
+          document.getElementById('filledTip').style.display = 'none';
+          document.getElementById('filledTime').textContent = '';
         }
       }
     }
@@ -1143,7 +1239,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const selectedOrgId = groupSelect.value;
 
       if (!selectedOrgId) {
-        showToast('请选择小组');
+        showToast('请选择');
         return;
       }
 
@@ -1253,13 +1349,17 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         created_at: new Date().toISOString()
       };
 
-      const { error } = await window.db.from('attendance_records').insert(submission);
+      // upsert 防止重复提交（同小组同一天只保留最新记录）
+      const { error } = await window.db.from('attendance_records').upsert(submission, { onConflict: 'schedule_id, organization_id' });
 
       if (error) {
         showToast('提交失败: ' + error.message);
         console.error('Submit error:', error);
       } else {
         showToast('提交成功！');
+        var ol = yingdao>0 ? (shidao/yingdao*100).toFixed(1) : '0.0';
+        var hl = yingzuo>0 ? (zuowan/yingzuo*100).toFixed(1) : '0.0';
+        logAction('考勤提交', selectedOrg.name, '上线率:' + ol + '%, 作业率:' + hl + '%');
         ['yingdao','shidao','qingjia','shipin','yingzuo','zuowan'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';
