@@ -909,6 +909,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
 
       const today = getToday();
+      console.log('[attendance] today local date:', today);
 
       // Query today's schedule
       const { data: schedules } = await window.db.from('schedules')
@@ -916,7 +917,9 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         .eq('semester_id', currentSemester.id)
         .eq('schedule_date', today);
 
+      console.log('[attendance] schedules returned:', schedules?.length, 'schedules');
       currentSchedule = schedules?.find(s => s.schedule_date === today);
+      console.log('[attendance] currentSchedule:', currentSchedule, 'item_ids:', currentSchedule?.item_ids);
 
       if (!currentSchedule) {
         document.getElementById('formsContainer').innerHTML = `
