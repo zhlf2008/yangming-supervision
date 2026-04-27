@@ -1367,6 +1367,29 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
     }
 
+    // 键盘弹起时隐藏底部导航，收起时恢复
+    (function() {
+      const nav = document.querySelector('.bottom-nav');
+      if (!nav) return;
+      // 监听 input/textarea 的 focus/blur
+      document.addEventListener('focusin', function(e) {
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+          nav.style.display = 'none';
+        }
+      });
+      document.addEventListener('focusout', function(e) {
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+          // 延迟恢复，避免两个 input 之间切换时闪烁
+          setTimeout(function() {
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+            nav.style.display = '';
+          }, 100);
+        }
+      });
+    })();
+
     // Initialize
     init();
   </script>
