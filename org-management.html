@@ -395,10 +395,8 @@
           html += renderClassAsRoot(managedRootOrg, byLevel);
         }
       } else if (role === '小组督察' || role === '小组副督察') {
-        // 小组级：显示自己的小组（作为根）
-        if (managedRootOrg && managedRootOrg.level === '小组') {
-          html += renderGroupAsRoot(managedRootOrg);
-        }
+        // 小组级别无权限管理组织架构
+        html = '<div class="empty-state">小组级别无管理权限</div>';
       }
 
       container.innerHTML = html || '<div class="empty-state">暂无管理权限</div>';
@@ -737,7 +735,7 @@
       if (myRoleIdx === -1) myRoleIdx = ROLE_HIERARCHY.length;
       return roles.filter(function (r) {
         var idx = ROLE_HIERARCHY.indexOf(r.value);
-        return idx === -1 || idx >= myRoleIdx;
+        return idx === -1 || idx > myRoleIdx;
       });
     }
 
