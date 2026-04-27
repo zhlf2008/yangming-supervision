@@ -1082,15 +1082,10 @@ document.getElementById('orgSelectorSection').style.display = 'block';
 
       // 出勤率 = 所有启用的考核项目比率之和 / 启用数量
       const activeTypes = todayTypes.map(t => t.type_name);
-      let rateSum = 0;
-      if (activeTypes.includes('上线率')) rateSum += onlineRate;
-      if (activeTypes.includes('作业率')) rateSum += hwRate;
-      if (activeTypes.includes('视频率')) rateSum += videoRate;
-      const rateCount = [onlineRate, hwRate, videoRate].filter((_, i) => {
-        return (i === 0 && activeTypes.includes('上线率')) ||
-               (i === 1 && activeTypes.includes('作业率')) ||
-               (i === 2 && activeTypes.includes('视频率'));
-      }).length;
+      let rateSum = 0, rateCount = 0;
+      if (activeTypes.includes('上线率')) { rateSum += onlineRate; rateCount++; }
+      if (activeTypes.includes('作业率')) { rateSum += hwRate; rateCount++; }
+      if (activeTypes.includes('视频率')) { rateSum += videoRate; rateCount++; }
       const totalRate = rateCount > 0 ? (rateSum / rateCount).toFixed(1) : '0.0';
 
       const el = document.getElementById('liveOnlineRate');
