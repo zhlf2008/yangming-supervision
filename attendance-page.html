@@ -1177,6 +1177,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         : 0;
 
       // 出勤率 = 上线率和作业率的平均值（视频率不计入）
+      const activeTypes = todayTypes.map(t => t.type_name);
       let rateSum = 0, rateCount = 0;
       if (activeTypes.includes('上线率')) { rateSum += onlineRate; rateCount++; }
       if (activeTypes.includes('作业率')) { rateSum += hwRate; rateCount++; }
