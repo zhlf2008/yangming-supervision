@@ -277,6 +277,12 @@
       if (!userData) { window.location.href = 'login.html'; return; }
       currentUser = JSON.parse(userData);
 
+      // 小组督察无权限，直接退回
+      if (currentUser.role === '小组督察' || currentUser.role === '小组副督察') {
+        document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">无访问权限，<a href="index.html">返回首页</a></div>';
+        return;
+      }
+
       initRegistrationToggle();
       await loadOrganizations();
       calcManagedScope();
