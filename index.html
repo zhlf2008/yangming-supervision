@@ -497,6 +497,12 @@
 <script src="js/utils.js"></script>
 <script>
     // Wait for Supabase db to be ready
+    // 获取本地日期（避免 UTC 时区问题）
+    function getToday() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
     async function init() {
       await waitForDb();
       await new Promise(r => setTimeout(r, 500));
@@ -595,7 +601,7 @@
 
       // Load today's stats for the user's scope
     async function loadCurrentSemester() {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getToday();
       const { data } = await window.db.from('semesters').select('semester_name').lte('start_date', today).gte('end_date', today).single();
       if (data) {
         document.querySelector('.header-subtitle').textContent = data.semester_name;
@@ -607,7 +613,7 @@
     var touchStartX = 0;
 
     async function loadTodayStats(profile) {
-      var today = new Date().toISOString().split('T')[0];
+      var today = getToday();
       var role = profile.role;
       var userOrgId = profile.organization_id;
 

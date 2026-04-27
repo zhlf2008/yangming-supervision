@@ -195,22 +195,26 @@
       document.getElementById('recordList').innerHTML=html;
     }
 
+    function fmtDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
     function getPeriodRange(period) {
-      var now=new Date(),today=now.toISOString().split('T')[0];
+      var now=new Date(),today=fmtDate(now);
       if (period==='week'){
         var dow=now.getDay(),monOff=dow===0?-6:1-dow;
         var mon=new Date(now);mon.setDate(now.getDate()+monOff);
-        return {start:mon.toISOString().split('T')[0],end:today};
+        return {start:fmtDate(mon),end:today};
       }
       if (period==='lastWeek'){
         var dow2=now.getDay(),lmOff=dow2===0?-13:-6-dow2,lsOff=dow2===0?-7:-dow2;
         var lm=new Date(now);lm.setDate(now.getDate()+lmOff);
         var ls=new Date(now);ls.setDate(now.getDate()+lsOff);
-        return {start:lm.toISOString().split('T')[0],end:ls.toISOString().split('T')[0]};
+        return {start:fmtDate(lm),end:fmtDate(ls)};
       }
       if (period==='month'){
         var ms=new Date(now.getFullYear(),now.getMonth(),1);
-        return {start:ms.toISOString().split('T')[0],end:today};
+        return {start:fmtDate(ms),end:today};
       }
       return null;
     }
