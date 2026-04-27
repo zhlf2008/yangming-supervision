@@ -792,40 +792,51 @@
         d.setDate(monday.getDate() + i);
         dayHeaders.push(d);
       }
-      const headerHtml = `<th>小组</th><th>今天</th>${dayHeaders.map(d => `<th>${d.getMonth()+1}/${d.getDate()}</th>`).join('')}<th>周平均</th>`;
+      // 统计本周实际有日程的天数，以及到今天为止的日程天数
+      const weekScheduleDates = Object.keys(schedMap);
+      let totalWeekDays = weekScheduleDates.length;  // 本周总考核天数
+      const datesUpToToday = dayHeaders.filter(d => formatDate(d) <= today);
+      let scheduledUpToToday = datesUpToToday.filter(d => weekScheduleDates.includes(formatDate(d))).length;
+
+      const headerHtml = `<th>小组</th><th>今天</th>${dayHeaders.map(d => `<th>${d.getMonth()+1}/${d.getDate()}</th>`).join('')}<th>周平均<br><small>(${totalWeekDays}天)</small></th>`;
       document.getElementById('weekDayHeader').innerHTML = headerHtml;
 
       // Build table rows
       let rows = '';
-      let totalOnlineSum = 0, totalHwSum = 0, totalAttSum = 0, totalAttCount = 0, totalOnlineCount = 0, totalHwCount = 0;
+      let totalAttSum = 0, totalAttCount = 0;
 
       Object.entries(orgStats).forEach(([orgId, stat]) => {
         const path = buildOrgPath(parseInt(orgId), summaryOrgsMap) || summaryOrgsMap[orgId]?.name || '未知';
         const groupName = path.split(' - ').pop();
 
         let todayRate = null;
-        let weeklySum = 0, weeklyCount = 0;
+        let weeklySum = 0, weeklyFilledCount = 0;
         let dailyCells = '';
 
         dayHeaders.forEach(d => {
           const ds = formatDate(d);
+          const isScheduled = weekScheduleDates.includes(ds);
           const day = stat.days[ds];
           let cell = '<td class="highlight">--</td>';
           if (day && day.attendanceRate !== null) {
             const rate = day.attendanceRate.toFixed(1);
             cell = `<td class="highlight rate-${rate >= 60 ? (rate >= 90 ? 'high' : 'mid') : 'low'}">${rate}%</td>`;
             if (ds === today) todayRate = day.attendanceRate;
-            weeklySum += day.attendanceRate;
-            weeklyCount++;
+            // 只统计到今天为止的已填报记录
+            if (ds <= today) { weeklySum += day.attendanceRate; weeklyFilledCount++; }
+          } else if (isScheduled && ds <= today) {
+            // 有日程但未填报，计为 0（也算在平均里）
+            weeklyFilledCount = Math.max(weeklyFilledCount, 1); // 确保分母不为 0
           }
           dailyCells += cell;
         });
 
-        const weeklyAvg = weeklyCount > 0 ? (weeklySum / weeklyCount).toFixed(1) : '--';
+        // 周平均 = 填报数据之和 / 到今天为止的日程天数
+        const divisor = scheduledUpToToday > 0 ? scheduledUpToToday : 1;
+        const weeklyAvg = weeklyFilledCount > 0 ? (weeklySum / divisor).toFixed(1) : '--';
         const todayDisplay = todayRate !== null ? todayRate.toFixed(1) + '%' : '--';
 
         if (todayRate !== null) { totalAttSum += todayRate; totalAttCount++; }
-        if (weeklyCount > 0) { /* track for overall average */ }
 
         rows += `<tr>
           <td style="text-align:left;">${groupName}</td>
