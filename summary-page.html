@@ -466,14 +466,31 @@
       </div>
     </div>
 
-    <!-- Organization Selector -->
+    <!-- Organization Selector (three-level cascade) -->
     <div class="section">
       <div class="section-header">
-        <span class="section-title">数据筛选</span>
+        <span class="section-title">🏢 数据筛选</span>
       </div>
-      <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-primary);">
-        <option value="">全部</option>
-      </select>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">大班</label>
+          <select class="form-select" id="bigClassSelect" onchange="onBigClassChange(this.value)" style="width:100%;padding:8px 6px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">班级</label>
+          <select class="form-select" id="classSelect" onchange="onClassChange(this.value)" style="width:100%;padding:8px 6px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">小组</label>
+          <select class="form-select" id="groupSelect" onchange="onGroupChange(this.value)" style="width:100%;padding:8px 6px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);">
+            <option value="">请选择</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- Weekly Data Table -->
@@ -573,46 +590,112 @@
     let summaryOrgsList = [];
 
     async function loadOrgSelector() {
-      const groupSelect = document.getElementById('groupSelect');
-      if (!groupSelect) return;
-      const role = currentUser.role;
-      const userOrgId = currentUser.organization_id;
-
-      // 小组督察/副督察只能看自己的小组，隐藏筛选器
-      if (role === '小组督察' || role === '小组副督察') {
-        groupSelect.closest('.section').style.display = 'none';
-        return;
-      }
-
       const { data: orgs } = await window.db.from('organizations').select('*').order('level', { ascending: true });
       if (!orgs) return;
-
-      // Build orgsMap
       summaryOrgsMap = {};
       summaryOrgsList = [];
       orgs.forEach(o => { summaryOrgsMap[o.id] = o; });
+      summaryOrgsList = orgs;
 
-      // Determine accessible group IDs
-      let accessibleGroupIds = [];
+      // 小组督察：自动选中自己的小组
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
       if (role === '小组督察' || role === '小组副督察') {
-        accessibleGroupIds = userOrgId ? [userOrgId] : [];
-      } else if (role === '班级总督察' || role === '班级副总督察') {
-        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
-      } else if (role === '大班总督' || role === '大班副督') {
-        accessibleGroupIds = userOrgId ? getAllGroups(userOrgId, summaryOrgsMap).map(g => g.id) : [];
-      } else if (role === '管理员' || role === '地区督委') {
-        accessibleGroupIds = orgs.filter(o => o.level === '小组').map(o => o.id);
-      } else {
-        accessibleGroupIds = [];
+        const g = document.getElementById('groupSelect');
+        if (g) {
+          const myOrg = orgs.find(o => o.id === userOrgId);
+          if (myOrg && myOrg.level === '小组') {
+            g.innerHTML = `<option value="${myOrg.id}">${myOrg.name}</option>`;
+            g.value = myOrg.id;
+            onGroupChange(String(myOrg.id));
+          }
+        }
+        return;
       }
 
-      // Build options: all accessible groups with full path, sorted
-      const groups = orgs.filter(o => o.level === '小组' && accessibleGroupIds.includes(o.id))
-        .map(g => ({ id: g.id, path: buildOrgPath(g.id, summaryOrgsMap) }))
-        .sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+      // Use same cascading logic as attendance page
+      const bigClassSelect = document.getElementById('bigClassSelect');
+      const classSelect = document.getElementById('classSelect');
+      const groupSelect = document.getElementById('groupSelect');
+      if (!bigClassSelect || !classSelect || !groupSelect) return;
 
-      groupSelect.innerHTML = '<option value="">全部</option>' +
-        groups.map(g => `<option value="${g.id}">${g.path}</option>`).join('');
+      let selectableGroupIds = new Set();
+      if (role === '班级总督察' || role === '班级副总督察') {
+        if (userOrgId) orgs.filter(o => o.parent_id === userOrgId && o.level === '小组').forEach(g => selectableGroupIds.add(g.id));
+      } else if (role === '大班总督' || role === '大班副督') {
+        if (userOrgId) getAllChildOrgs(userOrgId, summaryOrgsMap).filter(o => o.level === '小组').forEach(g => selectableGroupIds.add(g.id));
+      } else if (role === '管理员' || role === '地区督委') {
+        orgs.filter(o => o.level === '小组').forEach(g => selectableGroupIds.add(g.id));
+      }
+
+      if (selectableGroupIds.size === 0) {
+        bigClassSelect.innerHTML = '<option value="">无可选小组</option>';
+        return;
+      }
+
+      const groups = orgs.filter(o => selectableGroupIds.has(o.id));
+      const bigClasses = [...new Set(groups.map(g => {
+        const cls = orgs.find(o => o.id === g.parent_id);
+        return cls ? orgs.find(o => o.id === cls.parent_id) : null;
+      }).filter(Boolean).map(o => o.id))].map(id => orgs.find(o => o.id === id));
+
+      bigClassSelect.innerHTML = (bigClasses.length === 1 ? '' : '<option value="">请选择</option>') +
+        bigClasses.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+
+      if (bigClasses.length === 1) {
+        bigClassSelect.value = bigClasses[0].id;
+        onBigClassChange(String(bigClasses[0].id));
+      }
+    }
+
+    function onBigClassChange(bigClassId) {
+      const classSelect = document.getElementById('classSelect');
+      const groupSelect = document.getElementById('groupSelect');
+      classSelect.innerHTML = '';
+      groupSelect.innerHTML = '';
+      if (!bigClassId) return;
+
+      let classIds = new Set();
+      summaryOrgsList.filter(o => o.parent_id === parseInt(bigClassId) && o.level === '班级').forEach(c => classIds.add(c.id));
+
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+      if (role === '班级总督察' || role === '班级副总督察') {
+        if (userOrgId && classIds.has(userOrgId)) classIds = new Set([userOrgId]);
+      }
+
+      const classes = [...classIds].map(id => summaryOrgsMap[id]).filter(Boolean);
+      classSelect.innerHTML = (classes.length === 1 ? '' : '<option value="">请选择</option>') +
+        classes.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+      if (classes.length === 1) {
+        classSelect.value = classes[0].id;
+        onClassChange(String(classes[0].id));
+      }
+    }
+
+    function onClassChange(classId) {
+      const groupSelect = document.getElementById('groupSelect');
+      groupSelect.innerHTML = '';
+      if (!classId) return;
+
+      let groupIds = new Set();
+      summaryOrgsList.filter(o => o.parent_id === parseInt(classId) && o.level === '小组').forEach(g => groupIds.add(g.id));
+
+      const role = currentUser.role;
+      const userOrgId = currentUser.organization_id;
+      if (role === '小组督察' || role === '小组副督察') {
+        if (userOrgId && groupIds.has(userOrgId)) groupIds = new Set([userOrgId]);
+      }
+
+      const groups = [...groupIds].map(id => summaryOrgsMap[id]).filter(Boolean);
+      groupSelect.innerHTML = (groups.length === 1 ? '' : '<option value="">请选择</option>') +
+        groups.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+
+      if (groups.length === 1) {
+        groupSelect.value = groups[0].id;
+        onGroupChange(String(groups[0].id));
+      }
     }
 
     // Week navigation state
