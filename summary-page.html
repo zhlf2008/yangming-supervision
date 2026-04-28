@@ -426,6 +426,10 @@
       from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    .input-row { display: flex; gap: 8px; }
+    .input-row .input-group { flex: 1; min-width: 0; }
+    .input-label { display: block; font-size: 11px; color: var(--ink-muted); margin-bottom: 4px; }
   </style>
 </head>
 <body>
@@ -646,9 +650,22 @@
         bigClassSelect.value = bigClasses[0].id;
         onBigClassChange(String(bigClasses[0].id));
       }
+
+      // 自动匹配当前用户所在小组
+      if (userOrgId && selectableGroupIds.has(userOrgId)) {
+        const userGroup = summaryOrgsMap[userOrgId];
+        if (userGroup && userGroup.level === '小组') {
+          const cls = summaryOrgsMap[userGroup.parent_id];
+          const bigClass = cls ? summaryOrgsMap[cls.parent_id] : null;
+          if (bigClass) {
+            bigClassSelect.value = bigClass.id;
+            onBigClassChange(String(bigClass.id), userOrgId);
+          }
+        }
+      }
     }
 
-    function onBigClassChange(bigClassId) {
+    function onBigClassChange(bigClassId, preselectGroupId) {
       const classSelect = document.getElementById('classSelect');
       const groupSelect = document.getElementById('groupSelect');
       classSelect.innerHTML = '';
@@ -668,13 +685,24 @@
       classSelect.innerHTML = (classes.length === 1 ? '' : '<option value="">请选择</option>') +
         classes.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
+      if (preselectGroupId) {
+        const g = summaryOrgsMap[preselectGroupId];
+        if (g) {
+          const cls = summaryOrgsMap[g.parent_id];
+          if (cls) {
+            classSelect.value = cls.id;
+            onClassChange(String(cls.id), preselectGroupId);
+            return;
+          }
+        }
+      }
       if (classes.length === 1) {
         classSelect.value = classes[0].id;
         onClassChange(String(classes[0].id));
       }
     }
 
-    function onClassChange(classId) {
+    function onClassChange(classId, preselectGroupId) {
       const groupSelect = document.getElementById('groupSelect');
       groupSelect.innerHTML = '';
       if (!classId) return;
@@ -692,7 +720,10 @@
       groupSelect.innerHTML = (groups.length === 1 ? '' : '<option value="">请选择</option>') +
         groups.sort((a,b) => a.name.localeCompare(b.name,'zh-CN')).map(g => `<option value="${g.id}">${g.name}</option>`).join('');
 
-      if (groups.length === 1) {
+      if (preselectGroupId) {
+        groupSelect.value = preselectGroupId;
+        onGroupChange(String(preselectGroupId));
+      } else if (groups.length === 1) {
         groupSelect.value = groups[0].id;
         onGroupChange(String(groups[0].id));
       }
