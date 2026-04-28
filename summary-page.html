@@ -670,7 +670,7 @@
       const groupSelect = document.getElementById('groupSelect');
       classSelect.innerHTML = '';
       groupSelect.innerHTML = '';
-      if (!bigClassId) return;
+      if (!bigClassId) { loadData(); return; }
 
       let classIds = new Set();
       summaryOrgsList.filter(o => o.parent_id === parseInt(bigClassId) && o.level === '班级').forEach(c => classIds.add(c.id));
@@ -699,13 +699,15 @@
       if (classes.length === 1) {
         classSelect.value = classes[0].id;
         onClassChange(String(classes[0].id));
+      } else {
+        loadData(); // No specific class selected, show all groups under this big class
       }
     }
 
     function onClassChange(classId, preselectGroupId) {
       const groupSelect = document.getElementById('groupSelect');
       groupSelect.innerHTML = '';
-      if (!classId) return;
+      if (!classId) { loadData(); return; }
 
       let groupIds = new Set();
       summaryOrgsList.filter(o => o.parent_id === parseInt(classId) && o.level === '小组').forEach(g => groupIds.add(g.id));
@@ -726,6 +728,8 @@
       } else if (groups.length === 1) {
         groupSelect.value = groups[0].id;
         onGroupChange(String(groups[0].id));
+      } else {
+        loadData(); // No specific group selected, show all groups under this class
       }
     }
 
@@ -817,7 +821,8 @@
       const schedMap = {};
       scheduleIds.forEach(s => { schedMap[s.schedule_date] = s; });
 
-      // Build org filter
+      // Build org filter based on cascading selector state
+      // Determine which groups are accessible by the current user's role
       let accessibleGroupIds = [];
       if (role === '小组督察' || role === '小组副督察') {
         accessibleGroupIds = userOrgId ? [userOrgId] : [];
@@ -827,16 +832,37 @@
         accessibleGroupIds = Object.values(summaryOrgsMap).filter(o => o.level === '小组').map(o => o.id);
       } else { accessibleGroupIds = []; }
 
-      const selectedGroupId = document.getElementById('groupSelect')?.value ? parseInt(document.getElementById('groupSelect').value) : null;
-      let orgFilter = '';
-      if (selectedGroupId) {
-        if (!accessibleGroupIds.includes(selectedGroupId)) { showEmpty('无权限查看'); return; }
-        orgFilter = `organization_id=eq.${selectedGroupId}`;
-      } else {
-        const ids = accessibleGroupIds.filter(id => id != null);
-        if (ids.length === 0) { showEmpty('暂无可查看数据'); return; }
-        orgFilter = `organization_id=in.(${ids.join(',')})`;
+      // Narrow down by cascading selector
+      const bigClassSelect = document.getElementById('bigClassSelect');
+      const classSelect = document.getElementById('classSelect');
+      const groupSelect = document.getElementById('groupSelect');
+      const selBigClass = bigClassSelect?.value ? parseInt(bigClassSelect.value) : null;
+      const selClass = classSelect?.value ? parseInt(classSelect.value) : null;
+      const selGroup = groupSelect?.value ? parseInt(groupSelect.value) : null;
+
+      if (selGroup) {
+        // 选中了具体小组
+        if (!accessibleGroupIds.includes(selGroup)) { showEmpty('无权限查看'); return; }
+        accessibleGroupIds = [selGroup];
+      } else if (selClass) {
+        // 选中了班级：显示该班级下所有小组
+        const classGroups = summaryOrgsList.filter(o => o.parent_id === selClass && o.level === '小组').map(o => o.id);
+        accessibleGroupIds = accessibleGroupIds.filter(id => classGroups.includes(id));
+        if (accessibleGroupIds.length === 0) { showEmpty('无权限查看'); return; }
+      } else if (selBigClass) {
+        // 选中了大班：显示该大班下所有小组
+        const bigClassGroups = new Set();
+        const classes = summaryOrgsList.filter(o => o.parent_id === selBigClass && o.level === '班级');
+        classes.forEach(cls => {
+          summaryOrgsList.filter(o => o.parent_id === cls.id && o.level === '小组').forEach(g => bigClassGroups.add(g.id));
+        });
+        accessibleGroupIds = accessibleGroupIds.filter(id => bigClassGroups.has(id));
+        if (accessibleGroupIds.length === 0) { showEmpty('无权限查看'); return; }
       }
+
+      const ids = accessibleGroupIds.filter(id => id != null);
+      if (ids.length === 0) { showEmpty('暂无可查看数据'); return; }
+      const orgFilter = `organization_id=in.(${ids.join(',')})`;
 
       // Query attendance records for the week
       const sIds = scheduleIds.map(s => s.id);
