@@ -997,8 +997,8 @@
       Object.values(orgStats).forEach(stat => {
         let orgSum = 0, orgCount = 0;
         scheduledDays.forEach(({date}) => {
-          if (date <= today && stat.days[date]?.attendanceRate !== null) {
-            orgSum += stat.days[date].attendanceRate;
+          if (date <= today && stat.days[date]?.attendanceRate != null) {
+            orgSum += stat.days[date]?.attendanceRate ?? 0;
             orgCount++;
           }
         });
