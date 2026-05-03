@@ -236,15 +236,17 @@
 
     async function toggleValid(scheduleId, currentVal) {
       const newVal = currentVal == 0 ? 1 : 0;
+      const sid = parseInt(scheduleId);
       // 立即更新本地状态和UI
-      const s = schedules.find(x => x.id == scheduleId);
+      const s = schedules.find(x => x.id == sid);
       if (s) s.is_valid = newVal;
-      const switchEl = document.querySelector(`#day-${scheduleId} .switch-pill input`);
+      const switchEl = document.querySelector(`#day-${sid} .switch-pill input`);
       if (switchEl) switchEl.checked = newVal == 1;
-      const dayEl = document.querySelector(`#day-${scheduleId}`);
+      const dayEl = document.querySelector(`#day-${sid}`);
       if (dayEl) dayEl.classList.toggle('disabled', newVal == 0);
       // 异步写数据库
-      await window.db.from('schedules').update({ is_valid: newVal }).eq('id', scheduleId);
+      const { error } = await window.db.from('schedules').update({ is_valid: newVal }).eq('id', sid);
+      if (error) console.error('toggleValid error:', error);
     }
 
     async function toggleItem(el) {
