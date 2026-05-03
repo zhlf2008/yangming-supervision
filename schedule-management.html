@@ -290,37 +290,77 @@
 
     async function generateSchedules() {
       if (!currentSemester) return;
-      var hasExisting = schedules && schedules.length > 0;
-      var msg = hasExisting
-        ? '已有 ' + schedules.length + ' 天日程，重新生成将覆盖已有配置（含手动调整），确定继续？'
-        : '将根据学期日期范围自动生成每日日程，确定继续？';
-      if (!confirm(msg)) return;
-      var start = new Date(currentSemester.start_date);
-      var end = new Date(currentSemester.end_date);
-      var trialStart = currentSemester.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
-      var self = this;
-      var { data: templates } = await window.db.from('assessment_types').select('id').eq('is_template', 1);
-      var itemIds = templates ? templates.map(function(t){return t.id}).join(',') : '';
-      var toInsert = [];
-      var current = trialStart ? new Date(trialStart) : new Date(start);
-      var jumped = false;
+      const trialStart = currentSemester.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
+      const start = new Date(currentSemester.start_date);
+      const end = new Date(currentSemester.end_date);
+
+      // 构建期望的日期集合
+      const expectedDates = new Set();
+      const current = trialStart ? new Date(trialStart) : new Date(start);
+      let jumped = false;
       while (current <= end) {
-        toInsert.push({
-          semester_id: currentSemester.id,
-          schedule_date: current.toISOString().split('T')[0],
-          week_day: current.getDay() + 1,
-          item_ids: itemIds,
-          is_valid: 1
-        });
+        expectedDates.add(current.toISOString().split('T')[0]);
         current.setDate(current.getDate() + 1);
-        // 试听期结束、正式期开始交接：创建 start 的副本避免共享引用
         if (trialStart && !jumped && current.getTime() >= start.getTime()) {
           current = new Date(start.getTime());
           jumped = true;
         }
       }
-      // upsert 防止重复生成
-      await window.db.from('schedules').upsert(toInsert, { onConflict: 'semester_id, schedule_date' });
+
+      // 已有日期的集合，保留其配置
+      const existingMap = {};
+      (schedules || []).forEach(s => { existingMap[s.schedule_date] = s; });
+
+      // 找出需要添加的日期和需要删除的日期
+      const toAdd = [];
+      const existingDates = new Set(Object.keys(existingMap));
+      expectedDates.forEach(d => {
+        if (!existingDates.has(d)) toAdd.push(d);
+      });
+      const toDelete = [];
+      existingDates.forEach(d => {
+        if (!expectedDates.has(d)) toDelete.push(d);
+      });
+
+      if (toAdd.length === 0 && toDelete.length === 0) {
+        showToast('日程已是最新，无需更新');
+        return;
+      }
+
+      const msg = [];
+      if (toAdd.length > 0) msg.push('新增 ' + toAdd.length + ' 天');
+      if (toDelete.length > 0) msg.push('删除 ' + toDelete.length + ' 天');
+      msg.push('已有配置保持不变');
+      if (!confirm(msg.join('，') + '，确定继续？')) return;
+
+      // 获取模板 item_ids
+      const { data: templates } = await window.db.from('assessment_types').select('id').eq('is_template', 1);
+      const itemIds = templates?.map(t => t.id).join(',') || '';
+
+      // 新增日期
+      if (toAdd.length > 0) {
+        const toInsert = toAdd.map(d => {
+          const dt = new Date(d + 'T00:00:00');
+          return {
+            semester_id: currentSemester.id,
+            schedule_date: d,
+            week_day: dt.getDay() + 1,
+            item_ids: itemIds,
+            is_valid: 1
+          };
+        });
+        await window.db.from('schedules').insert(toInsert);
+      }
+
+      // 删除超出范围的日期
+      if (toDelete.length > 0) {
+        const deleteIds = toDelete.map(d => existingMap[d]?.id).filter(Boolean);
+        for (const id of deleteIds) {
+          await window.db.from('schedules').delete().eq('id', id);
+        }
+      }
+
+      showToast('日程已更新（新增 ' + toAdd.length + '，删除 ' + toDelete.length + '）');
       await loadSchedules(currentSemester.id);
     }
 
