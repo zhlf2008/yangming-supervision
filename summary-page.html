@@ -804,7 +804,7 @@
       // Query week's schedules
       let scheduleIds = [];
       try {
-        const url = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date,item_ids&schedule_date=gte.${weekStart}&schedule_date=lte.${weekEnd}`;
+        const url = `https://whvjfurrkusdwujjodwc.supabase.co/rest/v1/schedules?select=id,schedule_date,item_ids&schedule_date=gte.${weekStart}&schedule_date=lte.${weekEnd}&is_valid=eq.1`;
         const schedRes = await fetch(url, {
           headers: { apikey: 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', Authorization: 'Bearer sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_' }
         });
