@@ -500,14 +500,14 @@
     <!-- Weekly Data Table -->
     <section class="section">
       <div class="section-header">
-        <span class="section-title">📅 本周各小组出勤率</span>
+        <span class="section-title">📅 小组出勤率</span>
+        <span style="font-size:12px;color:var(--ink-muted);margin-left:8px;" id="weekLabel"></span>
       </div>
       <div class="table-scroll" style="overflow-x:auto;">
-        <table class="data-table" style="min-width:700px;">
+        <table class="data-table" style="min-width:600px;">
           <thead>
             <tr id="weekDayHeader">
               <th>小组</th>
-              <th>今天</th>
               <th>周平均</th>
             </tr>
           </thead>
@@ -544,6 +544,7 @@
 <script>
     let currentUser = null;
     let currentOrg = null;
+    let currentSemester = null;
 
     async function init() {
       await waitForDb();
@@ -557,6 +558,10 @@
       }
 
       currentUser = JSON.parse(userData);
+
+      // Load current semester
+      const { data: semData } = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single();
+      currentSemester = semData || null;
 
       // Load organization selector based on user's scope
       await loadOrgSelector();
@@ -925,48 +930,51 @@
         orgStats[orgId].days[date] = { online: onlineR, hw: hwR, video: videoR, attendanceRate: attR };
       });
 
-      // Build header - show Mon-Sun dates
-      const dayHeaders = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        dayHeaders.push(d);
-      }
-      // 统计本周实际有日程的天数，以及到今天为止的日程天数
-      const weekScheduleDates = Object.keys(schedMap);
-      let totalWeekDays = weekScheduleDates.length;  // 本周总考核天数
-      const datesUpToToday = dayHeaders.filter(d => formatDate(d) <= today);
-      let scheduledUpToToday = datesUpToToday.filter(d => weekScheduleDates.includes(formatDate(d))).length;
+      // Build header - only show scheduled dates
+      const weekScheduleDates = Object.keys(schedMap).sort();
+      let totalWeekDays = weekScheduleDates.length;
 
-      const headerHtml = `<th>小组</th><th>今天</th>${dayHeaders.map(d => `<th>${d.getMonth()+1}/${d.getDate()}</th>`).join('')}<th>周平均<br><small>(${totalWeekDays}天)</small></th>`;
+      // 计算第几周（基于学期开始日期）
+      let weekNum = '';
+      if (currentSemester?.start_date) {
+        const semStart = new Date(currentSemester.start_date);
+        const diffDays = Math.floor((monday - semStart) / 86400000);
+        weekNum = '第' + (Math.max(1, Math.ceil((diffDays + 1) / 7))) + '周';
+      }
+      document.getElementById('weekLabel').textContent = weekNum + ' (' + totalWeekDays + '天考核)';
+
+      const scheduledDays = weekScheduleDates.map(d => {
+        const dt = new Date(d + 'T00:00:00');
+        return { date: d, label: dt.getMonth()+1 + '/' + dt.getDate() };
+      });
+      // 到今天为止的日程天数
+      const datesUpToToday = scheduledDays.filter(d => d.date <= today);
+      let scheduledUpToToday = datesUpToToday.length;
+
+      const headerHtml = `<th>小组</th>${scheduledDays.map(d => `<th>${d.label}</th>`).join('')}<th>周平均</th>`;
       document.getElementById('weekDayHeader').innerHTML = headerHtml;
 
       // Build table rows
       let rows = '';
-      let totalAttSum = 0, totalAttCount = 0;
 
       Object.entries(orgStats).forEach(([orgId, stat]) => {
         const path = buildOrgPath(parseInt(orgId), summaryOrgsMap) || summaryOrgsMap[orgId]?.name || '未知';
         const groupName = path.split(' - ').pop();
 
-        let todayRate = null;
         let weeklySum = 0, weeklyFilledCount = 0;
         let dailyCells = '';
 
-        dayHeaders.forEach(d => {
-          const ds = formatDate(d);
-          const isScheduled = weekScheduleDates.includes(ds);
-          const day = stat.days[ds];
+        scheduledDays.forEach(({date}) => {
+          const day = stat.days[date];
           let cell = '<td class="highlight">--</td>';
           if (day && day.attendanceRate !== null) {
             const rate = day.attendanceRate.toFixed(1);
             cell = `<td class="highlight rate-${rate >= 60 ? (rate >= 90 ? 'high' : 'mid') : 'low'}">${rate}%</td>`;
-            if (ds === today) todayRate = day.attendanceRate;
             // 只统计到今天为止的已填报记录
-            if (ds <= today) { weeklySum += day.attendanceRate; weeklyFilledCount++; }
-          } else if (isScheduled && ds <= today) {
-            // 有日程但未填报，计为 0（也算在平均里）
-            weeklyFilledCount = Math.max(weeklyFilledCount, 1); // 确保分母不为 0
+            if (date <= today) { weeklySum += day.attendanceRate; weeklyFilledCount++; }
+          } else if (date <= today) {
+            // 有日程但未填报，计为 0
+            weeklyFilledCount = Math.max(weeklyFilledCount, 1);
           }
           dailyCells += cell;
         });
@@ -974,13 +982,9 @@
         // 周平均 = 填报数据之和 / 到今天为止的日程天数
         const divisor = scheduledUpToToday > 0 ? scheduledUpToToday : 1;
         const weeklyAvg = weeklyFilledCount > 0 ? (weeklySum / divisor).toFixed(1) : '--';
-        const todayDisplay = todayRate !== null ? todayRate.toFixed(1) + '%' : '--';
-
-        if (todayRate !== null) { totalAttSum += todayRate; totalAttCount++; }
 
         rows += `<tr>
           <td style="text-align:left;">${groupName}</td>
-          <td class="highlight rate-${todayRate !== null ? (todayRate >= 90 ? 'high' : todayRate >= 60 ? 'mid' : 'low') : ''}">${todayDisplay}</td>
           ${dailyCells}
           <td class="highlight rate-${weeklyAvg !== '--' ? (parseFloat(weeklyAvg) >= 90 ? 'high' : parseFloat(weeklyAvg) >= 60 ? 'mid' : 'low') : ''}">${weeklyAvg !== '--' ? weeklyAvg + '%' : '--'}</td>
         </tr>`;
@@ -988,10 +992,19 @@
 
       document.getElementById('weeklyTableBody').innerHTML = rows || '<tr><td colspan="9" class="empty-state">暂无数据</td></tr>';
 
-      // Summary stats
-      const overallOnline = 0; // TODO
-      const overallHw = 0;
-      const overallAtt = totalAttCount > 0 ? (totalAttSum / totalAttCount).toFixed(1) : '--';
+      // Summary stats - overall weekly average
+      let allOrgSum = 0, allOrgCount = 0;
+      Object.values(orgStats).forEach(stat => {
+        let orgSum = 0, orgCount = 0;
+        scheduledDays.forEach(({date}) => {
+          if (date <= today && stat.days[date]?.attendanceRate !== null) {
+            orgSum += stat.days[date].attendanceRate;
+            orgCount++;
+          }
+        });
+        if (orgCount > 0) { allOrgSum += orgSum / orgCount; allOrgCount++; }
+      });
+      const overallAtt = allOrgCount > 0 ? (allOrgSum / allOrgCount).toFixed(1) : '--';
       document.getElementById('avgAttendanceRate').textContent = overallAtt !== '--' ? overallAtt + '%' : '--';
       document.getElementById('avgOnlineRate').textContent = '--';
       document.getElementById('avgHwRate').textContent = '--';
