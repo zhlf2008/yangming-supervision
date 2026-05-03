@@ -103,19 +103,25 @@
       var bigId = document.getElementById('bigClassSelect').value;
       var classSelect = document.getElementById('classSelect');
       var groupSelect = document.getElementById('groupSelect');
+      // 保存之前选中的值
+      var prevClassId = classSelect.value;
+      var prevGroupId = groupSelect.value;
       
       if (!bigId) { classSelect.innerHTML = '<option value="">全部</option>'; groupSelect.innerHTML = '<option value="">全部</option>'; loadRecords(); return; }
 
       var classes = orgsList.filter(function(o){return o.parent_id===parseInt(bigId)&&o.level==='班级';});
       classSelect.innerHTML = '<option value="">全部</option>'+
         classes.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
+      // 恢复之前选中的班级（如果仍在可选列表中）
+      classSelect.value = classes.some(function(c){return c.id===parseInt(prevClassId);}) ? prevClassId : '';
 
-      var classId = classSelect.value;
-      if (!classId) { groupSelect.innerHTML = '<option value="">全部</option>'; loadRecords(); return; }
+      if (!classSelect.value) { groupSelect.innerHTML = '<option value="">全部</option>'; loadRecords(); return; }
 
-      var groups = orgsList.filter(function(o){return o.parent_id===parseInt(classId)&&o.level==='小组';});
+      var groups = orgsList.filter(function(o){return o.parent_id===parseInt(classSelect.value)&&o.level==='小组';});
       groupSelect.innerHTML = '<option value="">全部</option>'+
         groups.map(function(g){return '<option value="'+g.id+'">'+g.name+'</option>';}).join('');
+      // 恢复之前选中的小组
+      groupSelect.value = groups.some(function(g){return g.id===parseInt(prevGroupId);}) ? prevGroupId : '';
 
       loadRecords();
     }
