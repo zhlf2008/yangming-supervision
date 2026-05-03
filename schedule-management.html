@@ -152,6 +152,25 @@
       if (error) { document.getElementById('scheduleList').innerHTML = '<div class="empty-state">加载失败</div>'; return; }
       schedules = data || [];
       renderScheduleList();
+
+      // 检查日程是否覆盖学期完整日期范围
+      if (currentSemester && schedules.length > 0) {
+        const firstDate = schedules[0].schedule_date;
+        const lastDate = schedules[schedules.length - 1].schedule_date;
+        const expectedFirst = currentSemester.trial_start_date || currentSemester.start_date;
+        const missingStart = firstDate > expectedFirst;
+        const missingEnd = lastDate < currentSemester.end_date;
+        if (missingStart || missingEnd) {
+          const msg = [];
+          if (missingStart) msg.push('缺少 ' + expectedFirst + ' 到 ' + firstDate + ' 的日程');
+          if (missingEnd) msg.push('缺少 ' + lastDate + ' 到 ' + currentSemester.end_date + ' 的日程');
+          document.getElementById('scheduleList').insertAdjacentHTML('beforebegin',
+            '<div style="background:#FFF3E0;border-left:3px solid #FF9800;padding:10px 14px;margin-bottom:12px;border-radius:6px;font-size:13px;">' +
+            '⚠️ 日程与学期日期不匹配：' + msg.join('；') +
+            ' — <a href="javascript:void(0)" onclick="generateSchedules()" style="color:var(--vermillion);text-decoration:underline;">点击重新生成</a></div>'
+          );
+        }
+      }
     }
 
     function renderScheduleList() {
