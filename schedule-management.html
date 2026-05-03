@@ -296,7 +296,7 @@
 
       // 构建期望的日期集合
       const expectedDates = new Set();
-      const current = trialStart ? new Date(trialStart) : new Date(start);
+      let current = trialStart ? new Date(trialStart) : new Date(start);
       let jumped = false;
       while (current <= end) {
         expectedDates.add(current.toISOString().split('T')[0]);
