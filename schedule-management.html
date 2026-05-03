@@ -225,8 +225,8 @@
               }).join('')}
           </div>
           <div class="day-opts">
-            <label class="switch-pill" onclick="event.stopPropagation(); toggleValid('${s.id}', ${s.is_valid})">
-              <input type="checkbox" ${s.is_valid==1?'checked':''} onclick="event.stopPropagation()">
+            <label class="switch-pill" onclick="event.stopPropagation()">
+              <input type="checkbox" ${s.is_valid==1?'checked':''} onclick="event.stopPropagation(); toggleValid('${s.id}', ${s.is_valid})">
               <span class="switch-slider"></span>
             </label>
           </div>
