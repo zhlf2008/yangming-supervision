@@ -245,8 +245,9 @@
       const dayEl = document.querySelector(`#day-${sid}`);
       if (dayEl) dayEl.classList.toggle('disabled', newVal == 0);
       // 异步写数据库
-      const { error } = await window.db.from('schedules').update({ is_valid: newVal }).eq('id', sid);
-      if (error) console.error('toggleValid error:', error);
+      console.log('[toggleValid] sid=', sid, 'newVal=', newVal, 'typeof sid=', typeof sid);
+      const { data, error } = await window.db.from('schedules').update({ is_valid: newVal }).eq('id', sid).select('id,is_valid');
+      console.log('[toggleValid] result:', data, 'error:', error);
     }
 
     async function toggleItem(el) {
