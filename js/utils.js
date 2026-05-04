@@ -25,19 +25,30 @@
 
 // ---- Toast ----
 
-function showToast(msg, duration) {
-  duration = duration || 2000;
+function showToast(msg, options) {
   var toast = document.getElementById('toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'toast';
-    toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translate(-50%,0);background:rgba(0,0,0,0.75);color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;';
     document.body.appendChild(toast);
   }
+
+  // options: number (duration in ms), 'success', 'error', or object { type, duration }
+  var type = '';
+  var duration = 2000;
+  if (typeof options === 'number') {
+    duration = options;
+  } else if (typeof options === 'string') {
+    type = options;
+  } else if (options && typeof options === 'object') {
+    type = options.type || '';
+    duration = options.duration || 2000;
+  }
+
   toast.textContent = msg;
-  toast.style.opacity = '1';
+  toast.className = 'show' + (type ? ' ' + type : '');
   clearTimeout(toast._timer);
-  toast._timer = setTimeout(function () { toast.style.opacity = '0'; }, duration);
+  toast._timer = setTimeout(function () { toast.className = ''; }, duration);
 }
 
 // ---- 周日/周x 转换 ----
@@ -245,4 +256,34 @@ function guardAuth() {
     return false;
   }
   return true;
+}
+
+// ---- 日期工具 ----
+
+// 返回本地日期字符串 YYYY-MM-DD（避免 UTC 时区问题）
+function getToday() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var dt = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + dt;
+}
+
+// ---- 公式计算 ----
+
+// 计算考核公式，fieldMap: { 中文名: 数值 }
+function calcFormula(formula, fieldMap) {
+  if (!formula) return null;
+  var expr = formula.trim();
+
+  Object.keys(fieldMap).forEach(function (name) {
+    expr = expr.replace(new RegExp(name, 'g'), '(' + (fieldMap[name] || 0) + ')');
+  });
+
+  try {
+    var result = new Function('return ' + expr)();
+    return typeof result === 'number' && isFinite(result) ? result : null;
+  } catch (e) {
+    return null;
+  }
 }
