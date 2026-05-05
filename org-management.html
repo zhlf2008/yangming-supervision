@@ -506,6 +506,20 @@
     }
 
     function showAddOrgModal(level, parentId) {
+      // 权限守卫：仅管理员/地区督委可添加大班
+      var role = currentUser.role;
+      if (level === 'bigclass' && role !== '管理员' && role !== '地区督委') {
+        showToast('无权限添加大班', 'error'); return;
+      }
+      // 班级级及以上可添加班级
+      if (level === 'class' && role !== '管理员' && role !== '地区督委' && role !== '大班总督' && role !== '大班副督') {
+        showToast('无权限添加班级', 'error'); return;
+      }
+      // 小组督察/副督察不可添加任何组织
+      if (role === '小组督察' || role === '小组副督察') {
+        showToast('无权限添加组织', 'error'); return;
+      }
+
       document.getElementById('orgId').value = '';
       document.getElementById('orgName').value = '';
       if (level === 'bigclass') {
@@ -555,9 +569,22 @@
     }
 
     async function saveOrg() {
+      var role = currentUser.role;
+
+      // 权限校验：与 showAddOrgModal 保持一致的规则
+      if (role === '小组督察' || role === '小组副督察') {
+        showToast('无权限操作组织', 'error'); return;
+      }
+      var level = document.getElementById('orgLevel').value;
+      if (level === '大班' && role !== '管理员' && role !== '地区督委') {
+        showToast('无权限添加大班', 'error'); return;
+      }
+      if (level === '班级' && role !== '管理员' && role !== '地区督委' && role !== '大班总督' && role !== '大班副督') {
+        showToast('无权限添加班级', 'error'); return;
+      }
+
       const id = document.getElementById('orgId').value;
       const name = document.getElementById('orgName').value.trim();
-      const level = document.getElementById('orgLevel').value;
       const parentId = document.getElementById('parentOrgId').value || null;
       if (!name) { showToast('请输入名称'); return; }
       if (level !== '大班' && !parentId) { showToast('请选择上级组织'); return; }
