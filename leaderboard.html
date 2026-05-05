@@ -1078,11 +1078,40 @@
         var svg = generateCertSVG();
         if (!svg) { showToast('证书数据不完整', 'error'); return; }
         var canvas = await svgToCanvas(svg);
-        var link = document.createElement('a');
-        link.download = '荣誉证书_' + certEntityName + '.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        showToast('证书已保存');
+        var blob = await new Promise(function(r) { canvas.toBlob(r, 'image/png'); });
+        var url = URL.createObjectURL(blob);
+        var filename = '荣誉证书_' + certEntityName + '.png';
+
+        var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (isMobile) {
+          // 移动端：新标签页打开图片，用户长按即可保存到系统相册
+          var w = window.open(url, '_blank');
+          if (w) {
+            showToast('请长按图片保存到相册');
+          } else {
+            // 弹窗被拦截，降级为下载链接
+            var a = document.createElement('a');
+            a.download = filename;
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('证书已保存到下载目录');
+          }
+        } else {
+          // 桌面端：直接触发下载
+          var a = document.createElement('a');
+          a.download = filename;
+          a.href = url;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast('证书已保存');
+        }
+
+        // 60秒后释放 Blob URL
+        setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
       } catch (e) {
         console.error('saveCertificate error:', e);
         showToast('保存失败: ' + (e.message || '未知错误'), 'error');
@@ -1096,13 +1125,29 @@
         var canvas = await svgToCanvas(svg);
         var blob = await new Promise(function(r) { canvas.toBlob(r, 'image/png'); });
         var file = new File([blob], '荣誉证书.png', { type: 'image/png' });
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: '荣誉证书', text: certEntityName + ' - ' + certParentOrg + ' - ' + certRankTitle });
-        } else if (navigator.share) {
-          await navigator.share({ title: '荣誉证书', text: '阳明心学督察管理系统\n' + certEntityName + '\n荣获 ' + certRankTitle + '\n出勤率: ' + certAttRate });
-        } else {
-          await saveCertificate();
-        }
+
+        var shareText = certEntityName + ' - ' + certParentOrg + ' - ' + certRankTitle + ' - 出勤率: ' + certAttRate;
+
+        // 尝试文件分享（Android Chrome 支持，可分享图片到微信）
+        try {
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: '荣誉证书', text: shareText });
+            return;
+          }
+        } catch (_) { /* 文件分享不可用，继续尝试其他方式 */ }
+
+        // 尝试 URL 分享（部分浏览器支持分享 Blob URL）
+        try {
+          if (navigator.share) {
+            var shareUrl = URL.createObjectURL(blob);
+            await navigator.share({ title: '荣誉证书', text: shareText, url: shareUrl });
+            setTimeout(function() { URL.revokeObjectURL(shareUrl); }, 60000);
+            return;
+          }
+        } catch (_) { /* 分享失败，降级为保存 */ }
+
+        // 最终降级：保存图片
+        await saveCertificate();
       } catch (e) {
         console.error('shareCertificate error:', e);
         if (e.name !== 'AbortError') await saveCertificate();
