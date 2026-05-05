@@ -13,6 +13,7 @@ function renderBottomNav(activePage) {
     { key: 'home', href: 'index.html', icon: '🏠', label: '首页' },
     { key: 'attendance', href: 'attendance-page.html', icon: '📋', label: '考勤' },
     { key: 'summary', href: 'summary-page.html', icon: '📊', label: '汇总' },
+    { key: 'rank', href: 'leaderboard.html', icon: '🏆', label: '榜单' },
     { key: 'profile', href: 'profile.html', icon: '👤', label: '我的' }
   ];
 
