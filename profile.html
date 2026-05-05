@@ -474,6 +474,27 @@
       85% { opacity: 1; transform: translateX(-50%) translateY(0); }
       100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
     }
+
+    /* 反馈系统 */
+    .feedback-list { max-height: 50vh; overflow-y: auto; margin-bottom: 16px; }
+    .feedback-item { padding: 12px; border-radius: var(--radius-sm); background: var(--bg-primary); margin-bottom: 8px; }
+    .feedback-item-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .feedback-item-time { font-size: 11px; color: var(--ink-muted); }
+    .feedback-item-status { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .feedback-item-status.unread { background: #FFF3E0; color: #EF6C00; }
+    .feedback-item-status.read { background: #E8F5E9; color: #2E7D32; }
+    .feedback-item-status.replied { background: #E3F2FD; color: #1565C0; }
+    .feedback-item-content { font-size: 14px; color: var(--ink-dark); line-height: 1.5; }
+    .feedback-item-reply { margin-top: 8px; padding: 8px 12px; background: #E3F2FD; border-radius: var(--radius-sm); border-left: 3px solid #1565C0; }
+    .feedback-item-reply-label { font-size: 11px; color: #1565C0; font-weight: 600; margin-bottom: 4px; }
+    .feedback-item-reply-text { font-size: 13px; color: var(--ink-dark); }
+    .feedback-empty { text-align: center; padding: 32px 20px; color: var(--ink-muted); font-size: 14px; }
+    .feedback-textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; resize: vertical; background: var(--bg-primary); }
+    .feedback-textarea:focus { outline: none; border-color: var(--vermillion); }
+    .feedback-count { font-size: 12px; color: var(--ink-muted); text-align: right; margin-top: 4px; }
+    .feedback-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .feedback-tab { flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .feedback-tab.active { background: var(--vermillion); border-color: var(--vermillion); color: white; }
   </style>
 </head>
 <body>
@@ -640,6 +661,29 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
         <button class="btn btn-primary" onclick="saveProfile()" id="saveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div class="modal-overlay" id="feedbackModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">帮助与反馈</h2>
+        <button class="modal-close" onclick="closeFeedbackModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 普通用户：留言表单 -->
+        <div id="feedbackFormSection">
+          <textarea class="feedback-textarea" id="feedbackContent" placeholder="请描述你遇到的问题或建议..." maxlength="500"></textarea>
+          <div class="feedback-count"><span id="feedbackCharCount">0</span>/500</div>
+          <button class="btn btn-primary" onclick="submitFeedback()" style="width:100%;margin-top:12px;">提交反馈</button>
+        </div>
+        <!-- 历史反馈 -->
+        <div style="margin-top:16px;font-size:13px;color:var(--ink-muted);" id="feedbackHistoryTitle">我的反馈记录</div>
+        <div class="feedback-list" id="feedbackList">
+          <div class="feedback-empty">加载中...</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1054,6 +1098,115 @@
 
     function showAbout() {
       alert('阳明心学督察管理系统\n版本：v1.0.0\n\n基于阳明心学教育理念\n打造智能化督察管理体系');
+    }
+
+    // ========== 帮助与反馈 ==========
+
+    function escapeHtml(text) {
+      var d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    var feedbackRole = '';
+
+    function showHelp() {
+      var profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
+      feedbackRole = profile.role || '';
+
+      document.getElementById('feedbackContent').value = '';
+      document.getElementById('feedbackCharCount').textContent = '0';
+      document.getElementById('feedbackModal').classList.add('active');
+
+      // 管理端：加载所有用户反馈；普通用户：只加载自己的
+      loadFeedbackList();
+
+      // 字符计数
+      var textarea = document.getElementById('feedbackContent');
+      textarea.oninput = function() {
+        document.getElementById('feedbackCharCount').textContent = textarea.value.length;
+      };
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById('feedbackModal').classList.remove('active');
+    }
+
+    async function submitFeedback() {
+      var content = document.getElementById('feedbackContent').value.trim();
+      if (!content) { showToast('请输入反馈内容'); return; }
+      if (content.length < 4) { showToast('反馈内容至少4个字'); return; }
+
+      var profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
+      try {
+        var { error } = await window.db.from('feedback').insert({
+          user_id: profile.id,
+          user_name: profile.name || '未知',
+          content: content
+        });
+        if (error) throw error;
+        showToast('反馈已提交，感谢你的留言！');
+        document.getElementById('feedbackContent').value = '';
+        document.getElementById('feedbackCharCount').textContent = '0';
+        loadFeedbackList();
+      } catch (e) {
+        console.error('submitFeedback error:', e);
+        if (e.message && e.message.indexOf('relation') !== -1) {
+          showToast('反馈功能暂未开通，请联系管理员建表', 'error');
+        } else {
+          showToast('提交失败: ' + (e.message || '未知错误'), 'error');
+        }
+      }
+    }
+
+    async function loadFeedbackList() {
+      var container = document.getElementById('feedbackList');
+      container.innerHTML = '<div class="feedback-empty">加载中...</div>';
+
+      var profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
+      var isAdmin = profile.role === '管理员' || profile.role === '地区督委';
+
+      try {
+        var query = window.db.from('feedback').select('*').order('created_at', { ascending: false });
+        if (!isAdmin) {
+          query = query.eq('user_id', profile.id);
+        }
+        var { data, error } = await query;
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          container.innerHTML = '<div class="feedback-empty">暂无反馈记录</div>';
+          document.getElementById('feedbackHistoryTitle').textContent = isAdmin ? '所有反馈' : '我的反馈记录';
+          return;
+        }
+
+        document.getElementById('feedbackHistoryTitle').textContent =
+          isAdmin ? '所有反馈（' + data.length + '条）' : '我的反馈记录（' + data.length + '条）';
+
+        var statusMap = { unread: '待处理', read: '已读', replied: '已回复' };
+        var html = '';
+        data.forEach(function(fb) {
+          var time = fb.created_at ? fb.created_at.substring(0, 10) + ' ' + fb.created_at.substring(11, 16) : '';
+          var statusLabel = statusMap[fb.status] || '待处理';
+          html += '<div class="feedback-item">';
+          html += '<div class="feedback-item-meta">';
+          html += '<span class="feedback-item-time">' + (isAdmin ? fb.user_name + ' · ' : '') + time + '</span>';
+          html += '<span class="feedback-item-status ' + (fb.status || 'unread') + '">' + statusLabel + '</span>';
+          html += '</div>';
+          html += '<div class="feedback-item-content">' + escapeHtml(fb.content) + '</div>';
+          if (fb.admin_reply) {
+            html += '<div class="feedback-item-reply">';
+            html += '<div class="feedback-item-reply-label">管理员回复</div>';
+            html += '<div class="feedback-item-reply-text">' + escapeHtml(fb.admin_reply) + '</div>';
+            html += '</div>';
+          }
+          html += '</div>';
+        });
+        container.innerHTML = html;
+      } catch (e) {
+        console.error('loadFeedbackList error:', e);
+        container.innerHTML = '<div class="feedback-empty">加载失败，请重试</div>';
+      }
     }
 
     init();
