@@ -674,10 +674,12 @@
 
     function buildRankCard(r, index, level, parentName) {
       var rank = index + 1;
+      var hasData = r.filledDays > 0 && r.attendanceAvg > 0;
+
       var rankDisplay, rankClass;
-      if (rank === 1) { rankDisplay = '<span class="rank-medal">🥇</span>'; rankClass = ' top-1'; }
-      else if (rank === 2) { rankDisplay = '<span class="rank-medal">🥈</span>'; rankClass = ' top-2'; }
-      else if (rank === 3) { rankDisplay = '<span class="rank-medal">🥉</span>'; rankClass = ' top-3'; }
+      if (hasData && rank === 1) { rankDisplay = '<span class="rank-medal">🥇</span>'; rankClass = ' top-1'; }
+      else if (hasData && rank === 2) { rankDisplay = '<span class="rank-medal">🥈</span>'; rankClass = ' top-2'; }
+      else if (hasData && rank === 3) { rankDisplay = '<span class="rank-medal">🥉</span>'; rankClass = ' top-3'; }
       else { rankDisplay = '<span class="rank-number">' + rank + '</span>'; rankClass = ''; }
 
       var attVal = r.attendanceAvg;
@@ -693,7 +695,7 @@
       }
 
       var certBtn = '';
-      if (rank <= 3) {
+      if (hasData && rank <= 3) {
         var weekSunday = formatDate(getWeekRange(weekOffset).sunday);
         var weekComplete = getToday() >= weekSunday;
         if (weekComplete) {
