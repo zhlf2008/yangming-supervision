@@ -1113,15 +1113,17 @@
     function showHelp() {
       var profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
       feedbackRole = profile.role || '';
+      var isAdmin = feedbackRole === '管理员' || feedbackRole === '地区督委';
 
       document.getElementById('feedbackContent').value = '';
       document.getElementById('feedbackCharCount').textContent = '0';
       document.getElementById('feedbackModal').classList.add('active');
 
-      // 管理端：加载所有用户反馈；普通用户：只加载自己的
+      // 管理员隐藏提交表单，普通用户显示
+      document.getElementById('feedbackFormSection').style.display = isAdmin ? 'none' : '';
+
       loadFeedbackList();
 
-      // 字符计数
       var textarea = document.getElementById('feedbackContent');
       textarea.oninput = function() {
         document.getElementById('feedbackCharCount').textContent = textarea.value.length;
@@ -1188,7 +1190,7 @@
         data.forEach(function(fb) {
           var time = fb.created_at ? fb.created_at.substring(0, 10) + ' ' + fb.created_at.substring(11, 16) : '';
           var statusLabel = statusMap[fb.status] || '待处理';
-          html += '<div class="feedback-item">';
+          html += '<div class="feedback-item" id="fbItem' + fb.id + '">';
           html += '<div class="feedback-item-meta">';
           html += '<span class="feedback-item-time">' + (isAdmin ? fb.user_name + ' · ' : '') + time + '</span>';
           html += '<span class="feedback-item-status ' + (fb.status || 'unread') + '">' + statusLabel + '</span>';
@@ -1200,12 +1202,49 @@
             html += '<div class="feedback-item-reply-text">' + escapeHtml(fb.admin_reply) + '</div>';
             html += '</div>';
           }
+          // 管理员回复入口
+          if (isAdmin) {
+            html += '<div id="fbReplyForm' + fb.id + '" style="display:none;margin-top:8px;">';
+            html += '<textarea class="feedback-textarea" id="fbReplyText' + fb.id + '" placeholder="输入回复..." style="min-height:60px;"></textarea>';
+            html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+            html += '<button class="btn btn-primary" onclick="replyToFeedback(' + fb.id + ')" style="flex:1;">发送回复</button>';
+            html += '<button class="btn btn-secondary" onclick="cancelReply(' + fb.id + ')" style="flex:1;">取消</button>';
+            html += '</div></div>';
+            html += '<button class="btn btn-secondary" id="fbReplyBtn' + fb.id + '" onclick="showReplyForm(' + fb.id + ')" style="margin-top:8px;width:100%;">回复</button>';
+          }
           html += '</div>';
         });
         container.innerHTML = html;
       } catch (e) {
         console.error('loadFeedbackList error:', e);
         container.innerHTML = '<div class="feedback-empty">加载失败，请重试</div>';
+      }
+    }
+
+    function showReplyForm(fbId) {
+      document.getElementById('fbReplyForm' + fbId).style.display = 'block';
+      document.getElementById('fbReplyBtn' + fbId).style.display = 'none';
+    }
+
+    function cancelReply(fbId) {
+      document.getElementById('fbReplyForm' + fbId).style.display = 'none';
+      document.getElementById('fbReplyBtn' + fbId).style.display = '';
+      document.getElementById('fbReplyText' + fbId).value = '';
+    }
+
+    async function replyToFeedback(fbId) {
+      var reply = document.getElementById('fbReplyText' + fbId).value.trim();
+      if (!reply) { showToast('请输入回复内容'); return; }
+      try {
+        var { error } = await window.db.from('feedback')
+          .update({ admin_reply: reply, status: 'replied' })
+          .eq('id', fbId);
+        if (error) throw error;
+        showToast('回复已发送');
+        loadFeedbackList();
+      } catch (e) {
+        console.error('replyToFeedback error:', e);
+        showToast('回复失败: ' + (e.message || '未知错误'), 'error');
       }
     }
 
