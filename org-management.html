@@ -290,6 +290,7 @@
         if (levelDiff !== 0) return levelDiff;
         return a.name.localeCompare(b.name, 'zh-CN');
       });
+      calcManagedScope();
       renderOrgTree();
     }
 
