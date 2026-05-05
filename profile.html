@@ -494,18 +494,18 @@
       <div class="profile-name" id="profileName">加载中...</div>
       <div class="profile-role" id="profileRole">-</div>
       <div class="profile-phone" id="profilePhone" style="font-size:12px;color:#8A8A8A;margin-top:4px;">-</div>
-      <div class="profile-stats">
+      <div class="profile-stats" id="profileStats">
         <div class="profile-stat">
-          <div class="profile-stat-value" id="profileFillCount">--</div>
-          <div class="profile-stat-label">填报次数</div>
+          <div class="profile-stat-value" id="statValue1">--</div>
+          <div class="profile-stat-label" id="statLabel1">加载中...</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="profileOnlineRate">--</div>
-          <div class="profile-stat-label">平均出勤率</div>
+          <div class="profile-stat-value" id="statValue2">--</div>
+          <div class="profile-stat-label" id="statLabel2">加载中...</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="profileOrgCount">--</div>
-          <div class="profile-stat-label">管辖小组</div>
+          <div class="profile-stat-value" id="statValue3">--</div>
+          <div class="profile-stat-label" id="statLabel3">加载中...</div>
         </div>
       </div>
     </div>
@@ -682,42 +682,122 @@
     }
 
     async function loadProfileStats(profile) {
-      // 1. 填报次数（本账户提交的）
-      var { count: fillCount } = await window.db.from('attendance_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('fill_user_id', profile.id);
-      document.getElementById('profileFillCount').textContent = fillCount || 0;
+      var role = profile.role;
+      var userOrgId = profile.organization_id;
+      var today = getToday();
 
-      // 2. 平均出勤率（所有自己提交的记录）
-      var { data: myRecords } = await window.db.from('attendance_records')
-        .select('fill_data')
-        .eq('fill_user_id', profile.id);
-      if (myRecords && myRecords.length > 0) {
-        var totalYd=0, totalSd=0, totalYz=0, totalZw=0;
-        myRecords.forEach(function(r) {
-          var fd = r.fill_data || {};
-          totalYd += parseInt(fd['应到人数']) || 0;
-          totalSd += parseInt(fd['实到人数']) || 0;
-          totalYz += parseInt(fd['应做作业人数']) || 0;
-          totalZw += parseInt(fd['作业完成人数']) || 0;
-        });
-        var onlineRate = totalYd>0 ? (totalSd/totalYd*100).toFixed(0) : '--';
-        var hwRate = totalYz>0 ? (totalZw/totalYz*100).toFixed(0) : '--';
-        document.getElementById('profileOnlineRate').textContent = (onlineRate==='--'&&hwRate==='--')?'--':((parseFloat(onlineRate)||0)+(parseFloat(hwRate)||0))/2 + '%';
-      } else {
-        document.getElementById('profileOnlineRate').textContent = '--';
-      }
+      // 计算本周一（用于本周统计）
+      var now = new Date();
+      var day = now.getDay();
+      var monday = new Date(now);
+      monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+      var mondayStr = monday.getFullYear() + '-' +
+        String(monday.getMonth() + 1).padStart(2, '0') + '-' +
+        String(monday.getDate()).padStart(2, '0');
+      var sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      var sundayStr = sunday.getFullYear() + '-' +
+        String(sunday.getMonth() + 1).padStart(2, '0') + '-' +
+        String(sunday.getDate()).padStart(2, '0');
 
-      // 3. 管辖小组数
-      if (profile.role === '管理员' || profile.role === '地区督委') {
-        var { count: groupCount } = await window.db.from('organizations')
-          .select('*', { count: 'exact', head: true })
-          .eq('level', '小组');
-        document.getElementById('profileOrgCount').textContent = groupCount || 0;
+      if (role === '小组督察' || role === '小组副督察') {
+        // ===== 小组督察：个人填报统计 =====
+        document.getElementById('statLabel1').textContent = '本周累计填报';
+        document.getElementById('statLabel2').textContent = '本周漏填报';
+        document.getElementById('statLabel3').textContent = '今日是否已填报';
+
+        // 先取本周日程（填报次数和漏报都基于日程计算）
+        var { data: weekSchedules } = await window.db.from('schedules')
+          .select('id')
+          .gte('schedule_date', mondayStr)
+          .lte('schedule_date', sundayStr)
+          .eq('is_valid', 1);
+        var weekScheduleIds = (weekSchedules || []).map(function(s) { return s.id; });
+        var totalWeekSchedules = weekScheduleIds.length;
+
+        if (totalWeekSchedules > 0) {
+          var { count: filledThisWeek } = await window.db.from('attendance_records')
+            .select('*', { count: 'exact', head: true })
+            .eq('fill_user_id', profile.id)
+            .in('schedule_id', weekScheduleIds);
+          var filled = filledThisWeek || 0;
+          var missed = totalWeekSchedules - filled;
+          document.getElementById('statValue1').textContent = filled;
+          document.getElementById('statValue2').textContent = missed;
+          document.getElementById('statValue2').style.color = missed > 0 ? 'var(--vermillion)' : '#2E7D32';
+        } else {
+          document.getElementById('statValue1').textContent = '0';
+          document.getElementById('statValue2').textContent = '--';
+          document.getElementById('statValue2').style.color = 'var(--ink-dark)';
+        }
+
+        // 3. 今日是否已填报
+        var { data: todayScheds } = await window.db.from('schedules')
+          .select('id')
+          .eq('schedule_date', today)
+          .eq('is_valid', 1);
+        if (!todayScheds || todayScheds.length === 0) {
+          document.getElementById('statValue3').textContent = '无考核';
+          document.getElementById('statValue3').style.color = 'var(--ink-muted)';
+        } else {
+          var todayIds = todayScheds.map(function(s) { return s.id; });
+          var { count: todayFilled } = await window.db.from('attendance_records')
+            .select('*', { count: 'exact', head: true })
+            .eq('fill_user_id', profile.id)
+            .in('schedule_id', todayIds);
+          if (todayFilled > 0) {
+            document.getElementById('statValue3').textContent = '是';
+            document.getElementById('statValue3').style.color = '#2E7D32';
+          } else {
+            document.getElementById('statValue3').textContent = '否';
+            document.getElementById('statValue3').style.color = 'var(--vermillion)';
+          }
+        }
+
       } else {
+        // ===== 上级角色：管辖范围 + 今日填报进度 =====
+        document.getElementById('statLabel1').textContent = '管辖小组';
+        document.getElementById('statLabel2').textContent = '今日已填报';
+        document.getElementById('statLabel3').textContent = '今日未填报';
+
+        // 1. 管辖小组数量
         var { data: allOrgs } = await window.db.from('organizations').select('*');
-        var groupIds = getAccessibleGroupIds(profile.role, profile.organization_id, allOrgs||[]);
-        document.getElementById('profileOrgCount').textContent = groupIds.size;
+        allOrgs = allOrgs || [];
+        var groupIds = getAccessibleGroupIds(role, userOrgId, allOrgs);
+        var totalGroups = groupIds.size;
+        document.getElementById('statValue1').textContent = totalGroups;
+
+        // 2 & 3. 今日填报进度
+        var { data: todayScheds } = await window.db.from('schedules')
+          .select('id')
+          .eq('schedule_date', today)
+          .eq('is_valid', 1);
+
+        if (!todayScheds || todayScheds.length === 0) {
+          document.getElementById('statValue2').textContent = '无考核';
+          document.getElementById('statValue2').style.color = 'var(--ink-muted)';
+          document.getElementById('statValue3').textContent = '无考核';
+          document.getElementById('statValue3').style.color = 'var(--ink-muted)';
+        } else {
+          var scheduleIds = todayScheds.map(function(s) { return s.id; });
+          var groupIdArray = [];
+          groupIds.forEach(function(id) { groupIdArray.push(id); });
+          var { data: records } = await window.db.from('attendance_records')
+            .select('organization_id')
+            .in('schedule_id', scheduleIds)
+            .in('organization_id', groupIdArray.length > 0 ? groupIdArray : [-1]);
+
+          var filledSet = new Set();
+          (records || []).forEach(function(r) { filledSet.add(r.organization_id); });
+          var filledCount = 0;
+          groupIds.forEach(function(id) { if (filledSet.has(id)) filledCount++; });
+          var unfilledCount = totalGroups - filledCount;
+
+          document.getElementById('statValue2').textContent = filledCount;
+          document.getElementById('statValue2').style.color = '#2E7D32';
+          document.getElementById('statValue3').textContent = unfilledCount;
+          document.getElementById('statValue3').style.color = unfilledCount > 0 ? 'var(--vermillion)' : '#2E7D32';
+        }
       }
     }
 

@@ -346,6 +346,15 @@
     }
 
     async function loadAndRender() {
+      // 自动跳过试晨读周：如果当前选择落在试晨读范围，跳到第一个正式周
+      if (currentSemester && currentSemester.trial_start_date) {
+        var formalMonday = getMonday(new Date(currentSemester.start_date + 'T00:00:00'));
+        var range0 = getWeekRange(weekOffset);
+        if (range0.monday < formalMonday) {
+          weekOffset = Math.ceil((formalMonday - range0.monday) / (7 * 86400000));
+        }
+      }
+
       var range = getWeekRange(weekOffset);
       var weekStart = formatDate(range.monday);
       var weekEnd = formatDate(range.sunday);
@@ -1220,10 +1229,10 @@
       if (!currentSemester) { weekOffset += delta; loadAndRender(); return; }
       var newOffset = weekOffset + delta;
       var range = getWeekRange(newOffset);
-      var effStart = currentSemester.trial_start_date || currentSemester.start_date;
-      var semStart = new Date(effStart + 'T00:00:00');
+      // 下限以正式学期为准，不纳入试晨读周
+      var formalStart = new Date(currentSemester.start_date + 'T00:00:00');
       var semEnd = new Date(currentSemester.end_date + 'T23:59:59');
-      if (range.sunday < semStart || range.monday > semEnd) return;
+      if (range.sunday < formalStart || range.monday > semEnd) return;
       weekOffset = newOffset;
       loadAndRender();
     }
