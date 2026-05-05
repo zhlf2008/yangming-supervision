@@ -129,6 +129,9 @@ body {
   transition: opacity 0.3s;
   pointer-events: none;
   white-space: nowrap;
+  max-width: 85vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #toast.show {
