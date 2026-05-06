@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
 
     // ---- send: 检查并发送提醒 ----
     const now = new Date();
-    const currentHour = now.getHours();
+    const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     const today = getToday();
 
     // 读取所有启用的提醒配置
@@ -140,7 +140,9 @@ Deno.serve(async (req) => {
 
     for (const cfg of configs) {
       // 时间窗口检查
-      if (currentHour < cfg.start_hour || currentHour >= cfg.end_hour) continue;
+      const startTime = cfg.start_time || String(cfg.start_hour || 12).padStart(2, '0') + ':00';
+      const endTime = cfg.end_time || String(cfg.end_hour || 20).padStart(2, '0') + ':00';
+      if (currentTime < startTime || currentTime >= endTime) continue;
 
       // 间隔检查
       if (cfg.last_reminded_at) {

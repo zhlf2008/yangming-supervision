@@ -133,8 +133,8 @@
           var cfg = configsMap[bc.id] || {};
           var enabled = cfg.enabled || false;
           var webhookUrl = cfg.webhook_url || '';
-          var startHour = cfg.start_hour != null ? cfg.start_hour : 12;
-          var endHour = cfg.end_hour != null ? cfg.end_hour : 20;
+          var startTime = cfg.start_time || '12:00';
+          var endTime = cfg.end_time || '20:00';
           var interval = cfg.interval_minutes || 60;
 
           html += '<div class="bigclass-card" data-org-id="' + bc.id + '">';
@@ -155,12 +155,12 @@
           html += '    </div>';
           html += '    <div class="form-row">';
           html += '      <div class="form-group">';
-          html += '        <label class="form-label">开始时间（时）</label>';
-          html += '        <input class="form-input" type="number" id="starthour_' + bc.id + '" value="' + startHour + '" min="0" max="23" step="1" onchange="window._markDirty(\'' + bc.id + '\')">';
+          html += '        <label class="form-label">开始时间</label>';
+          html += '        <input class="form-input" type="time" id="starttime_' + bc.id + '" value="' + startTime + '" onchange="window._markDirty(\'' + bc.id + '\')">';
           html += '      </div>';
           html += '      <div class="form-group">';
-          html += '        <label class="form-label">结束时间（时）</label>';
-          html += '        <input class="form-input" type="number" id="endhour_' + bc.id + '" value="' + endHour + '" min="0" max="23" step="1" onchange="window._markDirty(\'' + bc.id + '\')">';
+          html += '        <label class="form-label">结束时间</label>';
+          html += '        <input class="form-input" type="time" id="endtime_' + bc.id + '" value="' + endTime + '" onchange="window._markDirty(\'' + bc.id + '\')">';
           html += '      </div>';
           html += '      <div class="form-group">';
           html += '        <label class="form-label">间隔（分钟）</label>';
@@ -203,8 +203,8 @@
 
         var webhook = document.getElementById('webhook_' + orgId).value.trim();
         var enabled = document.getElementById('toggle_' + orgId).checked;
-        var startHour = parseInt(document.getElementById('starthour_' + orgId).value) || 12;
-        var endHour = parseInt(document.getElementById('endhour_' + orgId).value) || 20;
+        var startTime = document.getElementById('starttime_' + orgId).value || '12:00';
+        var endTime = document.getElementById('endtime_' + orgId).value || '20:00';
         var interval = parseInt(document.getElementById('interval_' + orgId).value) || 60;
 
         // 基本校验
@@ -214,7 +214,7 @@
           btn.textContent = '保存配置';
           return;
         }
-        if (startHour >= endHour) {
+        if (startTime >= endTime) {
           showToast('开始时间必须小于结束时间', 'error');
           btn.disabled = false;
           btn.textContent = '保存配置';
@@ -231,8 +231,8 @@
           org_id: parseInt(orgId),
           webhook_url: webhook || null,
           enabled: enabled,
-          start_hour: startHour,
-          end_hour: endHour,
+          start_time: startTime,
+          end_time: endTime,
           interval_minutes: interval,
           updated_at: new Date().toISOString()
         };
