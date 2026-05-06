@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>填报提醒设置 - 阳明心学督察管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .container { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); flex-shrink: 0; }
+    .page-title { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 600; }
+
+    .info-banner { background: var(--gold-light); border: 1px solid var(--gold); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: var(--ink-dark); line-height: 1.6; }
+    .info-banner b { color: var(--vermillion); }
+
+    .bigclass-card { background: var(--bg-card); border-radius: var(--radius); padding: 2px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+
+    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border); gap: 12px; }
+    .card-header .org-name { font-weight: 600; font-size: 15px; flex: 1; min-width: 0; }
+
+    /* Toggle switch */
+    .toggle-switch { position: relative; width: 48px; height: 26px; cursor: pointer; flex-shrink: 0; }
+    .toggle-switch input { display: none; }
+    .toggle-slider { position: absolute; inset: 0; background: #ccc; border-radius: 13px; transition: background 0.2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 22px; height: 22px; left: 2px; top: 2px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .toggle-switch input:checked + .toggle-slider { background: var(--vermillion); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+    .card-body { padding: 16px; transition: opacity 0.2s; }
+    .card-body.disabled { opacity: 0.5; pointer-events: none; }
+
+    .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .form-row:last-child { margin-bottom: 0; }
+    .form-group { flex: 1; min-width: 0; }
+    .form-group.full { flex: none; width: 100%; }
+    .form-label { font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; display: block; }
+    .form-input { width: 100%; padding: 9px 12px; font-size: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--ink-dark); outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--vermillion); }
+
+    .card-actions { display: flex; gap: 8px; padding: 0 16px 14px; }
+    .btn { padding: 9px 20px; font-size: 13px; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
+    .btn-save { background: var(--vermillion); color: white; flex: 1; justify-content: center; }
+    .btn-save:active { background: #C62828; }
+    .btn-save:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-test { background: var(--bg-primary); color: var(--ink-dark); border: 1px solid var(--border); }
+    .btn-test:active { background: var(--border); }
+    .btn-test:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .status-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+    .status-tag.saved { background: var(--green-light); color: var(--green); }
+    .status-tag.unsaved { background: #FFF3E0; color: #EF6C00; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <a href="profile.html" class="back-btn" aria-label="返回">←</a>
+      <h1 class="page-title">填报提醒设置</h1>
+    </div>
+
+    <div class="info-banner">
+      配置企业微信群机器人 Webhook 后，系统将在<b>考核日</b>自动推送未填报提醒。<br>
+      需在 Supabase Dashboard 为 <b>send-reminder</b> 函数设置 Cron 触发器：<br>
+      <code style="background:rgba(0,0,0,0.05);padding:2px 6px;border-radius:4px;font-size:12px;">*/15 12-21 * * *</code> — 每天12:00-21:59每15分钟执行
+    </div>
+
+    <div id="loadingArea" style="text-align:center;padding:40px;color:var(--ink-muted);">加载中...</div>
+    <div id="cardsContainer"></div>
+  </div>
+
+  <div id="bottomNavContainer"></div>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script>
+    (async function() {
+      await waitForDb();
+      var currentUser = getCurrentUser();
+
+      // 仅管理员可访问
+      if (!currentUser || currentUser.role !== '管理员') {
+        showToast('仅管理员可访问此页面', 'error');
+        setTimeout(function() { window.location.href = 'profile.html'; }, 1500);
+        return;
+      }
+
+      renderBottomNav('profile');
+
+      var configsMap = {};   // org_id → config
+      var bigClasses = [];   // 大班列表
+
+      await loadData();
+
+      // ---- 数据加载 ----
+      async function loadData() {
+        document.getElementById('loadingArea').style.display = 'block';
+        document.getElementById('cardsContainer').innerHTML = '';
+
+        // 加载所有组织
+        var { data: orgs } = await window.db.from('organizations')
+          .select('id, name, level, parent_id')
+          .order('name');
+
+        bigClasses = (orgs || []).filter(function(o) { return o.level === '大班'; });
+
+        // 加载已有配置
+        var { data: configs } = await window.db.from('reminder_configs').select('*');
+        (configs || []).forEach(function(c) { configsMap[c.org_id] = c; });
+
+        document.getElementById('loadingArea').style.display = 'none';
+        renderCards();
+      }
+
+      // ---- 渲染卡片 ----
+      function renderCards() {
+        var container = document.getElementById('cardsContainer');
+
+        if (bigClasses.length === 0) {
+          container.innerHTML = '<div class="empty-state">暂无大班数据，请先在组织架构中创建大班</div>';
+          return;
+        }
+
+        var html = '';
+        bigClasses.forEach(function(bc) {
+          var cfg = configsMap[bc.id] || {};
+          var enabled = cfg.enabled || false;
+          var webhookUrl = cfg.webhook_url || '';
+          var startHour = cfg.start_hour != null ? cfg.start_hour : 12;
+          var endHour = cfg.end_hour != null ? cfg.end_hour : 20;
+          var interval = cfg.interval_minutes || 60;
+
+          html += '<div class="bigclass-card" data-org-id="' + bc.id + '">';
+          html += '  <div class="card-header">';
+          html += '    <span class="org-name">' + escHtml(bc.name) + '</span>';
+          html += '    <span class="status-tag unsaved" id="status_' + bc.id + '" style="display:none;">已修改</span>';
+          html += '    <label class="toggle-switch">';
+          html += '      <input type="checkbox" id="toggle_' + bc.id + '" ' + (enabled ? 'checked' : '') + ' onchange="window._toggleCard(\'' + bc.id + '\')">';
+          html += '      <span class="toggle-slider"></span>';
+          html += '    </label>';
+          html += '  </div>';
+          html += '  <div class="card-body' + (enabled ? '' : ' disabled') + '" id="body_' + bc.id + '">';
+          html += '    <div class="form-row">';
+          html += '      <div class="form-group full">';
+          html += '        <label class="form-label">Webhook 地址</label>';
+          html += '        <input class="form-input" type="url" id="webhook_' + bc.id + '" value="' + escAttr(webhookUrl) + '" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..." oninput="window._markDirty(\'' + bc.id + '\')">';
+          html += '      </div>';
+          html += '    </div>';
+          html += '    <div class="form-row">';
+          html += '      <div class="form-group">';
+          html += '        <label class="form-label">开始时间（时）</label>';
+          html += '        <input class="form-input" type="number" id="starthour_' + bc.id + '" value="' + startHour + '" min="0" max="23" step="1" onchange="window._markDirty(\'' + bc.id + '\')">';
+          html += '      </div>';
+          html += '      <div class="form-group">';
+          html += '        <label class="form-label">结束时间（时）</label>';
+          html += '        <input class="form-input" type="number" id="endhour_' + bc.id + '" value="' + endHour + '" min="0" max="23" step="1" onchange="window._markDirty(\'' + bc.id + '\')">';
+          html += '      </div>';
+          html += '      <div class="form-group">';
+          html += '        <label class="form-label">间隔（分钟）</label>';
+          html += '        <input class="form-input" type="number" id="interval_' + bc.id + '" value="' + interval + '" min="15" max="480" step="5" onchange="window._markDirty(\'' + bc.id + '\')">';
+          html += '      </div>';
+          html += '    </div>';
+          html += '  </div>';
+          html += '  <div class="card-actions">';
+          html += '    <button class="btn btn-save" id="saveBtn_' + bc.id + '" onclick="window._saveConfig(\'' + bc.id + '\')">保存配置</button>';
+          html += '    <button class="btn btn-test" id="testBtn_' + bc.id + '" onclick="window._testWebhook(\'' + bc.id + '\')" ' + (webhookUrl ? '' : 'disabled') + '>测试</button>';
+          html += '  </div>';
+          html += '</div>';
+        });
+
+        container.innerHTML = html;
+      }
+
+      // ---- Toggle ----
+      window._toggleCard = function(orgId) {
+        var checked = document.getElementById('toggle_' + orgId).checked;
+        var body = document.getElementById('body_' + orgId);
+        if (checked) {
+          body.classList.remove('disabled');
+        } else {
+          body.classList.add('disabled');
+        }
+        window._markDirty(orgId);
+      };
+
+      // ---- 标记已修改 ----
+      window._markDirty = function(orgId) {
+        document.getElementById('status_' + orgId).style.display = 'inline-block';
+      };
+
+      // ---- 保存 ----
+      window._saveConfig = async function(orgId) {
+        var btn = document.getElementById('saveBtn_' + orgId);
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+
+        var webhook = document.getElementById('webhook_' + orgId).value.trim();
+        var enabled = document.getElementById('toggle_' + orgId).checked;
+        var startHour = parseInt(document.getElementById('starthour_' + orgId).value) || 12;
+        var endHour = parseInt(document.getElementById('endhour_' + orgId).value) || 20;
+        var interval = parseInt(document.getElementById('interval_' + orgId).value) || 60;
+
+        // 基本校验
+        if (enabled && !webhook) {
+          showToast('请填写 Webhook 地址', 'error');
+          btn.disabled = false;
+          btn.textContent = '保存配置';
+          return;
+        }
+        if (startHour >= endHour) {
+          showToast('开始时间必须小于结束时间', 'error');
+          btn.disabled = false;
+          btn.textContent = '保存配置';
+          return;
+        }
+        if (interval < 15) {
+          showToast('间隔时间不能少于15分钟', 'error');
+          btn.disabled = false;
+          btn.textContent = '保存配置';
+          return;
+        }
+
+        var record = {
+          org_id: parseInt(orgId),
+          webhook_url: webhook || null,
+          enabled: enabled,
+          start_hour: startHour,
+          end_hour: endHour,
+          interval_minutes: interval,
+          updated_at: new Date().toISOString()
+        };
+
+        // 如果禁用，清除 last_reminded_at 避免下次启用时跳过
+        if (!enabled) {
+          record.last_reminded_at = null;
+        }
+
+        var { error } = await window.db.from('reminder_configs').upsert(record, { onConflict: 'org_id' });
+        if (error) {
+          showToast('保存失败：' + error.message, 'error');
+        } else {
+          configsMap[orgId] = record;
+          document.getElementById('status_' + orgId).style.display = 'none';
+          showToast('配置已保存', 'success');
+
+          // 更新测试按钮状态
+          var testBtn = document.getElementById('testBtn_' + orgId);
+          if (testBtn) testBtn.disabled = !webhook;
+        }
+
+        btn.disabled = false;
+        btn.textContent = '保存配置';
+      };
+
+      // ---- 测试 Webhook ----
+      window._testWebhook = async function(orgId) {
+        var webhook = document.getElementById('webhook_' + orgId).value.trim();
+        if (!webhook) {
+          showToast('请先填写 Webhook 地址', 'error');
+          return;
+        }
+
+        var btn = document.getElementById('testBtn_' + orgId);
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+
+        var supabaseUrl = window.supabaseConfig.url;
+        var anonKey = window.supabaseConfig.anonKey;
+
+        try {
+          var res = await fetch(supabaseUrl + '/functions/v1/send-reminder', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + anonKey
+            },
+            body: JSON.stringify({ action: 'test', webhook_url: webhook })
+          });
+          var data = await res.json();
+          if (data.success) {
+            showToast('测试消息已发送，请查看企业微信群', 'success');
+          } else {
+            showToast('发送失败：' + (data.error || '未知错误'), 'error');
+          }
+        } catch (e) {
+          showToast('请求失败：' + e.message, 'error');
+        }
+
+        btn.disabled = false;
+        btn.textContent = '测试';
+      };
+
+      // ---- 辅助 ----
+      function escHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function escAttr(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+    })();
+  </script>
+</body>
+</html>
