@@ -28,5 +28,8 @@ build/
 # OpenCode
 .opencode/
 
+# Claude Code
+.claude/
+
 # Supabase
 supabase/.temp/
