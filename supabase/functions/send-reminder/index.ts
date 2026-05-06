@@ -183,8 +183,11 @@ Deno.serve(async (req) => {
       const bigClassName = allOrgs.find(o => o.id === cfg.org_id)?.name || '未知大班';
       const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
 
+      const submittedCount = groups.length - unsubmitted.length;
+
       let content = `## 📋 填报提醒\n\n`;
-      content += `**${bigClassName}** 截至 ${timeStr}，以下小组尚未填报数据：\n`;
+      content += `**${bigClassName}** 截至 ${timeStr}，已填报 **${submittedCount}** / **${groups.length}** 个小组\n`;
+      content += `以下 **${unsubmitted.length}** 个小组尚未填报：\n`;
 
       // 按班级分组展示
       const grouped: Record<string, Org[]> = {};
@@ -206,7 +209,7 @@ Deno.serve(async (req) => {
 
       // 检查 content 长度（企业微信 markdown 限制 4096 字符）
       if (content.length > 4000) {
-        content = `## 📋 填报提醒\n\n**${bigClassName}** 截至 ${timeStr}，还有 **${unsubmitted.length}** 个小组尚未填报数据，请尽快完成！`;
+        content = `## 📋 填报提醒\n\n**${bigClassName}** 截至 ${timeStr}，已填报 **${submittedCount}** / **${groups.length}** 个小组\n还有 **${unsubmitted.length}** 个小组尚未填报数据，请尽快完成！`;
       }
 
       // 发送 webhook
