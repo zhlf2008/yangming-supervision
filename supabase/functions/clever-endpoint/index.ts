@@ -1,5 +1,5 @@
-// Supabase Edge Function: send-reminder
-// 部署命令: supabase functions deploy send-reminder --project-ref whvjfurrkusdwujjodwc
+// Supabase Edge Function: clever-endpoint
+// 部署命令: supabase functions deploy clever-endpoint --project-ref whvjfurrkusdwujjodwc
 // Cron 触发器 (Supabase Dashboard 设置):
 //   名称: reminder-cron
 //   表达式: */15 12-21 * * *  (每天 12:00-21:59 每15分钟)
@@ -14,12 +14,20 @@ const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
-function getToday() {
+// 获取北京时间（UTC+8）的今天日期和当前时间字符串
+function getBeijingNow() {
   const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dt = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + dt;
+  // Deno Deploy 运行在 UTC，手动加 8 小时偏移
+  const beijingTime = new Date(d.getTime() + 8 * 60 * 60 * 1000);
+  const y = beijingTime.getUTCFullYear();
+  const m = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
+  const dt = String(beijingTime.getUTCDate()).padStart(2, '0');
+  const hh = String(beijingTime.getUTCHours()).padStart(2, '0');
+  const mm = String(beijingTime.getUTCMinutes()).padStart(2, '0');
+  return {
+    today: y + '-' + m + '-' + dt,
+    time: hh + ':' + mm
+  };
 }
 
 interface Org {
@@ -92,9 +100,10 @@ Deno.serve(async (req) => {
     }
 
     // ---- send: 检查并发送提醒 ----
-    const now = new Date();
-    const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-    const today = getToday();
+    const beijingNow = getBeijingNow();
+    const currentTime = beijingNow.time;
+    const today = beijingNow.today;
+    const now = new Date(); // UTC 时间，仅用于记录时间戳
 
     // 读取所有启用的提醒配置
     const { data: configs, error: configErr } = await adminClient
@@ -188,7 +197,7 @@ Deno.serve(async (req) => {
 
       // 构建消息
       const bigClassName = allOrgs.find(o => o.id === cfg.org_id)?.name || '未知大班';
-      const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const timeStr = beijingNow.time;
 
       const submittedCount = groups.length - unsubmitted.length;
 
@@ -240,6 +249,20 @@ Deno.serve(async (req) => {
           console.error('Failed to update last_reminded_at for config', cfg.id, updateErr.message);
         }
 
+        // 记录操作日志
+        const { error: logErr } = await adminClient
+          .from('audit_logs')
+          .insert({
+            user_id: null,
+            user_name: '系统推送',
+            action: '推送提醒',
+            target: bigClassName,
+            detail: `已填${submittedCount}/${groups.length}，未填${unsubmitted.length}个小组`
+          });
+        if (logErr) {
+          console.error('Failed to insert audit_log', logErr.message);
+        }
+
         remindersSent++;
         results.push({
           org_id: cfg.org_id,
@@ -260,7 +283,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       date: today,
-      time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
+      time: beijingNow.time,
       reminders_sent: remindersSent,
       results
     }), { headers });

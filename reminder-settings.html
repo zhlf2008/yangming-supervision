@@ -55,6 +55,9 @@
     .status-tag.saved { background: var(--green-light); color: var(--green); }
     .status-tag.unsaved { background: #FFF3E0; color: #EF6C00; }
 
+    .push-info { font-size: 11px; color: var(--ink-muted); padding: 4px 16px 8px; display: flex; gap: 12px; }
+    .push-info .last-time { color: var(--ink-light); }
+
     .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-muted); font-size: 14px; }
   </style>
 </head>
@@ -168,6 +171,7 @@
           html += '      </div>';
           html += '    </div>';
           html += '  </div>';
+          html += '  <div class="push-info" id="pushInfo_' + bc.id + '">' + formatPushInfo(cfg.last_reminded_at, enabled) + '</div>';
           html += '  <div class="card-actions">';
           html += '    <button class="btn btn-save" id="saveBtn_' + bc.id + '" onclick="window._saveConfig(\'' + bc.id + '\')">保存配置</button>';
           html += '    <button class="btn btn-test" id="testBtn_' + bc.id + '" onclick="window._testWebhook(\'' + bc.id + '\')" ' + (webhookUrl ? '' : 'disabled') + '>测试</button>';
@@ -187,6 +191,8 @@
         } else {
           body.classList.add('disabled');
         }
+        var pushEl = document.getElementById('pushInfo_' + orgId);
+        if (pushEl) pushEl.innerHTML = formatPushInfo(configsMap[orgId]?.last_reminded_at, checked);
         window._markDirty(orgId);
       };
 
@@ -248,6 +254,8 @@
         } else {
           configsMap[orgId] = record;
           document.getElementById('status_' + orgId).style.display = 'none';
+          // 刷新推送信息
+          document.getElementById('pushInfo_' + orgId).innerHTML = formatPushInfo(record.last_reminded_at, record.enabled);
           showToast('配置已保存', 'success');
 
           // 更新测试按钮状态
@@ -304,6 +312,20 @@
 
       function escAttr(s) {
         return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function formatPushInfo(lastRemindedAt, enabled) {
+        if (!enabled) return '提醒已禁用';
+        if (!lastRemindedAt) return '尚未推送过';
+        var d = new Date(lastRemindedAt);
+        // 转为北京时间显示
+        var bj = new Date(d.getTime() + 8 * 60 * 60 * 1000);
+        var y = bj.getUTCFullYear();
+        var mo = String(bj.getUTCMonth() + 1).padStart(2, '0');
+        var dt = String(bj.getUTCDate()).padStart(2, '0');
+        var hh = String(bj.getUTCHours()).padStart(2, '0');
+        var mm = String(bj.getUTCMinutes()).padStart(2, '0');
+        return '最近推送：<span class="last-time">' + y + '-' + mo + '-' + dt + ' ' + hh + ':' + mm + '</span>';
       }
 
     })();

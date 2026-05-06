@@ -28,6 +28,7 @@
     .log-action.删除人员 { color: var(--vermillion); }
     .log-action.组织修改 { color: #EF6C00; }
     .log-action.删除组织 { color: var(--vermillion); }
+    .log-action.推送提醒 { color: #6A1B9A; }
     .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-muted); }
   </style>
 </head>
@@ -42,6 +43,7 @@
       <button class="filter-btn" onclick="filterLogs('考勤提交', this)">考勤</button>
       <button class="filter-btn" onclick="filterLogs('添加人员', this)">人员</button>
       <button class="filter-btn" onclick="filterLogs('组织修改', this)">组织</button>
+      <button class="filter-btn" onclick="filterLogs('推送提醒', this)">推送</button>
     </div>
     <div id="logList" class="log-list">
       <div class="empty-state">加载中...</div>
