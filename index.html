@@ -449,6 +449,8 @@
               </a>
             `);
           }
+        }).catch(function(err) {
+          console.error('加载当前学期失败:', err);
         });
       } else if (userRole === '大班总督' || userRole === '大班副督' || userRole === '班级总督察' || userRole === '班级副总督察') {
         document.getElementById('quickActions').insertAdjacentHTML('beforeend', `

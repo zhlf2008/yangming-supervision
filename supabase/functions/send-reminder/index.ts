@@ -102,10 +102,17 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('enabled', true);
 
-    if (configErr || !configs?.length) {
+    if (configErr) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: configErr.message
+      }), { headers, status: 500 });
+    }
+
+    if (!configs?.length) {
       return new Response(JSON.stringify({
         success: true,
-        message: configErr ? configErr.message : '无启用的提醒配置',
+        message: '无启用的提醒配置',
         reminders_sent: 0
       }), { headers });
     }
@@ -225,10 +232,13 @@ Deno.serve(async (req) => {
         const resText = await res.text();
 
         // 更新 last_reminded_at
-        await adminClient
+        const { error: updateErr } = await adminClient
           .from('reminder_configs')
           .update({ last_reminded_at: now.toISOString(), updated_at: now.toISOString() })
           .eq('id', cfg.id);
+        if (updateErr) {
+          console.error('Failed to update last_reminded_at for config', cfg.id, updateErr.message);
+        }
 
         remindersSent++;
         results.push({
