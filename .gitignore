@@ -27,3 +27,6 @@ build/
 
 # OpenCode
 .opencode/
+
+# Supabase
+supabase/.temp/

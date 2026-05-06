@@ -67,7 +67,7 @@
 
     <div class="info-banner">
       配置企业微信群机器人 Webhook 后，系统将在<b>考核日</b>自动推送未填报提醒。<br>
-      需在 Supabase Dashboard 为 <b>send-reminder</b> 函数设置 Cron 触发器：<br>
+      需在 Supabase Dashboard 或 cron-job.org 为 <b>clever-endpoint</b> 函数设置定时触发器：<br>
       <code style="background:rgba(0,0,0,0.05);padding:2px 6px;border-radius:4px;font-size:12px;">*/15 12-21 * * *</code> — 每天12:00-21:59每15分钟执行
     </div>
 
@@ -275,7 +275,7 @@
         var anonKey = window.supabaseConfig.anonKey;
 
         try {
-          var res = await fetch(supabaseUrl + '/functions/v1/send-reminder', {
+          var res = await fetch(supabaseUrl + '/functions/v1/clever-endpoint', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
