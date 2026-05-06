@@ -433,6 +433,11 @@
             <div class="action-title">数据管理</div>
             <div class="action-desc">管理所有填报记录</div>
           </a>
+          <a href="reminder-settings.html" class="action-card">
+            <div class="action-icon attendance">📢</div>
+            <div class="action-title">填报提醒</div>
+            <div class="action-desc">企业微信自动提醒</div>
+          </a>
         `);
         var { data: currentSem } = await window.db.from('semesters').select('id').eq('is_current', 1).single();
         if (currentSem) {
