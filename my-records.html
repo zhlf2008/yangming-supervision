@@ -71,11 +71,35 @@
         return;
       }
 
-      // 查日程日期
+      // 查日程日期和 item_ids（用于公式匹配）
       var scheduleIds = [...new Set(records.map(function(r) { return r.schedule_id; }))];
-      var { data: schedules } = await window.db.from('schedules').select('id,schedule_date').in('id', scheduleIds);
+      var { data: schedules } = await window.db.from('schedules').select('id,schedule_date,item_ids').in('id', scheduleIds);
       var dateMap = {};
-      (schedules || []).forEach(function(s) { dateMap[s.id] = s.schedule_date; });
+      var schedMap = {};
+      (schedules || []).forEach(function(s) { dateMap[s.id] = s.schedule_date; schedMap[s.id] = s; });
+
+      // 加载考核类型公式
+      var { data: assessmentTypes } = await window.db.from('assessment_types').select('*');
+      assessmentTypes = assessmentTypes || [];
+
+      // 建立日程→公式映射
+      function getScheduleFormulas(s) {
+        var result = { online: null, video: null, hw: null };
+        if (!s || !s.item_ids) return result;
+        var ids = s.item_ids.split(',').map(Number).filter(Boolean);
+        ids.forEach(function(id) {
+          var at = null;
+          assessmentTypes.forEach(function(t) { if (t.id === id) at = t; });
+          if (!at || !at.formula) return;
+          var name = at.type_name || '';
+          if (name.indexOf('上线率') !== -1) result.online = at.formula;
+          else if (name.indexOf('视频率') !== -1) result.video = at.formula;
+          else if (name.indexOf('作业率') !== -1) result.hw = at.formula;
+        });
+        return result;
+      }
+
+      function hasMult100(f) { return f && (f.indexOf('*100') !== -1 || f.indexOf('×100') !== -1); }
 
       // 加载组织信息
       var orgIds = [...new Set(records.map(function(r) { return r.organization_id; }))];
@@ -96,14 +120,28 @@
       var html = '';
       records.forEach(function (r) {
         var fd = r.fill_data || {};
-        var yd = parseInt(fd['应到人数']) || 0;
-        var sd = parseInt(fd['实到人数']) || 0;
-        var yz = parseInt(fd['应做作业人数']) || 0;
-        var zw = parseInt(fd['作业完成人数']) || 0;
-        var sp = parseInt(fd['视频人数']) || 0;
-        var online = yd > 0 ? (sd / yd * 100).toFixed(1) : '0.0';
-        var hw = yz > 0 ? (zw / yz * 100).toFixed(1) : '0.0';
-        var video = sd > 0 ? (sp / sd * 100).toFixed(1) : '0.0';
+        var fieldMap = {};
+        Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
+
+        var formulas = getScheduleFormulas(schedMap[r.schedule_id]);
+
+        var calcOnline = null, calcVideo = null, calcHw = null;
+        if (formulas.online) {
+          var ro = calcFormula(formulas.online, fieldMap);
+          if (ro != null) calcOnline = ro * (hasMult100(formulas.online) ? 1 : 100);
+        }
+        if (formulas.video) {
+          var rv = calcFormula(formulas.video, fieldMap);
+          if (rv != null) calcVideo = rv * (hasMult100(formulas.video) ? 1 : 100);
+        }
+        if (formulas.hw) {
+          var rh = calcFormula(formulas.hw, fieldMap);
+          if (rh != null) calcHw = rh * (hasMult100(formulas.hw) ? 1 : 100);
+        }
+
+        var online = calcOnline != null ? calcOnline.toFixed(1) : '0.0';
+        var hw = calcHw != null ? calcHw.toFixed(1) : '0.0';
+        var video = calcVideo != null ? calcVideo.toFixed(1) : '0.0';
         var dateStr = dateMap[r.schedule_id] || (r.created_at || '').slice(0, 10);
         var timeStr = r.created_at ? new Date(r.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) : '';
         var orgName = orgMap[r.organization_id] || '';

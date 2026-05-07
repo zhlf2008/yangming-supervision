@@ -569,16 +569,6 @@
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </div>
-      <div id="reminderMenuItem" class="menu-item" onclick="goToReminderSettings()" style="display:none;">
-        <div class="menu-item-icon notify">📢</div>
-        <div class="menu-item-content">
-          <div class="menu-item-title">填报提醒</div>
-          <div class="menu-item-desc">企业微信群自动提醒设置</div>
-        </div>
-        <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </div>
       <div class="menu-item" onclick="showHelp()">
         <div class="menu-item-icon help">❓</div>
         <div class="menu-item-content">
@@ -729,7 +719,6 @@
       // 检查是否是管理员，显示设置入口
       if (profile.role === '管理员') {
         document.getElementById('adminMenuItem').style.display = 'flex';
-        document.getElementById('reminderMenuItem').style.display = 'flex';
       }
 
       // Load profile stats
@@ -860,9 +849,6 @@
       window.location.href = 'semester-settings.html';
     }
 
-    function goToReminderSettings() {
-      window.location.href = 'reminder-settings.html';
-    }
 
     function editProfile() {
       const profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');

@@ -843,7 +843,6 @@ document.getElementById('orgSelectorSection').style.display = 'block';
     }
 
     async function loadAssessmentForms(itemIds, selectedGroupId) {
-      // Load only the assessment types we need
       const { data: types, error } = await window.db.from('assessment_types').select('*');
       if (error || !types) {
         document.getElementById('formsContainer').innerHTML = `
@@ -866,122 +865,159 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         return;
       }
 
-      // Field name to element ID mapping for recalcRates
-      const fieldIds = {
-        '应到人数': 'yingdao', '实到人数': 'shidao',
-        '请假人数': 'qingjia', '视频人数': 'shipin',
-        '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
-      };
-
-      // Build field map from today's types
-      const fieldMap = {};
-      const requiredFields = new Set();
+      // Collect required fields from today's types (field name → boolean)
+      const requiredFields = {};
       todayTypes.forEach(type => {
         Object.entries(type.fields || {}).forEach(([fn, fcfg]) => {
-          const eid = fieldIds[fn];
-          if (eid) {
-            fieldMap[fn] = eid;
-            if (String(fcfg).includes('必填')) requiredFields.add(eid);
-          }
+          if (String(fcfg).includes('必填')) requiredFields[fn] = true;
         });
       });
 
-      // Initialize formData
-      formData = {};
-      Object.values(fieldIds).forEach(id => formData[id] = '');
-
-      // Render the new layout (use DB fields for labels/required, fixed IDs for input)
-      // Determine which sections to show based on todayTypes
+      // Detect which rate categories are active by type_name
       const typeNames = todayTypes.map(t => t.type_name);
-      const showOnline = typeNames.includes('上线率');
-      const showVideo = typeNames.includes('视频率');
-      const showHw = typeNames.includes('作业率');
+      const showOnline = typeNames.some(n => n.indexOf('上线率') !== -1);
+      const showVideo = typeNames.some(n => n.indexOf('视频率') !== -1);
+      const showHw = typeNames.some(n => n.indexOf('作业率') !== -1);
+
+      // Group assessment types by category and merge shared sections
+      // Attendance group: 上线率 + 视频率 (share fields like 实到人数)
+      // Homework group: 作业率
+      const attendanceTypes = todayTypes.filter(t => {
+        const n = t.type_name || '';
+        return n.indexOf('上线率') !== -1 || n.indexOf('视频率') !== -1;
+      });
+      const homeworkTypes = todayTypes.filter(t => {
+        const n = t.type_name || '';
+        return n.indexOf('作业率') !== -1;
+      });
 
       let html = '';
 
-      // === 上线率 Section ===
-      if (showOnline) {
-        html += `<div class="section">
-          <div class="section-title">
-            <span class="section-icon 考勤">📊</span>
-            上线率
-          </div>
-          <div class="input-row">
-            <div class="input-group">
-              <label class="input-label">${requiredFields.has('yingdao') ? '应到人数 *' : '应到人数'}</label>
-              <input type="number" class="form-input compact" id="yingdao" placeholder="0" oninput="recalcRates()">
-            </div>
-            <div class="input-group">
-              <label class="input-label">${requiredFields.has('shidao') ? '实到人数 *' : '实到人数'}</label>
-              <input type="number" class="form-input compact" id="shidao" placeholder="0" oninput="recalcRates()">
-            </div>
-          </div>
-          <div class="input-row">
-            <div class="input-group">
-              <label class="input-label">${requiredFields.has('qingjia') ? '请假人数 *' : '请假人数'}</label>
-              <input type="number" class="form-input compact" id="qingjia" placeholder="0" oninput="recalcRates()">
-            </div>
-            <div class="input-group">
-              <label class="input-label">${requiredFields.has('shipin') ? '视频人数 *' : '视频人数'}</label>
-              <input type="number" class="form-input compact" id="shipin" placeholder="0" oninput="recalcRates()">
-            </div>
-          </div>
-          <div class="rate-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="rate-item">
-              <span class="rate-label">上线率：</span>
-              <span class="rate-value" id="liveOnlineRate">--</span>
-            </div>
-            ${showVideo ? `<div class="rate-item" style="text-align:right;">
-              <span class="rate-label">视频率：</span>
-              <span class="rate-value" id="liveVideoRate">--</span>
-            </div>` : ''}
-          </div>
-        </div>`;
+      // === 考勤 Section (上线率 + 视频率 merged) ===
+      if (attendanceTypes.length > 0) {
+        // Merge fields from all attendance types, deduplicate, preserve canonical order
+        const attOrder = ['应到人数', '实到人数', '请假人数', '视频人数'];
+        const attFields = [];
+        const seen = {};
+        // Add known fields in preferred order
+        attOrder.forEach(fn => {
+          attendanceTypes.forEach(type => {
+            if ((type.fields || {})[fn] && !seen[fn]) {
+              seen[fn] = true; attFields.push(fn);
+            }
+          });
+        });
+        // Append any unknown fields
+        attendanceTypes.forEach(type => {
+          Object.keys(type.fields || {}).forEach(fn => {
+            if (!seen[fn]) { seen[fn] = true; attFields.push(fn); }
+          });
+        });
+
+        html += '<div class="section">' +
+          '<div class="section-title">' +
+            '<span class="section-icon 考勤">📊</span>' +
+            '上线率' +
+          '</div>';
+
+        // Render merged fields in pairs
+        for (let i = 0; i < attFields.length; i += 2) {
+          html += '<div class="input-row">';
+          for (let j = i; j < i + 2 && j < attFields.length; j++) {
+            const fn = attFields[j];
+            const required = requiredFields[fn] ? ' *' : '';
+            html += '<div class="input-group">' +
+              '<label class="input-label">' + fn + required + '</label>' +
+              '<input type="number" class="form-input compact" id="' + fn + '" placeholder="0" min="0" oninput="recalcRates()">' +
+            '</div>';
+          }
+          html += '</div>';
+        }
+
+        // Rate displays: sort so 上线率 always left, 视频率 right
+        const sortedAttendanceTypes = [...attendanceTypes].sort((a, b) => {
+          const na = (a.type_name || ''), nb = (b.type_name || '');
+          if (na.indexOf('上线率') !== -1) return -1;
+          if (nb.indexOf('上线率') !== -1) return 1;
+          return 0;
+        });
+        html += '<div class="rate-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+        sortedAttendanceTypes.forEach(type => {
+          html += '<div class="rate-item' + (attendanceTypes.length === 1 ? '' : '') + '">' +
+            '<span class="rate-label">' + (type.type_name || '') + '：</span>' +
+            '<span class="rate-value" id="liveRate_' + type.id + '">--</span>' +
+          '</div>';
+        });
+        html += '</div></div>';
       }
 
       // === 作业率 Section ===
-      if (showHw) {
-        html += `<div class="section">
-          <div class="section-title">
-            <span class="section-icon 作业">📝</span>
-            作业率
-          </div>
-          <div class="input-row">
-            <div class="input-group">
-              <label class="input-label">${requiredFields.has('yingzuo') ? '应做作业人数 *' : '应做作业人数'}</label>
-              <input type="number" class="form-input compact" id="yingzuo" placeholder="0" oninput="recalcRates()">
-            </div>
-            <div class="input-group">
-              <label class="input-label">${requiredFields.has('zuowan') ? '作业完成人数 *' : '作业完成人数'}</label>
-              <input type="number" class="form-input compact" id="zuowan" placeholder="0" oninput="recalcRates()">
-            </div>
-          </div>
-          <div class="rate-row">
-            <div class="rate-item">
-              <span class="rate-label">作业率：</span>
-              <span class="rate-value" id="liveHwRate">--</span>
-            </div>
-          </div>
-        </div>`;
+      if (homeworkTypes.length > 0) {
+        const hwOrder = ['应做作业人数', '作业完成人数'];
+        homeworkTypes.forEach(type => {
+          // Sort fields by preferred order
+          const rawFields = Object.keys(type.fields || {});
+          if (rawFields.length === 0) return;
+          const fields = [];
+          const hwSeen = {};
+          hwOrder.forEach(fn => {
+            if ((type.fields || {})[fn] && !hwSeen[fn]) {
+              hwSeen[fn] = true; fields.push(fn);
+            }
+          });
+          rawFields.forEach(fn => {
+            if (!hwSeen[fn]) { hwSeen[fn] = true; fields.push(fn); }
+          });
+
+          html += '<div class="section">' +
+            '<div class="section-title">' +
+              '<span class="section-icon 作业">📝</span>' +
+              (type.type_name || '作业率') +
+            '</div>';
+
+          for (let i = 0; i < fields.length; i += 2) {
+            html += '<div class="input-row">';
+            for (let j = i; j < i + 2 && j < fields.length; j++) {
+              const fn = fields[j];
+              const required = requiredFields[fn] ? ' *' : '';
+              html += '<div class="input-group">' +
+                '<label class="input-label">' + fn + required + '</label>' +
+                '<input type="number" class="form-input compact" id="' + fn + '" placeholder="0" min="0" oninput="recalcRates()">' +
+              '</div>';
+            }
+            html += '</div>';
+          }
+
+          html += '<div class="rate-row">' +
+            '<div class="rate-item">' +
+              '<span class="rate-label">' + (type.type_name || '') + '：</span>' +
+              '<span class="rate-value" id="liveRate_' + type.id + '">--</span>' +
+            '</div>' +
+          '</div>';
+
+          html += '</div>';
+        });
       }
 
       // If no sections to show
-      if (!showOnline && !showHw) {
-        html = `<div class="empty-state">
-          <div class="empty-state-icon">📋</div>
-          <p>今日未设置考核项目</p>
-        </div>`;
+      if (!showOnline && !showHw && typeNames.length === 0) {
+        html = '<div class=\"empty-state\">' +
+          '<div class=\"empty-state-icon\">📋</div>' +
+          '<p>今日未设置考核项目</p>' +
+        '</div>';
       }
 
       // === 出勤率 Section ===
-      html += `<div class="section attendance-summary">
-        <div class="rate-row total">
-          <div class="rate-item large">
-            <span class="rate-label">今日出勤率：</span>
-            <span class="rate-value" id="liveTotalRate">--</span>
-          </div>
-        </div>
-      </div>`;
+      if (showOnline || showHw) {
+        html += '<div class=\"section attendance-summary\">' +
+          '<div class=\"rate-row total\">' +
+            '<div class=\"rate-item large\">' +
+              '<span class=\"rate-label\">今日出勤率：</span>' +
+              '<span class=\"rate-value\" id=\"liveTotalRate\">--</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
 
       document.getElementById('formsContainer').innerHTML = html;
 
@@ -996,11 +1032,11 @@ document.getElementById('orgSelectorSection').style.display = 'block';
           document.getElementById('filledTip').style.display = 'block';
           document.getElementById('filledTime').textContent = '提交时间: ' + new Date(existingRecords[0].created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
           const fd = existingRecords[0].fill_data || {};
-          Object.entries(fieldIds).forEach(([name, id]) => {
-            const el = document.getElementById(id);
-            if (el && fd[name] !== undefined && fd[name] !== null) {
+          Object.keys(fd).forEach(name => {
+            const el = document.getElementById(name);
+            if (el) {
               el.value = fd[name];
-              formData[id] = String(fd[name]);
+              formData[name] = String(fd[name]);
             }
           });
           recalcRates();
@@ -1011,83 +1047,62 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       }
     }
 
-    // Evaluate a formula string like "实到人数/应到人数" using current input values
-    // Returns percentage (0-100) as string or null if invalid
-    function calcFormula(formula, values) {
-      if (!formula) return null;
-      let expr = formula.trim();
+    // calcFormula is provided by js/utils.js (global)
 
-      // Field name -> element ID mapping
-      const nameToId = {
-        '应到人数': 'yingdao', '实到人数': 'shidao',
-        '请假人数': 'qingjia', '视频人数': 'shipin',
-        '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
-      };
-
-      // Replace field names with values wrapped in parens to prevent code injection
-      Object.keys(nameToId).forEach(name => {
-        expr = expr.replace(new RegExp(name, 'g'), `(${values[nameToId[name]] ?? 0})`);
+    // Recalculate rates when form changes — dynamically driven by type.fields and type_name
+    function recalcRates() {
+      // Build values map from all visible inputs: { 字段名: 数值 }
+      const values = {};
+      todayTypes.forEach(type => {
+        Object.keys(type.fields || {}).forEach(fn => {
+          const el = document.getElementById(fn);
+          values[fn] = parseInt(el && el.value) || 0;
+        });
       });
 
-      try {
-        const result = new Function('return ' + expr)();
-        return typeof result === 'number' && isFinite(result) ? result : null;
-      } catch (e) {
-        return null;
-      }
-    }
-
-    // Recalculate rates when form changes
-    function recalcRates() {
-      const getVal = (id) => parseInt(document.getElementById(id)?.value) || 0;
-      const values = {
-        yingdao: getVal('yingdao'),
-        shidao: getVal('shidao'),
-        qingjia: getVal('qingjia'),
-        shipin: getVal('shipin'),
-        yingzuo: getVal('yingzuo'),
-        zuowan: getVal('zuowan')
-      };
-
-      // Find formulas for each rate type from today's assessment types
+      // Match formulas by type_name (not by guessing formula content)
       let onlineFormula = null, videoFormula = null, hwFormula = null;
-
       todayTypes.forEach(type => {
-        // Try to match by field names in formula
-        if (type.formula) {
-          const f = type.formula;
-          if (f.includes('实到人数') && f.includes('应到人数')) onlineFormula = f;
-          else if (f.includes('视频人数') && f.includes('实到人数')) videoFormula = f;
-          else if (f.includes('完成人数') && f.includes('应做')) hwFormula = f;
-        }
+        if (!type.formula) return;
+        const name = type.type_name || '';
+        if (name.indexOf('上线率') !== -1) onlineFormula = type.formula;
+        else if (name.indexOf('视频率') !== -1) videoFormula = type.formula;
+        else if (name.indexOf('作业率') !== -1) hwFormula = type.formula;
       });
 
       // Only multiply by 100 if formula does NOT already contain "*100" (avoid double-scale)
-      const hasMult100 = (f) => f && (f.includes('*100') || f.includes('×100'));
+      const hasMult100 = (f) => f && (f.indexOf('*100') !== -1 || f.indexOf('×100') !== -1);
 
-      const onlineRate = onlineFormula != null
-        ? (calcFormula(onlineFormula, values) ?? 0) * (hasMult100(onlineFormula) ? 1 : 100)
-        : 0;
-      const videoRate = videoFormula != null
-        ? (calcFormula(videoFormula, values) ?? 0) * (hasMult100(videoFormula) ? 1 : 100)
-        : 0;
-      const hwRate = hwFormula != null
-        ? (calcFormula(hwFormula, values) ?? 0) * (hasMult100(hwFormula) ? 1 : 100)
-        : 0;
+      var _or = null;
+      _or = onlineFormula != null ? calcFormula(onlineFormula, values) : null;
+      const onlineRate = (_or != null ? _or : 0) * (hasMult100(onlineFormula) ? 1 : 100);
+      _or = videoFormula != null ? calcFormula(videoFormula, values) : null;
+      const videoRate = (_or != null ? _or : 0) * (hasMult100(videoFormula) ? 1 : 100);
+      _or = hwFormula != null ? calcFormula(hwFormula, values) : null;
+      const hwRate = (_or != null ? _or : 0) * (hasMult100(hwFormula) ? 1 : 100);
 
       // 出勤率 = 上线率和作业率的平均值（视频率不计入）
-      const activeTypes = todayTypes.map(t => t.type_name);
       let rateSum = 0, rateCount = 0;
-      if (activeTypes.includes('上线率')) { rateSum += onlineRate; rateCount++; }
-      if (activeTypes.includes('作业率')) { rateSum += hwRate; rateCount++; }
+      todayTypes.forEach(type => {
+        const name = type.type_name || '';
+        if (name.indexOf('上线率') !== -1) { rateSum += onlineRate; rateCount++; }
+        else if (name.indexOf('作业率') !== -1) { rateSum += hwRate; rateCount++; }
+      });
       const totalRate = rateCount > 0 ? (rateSum / rateCount).toFixed(1) : '0.0';
 
-      const el = document.getElementById('liveOnlineRate');
-      if (el) el.textContent = onlineRate.toFixed(1) + '%';
-      const vr = document.getElementById('liveVideoRate');
-      if (vr) vr.textContent = videoRate.toFixed(1) + '%';
-      const hr = document.getElementById('liveHwRate');
-      if (hr) hr.textContent = hwRate.toFixed(1) + '%';
+      // Update rate displays dynamically
+      todayTypes.forEach(type => {
+        const name = type.type_name || '';
+        let rate = null;
+        if (name.indexOf('上线率') !== -1) rate = onlineRate;
+        else if (name.indexOf('视频率') !== -1) rate = videoRate;
+        else if (name.indexOf('作业率') !== -1) rate = hwRate;
+        if (rate !== null) {
+          const el = document.getElementById('liveRate_' + type.id);
+          if (el) el.textContent = rate.toFixed(1) + '%';
+        }
+      });
+
       const tr = document.getElementById('liveTotalRate');
       if (tr) tr.textContent = totalRate + '%';
     }
@@ -1137,7 +1152,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       const selectedOrgId = groupSelect.value;
 
       if (!selectedOrgId) {
-        showToast('请选择');
+        showToast('请选择小组后再提交');
         return;
       }
 
@@ -1148,56 +1163,46 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         return;
       }
 
-      const getVal = (id) => document.getElementById(id)?.value;
-      const getInt = (id) => parseInt(getVal(id)) || 0;
-
-      const yingdao = getInt('yingdao');
-      const shidao = getInt('shidao');
-      const qingjia = getInt('qingjia');
-      const shipin = getInt('shipin');
-      const yingzuo = getInt('yingzuo');
-      const zuowan = getInt('zuowan');
-
-      // 1. Validate: 实到人数 + 请假人数 <= 应到人数
-      if (shidao + qingjia > yingdao) {
-        showToast('实到人数 + 请假人数不能超过应到人数');
-        return;
-      }
-      // 2. Validate: 视频人数 <= 实到人数
-      if (shipin > shidao) {
-        showToast('视频人数不能超过实到人数');
-        return;
-      }
-      // 3. Validate: 作业完成人数 <= 应做作业人数
-      if (zuowan > yingzuo) {
-        showToast('作业完成人数不能超过应做作业人数');
-        return;
-      }
-
-      // 4. Validate rates <= 100% using actual formulas from DB
-      const values = { yingdao, shidao, qingjia, shipin, yingzuo, zuowan };
-      let onlineFormula = null, videoFormula = null, hwFormula = null;
+      // Dynamically collect field values from all assessment types
+      const getInt = (id) => parseInt(document.getElementById(id)?.value) || 0;
+      const fieldValues = {};
       todayTypes.forEach(type => {
-        const f = type.formula;
-        if (f && f.includes('实到人数') && f.includes('应到人数')) onlineFormula = f;
-        else if (f && f.includes('视频人数') && f.includes('实到人数')) videoFormula = f;
-        else if (f && f.includes('完成人数') && f.includes('应做')) hwFormula = f;
+        Object.keys(type.fields || {}).forEach(fn => {
+          fieldValues[fn] = getInt(fn);
+        });
       });
 
-      const calcRate = (f) => {
-        if (!f) return null;
-        let expr = f;
-        const nameToId = {
-          '应到人数': 'yingdao', '实到人数': 'shidao',
-          '请假人数': 'qingjia', '视频人数': 'shipin',
-          '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
-        };
-        Object.keys(nameToId).forEach(name => {
-          expr = expr.replace(new RegExp(name, 'g'), `(${values[nameToId[name]] ?? 0})`);
-        });
-        try { const r = new Function('return ' + expr)(); return typeof r === 'number' && isFinite(r) ? r : null; }
-        catch { return null; }
-      };
+      // Conditional validations: only check field relationships if both fields exist
+      if (fieldValues['应到人数'] && fieldValues['实到人数'] !== undefined) {
+        if (fieldValues['实到人数'] + (fieldValues['请假人数'] || 0) > fieldValues['应到人数']) {
+          showToast('实到人数 + 请假人数不能超过应到人数');
+          return;
+        }
+      }
+      if (fieldValues['实到人数'] && fieldValues['视频人数'] !== undefined) {
+        if (fieldValues['视频人数'] > fieldValues['实到人数']) {
+          showToast('视频人数不能超过实到人数');
+          return;
+        }
+      }
+      if (fieldValues['应做作业人数'] && fieldValues['作业完成人数'] !== undefined) {
+        if (fieldValues['作业完成人数'] > fieldValues['应做作业人数']) {
+          showToast('作业完成人数不能超过应做作业人数');
+          return;
+        }
+      }
+
+      // Validate rates <= 100% using actual formulas from DB (matched by type_name)
+      let onlineFormula = null, videoFormula = null, hwFormula = null;
+      todayTypes.forEach(type => {
+        if (!type.formula) return;
+        const name = type.type_name || '';
+        if (name.indexOf('上线率') !== -1) onlineFormula = type.formula;
+        else if (name.indexOf('视频率') !== -1) videoFormula = type.formula;
+        else if (name.indexOf('作业率') !== -1) hwFormula = type.formula;
+      });
+
+      const calcRate = (f) => f ? calcFormula(f, fieldValues) : null;
 
       const rates = [];
       if (onlineFormula) { const r = calcRate(onlineFormula); if (r !== null && r > 100) rates.push('上线率'); }
@@ -1212,12 +1217,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
       let missingRequired = false;
       todayTypes.forEach(type => {
         Object.entries(type.fields || {}).forEach(([fn, fcfg]) => {
-          const fieldId = {
-            '应到人数': 'yingdao', '实到人数': 'shidao',
-            '请假人数': 'qingjia', '视频人数': 'shipin',
-            '应做作业人数': 'yingzuo', '作业完成人数': 'zuowan'
-          }[fn];
-          if (String(fcfg).includes('必填') && (getVal(fieldId) === '' || getVal(fieldId) === null)) {
+          if (String(fcfg).includes('必填') && !fieldValues[fn]) {
             missingRequired = true;
           }
         });
@@ -1228,15 +1228,13 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         return;
       }
 
-      // Build fill_data using DB field names as keys
-      const fillData = {
-        '应到人数': yingdao,
-        '实到人数': shidao,
-        '请假人数': qingjia,
-        '视频人数': shipin,
-        '应做作业人数': yingzuo,
-        '作业完成人数': zuowan
-      };
+      // Build fill_data dynamically from all visible fields
+      const fillData = {};
+      todayTypes.forEach(type => {
+        Object.keys(type.fields || {}).forEach(fn => {
+          fillData[fn] = fieldValues[fn] || 0;
+        });
+      });
 
       const submission = {
         schedule_id: currentSchedule.id,
@@ -1255,12 +1253,17 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         console.error('Submit error:', error);
       } else {
         showToast('提交成功！');
-        var ol = yingdao>0 ? (shidao/yingdao*100).toFixed(1) : '0.0';
-        var hl = yingzuo>0 ? (zuowan/yingzuo*100).toFixed(1) : '0.0';
-        logAction('考勤提交', selectedOrg.name, '上线率:' + ol + '%, 作业率:' + hl + '%');
-        ['yingdao','shidao','qingjia','shipin','yingzuo','zuowan'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = '';
+        // Log with formula-based rates
+        const logVals = [];
+        if (onlineFormula) { const r = calcFormula(onlineFormula, fieldValues); if (r != null) logVals.push('上线率:' + r.toFixed(1) + '%'); }
+        if (hwFormula) { const r = calcFormula(hwFormula, fieldValues); if (r != null) logVals.push('作业率:' + r.toFixed(1) + '%'); }
+        logAction('考勤提交', selectedOrg.name, logVals.join(', '));
+        // Clear all dynamic input fields
+        todayTypes.forEach(type => {
+          Object.keys(type.fields || {}).forEach(fn => {
+            const el = document.getElementById(fn);
+            if (el) el.value = '';
+          });
         });
         recalcRates();
       }

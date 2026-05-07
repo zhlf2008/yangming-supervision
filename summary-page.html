@@ -585,6 +585,7 @@
 
       weekSchedules.forEach(function (s) {
         var cats = getScheduleCategories(s);
+        var formulas = getScheduleFormulas(s);
         var rec = recMap[s.id];
         var fd = (rec && rec.fill_data) ? rec.fill_data : {};
         var yingdao = parseInt(fd['应到人数']) || 0;
@@ -592,16 +593,16 @@
         var yingzuo = parseInt(fd['应做作业人数']) || 0;
         var zuowan = parseInt(fd['作业完成人数']) || 0;
         var shipin = parseInt(fd['视频人数']) || 0;
+        var qingjia = parseInt(fd['请假人数']) || 0;
 
-        var onlineR = cats.hasAttendance ? (yingdao > 0 ? (shidao / yingdao * 100).toFixed(2) : null) : null;
-        var hwR = cats.hasHomework ? (yingzuo > 0 ? (zuowan / yingzuo * 100).toFixed(2) : null) : null;
-        var shipinR = cats.hasAttendance ? (shidao > 0 ? (shipin / shidao * 100).toFixed(2) : null) : null;
-        var attR = null;
-        if (onlineR !== null && hwR !== null) {
-          attR = ((parseFloat(onlineR) + parseFloat(hwR)) / 2).toFixed(2);
-        } else {
-          attR = onlineR || hwR || null;
-        }
+        var fieldMap = {};
+        Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
+        var rates = computeRatesFromFormulas(fieldMap, formulas);
+
+        var onlineR = fmtRate(rates.online);
+        var hwR = fmtRate(rates.hw);
+        var shipinR = fmtRate(rates.video);
+        var attR = fmtRate(rates.attendance);
 
         var dt = new Date(s.schedule_date + 'T00:00:00');
         var dateLabel = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + weekDays[dt.getDay()];
@@ -679,6 +680,7 @@
       var dateLabel = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + weekDays[dt.getDay()];
 
       var cats = getScheduleCategories(sched);
+      var formulas = getScheduleFormulas(sched);
 
       var yingdao = parseInt(fd['应到人数']) || 0;
       var shidao = parseInt(fd['实到人数']) || 0;
@@ -687,15 +689,14 @@
       var zuowan = parseInt(fd['作业完成人数']) || 0;
       var shipin = parseInt(fd['视频人数']) || 0;
 
-      var onlineR = cats.hasAttendance ? (yingdao > 0 ? (shidao / yingdao * 100).toFixed(2) : null) : null;
-      var hwR = cats.hasHomework ? (yingzuo > 0 ? (zuowan / yingzuo * 100).toFixed(2) : null) : null;
-      var shipinR = cats.hasAttendance ? (shidao > 0 ? (shipin / shidao * 100).toFixed(2) : null) : null;
-      var attR = null;
-      if (onlineR !== null && hwR !== null) {
-        attR = ((parseFloat(onlineR) + parseFloat(hwR)) / 2).toFixed(2);
-      } else {
-        attR = onlineR || hwR || null;
-      }
+      var fieldMap = {};
+      Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
+      var rates = computeRatesFromFormulas(fieldMap, formulas);
+
+      var onlineR = fmtRate(rates.online);
+      var hwR = fmtRate(rates.hw);
+      var shipinR = fmtRate(rates.video);
+      var attR = fmtRate(rates.attendance);
 
       var rateCls = function (r) {
         if (r === null) return '';
@@ -771,6 +772,57 @@
       return { hasAttendance: hasAtt, hasHomework: hasHw };
     }
 
+    // Get formulas from assessment types for a given schedule (matched by type_name)
+    function getScheduleFormulas(s) {
+      var result = { online: null, video: null, hw: null };
+      if (!s || !s.item_ids) return result;
+      var ids = s.item_ids.split(',').map(Number).filter(Boolean);
+      ids.forEach(function (id) {
+        var at = null;
+        assessmentTypes.forEach(function (t) { if (t.id === id) at = t; });
+        if (!at || !at.formula) return;
+        var name = at.type_name || '';
+        if (name.indexOf('上线率') !== -1) result.online = at.formula;
+        else if (name.indexOf('视频率') !== -1) result.video = at.formula;
+        else if (name.indexOf('作业率') !== -1) result.hw = at.formula;
+      });
+      return result;
+    }
+
+    function hasMult100(f) {
+      return f && (f.indexOf('*100') !== -1 || f.indexOf('×100') !== -1);
+    }
+
+    // Compute rates using assessment type formulas. Returns { online, video, hw, attendance }
+    function computeRatesFromFormulas(fieldMap, formulas) {
+      var online = null, video = null, hw = null;
+
+      if (formulas.online) {
+        var r = calcFormula(formulas.online, fieldMap);
+        if (r != null) online = r * (hasMult100(formulas.online) ? 1 : 100);
+      }
+      if (formulas.video) {
+        var r = calcFormula(formulas.video, fieldMap);
+        if (r != null) video = r * (hasMult100(formulas.video) ? 1 : 100);
+      }
+      if (formulas.hw) {
+        var r = calcFormula(formulas.hw, fieldMap);
+        if (r != null) hw = r * (hasMult100(formulas.hw) ? 1 : 100);
+      }
+
+      var attendance = null;
+      if (online !== null || hw !== null) {
+        attendance = ((online || 0) + (hw || 0)) / ((online !== null && hw !== null) ? 2 : 1);
+      }
+
+      return { online: online, video: video, hw: hw, attendance: attendance };
+    }
+
+    // Format a computed rate for display
+    function fmtRate(val) {
+      return val != null ? val.toFixed(2) : null;
+    }
+
     // Pre-compute per-group AVERAGES once per load cycle
     function buildGroupStatsCache() {
       groupStatsCache = {};
@@ -806,34 +858,31 @@
 
         weekSchedules.forEach(function (s) {
           if (s.schedule_date > today) return;
-          var cats = getScheduleCategories(s);
+          var formulas = getScheduleFormulas(s);
           var rec = recMap[s.id];
           var fd = (rec && rec.fill_data) ? rec.fill_data : {};
           var yingdao = parseInt(fd['应到人数']) || 0;
           var shidao = parseInt(fd['实到人数']) || 0;
           var yingzuo = parseInt(fd['应做作业人数']) || 0;
           var zuowan = parseInt(fd['作业完成人数']) || 0;
-          var shipin = parseInt(fd['视频人数']) || 0;
 
           var hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0);
           if (hasData) filledDays++;
 
-          if (cats.hasAttendance) {
-            onlineSum += yingdao > 0 ? (shidao / yingdao * 100) : 0;
-            onlineN++;
-            videoSum += shidao > 0 ? (shipin / shidao * 100) : 0;
-            videoN++;
-          }
-          if (cats.hasHomework) {
-            hwSum += yingzuo > 0 ? (zuowan / yingzuo * 100) : 0;
-            hwN++;
-          }
-          var onlineR = cats.hasAttendance ? (yingdao > 0 ? shidao / yingdao : 0) : null;
-          var hwR = cats.hasHomework ? (yingzuo > 0 ? zuowan / yingzuo : 0) : null;
-          if (onlineR !== null || hwR !== null) {
-            attSum += ((onlineR || 0) + (hwR || 0)) / ((onlineR !== null && hwR !== null) ? 2 : 1) * 100;
-            attN++;
-          }
+          var fieldMap = {};
+          Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
+
+          var rates = computeRatesFromFormulas(fieldMap, formulas);
+
+          // 未填报的天按 0 计入平均，分母为所有考核日
+          var expectOnline = formulas.online !== null;
+          var expectVideo = formulas.video !== null;
+          var expectHw = formulas.hw !== null;
+
+          if (expectOnline) { onlineSum += (rates.online !== null ? rates.online : 0); onlineN++; }
+          if (expectVideo) { videoSum += (rates.video !== null ? rates.video : 0); videoN++; }
+          if (expectHw) { hwSum += (rates.hw !== null ? rates.hw : 0); hwN++; }
+          if (expectOnline || expectHw) { attSum += (rates.attendance !== null ? rates.attendance : 0); attN++; }
         });
 
         groupStatsCache[gid] = {
@@ -970,7 +1019,7 @@
       // Show a single day's rates for the group
       var sched = null;
       weekSchedules.forEach(function (s) { if (s.id === scheduleId) sched = s; });
-      var cats = getScheduleCategories(sched);
+      var formulas = getScheduleFormulas(sched);
 
       var rec = null;
       weekRecords.forEach(function (r) {
@@ -979,18 +1028,18 @@
       var fd = (rec && rec.fill_data) ? rec.fill_data : {};
       var yingdao = parseInt(fd['应到人数']) || 0;
       var shidao = parseInt(fd['实到人数']) || 0;
+      var qingjia = parseInt(fd['请假人数']) || 0;
       var yingzuo = parseInt(fd['应做作业人数']) || 0;
       var zuowan = parseInt(fd['作业完成人数']) || 0;
       var shipin = parseInt(fd['视频人数']) || 0;
 
-      var onlineR = cats.hasAttendance ? (yingdao > 0 ? (shidao / yingdao * 100).toFixed(2) : null) : null;
-      var hwR = cats.hasHomework ? (yingzuo > 0 ? (zuowan / yingzuo * 100).toFixed(2) : null) : null;
-      var attR = null;
-      if (onlineR !== null && hwR !== null) {
-        attR = ((parseFloat(onlineR) + parseFloat(hwR)) / 2).toFixed(2);
-      } else {
-        attR = onlineR || hwR || null;
-      }
+      var fieldMap = {};
+      Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
+      var rates = computeRatesFromFormulas(fieldMap, formulas);
+
+      var onlineR = fmtRate(rates.online);
+      var hwR = fmtRate(rates.hw);
+      var attR = fmtRate(rates.attendance);
 
       document.getElementById('statLabelAtt').textContent = '出勤率';
       document.getElementById('statLabelOnline').textContent = '上线率';

@@ -31,7 +31,7 @@ function clearLoginState() {
   localStorage.removeItem('supabase_user');
 }
 
-// 页面初始化前等待 db 就绪
+// 页面初始化前等待 db 就绪 + session 恢复
 async function waitForDb() {
   if (window.db) return;
   var startTime = Date.now();
@@ -40,6 +40,10 @@ async function waitForDb() {
   }
   if (!window.db) {
     throw new Error('Supabase db not initialized');
+  }
+  // 等待 session 从自定义 localStorage 恢复完成
+  if (window._sessionReady) {
+    await window._sessionReady;
   }
 }
 
@@ -57,6 +61,34 @@ async function waitForDb() {
     // 客户端（anon key）
     var client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.supabaseClient = client;
+
+    // 从自定义 localStorage key 恢复 Supabase Auth session
+    // Supabase SDK 只认 sb-<ref>-auth-token 标准 key，
+    // 而登录页存储在 supabase_session 自定义 key 中，
+    // 导致其他页面 auth.uid() 为 NULL，RLS 策略失效
+    window._sessionReady = Promise.resolve(); // 默认已就绪
+    var customSession = localStorage.getItem('supabase_session');
+    if (customSession) {
+      try {
+        var sessionData = JSON.parse(customSession);
+        if (sessionData.access_token && sessionData.refresh_token) {
+          window._sessionReady = client.auth.setSession({
+            access_token: sessionData.access_token,
+            refresh_token: sessionData.refresh_token
+          }).then(function (res) {
+            if (res.data && res.data.session) {
+              localStorage.setItem('supabase_session', JSON.stringify(res.data.session));
+            }
+          }).catch(function () {
+            // token 过期，清除并跳转登录
+            clearLoginState();
+            if (window.location.pathname.indexOf('login.html') === -1) {
+              window.location.href = 'login.html';
+            }
+          });
+        }
+      } catch (e) { /* ignore */ }
+    }
 
     // 统一 db 对象
     window.db = {
