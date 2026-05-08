@@ -154,7 +154,7 @@ function _initSelector(containerId) {
       getAllChildOrgs(userOrgId, orgs).filter(function (o) { return o.level === '小组'; })
         .forEach(function (g) { selectableGroupIds.add(g.id); });
     }
-  } else if (role === '管理员' || role === '地区督委') {
+  } else if (role === '超级管理员' || role === '管理员') {
     orgs.filter(function (o) { return o.level === '小组'; })
       .forEach(function (g) { selectableGroupIds.add(g.id); });
   }

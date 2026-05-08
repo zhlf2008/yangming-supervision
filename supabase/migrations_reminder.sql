@@ -35,7 +35,7 @@ CREATE POLICY "管理员可查看日志" ON audit_logs FOR SELECT
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('管理员', '地区督委')
+      AND profiles.role IN ('超级管理员', '管理员')
     )
   );
 
@@ -52,13 +52,13 @@ CREATE POLICY "管理员可管理提醒配置" ON reminder_configs
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.role = '管理员'
+      AND profiles.role IN ('超级管理员', '管理员')
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.role = '管理员'
+      AND profiles.role IN ('超级管理员', '管理员')
     )
   );

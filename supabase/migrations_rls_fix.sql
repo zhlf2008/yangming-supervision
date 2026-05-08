@@ -48,6 +48,6 @@ CREATE POLICY "管理员可管理组织" ON organizations
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.role = '管理员'
+      AND profiles.role IN ('超级管理员', '管理员')
     )
   );

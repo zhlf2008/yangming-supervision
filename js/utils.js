@@ -51,6 +51,31 @@ function showToast(msg, options) {
   toast._timer = setTimeout(function () { toast.className = ''; }, duration);
 }
 
+// ---- 确认弹窗 ----
+
+function showConfirm(msg) {
+  return new Promise(function (resolve) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:3000;animation:confirmFadeIn 0.2s;';
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:14px;width:calc(100% - 64px);max-width:300px;padding:28px 24px 20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.25);">' +
+        '<div style="font-size:30px;margin-bottom:12px;">⚠️</div>' +
+        '<div style="font-size:15px;color:#2D2D2D;margin-bottom:8px;line-height:1.6;">' + msg + '</div>' +
+        '<div style="font-size:12px;color:#E63946;margin-bottom:8px;">此操作不可撤销</div>' +
+        '<div style="display:flex;gap:12px;margin-top:20px;">' +
+          '<button style="flex:1;padding:11px 0;font-size:14px;border:1px solid #E8E4DF;border-radius:8px;background:#FAFAF8;color:#5C5C5C;cursor:pointer;">取消</button>' +
+          '<button style="flex:1;padding:11px 0;font-size:14px;border:none;border-radius:8px;background:#E63946;color:#fff;cursor:pointer;font-weight:500;">确认删除</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var buttons = overlay.querySelectorAll('button');
+    buttons[0].onclick = function () { overlay.remove(); resolve(false); };
+    buttons[1].onclick = function () { overlay.remove(); resolve(true); };
+  });
+}
+
 // ---- 周日/周x 转换 ----
 
 var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -133,7 +158,7 @@ function getAccessibleGroupIds(role, userOrgId, orgs) {
       getAllChildOrgs(userOrgId, orgs).filter(function (o) { return o.level === '小组'; })
         .forEach(function (g) { groupIds.add(g.id); });
     }
-  } else if (role === '管理员' || role === '地区督委') {
+  } else if (role === '超级管理员' || role === '管理员') {
     orgs.filter(function (o) { return o.level === '小组'; }).forEach(function (g) { groupIds.add(g.id); });
   }
 
@@ -156,14 +181,17 @@ function getParentOrgId(role, userOrgId, orgs) {
 function sortUsers(users) {
   return users.slice().sort(function (a, b) {
     function roleOrder(r) {
-      if (r.includes('管理员')) return 0;
-      if (r.includes('地区督委')) return 1;
-      if (r.includes('总督')) return 2;
-      if (r.includes('副督')) return 3;
-      if (r.includes('总督察')) return 4;
-      if (r.includes('副总督察')) return 5;
-      if (r.includes('督察')) return 6;
-      if (r.includes('副督察')) return 7;
+      var order = {
+        '超级管理员': 0,
+        '管理员': 1,
+        '大班总督': 2,
+        '大班副督': 3,
+        '班级总督察': 4,
+        '班级副总督察': 5,
+        '小组督察': 6,
+        '小组副督察': 7
+      };
+      if (order.hasOwnProperty(r)) return order[r];
       return 8;
     }
     var oa = roleOrder(a.role || '');
@@ -247,6 +275,48 @@ function checkLogin() {
   catch (e) { window.location.href = 'login.html'; return null; }
 }
 
+// ---- 刷新当前用户数据 ----
+
+async function refreshCurrentUser() {
+  try {
+    var sessionData = localStorage.getItem('supabase_session');
+    if (!sessionData || !window.db) return null;
+    var session = JSON.parse(sessionData);
+    var userId = session.user ? session.user.id : null;
+    if (!userId) return null;
+
+    var result = await window.db
+      .from('profiles')
+      .select('*, organizations(*)')
+      .eq('id', userId)
+      .single();
+
+    if (!result.error && result.data) {
+      localStorage.setItem('supabase_user', JSON.stringify(result.data));
+      localStorage.setItem('currentUser', result.data.name || '');
+      return result.data;
+    }
+    return null;
+  } catch (e) {
+    console.error('refreshCurrentUser failed:', e);
+    return null;
+  }
+}
+
+// ---- 当前学期 ----
+
+var _currentSemesterId = null;
+async function getCurrentSemesterId() {
+  if (_currentSemesterId !== null) return _currentSemesterId;
+  try {
+    var result = await window.db.from('semesters').select('id').eq('is_current', 1).single();
+    _currentSemesterId = result.data ? result.data.id : null;
+  } catch (e) {
+    _currentSemesterId = null;
+  }
+  return _currentSemesterId;
+}
+
 // ---- 强制导航到登录页 ----
 
 function guardAuth() {
@@ -287,3 +357,21 @@ function calcFormula(formula, fieldMap) {
     return null;
   }
 }
+
+// ---- 自动刷新用户数据 ----
+
+(function () {
+  // 从 bfcache 恢复时刷新用户角色
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted && typeof refreshCurrentUser === 'function') {
+      refreshCurrentUser();
+    }
+  });
+
+  // Tab 切换回来时刷新用户角色
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && typeof refreshCurrentUser === 'function') {
+      refreshCurrentUser();
+    }
+  });
+})();

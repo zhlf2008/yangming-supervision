@@ -74,10 +74,11 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="index.html" class="back-btn">←</a>
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">考核项目管理</h1>
     </div>
     <p class="section-desc">管理考勤填报的考核项目模板。设为"模板"的项目会在生成日程时自动添加。</p>
+    <div id="semesterLabel" style="font-size:12px;color:var(--ink-muted);margin-bottom:12px;"></div>
     <button class="add-btn" onclick="showTypeModal()">+ 新增考核项目</button>
     <div id="typeList"><div class="empty-state">加载中...</div></div>
   </div>
@@ -125,6 +126,7 @@
     let editingType = null;
     let fieldList = [];
     let isTemplateEnabled = true;
+    let currentSemesterId = null;
 
     function showToast(msg) {
       const t = document.getElementById('toast');
@@ -133,11 +135,14 @@
     }
 
     async function init() {
+      currentSemesterId = await getCurrentSemesterId();
+      var { data: sem } = await window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single();
+      document.getElementById('semesterLabel').textContent = '当前学期：' + (sem ? sem.semester_name : '未知');
       await loadAssessmentTypes();
     }
 
     async function loadAssessmentTypes() {
-      const { data, error } = await window.db.from('assessment_types').select('*').order('id');
+      const { data, error } = await window.db.from('assessment_types').select('*').eq('semester_id', currentSemesterId).order('id');
       if (error) { showToast('加载考核项目失败'); return; }
       assessmentTypes = data || [];
       renderAssessmentTypes();
@@ -267,7 +272,7 @@
           fields[f.name.trim()] = val;
         }
       });
-      const data = { type_name, fields, formula, is_template: isTemplateEnabled ? 1 : 0 };
+      const data = { type_name, fields, formula, is_template: isTemplateEnabled ? 1 : 0, semester_id: currentSemesterId };
       let error;
       if (id) {
         const { error: e } = await window.db.from('assessment_types').update(data).eq('id', id);
@@ -286,13 +291,13 @@
     }
 
     async function deleteType(id) {
-      if (!confirm('确定删除？删除后无法恢复')) return;
+      if (!(await showConfirm('确定删除该考核类型？删除后无法恢复'))) return;
       const { error } = await window.db.from('assessment_types').delete().eq('id', id);
       if (error) showToast('删除失败');
       else { showToast('删除成功'); await loadAssessmentTypes(); }
     }
 
-    waitForDb().then(init);
+    waitForDb().then(refreshCurrentUser).then(init);
   </script>
 
   <div id="bottomNavContainer"></div>

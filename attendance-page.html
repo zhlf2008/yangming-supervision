@@ -473,7 +473,7 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="index.html" class="back-btn">←</a>
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">考勤</h1>
     </div>
 
@@ -564,6 +564,7 @@
 
     async function init() {
       await waitForDb();
+      await refreshCurrentUser();
 
       currentUser = checkLogin();
       if (!currentUser) return;
@@ -574,16 +575,18 @@
       document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
       document.getElementById('reporterName').textContent = currentUser.name || '未知';
 
-      // 并行加载所有需要的数据
-      const [semesters, orgNameResult, orgsResult] = await Promise.all([
-        window.db.from('semesters').select('*').eq('is_current', 1).limit(1),
+      // 先加载学期，再按学期加载组织
+      const semesters = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1);
+      currentSemester = semesters.data?.[0] || null;
+
+      const [orgNameResult, orgsResult] = await Promise.all([
         currentUser.organization_id
           ? window.db.from('organizations').select('name').eq('id', currentUser.organization_id).single()
           : Promise.resolve({ data: null }),
-        window.db.from('organizations').select('*').order('level', { ascending: true })
+        currentSemester
+          ? window.db.from('organizations').select('*').eq('semester_id', currentSemester.id).order('level', { ascending: true })
+          : Promise.resolve({ data: [] })
       ]);
-
-      currentSemester = semesters.data?.[0] || null;
       if (currentSemester) {
         document.getElementById('semesterName').textContent = currentSemester.semester_name;
       } else {
@@ -637,7 +640,7 @@ document.getElementById('orgSelectorSection').style.display = 'block';
           getAllChildOrgs(userOrgId, orgs).filter(o => o.level === '小组')
             .forEach(g => selectableGroupIds.add(g.id));
         }
-      } else if (role === '管理员' || role === '地区督委') {
+      } else if (role === '超级管理员' || role === '管理员') {
         orgs.filter(o => o.level === '小组').forEach(g => selectableGroupIds.add(g.id));
       }
 
@@ -806,12 +809,26 @@ document.getElementById('orgSelectorSection').style.display = 'block';
         return;
       }
 
+      // 从小组追溯到大班
+      var dabanId = null;
+      if (selectedGroupId) {
+        var group = orgs.find(function(o) { return o.id === parseInt(selectedGroupId); });
+        if (group) {
+          var classOrg = orgs.find(function(o) { return o.id === group.parent_id; });
+          if (classOrg) {
+            var daban = orgs.find(function(o) { return o.id === classOrg.parent_id; });
+            if (daban && daban.level === '大班') dabanId = daban.id;
+          }
+        }
+      }
+
       const today = getToday();
 
-      // Query today's schedule
+      // Query today's schedule for this 大班
       const { data: schedules } = await window.db.from('schedules')
         .select('*')
         .eq('semester_id', currentSemester.id)
+        .eq('org_id', dabanId)
         .eq('schedule_date', today)
         .eq('is_valid', 1);
 
@@ -843,7 +860,9 @@ document.getElementById('orgSelectorSection').style.display = 'block';
     }
 
     async function loadAssessmentForms(itemIds, selectedGroupId) {
-      const { data: types, error } = await window.db.from('assessment_types').select('*');
+      const { data: types, error } = currentSemester
+        ? await window.db.from('assessment_types').select('*').eq('semester_id', currentSemester.id)
+        : { data: [], error: null };
       if (error || !types) {
         document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">

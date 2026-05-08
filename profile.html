@@ -501,7 +501,7 @@
   <div class="container">
     <!-- Page Header -->
     <header class="page-header">
-      <a href="index.html" class="back-btn">
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
@@ -698,6 +698,7 @@
 <script>
     async function init() {
       await waitForDb();
+      await refreshCurrentUser();
 
       var profile = checkLogin();
       if (!profile) return;
@@ -716,8 +717,8 @@
         document.querySelector('.profile-phone').textContent = profile.phone;
       }
 
-      // 检查是否是管理员，显示设置入口
-      if (profile.role === '管理员') {
+      // 检查是否是系统管理员，显示设置入口
+      if (profile.role === '超级管理员' || profile.role === '管理员') {
         document.getElementById('adminMenuItem').style.display = 'flex';
       }
 
@@ -744,18 +745,41 @@
         String(sunday.getMonth() + 1).padStart(2, '0') + '-' +
         String(sunday.getDate()).padStart(2, '0');
 
+      // 加载所有组织（用于 group→daban 追溯）
+      var semId = await getCurrentSemesterId();
+      var { data: allOrgs } = semId
+        ? await window.db.from('organizations').select('*').eq('semester_id', semId)
+        : { data: [] };
+      allOrgs = allOrgs || [];
+      var orgMap = {};
+      allOrgs.forEach(function(o) { orgMap[o.id] = o; });
+
+      // 辅助：从小组追溯到大班 ID
+      function getDabanId(groupId) {
+        var grp = orgMap[groupId];
+        if (!grp) return null;
+        var cls = orgMap[grp.parent_id];
+        if (!cls) return null;
+        var daban = orgMap[cls.parent_id];
+        return (daban && daban.level === '大班') ? daban.id : null;
+      }
+
       if (role === '小组督察' || role === '小组副督察') {
         // ===== 小组督察：个人填报统计 =====
         document.getElementById('statLabel1').textContent = '本周累计填报';
         document.getElementById('statLabel2').textContent = '本周漏填报';
         document.getElementById('statLabel3').textContent = '今日是否已填报';
 
+        var dabanId = getDabanId(userOrgId);
+
         // 先取本周日程（填报次数和漏报都基于日程计算）
-        var { data: weekSchedules } = await window.db.from('schedules')
+        var weekQuery = window.db.from('schedules')
           .select('id')
           .gte('schedule_date', mondayStr)
           .lte('schedule_date', sundayStr)
           .eq('is_valid', 1);
+        if (dabanId) weekQuery = weekQuery.eq('org_id', dabanId);
+        var { data: weekSchedules } = await weekQuery;
         var weekScheduleIds = (weekSchedules || []).map(function(s) { return s.id; });
         var totalWeekSchedules = weekScheduleIds.length;
 
@@ -776,10 +800,12 @@
         }
 
         // 3. 今日是否已填报
-        var { data: todayScheds } = await window.db.from('schedules')
+        var todayQuery = window.db.from('schedules')
           .select('id')
           .eq('schedule_date', today)
           .eq('is_valid', 1);
+        if (dabanId) todayQuery = todayQuery.eq('org_id', dabanId);
+        var { data: todayScheds } = await todayQuery;
         if (!todayScheds || todayScheds.length === 0) {
           document.getElementById('statValue3').textContent = '无考核';
           document.getElementById('statValue3').style.color = 'var(--ink-muted)';
@@ -805,15 +831,13 @@
         document.getElementById('statLabel3').textContent = '今日未填报';
 
         // 1. 管辖小组数量
-        var { data: allOrgs } = await window.db.from('organizations').select('*');
-        allOrgs = allOrgs || [];
         var groupIds = getAccessibleGroupIds(role, userOrgId, allOrgs);
         var totalGroups = groupIds.size;
         document.getElementById('statValue1').textContent = totalGroups;
 
-        // 2 & 3. 今日填报进度
+        // 2 & 3. 今日填报进度 — 需要考虑 per-daban 日程
         var { data: todayScheds } = await window.db.from('schedules')
-          .select('id')
+          .select('id,org_id')
           .eq('schedule_date', today)
           .eq('is_valid', 1);
 
@@ -823,9 +847,19 @@
           document.getElementById('statValue3').textContent = '无考核';
           document.getElementById('statValue3').style.color = 'var(--ink-muted)';
         } else {
+          // 构建 daban→schedule_id 映射（每个大班今天最多一个日程）
+          var dabanTodaySet = new Set();
+          todayScheds.forEach(function(s) { if (s.org_id) dabanTodaySet.add(s.org_id); });
+
+          // 只统计所属大班今日有日程的小组
+          var eligibleGroups = [];
+          groupIds.forEach(function(gid) {
+            var did = getDabanId(gid);
+            if (did && dabanTodaySet.has(did)) eligibleGroups.push(gid);
+          });
+
           var scheduleIds = todayScheds.map(function(s) { return s.id; });
-          var groupIdArray = [];
-          groupIds.forEach(function(id) { groupIdArray.push(id); });
+          var groupIdArray = eligibleGroups;
           var { data: records } = await window.db.from('attendance_records')
             .select('organization_id')
             .in('schedule_id', scheduleIds)
@@ -834,8 +868,8 @@
           var filledSet = new Set();
           (records || []).forEach(function(r) { filledSet.add(r.organization_id); });
           var filledCount = 0;
-          groupIds.forEach(function(id) { if (filledSet.has(id)) filledCount++; });
-          var unfilledCount = totalGroups - filledCount;
+          eligibleGroups.forEach(function(id) { if (filledSet.has(id)) filledCount++; });
+          var unfilledCount = eligibleGroups.length - filledCount;
 
           document.getElementById('statValue2').textContent = filledCount;
           document.getElementById('statValue2').style.color = '#2E7D32';
@@ -1114,7 +1148,7 @@
     function showHelp() {
       var profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
       feedbackRole = profile.role || '';
-      var isAdmin = feedbackRole === '管理员' || feedbackRole === '地区督委';
+      var isAdmin = feedbackRole === '超级管理员' || feedbackRole === '管理员';
 
       document.getElementById('feedbackContent').value = '';
       document.getElementById('feedbackCharCount').textContent = '0';
@@ -1167,7 +1201,7 @@
       container.innerHTML = '<div class="feedback-empty">加载中...</div>';
 
       var profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
-      var isAdmin = profile.role === '管理员' || profile.role === '地区督委';
+      var isAdmin = profile.role === '超级管理员' || profile.role === '管理员';
 
       try {
         var query = window.db.from('feedback').select('*').order('created_at', { ascending: false });

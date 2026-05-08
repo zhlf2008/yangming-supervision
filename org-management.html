@@ -50,14 +50,21 @@
     .user-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
     .user-meta { font-size: 12px; color: var(--ink-muted); }
     .user-role { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
-    .user-role.管理员 { background: #FFEBEE; color: #C62828; }
-    .user-role.地区督委 { background: #F3E5F5; color: #7B1FA2; }
+    .user-role.超级管理员 { background: #FFEBEE; color: #C62828; }
+    .user-role.管理员 { background: #F3E5F5; color: #7B1FA2; }
     .user-role.大班总督 { background: #E3F2FD; color: #1565C0; }
     .user-role.班级总督察 { background: #E8F5E9; color: #2E7D32; }
     .user-role.小组督察 { background: #FFF3E0; color: #EF6C00; }
     .user-role.小组副督察 { background: #FFF3E0; color: #E65100; }
     .user-role.班级副总督察 { background: #E8F5E9; color: #558B2F; }
     .user-role.大班副督 { background: #E3F2FD; color: #1565C0; }
+    .system-users-card { background: var(--bg-card); border-radius: var(--radius); padding: 0; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+    .system-users-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
+    .system-users-title { font-weight: 600; font-size: 14px; color: var(--ink-dark); }
+    .system-users-body { padding: 8px 0; }
+    .system-users-body .user-item { padding: 12px 16px; }
+    .add-sysadmin-btn { padding: 6px 14px; font-size: 12px; font-weight: 500; background: var(--vermillion); color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .add-sysadmin-btn:active { opacity: 0.85; }
     .item-actions { display: flex; gap: 8px; }
     .edit-btn, .delete-btn { padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; }
     .edit-btn { background: var(--bg-primary); color: var(--ink-dark); }
@@ -91,9 +98,11 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="index.html" class="back-btn">←</a>
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">组织架构</h1>
     </div>
+    <div id="semesterInfo" style="font-size:12px;color:var(--ink-muted);margin-bottom:12px;"></div>
+    <div id="copySection" style="display:none;background:var(--bg-card);border:1px dashed var(--border);border-radius:8px;padding:12px;margin-bottom:12px;"></div>
     <div class="settings-bar">
       <span class="label">允许用户注册</span>
       <div class="toggle-switch" onclick="toggleRegistration()">
@@ -104,7 +113,10 @@
     <div class="section">
       <div class="section-header">
         <span class="section-title">组织架构</span>
-        <button class="add-btn" id="addBigClassBtn" onclick="showAddOrgModal('bigclass')">+ 添加大班</button>
+        <div style="display:flex;gap:8px;">
+          <button class="add-sysadmin-btn" id="addSysAdminBtn" onclick="showUserModal(null, null, true)" style="display:none;">+ 系统管理员</button>
+          <button class="add-btn" id="addBigClassBtn" onclick="showAddOrgModal('bigclass')">+ 添加大班</button>
+        </div>
       </div>
       <div id="orgTree" class="tree-container"><div class="empty-state">加载中...</div></div>
     </div>
@@ -186,11 +198,12 @@
     let expandedNodes = new Set();
     let editingUser = null;
     let currentUser = null;
+    let currentSemesterId = null;
 
     // 角色层级定义（索引越小级别越高）
     const ROLE_HIERARCHY = [
+      '超级管理员',
       '管理员',
-      '地区督委',
       '大班总督',
       '大班副督',
       '班级总督察',
@@ -235,14 +248,21 @@
         return;
       }
 
+      await waitForDb();
+      currentSemesterId = await getCurrentSemesterId();
+      var { data: sem } = await window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single();
+      document.getElementById('semesterInfo').textContent = '当前学期：' + (sem ? sem.semester_name : '未知');
+
       initRegistrationToggle();
       await loadOrganizations();
       calcManagedScope();
       // 非管理员隐藏添加大班按钮和注册开关
       const role = currentUser.role;
-      if (role !== '管理员' && role !== '地区督委') {
+      if (role !== '超级管理员' && role !== '管理员') {
         document.getElementById('addBigClassBtn').style.display = 'none';
         document.querySelector('.settings-bar').style.display = 'none';
+      } else if (role === '超级管理员') {
+        document.getElementById('addSysAdminBtn').style.display = 'inline-block';
       }
       await loadUsers();
     }
@@ -253,7 +273,7 @@
       const userOrgId = currentUser.organization_id;
       managedOrgIds = new Set();
 
-      if (role === '管理员' || role === '地区督委') {
+      if (role === '超级管理员' || role === '管理员') {
         organizations.forEach(o => managedOrgIds.add(o.id));
         return;
       }
@@ -281,7 +301,7 @@
     }
 
     async function loadOrganizations() {
-      const { data, error } = await window.db.from('organizations').select('*');
+      const { data, error } = await window.db.from('organizations').select('*').eq('semester_id', currentSemesterId);
       if (error) { showToast('加载组织失败'); return; }
       organizations = data || [];
       organizations.sort((a, b) => {
@@ -297,7 +317,7 @@
     async function loadUsers() {
       let query = window.db.from('profiles').select('*, organizations(name)').order('created_at', { ascending: false });
       // 非管理员只加载管辖范围内的用户
-      if (managedOrgIds.size > 0 && !(currentUser.role === '管理员' || currentUser.role === '地区督委')) {
+      if (managedOrgIds.size > 0 && !(currentUser.role === '超级管理员' || currentUser.role === '管理员')) {
         query = query.in('organization_id', [...managedOrgIds]);
       }
       const { data, error } = await query;
@@ -307,12 +327,49 @@
     }
 
     function sortUsers(users) {
-      return users.slice().sort((a, b) => {
-        const aIsDeputy = a.role.includes('副总') || a.role.includes('副督察');
-        const bIsDeputy = b.role.includes('副总') || b.role.includes('副督察');
-        if (aIsDeputy !== bIsDeputy) return aIsDeputy ? 1 : -1;
+      var roleOrder = {
+        '超级管理员': 0,
+        '管理员': 1,
+        '大班总督': 2,
+        '大班副督': 3,
+        '班级总督察': 4,
+        '班级副总督察': 5,
+        '小组督察': 6,
+        '小组副督察': 7
+      };
+      return users.slice().sort(function(a, b) {
+        var oa = roleOrder.hasOwnProperty(a.role) ? roleOrder[a.role] : 8;
+        var ob = roleOrder.hasOwnProperty(b.role) ? roleOrder[b.role] : 8;
+        if (oa !== ob) return oa - ob;
         return a.name.localeCompare(b.name, 'zh-CN');
       });
+    }
+
+    // 渲染系统级用户（不归属任何组织）
+    function renderSystemUsers() {
+      var sysUsers = users.filter(function(u) {
+        return u.organization_id === null && (u.role === '超级管理员' || u.role === '管理员');
+      });
+      if (sysUsers.length === 0) {
+        return '<div class="system-users-card"><div class="system-users-header"><span class="system-users-title">系统管理员</span></div><div class="empty-state" style="padding:20px;font-size:13px;">暂无系统管理员</div></div>';
+      }
+      var sorted = sortUsers(sysUsers);
+      var itemsHtml = sorted.map(function(u) {
+        return '<div class="user-item">' +
+          '<div class="user-info">' +
+            '<div class="user-name">' + u.name + '<span class="user-role ' + u.role + '">' + u.role + '</span></div>' +
+            '<div class="user-meta">' + (u.phone || '') + '</div>' +
+          '</div>' +
+          '<div class="item-actions">' +
+            '<button class="edit-btn" onclick="showEditUserModal(\'' + u.id + '\')">编辑</button>' +
+            '<button class="delete-btn" onclick="deleteUser(\'' + u.id + '\')">删除</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      return '<div class="system-users-card">' +
+        '<div class="system-users-header"><span class="system-users-title">系统管理员</span></div>' +
+        '<div class="system-users-body">' + itemsHtml + '</div>' +
+      '</div>';
     }
 
     // 获取组织及其所有下级的总人数
@@ -328,9 +385,15 @@
     function renderOrgTree() {
       const container = document.getElementById('orgTree');
       if (organizations.length === 0) {
-        container.innerHTML = '<div class="empty-state">暂无组织，点击上方添加</div>';
+        var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
+        container.innerHTML = '<div class="empty-state">当前学期暂无组织</div>';
+        if (isAdmin) {
+          document.getElementById('copySection').style.display = 'block';
+          loadCopySection();
+        }
         return;
       }
+      document.getElementById('copySection').style.display = 'none';
       const levelOrder = { '大班': 0, '班级': 1, '小组': 2 };
       const byLevel = { '大班': [], '班级': [], '小组': [] };
       organizations.forEach(org => { if (byLevel[org.level]) byLevel[org.level].push(org); });
@@ -338,8 +401,10 @@
       const role = currentUser.role;
       let html = '';
 
-      if (role === '管理员' || role === '地区督委') {
-        // 管理员：显示全部大班
+      // 系统管理员区域
+      if (role === '超级管理员' || role === '管理员') {
+        html += renderSystemUsers();
+        // 显示全部大班
         byLevel['大班'].forEach(bigclass => {
           html += renderBigClassNode(bigclass, byLevel);
         });
@@ -507,13 +572,13 @@
     }
 
     function showAddOrgModal(level, parentId) {
-      // 权限守卫：仅管理员/地区督委可添加大班
+      // 权限守卫：仅超级管理员/管理员可添加大班
       var role = currentUser.role;
-      if (level === 'bigclass' && role !== '管理员' && role !== '地区督委') {
+      if (level === 'bigclass' && role !== '超级管理员' && role !== '管理员') {
         showToast('无权限添加大班', 'error'); return;
       }
       // 班级级及以上可添加班级
-      if (level === 'class' && role !== '管理员' && role !== '地区督委' && role !== '大班总督' && role !== '大班副督') {
+      if (level === 'class' && role !== '超级管理员' && role !== '管理员' && role !== '大班总督' && role !== '大班副督') {
         showToast('无权限添加班级', 'error'); return;
       }
       // 小组督察/副督察不可添加任何组织
@@ -577,10 +642,10 @@
         showToast('无权限操作组织', 'error'); return;
       }
       var level = document.getElementById('orgLevel').value;
-      if (level === '大班' && role !== '管理员' && role !== '地区督委') {
+      if (level === '大班' && role !== '超级管理员' && role !== '管理员') {
         showToast('无权限添加大班', 'error'); return;
       }
-      if (level === '班级' && role !== '管理员' && role !== '地区督委' && role !== '大班总督' && role !== '大班副督') {
+      if (level === '班级' && role !== '超级管理员' && role !== '管理员' && role !== '大班总督' && role !== '大班副督') {
         showToast('无权限添加班级', 'error'); return;
       }
 
@@ -589,7 +654,7 @@
       const parentId = document.getElementById('parentOrgId').value || null;
       if (!name) { showToast('请输入名称'); return; }
       if (level !== '大班' && !parentId) { showToast('请选择上级组织'); return; }
-      const data = { name, level, parent_id: parentId, area_id: 1 };
+      const data = { name, level, parent_id: parentId, area_id: 1, semester_id: currentSemesterId };
       let error;
       if (id) { const { error: e } = await window.db.from('organizations').update(data).eq('id', id); error = e; }
       else { const { error: e } = await window.db.from('organizations').insert(data); error = e; }
@@ -598,7 +663,7 @@
     }
 
     async function deleteOrg(id) {
-      if (!confirm('确定删除？')) return;
+      if (!(await showConfirm('确定删除该组织？'))) return;
       const hasChildren = organizations.some(o => o.parent_id === id);
       if (hasChildren) { showToast('请先删除下级组织'); return; }
       const orgName = (organizations.find(o => o.id === id) || {}).name || '';
@@ -607,23 +672,91 @@
       else { showToast('删除成功'); logAction('删除组织', orgName + ' id:' + id); await loadOrganizations(); }
     }
 
-    // User modal - first arg (parentOrgId) is deprecated, use second arg for defaultOrgId
-    function showUserModal(parentOrgId, defaultOrgId) {
+    // ---- 从其他学期复制组织架构 ----
+
+    async function loadCopySection() {
+      var { data: semesters } = await window.db.from('semesters').select('id,semester_name').neq('id', currentSemesterId).order('start_date', { ascending: false });
+      if (!semesters || semesters.length === 0) {
+        document.getElementById('copySection').innerHTML = '<div style="font-size:13px;color:var(--ink-muted);text-align:center;">没有其他学期可供复制</div>';
+        return;
+      }
+      var options = semesters.map(function(s) {
+        return '<option value="' + s.id + '">' + s.semester_name + '</option>';
+      }).join('');
+      document.getElementById('copySection').innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+        '<span style="font-size:13px;">从学期</span>' +
+        '<select id="copySourceSelect" style="padding:6px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;">' + options + '</select>' +
+        '<button onclick="copyOrgsFromSemester()" style="padding:6px 14px;font-size:12px;background:var(--vermillion);color:#fff;border:none;border-radius:6px;cursor:pointer;">复制组织架构</button>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">将所选学期的组织架构完整复制到当前学期（人员归属不会自动更新）</div>';
+    }
+
+    async function copyOrgsFromSemester() {
+      var sourceSemesterId = parseInt(document.getElementById('copySourceSelect').value);
+      if (!sourceSemesterId) return;
+      if (!(await showConfirm('将从所选学期复制完整的组织架构到当前学期，确定继续？'))) return;
+
+      var { data: sourceOrgs } = await window.db.from('organizations').select('*').eq('semester_id', sourceSemesterId);
+      if (!sourceOrgs || sourceOrgs.length === 0) { showToast('源学期无组织可复制'); return; }
+
+      // 建立 oldId -> newId 映射，先插入顶级（大班），再插入下级
+      var idMap = {};
+      var byLevel = { '大班': [], '班级': [], '小组': [] };
+      sourceOrgs.forEach(function(o) { byLevel[o.level].push(o); });
+
+      // 逐级插入
+      var levels = ['大班', '班级', '小组'];
+      for (var i = 0; i < levels.length; i++) {
+        var level = levels[i];
+        var batch = (byLevel[level] || []).map(function(o) {
+          var newParentId = o.parent_id ? (idMap[o.parent_id] || null) : null;
+          return {
+            name: o.name,
+            level: o.level,
+            parent_id: newParentId,
+            area_id: o.area_id || 1,
+            semester_id: currentSemesterId
+          };
+        });
+        if (batch.length > 0) {
+          var { data: inserted, error } = await window.db.from('organizations').insert(batch).select('id,name');
+          if (error) { showToast('复制失败: ' + error.message); return; }
+          // 按名称映射（假设同层级同名）——用原始顺序匹配
+          var sourceNames = (byLevel[level] || []).map(function(o) { return o.id; });
+          inserted.forEach(function(newRow, idx) {
+            if (idx < sourceNames.length) idMap[sourceNames[idx]] = newRow.id;
+          });
+        }
+      }
+
+      showToast('复制完成（' + sourceOrgs.length + ' 个组织）');
+      logAction('组织修改', '从学期' + sourceSemesterId + '复制组织架构到学期' + currentSemesterId);
+      await loadOrganizations();
+    }
+
+    // User modal - first arg (parentOrgId) is deprecated, second arg for defaultOrgId, third arg systemOnly
+    function showUserModal(parentOrgId, defaultOrgId, systemOnly) {
       editingUser = null;
       document.getElementById('userId').value = '';
       document.getElementById('userName').value = '';
       document.getElementById('userPhone').value = '';
       document.getElementById('userPassword').value = '';
       document.getElementById('userRole').value = '小组督察';
-      // defaultOrgId is passed as second argument
-      const orgId = defaultOrgId;
+      var orgId = defaultOrgId;
+      if (systemOnly) {
+        orgId = null;
+      }
       if (orgId) {
         document.getElementById('userOrgId').value = orgId;
-        const path = buildOrgPath(orgId, organizations);
+        var path = buildOrgPath(orgId, organizations);
         document.getElementById('userOrgDisplay').textContent = path;
-        // 根据组织层级过滤角色
-        const org = organizations.find(o => o.id === orgId);
-        filterRolesByOrgLevel(org?.level);
+        var org = organizations.find(function(o) { return o.id === orgId; });
+        filterRolesByOrgLevel(org ? org.level : null);
+      } else if (systemOnly) {
+        document.getElementById('userOrgId').value = '';
+        document.getElementById('userOrgDisplay').textContent = '未指定';
+        renderSystemRoles();
       } else {
         document.getElementById('userOrgId').value = '';
         document.getElementById('userOrgDisplay').textContent = '未指定';
@@ -631,7 +764,6 @@
       }
       document.getElementById('userModalTitle').textContent = '添加人员';
       document.getElementById('userModal').classList.add('show');
-      // 新建人员时，如果已有手机号则自动填入后6位密码
       var phoneEl = document.getElementById('userPhone');
       if (phoneEl.value.length === 11) autoFillPassword();
     }
@@ -674,8 +806,8 @@
 
     function renderAllRoles(defaultRole) {
       const allRoles = [
+        { value: '超级管理员', label: '超级管理员' },
         { value: '管理员', label: '管理员' },
-        { value: '地区督委', label: '地区督委' },
         { value: '大班总督', label: '大班总督' },
         { value: '大班副督', label: '大班副督' },
         { value: '班级总督察', label: '班级总督察' },
@@ -687,6 +819,19 @@
       const select = document.getElementById('userRole');
       select.innerHTML = roles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
       if (defaultRole) select.value = defaultRole;
+    }
+
+    // 仅系统级角色（超级管理员、管理员），用于添加系统管理员
+    function renderSystemRoles(defaultRole) {
+      const sysRoles = [
+        { value: '超级管理员', label: '超级管理员' },
+        { value: '管理员', label: '管理员' }
+      ];
+      const roles = filterRolesByCurrentUser(sysRoles);
+      const select = document.getElementById('userRole');
+      select.innerHTML = roles.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
+      if (defaultRole) select.value = defaultRole;
+      if (roles.length > 0 && !defaultRole) select.value = roles[0].value;
     }
 
     function filterRolesByOrgLevel(level, defaultRole) {
@@ -733,7 +878,12 @@
       const phone = document.getElementById('userPhone').value.trim();
       const password = document.getElementById('userPassword').value;
       const role = document.getElementById('userRole').value;
-      const orgId = document.getElementById('userOrgId').value || null;
+      var orgId = document.getElementById('userOrgId').value || null;
+
+      // 系统级角色强制无组织归属
+      if (role === '超级管理员' || role === '管理员') {
+        orgId = null;
+      }
 
       if (!name) { showToast('请输入姓名'); return; }
       if (!phone || phone.length !== 11) { showToast('请输入正确的手机号'); return; }
@@ -744,7 +894,17 @@
         const data = { name, phone, role, organization_id: orgId };
         const { error } = await window.db.from('profiles').update(data).eq('id', id);
         if (error) showToast('保存失败: ' + error.message);
-        else { showToast('保存成功'); logAction('编辑人员', phone + ' ' + name + ' ' + role); closeUserModal(); await loadUsers(); }
+        else {
+          showToast('保存成功');
+          logAction('编辑人员', phone + ' ' + name + ' ' + role);
+          closeUserModal();
+          await loadUsers();
+          // 如果编辑的是当前登录用户，同步刷新 localStorage
+          if (currentUser && id === currentUser.id) {
+            await refreshCurrentUser();
+            currentUser = getCurrentUser();
+          }
+        }
         return;
       }
 
@@ -790,9 +950,20 @@
     }
 
     async function deleteUser(id) {
-      if (!confirm('确定删除？')) return;
+      if (!(await showConfirm('确定删除该人员？'))) return;
       var userInfo = users.find(u => u.id === id);
-      var userName = userInfo ? (userInfo.name + ' ' + userInfo.phone) : id;
+      if (!userInfo) { showToast('用户不存在'); return; }
+      // 权限校验：不能删除自己
+      if (id === currentUser.id) { showToast('不能删除自己'); return; }
+      // 管理员只能被超级管理员删除
+      if (userInfo.role === '管理员' && currentUser.role !== '超级管理员') {
+        showToast('只有超级管理员可以删除管理员'); return;
+      }
+      // 超级管理员只能被超级管理员删除
+      if (userInfo.role === '超级管理员' && currentUser.role !== '超级管理员') {
+        showToast('只有超级管理员可以删除超级管理员'); return;
+      }
+      var userName = userInfo.name + ' ' + (userInfo.phone || '');
       // 1. 尝试删除 auth.users（不阻塞，如果不存在忽略）
       try {
         var authResult = await adminApi.deleteUser(id);
@@ -806,7 +977,7 @@
       else { showToast('删除成功'); logAction('删除人员', userName); await loadUsers(); }
     }
 
-    waitForDb().then(init);
+    waitForDb().then(refreshCurrentUser).then(init);
   </script>
 
   <div id="bottomNavContainer"></div>

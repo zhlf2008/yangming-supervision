@@ -64,7 +64,7 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="profile.html" class="back-btn" aria-label="返回">←</a>
+      <a href="profile.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">填报提醒设置</h1>
     </div>
 
@@ -86,10 +86,11 @@
   <script>
     (async function() {
       await waitForDb();
+      await refreshCurrentUser();
       var currentUser = getCurrentUser();
 
-      // 仅管理员可访问
-      if (!currentUser || currentUser.role !== '管理员') {
+      // 仅超级管理员/管理员可访问
+      if (!currentUser || (currentUser.role !== '超级管理员' && currentUser.role !== '管理员')) {
         showToast('仅管理员可访问此页面', 'error');
         setTimeout(function() { window.location.href = 'profile.html'; }, 1500);
         return;
@@ -99,6 +100,7 @@
 
       var configsMap = {};   // org_id → config
       var bigClasses = [];   // 大班列表
+      var currentSemesterId = await getCurrentSemesterId();
 
       await loadData();
 
@@ -107,10 +109,10 @@
         document.getElementById('loadingArea').style.display = 'block';
         document.getElementById('cardsContainer').innerHTML = '';
 
-        // 加载所有组织
-        var { data: orgs } = await window.db.from('organizations')
-          .select('id, name, level, parent_id')
-          .order('name');
+        // 加载当前学期的组织
+        var { data: orgs } = currentSemesterId
+          ? await window.db.from('organizations').select('id, name, level, parent_id').eq('semester_id', currentSemesterId).order('name')
+          : { data: [] };
 
         bigClasses = (orgs || []).filter(function(o) { return o.level === '大班'; });
 

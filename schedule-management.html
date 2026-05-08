@@ -43,18 +43,32 @@
     .switch-pill input:checked + .switch-slider { background: var(--vermillion); }
     .switch-pill input:checked + .switch-slider::before { transform: translateX(16px); }
     .empty-state { text-align: center; padding: 40px; color: var(--ink-muted); }
+    .daban-list { display: flex; flex-direction: column; gap: 10px; }
+    .daban-card { background: var(--bg-card); border-radius: var(--radius); padding: 16px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.15s; }
+    .daban-card:active { transform: scale(0.98); }
+    .daban-card-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--vermillion-light); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .daban-card-info { flex: 1; min-width: 0; }
+    .daban-card-name { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
+    .daban-card-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+    .daban-card-arrow { font-size: 14px; color: var(--ink-muted); flex-shrink: 0; }
+    .back-to-list { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--vermillion); cursor: pointer; margin-bottom: 12px; padding: 4px 0; }
 
   </style>
 </head>
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="index.html" class="back-btn">←</a>
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">日程管理</h1>
     </div>
     <div class="semester-info" id="semesterInfo"><div class="empty-state" style="padding:8px;">加载中...</div></div>
-    <button class="add-btn" id="generateBtn" onclick="generateSchedules()">📅 自动生成日程</button>
-    <div id="scheduleList" class="schedule-list"><div class="empty-state">加载中...</div></div>
+    <div id="dabanListView"><div class="empty-state">加载中...</div></div>
+    <div id="scheduleView" style="display:none;">
+      <div class="back-to-list" onclick="backToDabanList()">← 返回大班列表</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--ink-dark);" id="scheduleViewTitle"></div>
+      <button class="add-btn" id="generateBtn" onclick="generateSchedules()">📅 自动生成日程</button>
+      <div id="scheduleList" class="schedule-list"></div>
+    </div>
   </div>
 
   <script src="js/supabase-config.js"></script>
@@ -64,17 +78,44 @@
     let currentSemester = null;
     let assessmentTypes = [];
     let schedules = [];
+    let semesterId = null;
+    let selectedDabanId = null;
+    let dabanNameMap = {};
 
     async function init() {
       const params = new URLSearchParams(window.location.search);
-      const semesterId = parseInt(params.get('semester_id'));
+      semesterId = parseInt(params.get('semester_id'));
       if (!semesterId) {
-        document.getElementById('scheduleList').innerHTML = '<div class="empty-state">无效的学期ID</div>';
+        document.getElementById('dabanListView').innerHTML = '<div class="empty-state">无效的学期ID</div>';
         return;
       }
       await loadSemester(semesterId);
       await loadAssessmentTypes();
-      await loadSchedules(semesterId);
+
+      // 大班总督/大班副督：只看到自己的大班，直接进入日程视图
+      var currentUser = checkLogin();
+      if (currentUser && (currentUser.role === '大班总督' || currentUser.role === '大班副督')) {
+        var myDabanId = currentUser.organization_id;
+        if (myDabanId) {
+          dabanNameMap[myDabanId] = ''; // 占位，后面 loadSemester 区域的名称暂时未知
+          // 直接加载该大班的日程，跳过卡片列表
+          selectedDabanId = myDabanId;
+          document.getElementById('dabanListView').style.display = 'none';
+          document.getElementById('scheduleView').style.display = '';
+          document.getElementById('scheduleViewTitle').textContent = '本大班日程';
+          // 隐藏返回按钮（不能切换到其他大班）
+          document.querySelector('.back-to-list').style.display = 'none';
+          loadSchedules();
+          return;
+        }
+      }
+
+      await loadDabanList();
+      // 如果 URL 带了 org_id 参数，直接进入该大班
+      var urlOrgId = parseInt(params.get('org_id'));
+      if (urlOrgId && dabanNameMap[urlOrgId]) {
+        enterDaban(urlOrgId);
+      }
     }
 
     async function loadSemester(id) {
@@ -96,13 +137,66 @@
       document.title = `${data.semester_name} - 日程管理`;
     }
 
+    async function loadDabanList() {
+      var { data: orgs } = await window.db.from('organizations')
+        .select('id,name').eq('semester_id', semesterId).eq('level', '大班').order('name');
+      var dabans = orgs || [];
+      dabans.forEach(function(d) { dabanNameMap[d.id] = d.name; });
+      if (dabans.length === 0) {
+        document.getElementById('dabanListView').innerHTML = '<div class="empty-state">本学期无大班</div>';
+        return;
+      }
+      // 获取每个大班的日程天数
+      var { data: scheds } = await window.db.from('schedules')
+        .select('org_id').eq('semester_id', semesterId).eq('is_valid', 1);
+      var countMap = {};
+      (scheds || []).forEach(function(s) { countMap[s.org_id] = (countMap[s.org_id] || 0) + 1; });
+
+      var html = '<div class="daban-list">';
+      dabans.forEach(function(d) {
+        var days = countMap[d.id] || 0;
+        html += '<div class="daban-card" onclick="enterDaban(' + d.id + ')">';
+        html += '<div class="daban-card-icon">📅</div>';
+        html += '<div class="daban-card-info">';
+        html += '<div class="daban-card-name">' + d.name + '</div>';
+        html += '<div class="daban-card-meta">' + days + ' 个考核日</div>';
+        html += '</div>';
+        html += '<span class="daban-card-arrow">▶</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+      document.getElementById('dabanListView').innerHTML = html;
+    }
+
+    function enterDaban(dabanId) {
+      selectedDabanId = dabanId;
+      document.getElementById('scheduleViewTitle').textContent = dabanNameMap[dabanId] || '大班日程';
+      document.getElementById('dabanListView').style.display = 'none';
+      document.getElementById('scheduleView').style.display = '';
+      loadSchedules();
+    }
+
+    function backToDabanList() {
+      document.getElementById('scheduleView').style.display = 'none';
+      document.getElementById('dabanListView').style.display = '';
+      selectedDabanId = null;
+      schedules = [];
+      loadDabanList(); // 刷新日程天数统计
+    }
+
     async function loadAssessmentTypes() {
-      const { data } = await window.db.from('assessment_types').select('*').order('id');
+      const { data } = await window.db.from('assessment_types').select('*').eq('semester_id', semesterId).order('id');
       assessmentTypes = data || [];
     }
 
-    async function loadSchedules(semesterId) {
-      const { data, error } = await window.db.from('schedules').select('*').eq('semester_id', semesterId).order('schedule_date', { ascending: true });
+    async function loadSchedules() {
+      if (!selectedDabanId) {
+        document.getElementById('scheduleList').innerHTML = '<div class="empty-state">请先选择大班</div>';
+        return;
+      }
+      const { data, error } = await window.db.from('schedules').select('*')
+        .eq('semester_id', semesterId).eq('org_id', selectedDabanId)
+        .order('schedule_date', { ascending: true });
       if (error) { document.getElementById('scheduleList').innerHTML = '<div class="empty-state">加载失败</div>'; return; }
       schedules = data || [];
       renderScheduleList();
@@ -244,6 +338,7 @@
 
     async function generateSchedules() {
       if (!currentSemester) return;
+      if (!selectedDabanId) { showToast('请先选择大班'); return; }
       const trialStart = currentSemester.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
       const start = new Date(currentSemester.start_date);
       const end = new Date(currentSemester.end_date);
@@ -285,10 +380,10 @@
       if (toAdd.length > 0) msg.push('新增 ' + toAdd.length + ' 天');
       if (toDelete.length > 0) msg.push('删除 ' + toDelete.length + ' 天');
       msg.push('已有配置保持不变');
-      if (!confirm(msg.join('，') + '，确定继续？')) return;
+      if (!(await showConfirm(msg.join('，') + '，确定继续？'))) return;
 
       // 获取模板 item_ids
-      const { data: templates } = await window.db.from('assessment_types').select('id').eq('is_template', 1);
+      const { data: templates } = await window.db.from('assessment_types').select('id').eq('is_template', 1).eq('semester_id', currentSemester.id);
       const itemIds = templates?.map(t => t.id).join(',') || '';
 
       // 新增日期
@@ -297,6 +392,7 @@
           const dt = new Date(d + 'T00:00:00');
           return {
             semester_id: currentSemester.id,
+            org_id: selectedDabanId,
             schedule_date: d,
             week_day: dt.getDay() + 1,
             item_ids: itemIds,
@@ -315,10 +411,10 @@
       }
 
       showToast('日程已更新（新增 ' + toAdd.length + '，删除 ' + toDelete.length + '）');
-      await loadSchedules(currentSemester.id);
+      await loadSchedules();
     }
 
-    waitForDb().then(init);
+    waitForDb().then(refreshCurrentUser).then(init);
   </script>
 
   <div id="bottomNavContainer"></div>

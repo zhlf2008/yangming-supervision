@@ -395,6 +395,7 @@
 <script>
     async function init() {
       await waitForDb();
+      await refreshCurrentUser();
 
       var profile = checkLogin();
       if (!profile) return;
@@ -406,7 +407,7 @@
       document.getElementById('userAvatar').textContent = userName.charAt(0);
 
       // 根据角色追加管理入口
-      if (userRole === '管理员' || userRole === '地区督委') {
+      if (userRole === '超级管理员' || userRole === '管理员') {
         document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
           <a href="org-management.html" class="action-card">
             <div class="action-icon summary">🏢</div>
@@ -418,20 +419,10 @@
             <div class="action-title">学期设置</div>
             <div class="action-desc">管理学期与试晨读</div>
           </a>
-          <a href="assessment-management.html" class="action-card">
-            <div class="action-icon summary">📝</div>
-            <div class="action-title">考核项目</div>
-            <div class="action-desc">配置考核模板</div>
-          </a>
           <a href="audit-log.html" class="action-card">
             <div class="action-icon attendance">📜</div>
             <div class="action-title">操作日志</div>
             <div class="action-desc">查看用户操作记录</div>
-          </a>
-          <a href="data-management.html" class="action-card">
-            <div class="action-icon summary">🗄️</div>
-            <div class="action-title">数据管理</div>
-            <div class="action-desc">管理所有填报记录</div>
           </a>
           <a href="reminder-settings.html" class="action-card">
             <div class="action-icon attendance">📢</div>
@@ -439,20 +430,52 @@
             <div class="action-desc">企业微信自动提醒</div>
           </a>
         `);
+        // 学期相关的快捷入口（需要当前学期ID）
         window.db.from('semesters').select('id').eq('is_current', 1).single().then(function(res) {
           if (res.data) {
+            var sid = res.data.id;
             document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
-              <a href="schedule-management.html?semester_id=${res.data.id}" class="action-card">
+              <a href="schedule-management.html?semester_id=${sid}" class="action-card">
                 <div class="action-icon summary">📅</div>
                 <div class="action-title">日程管理</div>
                 <div class="action-desc">管理每日考核日程</div>
+              </a>
+              <a href="assessment-management.html?semester_id=${sid}" class="action-card">
+                <div class="action-icon summary">📝</div>
+                <div class="action-title">考核项目</div>
+                <div class="action-desc">配置考核模板</div>
+              </a>
+              <a href="data-management.html?semester_id=${sid}" class="action-card">
+                <div class="action-icon summary">🗄️</div>
+                <div class="action-title">数据管理</div>
+                <div class="action-desc">管理所有填报记录</div>
               </a>
             `);
           }
         }).catch(function(err) {
           console.error('加载当前学期失败:', err);
         });
-      } else if (userRole === '大班总督' || userRole === '大班副督' || userRole === '班级总督察' || userRole === '班级副总督察') {
+      } else if (userRole === '大班总督' || userRole === '大班副督') {
+        document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
+          <a href="org-management.html" class="action-card">
+            <div class="action-icon summary">🏢</div>
+            <div class="action-title">组织架构</div>
+            <div class="action-desc">管理组织与人员</div>
+          </a>
+        `);
+        // 日程管理入口（仅自己的大班）
+        window.db.from('semesters').select('id').eq('is_current', 1).single().then(function(res) {
+          if (res.data) {
+            document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
+              <a href="schedule-management.html?semester_id=${res.data.id}&org_id=${userOrgId}" class="action-card">
+                <div class="action-icon summary">📅</div>
+                <div class="action-title">日程管理</div>
+                <div class="action-desc">管理本大班考核日程</div>
+              </a>
+            `);
+          }
+        });
+      } else if (userRole === '班级总督察' || userRole === '班级副总督察') {
         document.getElementById('quickActions').insertAdjacentHTML('beforeend', `
           <a href="org-management.html" class="action-card">
             <div class="action-icon summary">🏢</div>
@@ -463,8 +486,8 @@
       }
       // Update role display
       const roleMap = {
+        '超级管理员': '超级管理员',
         '管理员': '管理员',
-        '地区督委': '地区督委',
         '大班总督': '大班总督',
         '大班副督': '大班副督',
         '班级总督察': '班级总督察',
@@ -546,7 +569,10 @@
       var role = profile.role;
       var userOrgId = profile.organization_id;
 
-      var { data: orgs } = await window.db.from('organizations').select('id,name,parent_id,level');
+      var semId = await getCurrentSemesterId();
+      var { data: orgs } = semId
+        ? await window.db.from('organizations').select('id,name,parent_id,level').eq('semester_id', semId)
+        : { data: [] };
       orgs = orgs || [];
 
       var accessibleGroupIds = getAccessibleGroupIds(role, userOrgId, orgs);
@@ -566,15 +592,27 @@
       var groupIds = groups.map(function (g) { return g.id; });
       document.getElementById('statsDate').textContent = today;
 
-      // 查今天的日程 (include item_ids for formula matching)
-      var { data: schedules } = await window.db.from('schedules').select('id,schedule_date,item_ids').eq('schedule_date', today).eq('is_valid', 1);
+      // 建立小组→大班映射
+      var groupDabanMap = {};
+      groups.forEach(function (g) {
+        var cls = orgs.find(function(o) { return o.id === g.parent_id; });
+        if (cls) {
+          var daban = orgs.find(function(o) { return o.id === cls.parent_id; });
+          if (daban && daban.level === '大班') groupDabanMap[g.id] = daban.id;
+        }
+      });
+
+      // 查今天的日程（含 org_id 用于匹配大班）
+      var { data: schedules } = await window.db.from('schedules').select('id,schedule_date,item_ids,org_id').eq('schedule_date', today).eq('is_valid', 1);
       if (!schedules || schedules.length === 0) {
         renderCarousel(groups, {});
         return;
       }
 
       // 查考核类型公式
-      var { data: assessmentTypes } = await window.db.from('assessment_types').select('*');
+      var { data: assessmentTypes } = semId
+        ? await window.db.from('assessment_types').select('*').eq('semester_id', semId)
+        : { data: [] };
       assessmentTypes = assessmentTypes || [];
 
       // 建立日程→公式映射
@@ -592,7 +630,13 @@
 
       records = records || [];
 
-      // 先统计各日程是否有各类考核
+      // 大班→日程映射
+      var dabanScheduleMap = {};
+      schedules.forEach(function(s) {
+        if (s.org_id) dabanScheduleMap[s.org_id] = s;
+      });
+
+      // 统计各日程是否有各类考核
       var scheduleCats = {};
       schedules.forEach(function(s) {
         var f = scheduleFormulas[s.id] || {};
@@ -617,24 +661,25 @@
 
       groups.forEach(function (g) {
         var gr = groupRates[g.id];
-        schedules.forEach(function (s) {
-          var cats = scheduleCats[s.id];
-          var key = s.id + '_' + g.id;
-          var rec = recIndex[key];
-          var fd = (rec && rec.fill_data) ? rec.fill_data : {};
-          var fieldMap = {};
-          Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
-          var hasAnyData = Object.values(fieldMap).some(function(v) { return v > 0; });
-          if (hasAnyData) gr.hasData = true;
+        // 只使用该小组所属大班的日程
+        var dabanId = groupDabanMap[g.id];
+        var s = dabanId ? dabanScheduleMap[dabanId] : null;
+        if (!s) return;
+        var cats = scheduleCats[s.id];
+        var key = s.id + '_' + g.id;
+        var rec = recIndex[key];
+        var fd = (rec && rec.fill_data) ? rec.fill_data : {};
+        var fieldMap = {};
+        Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
+        var hasAnyData = Object.values(fieldMap).some(function(v) { return v > 0; });
+        if (hasAnyData) gr.hasData = true;
 
-          var formulas = scheduleFormulas[s.id];
-          var rates = hasAnyData ? computeRatesFromFormulas(fieldMap, formulas) : { online: null, hw: null, video: null };
+        var formulas = scheduleFormulas[s.id];
+        var rates = hasAnyData ? computeRatesFromFormulas(fieldMap, formulas) : { online: null, hw: null, video: null };
 
-          // 所有考核日都计入，未填报的按 0
-          if (cats.hasOnline) gr.online.push(rates.online !== null ? rates.online : 0);
-          if (cats.hasHw) gr.hw.push(rates.hw !== null ? rates.hw : 0);
-          if (cats.hasVideo) gr.video.push(rates.video !== null ? rates.video : 0);
-        });
+        if (cats.hasOnline) gr.online.push(rates.online !== null ? rates.online : 0);
+        if (cats.hasHw) gr.hw.push(rates.hw !== null ? rates.hw : 0);
+        if (cats.hasVideo) gr.video.push(rates.video !== null ? rates.video : 0);
       });
 
       // 构建 groupData（平均率）

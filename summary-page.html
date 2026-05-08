@@ -135,7 +135,7 @@
 <body>
   <div class="container">
     <header class="header">
-      <a href="index.html" class="back-btn">
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
       </a>
       <h1 class="header-title">数据汇总</h1>
@@ -199,19 +199,22 @@
 
     async function init() {
       await waitForDb();
+      await refreshCurrentUser();
 
       currentUser = checkLogin();
       if (!currentUser) return;
 
-      // Load org tree, semester, assessment types in parallel
-      var [orgRes, semRes, atRes] = await Promise.all([
-        window.db.from('organizations').select('*').order('level', { ascending: true }),
-        window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single(),
-        window.db.from('assessment_types').select('*').order('id')
+      // 先加载学期，再按学期加载组织和考核类型
+      var semRes = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single();
+      currentSemester = semRes.data || null;
+      var semId = currentSemester ? currentSemester.id : null;
+
+      var [orgRes, atRes] = await Promise.all([
+        semId ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true }) : Promise.resolve({ data: [] }),
+        semId ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id') : Promise.resolve({ data: [] })
       ]);
       orgsList = orgRes.data || [];
       orgsList.forEach(function (o) { orgsMap[o.id] = o; });
-      currentSemester = semRes.data || null;
       assessmentTypes = atRes.data || [];
 
       // Build assessment category map: type_id → attendance / homework / other
@@ -261,7 +264,7 @@
         var bc3 = orgsMap[userOrgId];
         breadcrumbs = bc3 ? [{ id: bc3.id, name: bc3.name, level: 'bigClass' }] : [];
       } else {
-        // 管理员 / 地区督委
+        // 超级管理员 / 管理员
         drillLevel = 'bigClass';
         drillParentId = null;
         breadcrumbs = [];
@@ -282,7 +285,7 @@
 
       // Load schedules for week
       var schedRes = await window.db.from('schedules')
-        .select('id,schedule_date,item_ids')
+        .select('id,schedule_date,item_ids,org_id')
         .gte('schedule_date', weekStart).lte('schedule_date', weekEnd)
         .eq('is_valid', 1).order('schedule_date');
       weekSchedules = schedRes.data || [];
@@ -302,7 +305,7 @@
         .select('organization_id,fill_data,schedule_id')
         .in('schedule_id', sIds);
 
-      var isAdmin = currentUser.role === '管理员' || currentUser.role === '地区督委';
+      var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
       if (!isAdmin && groupIds.length > 0) {
         query = query.in('organization_id', groupIds);
       }
@@ -575,6 +578,11 @@
       var grp = orgsMap[drillGroupId];
       if (!grp) { showEmpty('小组不存在'); return; }
 
+      // Use only this group's daban's schedules
+      var cls = orgsMap[grp.parent_id];
+      var dabanId = cls ? (orgsMap[cls.parent_id] || {}).id : null;
+      var groupSchedules = dabanId ? weekSchedules.filter(function (s) { return s.org_id == dabanId; }) : weekSchedules;
+
       var groupRecords = weekRecords.filter(function (r) { return r.organization_id === drillGroupId; });
       var recMap = {};
       groupRecords.forEach(function (r) { recMap[r.schedule_id] = r; });
@@ -583,7 +591,7 @@
       var today = getToday();
       var cards = [];
 
-      weekSchedules.forEach(function (s) {
+      groupSchedules.forEach(function (s) {
         var cats = getScheduleCategories(s);
         var formulas = getScheduleFormulas(s);
         var rec = recMap[s.id];
@@ -827,13 +835,26 @@
     function buildGroupStatsCache() {
       groupStatsCache = {};
       var today = getToday();
-      var scheduleMap = {};
-      weekSchedules.forEach(function (s) { scheduleMap[s.id] = s; });
 
-      // Count total scheduled days up to today
-      var totalDays = 0;
-      weekScheduleDates.forEach(function (d) { if (d <= today) totalDays++; });
-      if (totalDays === 0) return;
+      // Build group→daban map
+      var groupDabanMap = {};
+      orgsList.forEach(function (o) {
+        if (o.level === '小组') {
+          var cls = orgsMap[o.parent_id];
+          if (cls) {
+            var daban = orgsMap[cls.parent_id];
+            if (daban && daban.level === '大班') groupDabanMap[o.id] = daban.id;
+          }
+        }
+      });
+
+      // Build daban→schedules map
+      var dabanSchedulesMap = {};
+      weekSchedules.forEach(function (s) {
+        var did = s.org_id;
+        if (!dabanSchedulesMap[did]) dabanSchedulesMap[did] = [];
+        dabanSchedulesMap[did].push(s);
+      });
 
       // Group records by organization_id
       var recsByGroup = {};
@@ -853,10 +874,19 @@
         var recMap = {};
         recs.forEach(function (r) { recMap[r.schedule_id] = r; });
 
+        // Use only this group's daban's schedules
+        var dabanId = groupDabanMap[gid];
+        var groupSchedules = (dabanId && dabanSchedulesMap[dabanId]) ? dabanSchedulesMap[dabanId] : [];
+
+        // Count total scheduled days up to today for this daban
+        var totalDays = 0;
+        groupSchedules.forEach(function (s) { if (s.schedule_date <= today) totalDays++; });
+        if (totalDays === 0) return;
+
         var onlineSum = 0, onlineN = 0, hwSum = 0, hwN = 0, videoSum = 0, videoN = 0, attSum = 0, attN = 0;
         var filledDays = 0;
 
-        weekSchedules.forEach(function (s) {
+        groupSchedules.forEach(function (s) {
           if (s.schedule_date > today) return;
           var formulas = getScheduleFormulas(s);
           var rec = recMap[s.id];

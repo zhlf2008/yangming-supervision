@@ -30,7 +30,7 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="profile.html" class="back-btn">←</a>
+      <a href="profile.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">我的填报记录</h1>
     </div>
     <div class="info-bar">
@@ -48,12 +48,15 @@
   <script>renderBottomNav('profile');</script>
   <script>
     var currentUser = null;
+    var currentSemesterId = null;
 
     async function init() {
+      await waitForDb();
+      await refreshCurrentUser();
       currentUser = checkLogin();
       if (!currentUser) return;
+      currentSemesterId = await getCurrentSemesterId();
       document.getElementById('infoName').textContent = currentUser.name || '';
-      await waitForDb();
       await loadRecords();
     }
 
@@ -78,8 +81,10 @@
       var schedMap = {};
       (schedules || []).forEach(function(s) { dateMap[s.id] = s.schedule_date; schedMap[s.id] = s; });
 
-      // 加载考核类型公式
-      var { data: assessmentTypes } = await window.db.from('assessment_types').select('*');
+      // 加载当前学期考核类型公式
+      var { data: assessmentTypes } = currentSemesterId
+        ? await window.db.from('assessment_types').select('*').eq('semester_id', currentSemesterId)
+        : { data: [] };
       assessmentTypes = assessmentTypes || [];
 
       // 建立日程→公式映射

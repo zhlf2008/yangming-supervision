@@ -197,7 +197,7 @@
 <body>
   <div class="container">
     <header class="header">
-      <a href="index.html" class="back-btn">
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
       </a>
       <h1 class="header-title">榜单</h1>
@@ -322,18 +322,22 @@
 
     async function init() {
       await waitForDb();
+      await refreshCurrentUser();
       currentUser = checkLogin();
       if (!currentUser) return;
 
+      // 先加载学期，再按学期加载组织和考核类型
+      var semRes = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single();
+      currentSemester = semRes.data || null;
+      var semId = currentSemester ? currentSemester.id : null;
+
       var results = await Promise.all([
-        window.db.from('organizations').select('*').order('level', { ascending: true }),
-        window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single(),
-        window.db.from('assessment_types').select('*').order('id')
+        semId ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true }) : Promise.resolve({ data: [] }),
+        semId ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id') : Promise.resolve({ data: [] })
       ]);
       orgsList = results[0].data || [];
       orgsList.forEach(function(o) { orgsMap[o.id] = o; });
-      currentSemester = results[1].data || null;
-      assessmentTypes = results[2].data || [];
+      assessmentTypes = results[1].data || [];
 
       assessmentTypes.forEach(function(at) {
         var name = at.type_name || '';
@@ -365,7 +369,7 @@
         (range.sunday.getMonth() + 1) + '/' + range.sunday.getDate();
 
       var schedRes = await window.db.from('schedules')
-        .select('id,schedule_date,item_ids')
+        .select('id,schedule_date,item_ids,org_id')
         .gte('schedule_date', weekStart).lte('schedule_date', weekEnd)
         .eq('is_valid', 1).order('schedule_date');
       weekSchedules = schedRes.data || [];
@@ -388,15 +392,32 @@
     function buildLeaderboardStatsCache() {
       groupStatsCache = {};
       var today = getToday();
+
+      // Build group→daban map
+      var groupDabanMap = {};
+      orgsList.forEach(function(o) {
+        if (o.level === '小组') {
+          var cls = orgsMap[o.parent_id];
+          if (cls) {
+            var daban = orgsMap[cls.parent_id];
+            if (daban && daban.level === '大班') groupDabanMap[o.id] = daban.id;
+          }
+        }
+      });
+
+      // Build daban→schedules map
+      var dabanSchedulesMap = {};
+      weekSchedules.forEach(function(s) {
+        var did = s.org_id;
+        if (!dabanSchedulesMap[did]) dabanSchedulesMap[did] = [];
+        dabanSchedulesMap[did].push(s);
+      });
+
       var recsByGroup = {};
       weekRecords.forEach(function(r) {
         if (!recsByGroup[r.organization_id]) recsByGroup[r.organization_id] = [];
         recsByGroup[r.organization_id].push(r);
       });
-
-      var totalDays = 0;
-      weekSchedules.forEach(function(s) { if (s.schedule_date <= today) totalDays++; });
-      if (totalDays === 0) return;
 
       var allGroups = orgsList.filter(function(o) { return o.level === '小组'; });
       allGroups.forEach(function(g) {
@@ -404,11 +425,19 @@
         var recMap = {};
         recs.forEach(function(r) { recMap[r.schedule_id] = r; });
 
+        // Use only this group's daban's schedules
+        var dabanId = groupDabanMap[g.id];
+        var groupSchedules = (dabanId && dabanSchedulesMap[dabanId]) ? dabanSchedulesMap[dabanId] : [];
+
+        var totalDays = 0;
+        groupSchedules.forEach(function(s) { if (s.schedule_date <= today) totalDays++; });
+        if (totalDays === 0) return;
+
         var onlineSum = 0, onlineN = 0, hwSum = 0, hwN = 0, videoSum = 0, videoN = 0, attSum = 0, attN = 0;
         var filledDays = 0;
         var earliestCreatedAt = null;
 
-        weekSchedules.forEach(function(s) {
+        groupSchedules.forEach(function(s) {
           if (s.schedule_date > today) return;
           var formulas = getScheduleFormulas(s);
           var rec = recMap[s.id];

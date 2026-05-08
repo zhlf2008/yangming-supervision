@@ -35,7 +35,7 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="index.html" class="back-btn">←</a>
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">操作日志</h1>
     </div>
     <div class="filter-bar">
@@ -61,12 +61,13 @@
     async function init() {
       var user = checkLogin();
       if (!user) return;
-      if (user.role !== '管理员' && user.role !== '地区督委') {
+      if (user.role !== '超级管理员' && user.role !== '管理员') {
         alert('无权访问');
         window.location.href = 'index.html';
         return;
       }
       await waitForDb();
+      await refreshCurrentUser();
       await loadLogs();
     }
 

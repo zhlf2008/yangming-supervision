@@ -32,7 +32,7 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <a href="index.html" class="back-btn">←</a>
+      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
       <h1 class="page-title">数据管理</h1>
     </div>
     <div class="period-tabs">
@@ -72,15 +72,20 @@
     var allRecords = [];
     var orgsList = [];
     var currentPeriod = 'all';
+    var currentSemesterId = null;
 
     async function init() {
+      await waitForDb();
+      await refreshCurrentUser();
       var user = checkLogin();
       if (!user) return;
-      if (user.role !== '管理员' && user.role !== '地区督委') { alert('无权访问'); window.location.href = 'index.html'; return; }
-      await waitForDb();
+      if (user.role !== '超级管理员' && user.role !== '管理员') { alert('无权访问'); window.location.href = 'index.html'; return; }
 
-      // 加载组织数据（用于级联）
-      var { data: orgs } = await window.db.from('organizations').select('*');
+      // 加载当前学期，再加载组织
+      currentSemesterId = await getCurrentSemesterId();
+      var { data: orgs } = currentSemesterId
+        ? await window.db.from('organizations').select('*').eq('semester_id', currentSemesterId)
+        : { data: [] };
       orgsList = orgs || [];
       var bigClasses = orgsList.filter(function(o){return o.level==='大班';});
       document.getElementById('bigClassSelect').innerHTML = '<option value="">全部</option>'+
@@ -216,7 +221,7 @@
     }
 
     async function delRecord(id){
-      if(!confirm('确定删除？'))return;
+      if(!(await showConfirm('确定删除该填报记录？')))return;
       var { error } = await window.db.from('attendance_records').delete().eq('id',id);
       if(error){ alert('删除失败: '+error.message); return; }
       logAction('删除填报记录','id:'+id);

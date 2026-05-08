@@ -76,10 +76,11 @@ Deno.serve(async (req) => {
 
       // 批量生成日程（服务端执行避免前端卡死）
       case 'generateSchedules': {
-        const { semester_id, start_date, end_date, trial_start_date } = body;
+        const { semester_id, start_date, end_date, trial_start_date, org_id } = body;
         if (!semester_id) return new Response(JSON.stringify({ error: '缺少 semester_id' }), { headers, status: 400 });
+        if (!org_id) return new Response(JSON.stringify({ error: '缺少 org_id' }), { headers, status: 400 });
 
-        const { data: templates } = await adminClient.from('assessment_types').select('id').eq('is_template', 1);
+        const { data: templates } = await adminClient.from('assessment_types').select('id').eq('is_template', 1).eq('semester_id', semester_id);
         const itemIds = templates?.map(t => t.id).join(',') || '';
 
         const toInsert = [];
@@ -91,6 +92,7 @@ Deno.serve(async (req) => {
         while (current <= end) {
           toInsert.push({
             semester_id: semester_id,
+            org_id: org_id,
             schedule_date: current.toISOString().split('T')[0],
             week_day: current.getDay() + 1,
             item_ids: itemIds,
@@ -103,7 +105,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        const { error } = await adminClient.from('schedules').upsert(toInsert, { onConflict: 'semester_id, schedule_date' });
+        const { error } = await adminClient.from('schedules').upsert(toInsert, { onConflict: 'semester_id, org_id, schedule_date' });
         if (error) return new Response(JSON.stringify({ error: error.message }), { headers, status: 500 });
         return new Response(JSON.stringify({ success: true, count: toInsert.length }), { headers });
       }
