@@ -706,7 +706,17 @@
           });
         }
       }
-      logAction('组织修改', '从学期' + sourceSemesterId + '复制组织到学期' + targetSemesterId);
+      // 更新 profiles：将组织ID从旧学期映射到新学期
+      for (var oldId in idMap) {
+        if (idMap.hasOwnProperty(oldId)) {
+          var newId = idMap[oldId];
+          var { error: updateErr } = await window.db.from('profiles')
+            .update({ organization_id: newId })
+            .eq('organization_id', parseInt(oldId));
+          if (updateErr) console.error('更新profiles组织ID失败 (old=' + oldId + ', new=' + newId + '):', updateErr);
+        }
+      }
+      logAction('组织修改', '从学期' + sourceSemesterId + '复制组织到学期' + targetSemesterId + '（已更新用户组织映射）');
     }
 
     // 从源学期复制考核模板到目标学期
