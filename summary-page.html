@@ -1,610 +1,1303 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>数据汇总 - 阳明心学督察管理系统</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/common.css">
-  <style>
-    body::before {
-      content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      opacity: 0.03; pointer-events: none; z-index: 0;
-    }
-    .container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 16px 16px 120px; min-height: calc(100vh - 64px); }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>数据汇总 - 阳明心学督察管理系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/common.css" />
+    <style>
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        opacity: 0.03;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 16px 16px 120px;
+        min-height: calc(100vh - 64px);
+      }
 
-    .header { display: flex; align-items: center; gap: 16px; padding: 16px 0 20px; }
-    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
-    .back-btn:active { background: var(--border); }
-    .header-title { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 600; color: var(--ink-dark); }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 0 20px;
+      }
+      .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
+      }
+      .header-title {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
 
-    /* Week Selector */
-    .date-selector { background: var(--bg-card); border-radius: var(--radius); padding: 14px 20px; margin-bottom: 14px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .date-nav { display: flex; align-items: center; gap: 16px; }
-    .date-nav-btn { width: 36px; height: 36px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .date-nav-btn:active { background: var(--border); }
-    .date-current { text-align: center; min-width: 140px; }
-    .date-week-label { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
-    .date-week-range { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
-    .date-today { font-size: 12px; color: var(--vermillion); padding: 6px 12px; background: var(--vermillion-light); border-radius: 6px; cursor: pointer; border: none; }
+      /* Week Selector */
+      .date-selector {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 14px 20px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 12px var(--shadow);
+        border: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .date-nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .date-nav-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .date-nav-btn:active {
+        background: var(--border);
+      }
+      .date-current {
+        text-align: center;
+        min-width: 140px;
+      }
+      .date-week-label {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
+      .date-week-range {
+        font-size: 11px;
+        color: var(--ink-muted);
+        margin-top: 2px;
+      }
+      .date-today {
+        font-size: 12px;
+        color: var(--vermillion);
+        padding: 6px 12px;
+        background: var(--vermillion-light);
+        border-radius: 6px;
+        cursor: pointer;
+        border: none;
+      }
 
-    /* Breadcrumb */
-    .breadcrumb { display: flex; align-items: center; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; font-size: 13px; }
-    .breadcrumb-item { color: var(--ink-muted); cursor: pointer; padding: 4px 8px; border-radius: 4px; white-space: nowrap; }
-    .breadcrumb-item:hover { color: var(--vermillion); }
-    .breadcrumb-item.current { color: var(--ink-dark); font-weight: 600; cursor: default; }
-    .breadcrumb-sep { color: var(--border); }
+      /* Breadcrumb */
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        font-size: 13px;
+      }
+      .breadcrumb-item {
+        color: var(--ink-muted);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+      .breadcrumb-item:hover {
+        color: var(--vermillion);
+      }
+      .breadcrumb-item.current {
+        color: var(--ink-dark);
+        font-weight: 600;
+        cursor: default;
+      }
+      .breadcrumb-sep {
+        color: var(--border);
+      }
 
-    /* Summary Stats */
-    .summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
-    .summary-stat { background: var(--bg-card); border-radius: var(--radius); padding: 14px 10px; text-align: center; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); }
-    .summary-stat-value { font-family: 'Noto Serif SC', serif; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-    .summary-stat-value.high { color: #2E7D32; }
-    .summary-stat-value.medium { color: var(--ink-dark); }
-    .summary-stat-value.low { color: var(--vermillion); }
-    .summary-stat-label { font-size: 11px; color: var(--ink-muted); }
+      /* Summary Stats */
+      .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .summary-stat {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 14px 10px;
+        text-align: center;
+        box-shadow: 0 2px 12px var(--shadow);
+        border: 1px solid var(--border);
+      }
+      .summary-stat-value {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .summary-stat-value.high {
+        color: #2e7d32;
+      }
+      .summary-stat-value.medium {
+        color: var(--ink-dark);
+      }
+      .summary-stat-value.low {
+        color: var(--vermillion);
+      }
+      .summary-stat-label {
+        font-size: 11px;
+        color: var(--ink-muted);
+      }
 
-    /* Cards */
-    .card-list { display: flex; flex-direction: column; gap: 10px; }
-    .data-card { background: var(--bg-card); border-radius: var(--radius); padding: 16px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s; }
-    .data-card:active { transform: scale(0.98); }
-    .data-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-    .data-card-name { font-size: 15px; font-weight: 600; color: var(--ink-dark); flex: 1; }
-    .data-card-rate { text-align: right; }
-    .data-card-rate-value { font-family: 'Noto Serif SC', serif; font-size: 28px; font-weight: 700; line-height: 1; }
-    .data-card-rate-label { font-size: 10px; color: var(--ink-muted); }
+      /* Cards */
+      .card-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .data-card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 16px;
+        box-shadow: 0 2px 12px var(--shadow);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: transform 0.15s;
+      }
+      .data-card:active {
+        transform: scale(0.98);
+      }
+      .data-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+      }
+      .data-card-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-dark);
+        flex: 1;
+      }
+      .data-card-rate {
+        text-align: right;
+      }
+      .data-card-rate-value {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .data-card-rate-label {
+        font-size: 10px;
+        color: var(--ink-muted);
+      }
 
-    .data-card-sub { display: flex; gap: 12px; margin-bottom: 10px; }
-    .data-card-sub-item { flex: 1; background: var(--bg-primary); border-radius: 8px; padding: 8px 10px; text-align: center; }
-    .data-card-sub-value { font-size: 16px; font-weight: 600; color: var(--ink-dark); }
-    .data-card-sub-label { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
+      .data-card-sub {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .data-card-sub-item {
+        flex: 1;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        padding: 8px 10px;
+        text-align: center;
+      }
+      .data-card-sub-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
+      .data-card-sub-label {
+        font-size: 10px;
+        color: var(--ink-muted);
+        margin-top: 2px;
+      }
 
-    .data-card-progress { display: flex; align-items: center; gap: 8px; }
-    .progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-    .progress-fill.high { background: #2E7D32; }
-    .progress-fill.medium { background: var(--gold); }
-    .progress-fill.low { background: var(--vermillion); }
-    .progress-label { font-size: 11px; color: var(--ink-muted); white-space: nowrap; }
-    .data-card-arrow { font-size: 12px; color: var(--ink-muted); margin-left: 8px; }
+      .data-card-progress {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .progress-bar {
+        flex: 1;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s;
+      }
+      .progress-fill.high {
+        background: #2e7d32;
+      }
+      .progress-fill.medium {
+        background: var(--gold);
+      }
+      .progress-fill.low {
+        background: var(--vermillion);
+      }
+      .progress-label {
+        font-size: 11px;
+        color: var(--ink-muted);
+        white-space: nowrap;
+      }
+      .data-card-arrow {
+        font-size: 12px;
+        color: var(--ink-muted);
+        margin-left: 8px;
+      }
 
-    /* Detail Table */
-    .detail-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .detail-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: var(--radius); overflow: hidden; }
-    .detail-table th, .detail-table td { padding: 10px 8px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    .detail-table th { background: var(--bg-primary); font-weight: 500; color: var(--ink-muted); font-size: 11px; position: sticky; top: 0; }
-    .detail-table td { color: var(--ink-dark); }
-    .detail-table .highlight { font-weight: 600; }
-    .detail-table .rate-high { color: #2E7D32; }
-    .detail-table .rate-medium { color: var(--ink-dark); }
-    .detail-table .rate-low { color: var(--vermillion); }
-    .detail-table tr:last-child td { border-bottom: none; }
+      /* Detail Table */
+      .detail-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .detail-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .detail-table th,
+      .detail-table td {
+        padding: 10px 8px;
+        text-align: center;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .detail-table th {
+        background: var(--bg-primary);
+        font-weight: 500;
+        color: var(--ink-muted);
+        font-size: 11px;
+        position: sticky;
+        top: 0;
+      }
+      .detail-table td {
+        color: var(--ink-dark);
+      }
+      .detail-table .highlight {
+        font-weight: 600;
+      }
+      .detail-table .rate-high {
+        color: #2e7d32;
+      }
+      .detail-table .rate-medium {
+        color: var(--ink-dark);
+      }
+      .detail-table .rate-low {
+        color: var(--vermillion);
+      }
+      .detail-table tr:last-child td {
+        border-bottom: none;
+      }
 
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-muted); }
-    .empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
-    .empty-state-text { font-size: 14px; }
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--ink-muted);
+      }
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+      }
+      .empty-state-text {
+        font-size: 14px;
+      }
 
-    /* Daily Summary Cards */
-    .day-card { background: var(--bg-card); border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s; }
-    .day-card:active { transform: scale(0.98); }
-    .day-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .day-card-date { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
-    .day-card-att { font-family: 'Noto Serif SC', serif; font-size: 22px; font-weight: 700; }
-    .day-card-rates { display: flex; gap: 8px; margin-bottom: 8px; }
-    .day-card-rate-item { flex: 1; text-align: center; background: var(--bg-primary); border-radius: 6px; padding: 6px 4px; }
-    .day-card-rate-val { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
-    .day-card-rate-label { font-size: 10px; color: var(--ink-muted); }
-    .day-card-counts { display: flex; gap: 8px; font-size: 11px; color: var(--ink-muted); }
-    .day-card-counts span { white-space: nowrap; }
-    .day-card-arrow-row { text-align: right; margin-top: 6px; }
-    .day-card-arrow-row span { font-size: 11px; color: var(--vermillion); }
+      /* Daily Summary Cards */
+      .day-card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        box-shadow: 0 2px 12px var(--shadow);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: transform 0.15s;
+      }
+      .day-card:active {
+        transform: scale(0.98);
+      }
+      .day-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .day-card-date {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
+      .day-card-att {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .day-card-rates {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .day-card-rate-item {
+        flex: 1;
+        text-align: center;
+        background: var(--bg-primary);
+        border-radius: 6px;
+        padding: 6px 4px;
+      }
+      .day-card-rate-val {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
+      .day-card-rate-label {
+        font-size: 10px;
+        color: var(--ink-muted);
+      }
+      .day-card-counts {
+        display: flex;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--ink-muted);
+      }
+      .day-card-counts span {
+        white-space: nowrap;
+      }
+      .day-card-arrow-row {
+        text-align: right;
+        margin-top: 6px;
+      }
+      .day-card-arrow-row span {
+        font-size: 11px;
+        color: var(--vermillion);
+      }
 
-    /* Raw Data View */
-    .raw-data-title { margin-bottom: 14px; font-size: 14px; font-weight: 600; color: var(--ink-dark); }
-    .raw-data-back { font-size: 12px; color: var(--vermillion); cursor: pointer; margin-bottom: 12px; display: inline-block; }
-    .raw-section { background: var(--bg-card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); }
-    .raw-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .raw-section-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .raw-section-icon.att { background: var(--vermillion-light); }
-    .raw-section-icon.hw { background: var(--gold-light); }
-    .raw-section-icon.other { background: var(--green-light); }
-    .raw-field-row { display: flex; gap: 10px; margin-bottom: 8px; }
-    .raw-field { flex: 1; }
-    .raw-field-label { font-size: 11px; color: var(--ink-muted); margin-bottom: 2px; }
-    .raw-field-value { font-size: 15px; font-weight: 500; color: var(--ink-dark); }
-    .raw-rate-row { display: flex; gap: 10px; padding: 10px 12px; background: var(--bg-primary); border-radius: 8px; margin-top: 8px; }
-    .raw-rate-item { flex: 1; display: flex; align-items: center; gap: 6px; }
-    .raw-rate-label { font-size: 12px; color: var(--ink-muted); }
-    .raw-rate-value { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 18px; color: var(--vermillion); }
-    .raw-rate-value.high { color: #2E7D32; }
-    .raw-rate-value.low { color: var(--vermillion); }
-    .raw-total-row { padding: 12px 14px; background: var(--vermillion-light); border-radius: 8px; display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-    .raw-total-label { font-size: 14px; font-weight: 500; color: var(--ink-dark); }
-    .raw-total-value { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 22px; color: var(--vermillion); }
+      /* Raw Data View */
+      .raw-data-title {
+        margin-bottom: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
+      .raw-data-back {
+        font-size: 12px;
+        color: var(--vermillion);
+        cursor: pointer;
+        margin-bottom: 12px;
+        display: inline-block;
+      }
+      .raw-section {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 12px var(--shadow);
+        border: 1px solid var(--border);
+      }
+      .raw-section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .raw-section-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      .raw-section-icon.att {
+        background: var(--vermillion-light);
+      }
+      .raw-section-icon.hw {
+        background: var(--gold-light);
+      }
+      .raw-section-icon.other {
+        background: var(--green-light);
+      }
+      .raw-field-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .raw-field {
+        flex: 1;
+      }
+      .raw-field-label {
+        font-size: 11px;
+        color: var(--ink-muted);
+        margin-bottom: 2px;
+      }
+      .raw-field-value {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-dark);
+      }
+      .raw-rate-row {
+        display: flex;
+        gap: 10px;
+        padding: 10px 12px;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        margin-top: 8px;
+      }
+      .raw-rate-item {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .raw-rate-label {
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
+      .raw-rate-value {
+        font-family: 'Noto Serif SC', serif;
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--vermillion);
+      }
+      .raw-rate-value.high {
+        color: #2e7d32;
+      }
+      .raw-rate-value.low {
+        color: var(--vermillion);
+      }
+      .raw-total-row {
+        padding: 12px 14px;
+        background: var(--vermillion-light);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .raw-total-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink-dark);
+      }
+      .raw-total-value {
+        font-family: 'Noto Serif SC', serif;
+        font-weight: 700;
+        font-size: 22px;
+        color: var(--vermillion);
+      }
 
-    .header { animation: fadeInDown 0.4s ease-out; }
-    .date-selector { animation: fadeInUp 0.4s ease-out 0.05s backwards; }
-    .summary-stats { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
-    .breadcrumb { animation: fadeInUp 0.4s ease-out 0.12s backwards; }
-    .card-list { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header class="header">
-      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      </a>
-      <h1 class="header-title">数据汇总</h1>
-    </header>
+      .header {
+        animation: fadeInDown 0.4s ease-out;
+      }
+      .date-selector {
+        animation: fadeInUp 0.4s ease-out 0.05s backwards;
+      }
+      .summary-stats {
+        animation: fadeInUp 0.4s ease-out 0.1s backwards;
+      }
+      .breadcrumb {
+        animation: fadeInUp 0.4s ease-out 0.12s backwards;
+      }
+      .card-list {
+        animation: fadeInUp 0.4s ease-out 0.15s backwards;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <a
+          href="index.html"
+          class="back-btn"
+          aria-label="返回"
+          onclick="
+            event.preventDefault();
+            window.history.back();
+          "
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </a>
+        <h1 class="header-title">数据汇总</h1>
+      </header>
 
-    <div class="date-selector">
-      <div class="date-nav">
-        <button class="date-nav-btn" onclick="changeWeek(-1)">◀</button>
-        <span class="date-current"><div class="date-week-label" id="dateWeekLabel">本周</div><div class="date-week-range" id="dateWeekRange">--</div></span>
-        <button class="date-nav-btn" onclick="changeWeek(1)">▶</button>
+      <div class="date-selector">
+        <div class="date-nav">
+          <button class="date-nav-btn" onclick="changeWeek(-1)">◀</button>
+          <span class="date-current"
+            ><div class="date-week-label" id="dateWeekLabel">本周</div>
+            <div class="date-week-range" id="dateWeekRange">--</div></span
+          >
+          <button class="date-nav-btn" onclick="changeWeek(1)">▶</button>
+        </div>
+        <button class="date-today" onclick="goToCurrentWeek()">本周</button>
       </div>
-      <button class="date-today" onclick="goToCurrentWeek()">本周</button>
+
+      <div class="summary-stats" id="summaryStats">
+        <div class="summary-stat">
+          <div class="summary-stat-value" id="avgAttendance">--%</div>
+          <div class="summary-stat-label" id="statLabelAtt">平均出勤率</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-value" id="avgOnline">--%</div>
+          <div class="summary-stat-label" id="statLabelOnline">平均上线率</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-value" id="avgHomework">--%</div>
+          <div class="summary-stat-label" id="statLabelHw">平均作业率</div>
+        </div>
+      </div>
+
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="contentArea"><div class="empty-state">加载中...</div></div>
     </div>
 
-    <div class="summary-stats" id="summaryStats">
-      <div class="summary-stat">
-        <div class="summary-stat-value" id="avgAttendance">--%</div>
-        <div class="summary-stat-label" id="statLabelAtt">平均出勤率</div>
-      </div>
-      <div class="summary-stat">
-        <div class="summary-stat-value" id="avgOnline">--%</div>
-        <div class="summary-stat-label" id="statLabelOnline">平均上线率</div>
-      </div>
-      <div class="summary-stat">
-        <div class="summary-stat-value" id="avgHomework">--%</div>
-        <div class="summary-stat-label" id="statLabelHw">平均作业率</div>
-      </div>
-    </div>
+    <div id="bottomNavContainer"></div>
 
-    <div class="breadcrumb" id="breadcrumb"></div>
-    <div id="contentArea"><div class="empty-state">加载中...</div></div>
-  </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+      renderBottomNav('summary');
+    </script>
+    <script>
+      var currentUser = null;
+      var currentSemester = null;
+      var orgsMap = {};
+      var orgsList = [];
+      var weekOffset = 0;
 
-  <div id="bottomNavContainer"></div>
+      // Drill state
+      var drillLevel = ''; // 'bigClass' | 'class' | 'group' | 'detail' | 'raw'
+      var drillParentId = null;
+      var drillGroupId = null; // for detail/raw view
+      var drillScheduleId = null; // for raw view
+      var breadcrumbs = [];
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/components.js"></script>
-  <script>renderBottomNav('summary');</script>
-  <script>
-    var currentUser = null;
-    var currentSemester = null;
-    var orgsMap = {};
-    var orgsList = [];
-    var weekOffset = 0;
+      var weekScheduleDates = [];
+      var weekSchedules = [];
+      var weekRecords = [];
+      var assessmentTypes = [];
+      var assessmentCategoryMap = {}; // type_id → 'attendance' | 'homework' | 'other'
+      var groupStatsCache = {}; // groupId → stats, built once per loadAndRender
 
-    // Drill state
-    var drillLevel = '';    // 'bigClass' | 'class' | 'group' | 'detail' | 'raw'
-    var drillParentId = null;
-    var drillGroupId = null; // for detail/raw view
-    var drillScheduleId = null; // for raw view
-    var breadcrumbs = [];
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
 
-    var weekScheduleDates = [];
-    var weekSchedules = [];
-    var weekRecords = [];
-    var assessmentTypes = [];
-    var assessmentCategoryMap = {}; // type_id → 'attendance' | 'homework' | 'other'
-    var groupStatsCache = {}; // groupId → stats, built once per loadAndRender
+        currentUser = checkLogin();
+        if (!currentUser) return;
 
-    async function init() {
-      await waitForDb();
-      await refreshCurrentUser();
+        // 先加载学期，再按学期加载组织和考核类型
+        var semRes = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single();
+        currentSemester = semRes.data || null;
+        var semId = currentSemester ? currentSemester.id : null;
 
-      currentUser = checkLogin();
-      if (!currentUser) return;
+        var [orgRes, atRes] = await Promise.all([
+          semId
+            ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true })
+            : Promise.resolve({ data: [] }),
+          semId
+            ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id')
+            : Promise.resolve({ data: [] })
+        ]);
+        orgsList = orgRes.data || [];
+        orgsList.forEach(function (o) {
+          orgsMap[o.id] = o;
+        });
+        assessmentTypes = atRes.data || [];
 
-      // 先加载学期，再按学期加载组织和考核类型
-      var semRes = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single();
-      currentSemester = semRes.data || null;
-      var semId = currentSemester ? currentSemester.id : null;
+        // Build assessment category map: type_id → attendance / homework / other
+        // Match attendance page logic: check type_name for '上线率' / '作业率'
+        assessmentTypes.forEach(function (at) {
+          var name = at.type_name || '';
+          if (name.indexOf('上线率') !== -1) assessmentCategoryMap[at.id] = 'attendance';
+          else if (name.indexOf('作业率') !== -1) assessmentCategoryMap[at.id] = 'homework';
+          else assessmentCategoryMap[at.id] = 'other';
+        });
 
-      var [orgRes, atRes] = await Promise.all([
-        semId ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true }) : Promise.resolve({ data: [] }),
-        semId ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id') : Promise.resolve({ data: [] })
-      ]);
-      orgsList = orgRes.data || [];
-      orgsList.forEach(function (o) { orgsMap[o.id] = o; });
-      assessmentTypes = atRes.data || [];
-
-      // Build assessment category map: type_id → attendance / homework / other
-      // Match attendance page logic: check type_name for '上线率' / '作业率'
-      assessmentTypes.forEach(function (at) {
-        var name = at.type_name || '';
-        if (name.indexOf('上线率') !== -1) assessmentCategoryMap[at.id] = 'attendance';
-        else if (name.indexOf('作业率') !== -1) assessmentCategoryMap[at.id] = 'homework';
-        else assessmentCategoryMap[at.id] = 'other';
-      });
-
-      // Determine starting level
-      initDrillLevel();
-      await loadAndRender();
-    }
-
-    function initDrillLevel() {
-      var role = currentUser.role;
-      var userOrgId = currentUser.organization_id;
-      drillGroupId = null;
-
-      if (role === '小组督察' || role === '小组副督察') {
-        drillLevel = 'detail';
-        drillGroupId = userOrgId;
-        var grp = orgsMap[userOrgId];
-        if (grp) {
-          var cls = orgsMap[grp.parent_id];
-          var bc = cls ? orgsMap[cls.parent_id] : null;
-          breadcrumbs = [];
-          if (bc) breadcrumbs.push({ id: bc.id, name: bc.name, level: 'bigClass' });
-          if (cls) breadcrumbs.push({ id: cls.id, name: cls.name, level: 'class' });
-          if (grp) breadcrumbs.push({ id: grp.id, name: grp.name, level: 'group' });
-        }
-      } else if (role === '班级总督察' || role === '班级副总督察') {
-        drillLevel = 'group';
-        drillParentId = userOrgId;
-        var cls2 = orgsMap[userOrgId];
-        if (cls2) {
-          var bc2 = orgsMap[cls2.parent_id];
-          breadcrumbs = [];
-          if (bc2) breadcrumbs.push({ id: bc2.id, name: bc2.name, level: 'bigClass' });
-          breadcrumbs.push({ id: cls2.id, name: cls2.name, level: 'class' });
-        }
-      } else if (role === '大班总督' || role === '大班副督') {
-        drillLevel = 'class';
-        drillParentId = userOrgId;
-        var bc3 = orgsMap[userOrgId];
-        breadcrumbs = bc3 ? [{ id: bc3.id, name: bc3.name, level: 'bigClass' }] : [];
-      } else {
-        // 超级管理员 / 管理员
-        drillLevel = 'bigClass';
-        drillParentId = null;
-        breadcrumbs = [];
-      }
-    }
-
-    async function loadAndRender() {
-      var range = getWeekRange(weekOffset);
-      var weekStart = formatDate(range.monday);
-      var weekEnd = formatDate(range.sunday);
-
-      // Week label
-      var weekLabel = computeWeekLabel(range.monday);
-      document.getElementById('dateWeekLabel').textContent = weekLabel;
-      document.getElementById('dateWeekRange').textContent =
-        (range.monday.getMonth() + 1) + '/' + range.monday.getDate() + ' - ' +
-        (range.sunday.getMonth() + 1) + '/' + range.sunday.getDate();
-
-      // Load schedules for week
-      var schedRes = await window.db.from('schedules')
-        .select('id,schedule_date,item_ids,org_id')
-        .gte('schedule_date', weekStart).lte('schedule_date', weekEnd)
-        .eq('is_valid', 1).order('schedule_date');
-      weekSchedules = schedRes.data || [];
-      weekScheduleDates = weekSchedules.map(function (s) { return s.schedule_date; }).sort();
-
-      if (weekSchedules.length === 0) {
-        showEmpty('本周无日程');
-        return;
+        // Determine starting level
+        initDrillLevel();
+        await loadAndRender();
       }
 
-      // Get accessible group IDs
-      var groupIds = getVisibleGroupIds();
+      function initDrillLevel() {
+        var role = currentUser.role;
+        var userOrgId = currentUser.organization_id;
+        drillGroupId = null;
 
-      // Load records — skip org filter if admin sees all groups (avoids huge IN clause)
-      var sIds = weekSchedules.map(function (s) { return s.id; });
-      var query = window.db.from('attendance_records')
-        .select('organization_id,fill_data,schedule_id')
-        .in('schedule_id', sIds);
-
-      var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
-      if (!isAdmin && groupIds.length > 0) {
-        query = query.in('organization_id', groupIds);
-      }
-
-      var recRes = await query;
-      weekRecords = recRes.data || [];
-
-      // Pre-compute per-group stats so aggregateGroups can reuse
-      buildGroupStatsCache();
-
-      doRender();
-    }
-
-    function doRender() {
-      renderBreadcrumbs();
-      renderContent();
-      renderSummaryStats();
-    }
-
-    function getVisibleGroupIds() {
-      var role = currentUser.role;
-      var userOrgId = currentUser.organization_id;
-      var ids = [];
-      if (role === '小组督察' || role === '小组副督察') {
-        if (userOrgId && orgsMap[userOrgId] && orgsMap[userOrgId].level === '小组') ids = [userOrgId];
-      } else if (role === '班级总督察' || role === '班级副总督察') {
-        if (userOrgId) ids = getAllGroups(userOrgId, orgsList).map(function (g) { return g.id; });
-      } else if (role === '大班总督' || role === '大班副督') {
-        if (userOrgId) ids = getAllGroups(userOrgId, orgsList).map(function (g) { return g.id; });
-      } else {
-        ids = orgsList.filter(function (o) { return o.level === '小组'; }).map(function (o) { return o.id; });
-      }
-      return ids;
-    }
-
-    // Render content based on drill level
-    function renderContent() {
-      if (drillLevel === 'raw') {
-        renderRawDetail(drillScheduleId);
-      } else if (drillLevel === 'detail') {
-        renderDailySummary();
-      } else if (drillLevel === 'group') {
-        renderGroupCards(drillParentId);
-      } else if (drillLevel === 'class') {
-        renderClassCards(drillParentId);
-      } else {
-        renderBigClassCards();
-      }
-    }
-
-    function renderBreadcrumbs() {
-      var html = '';
-      if (drillLevel !== 'bigClass' || breadcrumbs.length > 0) {
-        html += '<span class="breadcrumb-item" onclick="goUpLevel(-1)">全部</span>';
-      }
-      breadcrumbs.forEach(function (bc, i) {
-        html += '<span class="breadcrumb-sep">&gt;</span>';
-        var isLast = i === breadcrumbs.length - 1 && (drillLevel === 'detail' || drillLevel === 'raw');
-        html += '<span class="breadcrumb-item' + (isLast ? ' current' : '') + '" onclick="goUpLevel(' + i + ')">' + bc.name + '</span>';
-      });
-      document.getElementById('breadcrumb').innerHTML = html;
-    }
-
-    function goUpLevel(index) {
-      // Navigate to a breadcrumb level
-      if (drillLevel === 'raw') {
-        drillScheduleId = null;
-        breadcrumbs = breadcrumbs.slice(0, index + 1);
-        var rawBc = breadcrumbs[index];
-        if (!rawBc) {
-          drillLevel = 'bigClass';
-        } else if (rawBc.level === 'bigClass') {
-          drillLevel = 'class';
-          drillParentId = rawBc.id;
-        } else if (rawBc.level === 'class') {
-          drillLevel = 'group';
-          drillParentId = rawBc.id;
-        } else {
+        if (role === '小组督察' || role === '小组副督察') {
           drillLevel = 'detail';
-        }
-        doRender();
-        return;
-      }
-      breadcrumbs = breadcrumbs.slice(0, index + 1);
-      var bc = breadcrumbs[index];
-      if (!bc) {
-        // Go to top
-        drillLevel = 'bigClass';
-        drillParentId = null;
-        drillGroupId = null;
-      } else if (bc.level === 'bigClass') {
-        drillLevel = 'class';
-        drillParentId = bc.id;
-        drillGroupId = null;
-      } else if (bc.level === 'class') {
-        drillLevel = 'group';
-        drillParentId = bc.id;
-        drillGroupId = null;
-      } else {
-        drillLevel = 'detail';
-        drillParentId = orgsMap[bc.id] ? orgsMap[bc.id].parent_id : null;
-        drillGroupId = bc.id;
-      }
-      doRender();
-    }
-
-    // ---- Big Class Cards ----
-    function renderBigClassCards() {
-      var bigClasses = orgsList.filter(function (o) { return o.level === '大班'; }).sort(function(a,b){ return a.name.localeCompare(b.name, 'zh'); });
-      if (bigClasses.length === 0) { showEmpty('无大班数据'); return; }
-
-      var cards = bigClasses.map(function (bc) {
-        var classChildren = orgsList.filter(function (o) { return o.parent_id === bc.id && o.level === '班级'; });
-        var classIds = classChildren.map(function (c) { return c.id; });
-        var stats = aggregateClasses(classIds);
-        return buildCard(bc, [], 'class', bc.id, stats);
-      }).filter(Boolean);
-
-      renderCardList(cards, '暂无大班数据');
-    }
-
-    // ---- Class Cards ----
-    function renderClassCards(bigClassId) {
-      var classes = orgsList.filter(function (o) { return o.parent_id === bigClassId && o.level === '班级'; }).sort(function(a,b){ return a.name.localeCompare(b.name, 'zh'); });
-      if (classes.length === 0) { showEmpty('该大班下无班级'); return; }
-
-      var cards = classes.map(function (cls) {
-        var groupIds = getAllGroups(cls.id, orgsList).map(function (g) { return g.id; });
-        return buildCard(cls, groupIds, 'group', cls.id);
-      }).filter(Boolean);
-
-      renderCardList(cards, '该大班下暂无数据');
-    }
-
-    // ---- Group Cards ----
-    function renderGroupCards(classId) {
-      var groups = orgsList.filter(function (o) { return o.parent_id === classId && o.level === '小组'; }).sort(function(a,b){ return a.name.localeCompare(b.name, 'zh'); });
-      if (groups.length === 0) { showEmpty('该班级下无小组'); return; }
-
-      var cards = groups.map(function (g) {
-        return buildCard(g, [g.id], 'detail', classId);
-      }).filter(Boolean);
-
-      renderCardList(cards, '该班级下暂无数据');
-    }
-
-    // ---- Build a single data card ----
-    // stats (optional): pre-computed aggregate result. If omitted, computed from groupIds.
-    function buildCard(org, groupIds, nextLevel, nextParentId, stats) {
-      if (!stats) stats = aggregateGroups(groupIds);
-      if (!stats || stats.totalDays === 0) return null;
-
-      var attRate = stats.attendanceCount > 0 ? (stats.attendanceSum / stats.attendanceCount).toFixed(2) : null;
-      var onlineRate = stats.onlineCount > 0 ? (stats.onlineSum / stats.onlineCount).toFixed(2) : null;
-      var hwRate = stats.hwCount > 0 ? (stats.hwSum / stats.hwCount).toFixed(2) : null;
-      var videoRate = stats.videoCount > 0 ? (stats.videoSum / stats.videoCount).toFixed(2) : null;
-
-      if (attRate === null && onlineRate === null && hwRate === null) return null;
-
-      return {
-        org: org,
-        nextLevel: nextLevel,
-        nextParentId: nextParentId,
-        attRate: attRate,
-        onlineRate: onlineRate,
-        hwRate: hwRate,
-        videoRate: videoRate,
-        filledDays: stats.filledDays,
-        totalDays: stats.totalDays
-      };
-    }
-
-    function renderCardList(cards, emptyMsg) {
-      if (cards.length === 0) {
-        showEmpty(emptyMsg);
-        return;
-      }
-
-      var html = '<div class="card-list">';
-      cards.forEach(function (card) {
-        var attClass = card.attRate ? (parseFloat(card.attRate) >= 90 ? 'high' : parseFloat(card.attRate) >= 70 ? 'medium' : 'low') : 'medium';
-        var progressPct = card.totalDays > 0 ? Math.round(card.filledDays / card.totalDays * 100) : 0;
-        var progressClass = progressPct >= 80 ? 'high' : progressPct >= 50 ? 'medium' : 'low';
-
-        html += '<div class="data-card" onclick="drillInto(\'' + card.nextLevel + '\',' + card.nextParentId + ',' + card.org.id + ')">';
-        html += '<div class="data-card-header">';
-        html += '<span class="data-card-name">' + card.org.name + '</span>';
-        html += '<div class="data-card-rate"><div class="data-card-rate-value ' + attClass + '">' + (card.attRate || '--') + (card.attRate ? '%' : '') + '</div><div class="data-card-rate-label">出勤率</div></div>';
-        html += '</div>';
-
-        // Sub metrics
-        html += '<div class="data-card-sub">';
-        html += '<div class="data-card-sub-item"><div class="data-card-sub-value">' + (card.onlineRate || '--') + (card.onlineRate ? '%' : '') + '</div><div class="data-card-sub-label">上线率</div></div>';
-        html += '<div class="data-card-sub-item"><div class="data-card-sub-value">' + (card.hwRate || '--') + (card.hwRate ? '%' : '') + '</div><div class="data-card-sub-label">作业率</div></div>';
-        if (card.nextLevel === 'detail' && card.videoRate !== null) {
-          html += '<div class="data-card-sub-item"><div class="data-card-sub-value">' + card.videoRate + '%</div><div class="data-card-sub-label">视频率</div></div>';
-        }
-        html += '</div>';
-
-        // Progress
-        html += '<div class="data-card-progress">';
-        html += '<div class="progress-bar"><div class="progress-fill ' + progressClass + '" style="width:' + progressPct + '%"></div></div>';
-        html += '<span class="progress-label">' + card.filledDays + '/' + card.totalDays + '天</span>';
-        html += '<span class="data-card-arrow">&#9654;</span>';
-        html += '</div>';
-
-        html += '</div>';
-      });
-      html += '</div>';
-      document.getElementById('contentArea').innerHTML = html;
-    }
-
-    function drillInto(nextLevel, nextParentId, orgId) {
-      if (nextLevel === 'raw') {
-        drillLevel = 'raw';
-        drillScheduleId = parseInt(orgId);
-        drillGroupId = nextParentId;
-        doRender();
-        return;
-      }
-      if (nextLevel === 'detail') {
-        drillLevel = 'detail';
-        drillGroupId = orgId;
-        drillParentId = nextParentId;
-
-        // Add group to breadcrumbs
-        var grp = orgsMap[orgId];
-        if (grp) {
-          // If breadcrumbs doesn't already have this group
-          if (breadcrumbs.length === 0 || breadcrumbs[breadcrumbs.length - 1].id !== orgId) {
-            // Check if parent is already in breadcrumbs
-            var parentInBreadcrumbs = breadcrumbs.length > 0 && breadcrumbs[breadcrumbs.length - 1].id === nextParentId;
-            if (!parentInBreadcrumbs) {
-              breadcrumbs = [];
-              var cls = orgsMap[nextParentId];
-              if (cls) {
-                var bc = orgsMap[cls.parent_id];
-                if (bc) breadcrumbs.push({ id: bc.id, name: bc.name, level: 'bigClass' });
-                breadcrumbs.push({ id: cls.id, name: cls.name, level: 'class' });
-              }
-            }
-            breadcrumbs.push({ id: grp.id, name: grp.name, level: 'group' });
+          drillGroupId = userOrgId;
+          var grp = orgsMap[userOrgId];
+          if (grp) {
+            var cls = orgsMap[grp.parent_id];
+            var bc = cls ? orgsMap[cls.parent_id] : null;
+            breadcrumbs = [];
+            if (bc) breadcrumbs.push({ id: bc.id, name: bc.name, level: 'bigClass' });
+            if (cls) breadcrumbs.push({ id: cls.id, name: cls.name, level: 'class' });
+            if (grp) breadcrumbs.push({ id: grp.id, name: grp.name, level: 'group' });
           }
-        }
-      } else {
-        drillLevel = nextLevel;
-        drillParentId = nextParentId;
-        drillGroupId = null;
-        // Update breadcrumbs
-        if (nextLevel === 'class') {
-          var bc = orgsMap[nextParentId];
-          breadcrumbs = bc ? [{ id: bc.id, name: bc.name, level: 'bigClass' }] : [];
-        } else if (nextLevel === 'group') {
-          var cls = orgsMap[nextParentId];
-          if (cls) {
-            var bc2 = orgsMap[cls.parent_id];
+        } else if (role === '班级总督察' || role === '班级副总督察') {
+          drillLevel = 'group';
+          drillParentId = userOrgId;
+          var cls2 = orgsMap[userOrgId];
+          if (cls2) {
+            var bc2 = orgsMap[cls2.parent_id];
             breadcrumbs = [];
             if (bc2) breadcrumbs.push({ id: bc2.id, name: bc2.name, level: 'bigClass' });
-            breadcrumbs.push({ id: cls.id, name: cls.name, level: 'class' });
+            breadcrumbs.push({ id: cls2.id, name: cls2.name, level: 'class' });
           }
+        } else if (role === '大班总督' || role === '大班副督') {
+          drillLevel = 'class';
+          drillParentId = userOrgId;
+          var bc3 = orgsMap[userOrgId];
+          breadcrumbs = bc3 ? [{ id: bc3.id, name: bc3.name, level: 'bigClass' }] : [];
+        } else {
+          // 超级管理员 / 管理员
+          drillLevel = 'bigClass';
+          drillParentId = null;
+          breadcrumbs = [];
         }
       }
-      doRender();
-    }
 
-    // ---- Daily Summary (group → day cards) ----
-    function renderDailySummary() {
-      if (!drillGroupId) { showEmpty('无效小组'); return; }
+      async function loadAndRender() {
+        var range = getWeekRange(weekOffset);
+        var weekStart = formatDate(range.monday);
+        var weekEnd = formatDate(range.sunday);
 
-      var grp = orgsMap[drillGroupId];
-      if (!grp) { showEmpty('小组不存在'); return; }
+        // Week label
+        var weekLabel = computeWeekLabel(range.monday);
+        document.getElementById('dateWeekLabel').textContent = weekLabel;
+        document.getElementById('dateWeekRange').textContent =
+          range.monday.getMonth() +
+          1 +
+          '/' +
+          range.monday.getDate() +
+          ' - ' +
+          (range.sunday.getMonth() + 1) +
+          '/' +
+          range.sunday.getDate();
 
-      // Use only this group's daban's schedules
-      var cls = orgsMap[grp.parent_id];
-      var dabanId = cls ? (orgsMap[cls.parent_id] || {}).id : null;
-      var groupSchedules = dabanId ? weekSchedules.filter(function (s) { return s.org_id == dabanId; }) : weekSchedules;
+        // Load schedules for week
+        var schedRes = await window.db
+          .from('schedules')
+          .select('id,schedule_date,item_ids,org_id')
+          .gte('schedule_date', weekStart)
+          .lte('schedule_date', weekEnd)
+          .eq('is_valid', 1)
+          .order('schedule_date');
+        weekSchedules = schedRes.data || [];
+        weekScheduleDates = weekSchedules
+          .map(function (s) {
+            return s.schedule_date;
+          })
+          .sort();
 
-      var groupRecords = weekRecords.filter(function (r) { return r.organization_id === drillGroupId; });
-      var recMap = {};
-      groupRecords.forEach(function (r) { recMap[r.schedule_id] = r; });
+        if (weekSchedules.length === 0) {
+          showEmpty('本周无日程');
+          return;
+        }
 
-      var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-      var today = getToday();
-      var cards = [];
+        // Get accessible group IDs
+        var groupIds = getVisibleGroupIds();
 
-      groupSchedules.forEach(function (s) {
-        var cats = getScheduleCategories(s);
-        var formulas = getScheduleFormulas(s);
-        var rec = recMap[s.id];
-        var fd = (rec && rec.fill_data) ? rec.fill_data : {};
+        // Load records — skip org filter if admin sees all groups (avoids huge IN clause)
+        var sIds = weekSchedules.map(function (s) {
+          return s.id;
+        });
+        var query = window.db
+          .from('attendance_records')
+          .select('organization_id,fill_data,schedule_id')
+          .in('schedule_id', sIds);
+
+        var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
+        if (!isAdmin && groupIds.length > 0) {
+          query = query.in('organization_id', groupIds);
+        }
+
+        var recRes = await query;
+        weekRecords = recRes.data || [];
+
+        // Pre-compute per-group stats so aggregateGroups can reuse
+        buildGroupStatsCache();
+
+        doRender();
+      }
+
+      function doRender() {
+        renderBreadcrumbs();
+        renderContent();
+        renderSummaryStats();
+      }
+
+      function getVisibleGroupIds() {
+        var role = currentUser.role;
+        var userOrgId = currentUser.organization_id;
+        var ids = [];
+        if (role === '小组督察' || role === '小组副督察') {
+          if (userOrgId && orgsMap[userOrgId] && orgsMap[userOrgId].level === '小组') ids = [userOrgId];
+        } else if (role === '班级总督察' || role === '班级副总督察') {
+          if (userOrgId)
+            ids = getAllGroups(userOrgId, orgsList).map(function (g) {
+              return g.id;
+            });
+        } else if (role === '大班总督' || role === '大班副督') {
+          if (userOrgId)
+            ids = getAllGroups(userOrgId, orgsList).map(function (g) {
+              return g.id;
+            });
+        } else {
+          ids = orgsList
+            .filter(function (o) {
+              return o.level === '小组';
+            })
+            .map(function (o) {
+              return o.id;
+            });
+        }
+        return ids;
+      }
+
+      // Render content based on drill level
+      function renderContent() {
+        if (drillLevel === 'raw') {
+          renderRawDetail(drillScheduleId);
+        } else if (drillLevel === 'detail') {
+          renderDailySummary();
+        } else if (drillLevel === 'group') {
+          renderGroupCards(drillParentId);
+        } else if (drillLevel === 'class') {
+          renderClassCards(drillParentId);
+        } else {
+          renderBigClassCards();
+        }
+      }
+
+      function renderBreadcrumbs() {
+        var html = '';
+        if (drillLevel !== 'bigClass' || breadcrumbs.length > 0) {
+          html += '<span class="breadcrumb-item" onclick="goUpLevel(-1)">全部</span>';
+        }
+        breadcrumbs.forEach(function (bc, i) {
+          html += '<span class="breadcrumb-sep">&gt;</span>';
+          var isLast = i === breadcrumbs.length - 1 && (drillLevel === 'detail' || drillLevel === 'raw');
+          html +=
+            '<span class="breadcrumb-item' +
+            (isLast ? ' current' : '') +
+            '" onclick="goUpLevel(' +
+            i +
+            ')">' +
+            bc.name +
+            '</span>';
+        });
+        document.getElementById('breadcrumb').innerHTML = html;
+      }
+
+      function goUpLevel(index) {
+        // Navigate to a breadcrumb level
+        if (drillLevel === 'raw') {
+          drillScheduleId = null;
+          breadcrumbs = breadcrumbs.slice(0, index + 1);
+          var rawBc = breadcrumbs[index];
+          if (!rawBc) {
+            drillLevel = 'bigClass';
+          } else if (rawBc.level === 'bigClass') {
+            drillLevel = 'class';
+            drillParentId = rawBc.id;
+          } else if (rawBc.level === 'class') {
+            drillLevel = 'group';
+            drillParentId = rawBc.id;
+          } else {
+            drillLevel = 'detail';
+          }
+          doRender();
+          return;
+        }
+        breadcrumbs = breadcrumbs.slice(0, index + 1);
+        var bc = breadcrumbs[index];
+        if (!bc) {
+          // Go to top
+          drillLevel = 'bigClass';
+          drillParentId = null;
+          drillGroupId = null;
+        } else if (bc.level === 'bigClass') {
+          drillLevel = 'class';
+          drillParentId = bc.id;
+          drillGroupId = null;
+        } else if (bc.level === 'class') {
+          drillLevel = 'group';
+          drillParentId = bc.id;
+          drillGroupId = null;
+        } else {
+          drillLevel = 'detail';
+          drillParentId = orgsMap[bc.id] ? orgsMap[bc.id].parent_id : null;
+          drillGroupId = bc.id;
+        }
+        doRender();
+      }
+
+      // ---- Big Class Cards ----
+      function renderBigClassCards() {
+        var bigClasses = orgsList
+          .filter(function (o) {
+            return o.level === '大班';
+          })
+          .sort(function (a, b) {
+            return a.name.localeCompare(b.name, 'zh');
+          });
+        if (bigClasses.length === 0) {
+          showEmpty('无大班数据');
+          return;
+        }
+
+        var cards = bigClasses
+          .map(function (bc) {
+            var classChildren = orgsList.filter(function (o) {
+              return o.parent_id === bc.id && o.level === '班级';
+            });
+            var classIds = classChildren.map(function (c) {
+              return c.id;
+            });
+            var stats = aggregateClasses(classIds);
+            return buildCard(bc, [], 'class', bc.id, stats);
+          })
+          .filter(Boolean);
+
+        renderCardList(cards, '暂无大班数据');
+      }
+
+      // ---- Class Cards ----
+      function renderClassCards(bigClassId) {
+        var classes = orgsList
+          .filter(function (o) {
+            return o.parent_id === bigClassId && o.level === '班级';
+          })
+          .sort(function (a, b) {
+            return a.name.localeCompare(b.name, 'zh');
+          });
+        if (classes.length === 0) {
+          showEmpty('该大班下无班级');
+          return;
+        }
+
+        var cards = classes
+          .map(function (cls) {
+            var groupIds = getAllGroups(cls.id, orgsList).map(function (g) {
+              return g.id;
+            });
+            return buildCard(cls, groupIds, 'group', cls.id);
+          })
+          .filter(Boolean);
+
+        renderCardList(cards, '该大班下暂无数据');
+      }
+
+      // ---- Group Cards ----
+      function renderGroupCards(classId) {
+        var groups = orgsList
+          .filter(function (o) {
+            return o.parent_id === classId && o.level === '小组';
+          })
+          .sort(function (a, b) {
+            return a.name.localeCompare(b.name, 'zh');
+          });
+        if (groups.length === 0) {
+          showEmpty('该班级下无小组');
+          return;
+        }
+
+        var cards = groups
+          .map(function (g) {
+            return buildCard(g, [g.id], 'detail', classId);
+          })
+          .filter(Boolean);
+
+        renderCardList(cards, '该班级下暂无数据');
+      }
+
+      // ---- Build a single data card ----
+      // stats (optional): pre-computed aggregate result. If omitted, computed from groupIds.
+      function buildCard(org, groupIds, nextLevel, nextParentId, stats) {
+        if (!stats) stats = aggregateGroups(groupIds);
+        if (!stats || stats.totalDays === 0) return null;
+
+        var attRate = stats.attendanceCount > 0 ? (stats.attendanceSum / stats.attendanceCount).toFixed(2) : null;
+        var onlineRate = stats.onlineCount > 0 ? (stats.onlineSum / stats.onlineCount).toFixed(2) : null;
+        var hwRate = stats.hwCount > 0 ? (stats.hwSum / stats.hwCount).toFixed(2) : null;
+        var videoRate = stats.videoCount > 0 ? (stats.videoSum / stats.videoCount).toFixed(2) : null;
+
+        if (attRate === null && onlineRate === null && hwRate === null) return null;
+
+        return {
+          org: org,
+          nextLevel: nextLevel,
+          nextParentId: nextParentId,
+          attRate: attRate,
+          onlineRate: onlineRate,
+          hwRate: hwRate,
+          videoRate: videoRate,
+          filledDays: stats.filledDays,
+          totalDays: stats.totalDays
+        };
+      }
+
+      function renderCardList(cards, emptyMsg) {
+        if (cards.length === 0) {
+          showEmpty(emptyMsg);
+          return;
+        }
+
+        var html = '<div class="card-list">';
+        cards.forEach(function (card) {
+          var attClass = card.attRate
+            ? parseFloat(card.attRate) >= 90
+              ? 'high'
+              : parseFloat(card.attRate) >= 70
+                ? 'medium'
+                : 'low'
+            : 'medium';
+          var progressPct = card.totalDays > 0 ? Math.round((card.filledDays / card.totalDays) * 100) : 0;
+          var progressClass = progressPct >= 80 ? 'high' : progressPct >= 50 ? 'medium' : 'low';
+
+          html +=
+            '<div class="data-card" onclick="drillInto(\'' +
+            card.nextLevel +
+            "'," +
+            card.nextParentId +
+            ',' +
+            card.org.id +
+            ')">';
+          html += '<div class="data-card-header">';
+          html += '<span class="data-card-name">' + card.org.name + '</span>';
+          html +=
+            '<div class="data-card-rate"><div class="data-card-rate-value ' +
+            attClass +
+            '">' +
+            (card.attRate || '--') +
+            (card.attRate ? '%' : '') +
+            '</div><div class="data-card-rate-label">出勤率</div></div>';
+          html += '</div>';
+
+          // Sub metrics
+          html += '<div class="data-card-sub">';
+          html +=
+            '<div class="data-card-sub-item"><div class="data-card-sub-value">' +
+            (card.onlineRate || '--') +
+            (card.onlineRate ? '%' : '') +
+            '</div><div class="data-card-sub-label">上线率</div></div>';
+          html +=
+            '<div class="data-card-sub-item"><div class="data-card-sub-value">' +
+            (card.hwRate || '--') +
+            (card.hwRate ? '%' : '') +
+            '</div><div class="data-card-sub-label">作业率</div></div>';
+          if (card.nextLevel === 'detail' && card.videoRate !== null) {
+            html +=
+              '<div class="data-card-sub-item"><div class="data-card-sub-value">' +
+              card.videoRate +
+              '%</div><div class="data-card-sub-label">视频率</div></div>';
+          }
+          html += '</div>';
+
+          // Progress
+          html += '<div class="data-card-progress">';
+          html +=
+            '<div class="progress-bar"><div class="progress-fill ' +
+            progressClass +
+            '" style="width:' +
+            progressPct +
+            '%"></div></div>';
+          html += '<span class="progress-label">' + card.filledDays + '/' + card.totalDays + '天</span>';
+          html += '<span class="data-card-arrow">&#9654;</span>';
+          html += '</div>';
+
+          html += '</div>';
+        });
+        html += '</div>';
+        document.getElementById('contentArea').innerHTML = html;
+      }
+
+      function drillInto(nextLevel, nextParentId, orgId) {
+        if (nextLevel === 'raw') {
+          drillLevel = 'raw';
+          drillScheduleId = parseInt(orgId);
+          drillGroupId = nextParentId;
+          doRender();
+          return;
+        }
+        if (nextLevel === 'detail') {
+          drillLevel = 'detail';
+          drillGroupId = orgId;
+          drillParentId = nextParentId;
+
+          // Add group to breadcrumbs
+          var grp = orgsMap[orgId];
+          if (grp) {
+            // If breadcrumbs doesn't already have this group
+            if (breadcrumbs.length === 0 || breadcrumbs[breadcrumbs.length - 1].id !== orgId) {
+              // Check if parent is already in breadcrumbs
+              var parentInBreadcrumbs =
+                breadcrumbs.length > 0 && breadcrumbs[breadcrumbs.length - 1].id === nextParentId;
+              if (!parentInBreadcrumbs) {
+                breadcrumbs = [];
+                var cls = orgsMap[nextParentId];
+                if (cls) {
+                  var bc = orgsMap[cls.parent_id];
+                  if (bc) breadcrumbs.push({ id: bc.id, name: bc.name, level: 'bigClass' });
+                  breadcrumbs.push({ id: cls.id, name: cls.name, level: 'class' });
+                }
+              }
+              breadcrumbs.push({ id: grp.id, name: grp.name, level: 'group' });
+            }
+          }
+        } else {
+          drillLevel = nextLevel;
+          drillParentId = nextParentId;
+          drillGroupId = null;
+          // Update breadcrumbs
+          if (nextLevel === 'class') {
+            var bc = orgsMap[nextParentId];
+            breadcrumbs = bc ? [{ id: bc.id, name: bc.name, level: 'bigClass' }] : [];
+          } else if (nextLevel === 'group') {
+            var cls = orgsMap[nextParentId];
+            if (cls) {
+              var bc2 = orgsMap[cls.parent_id];
+              breadcrumbs = [];
+              if (bc2) breadcrumbs.push({ id: bc2.id, name: bc2.name, level: 'bigClass' });
+              breadcrumbs.push({ id: cls.id, name: cls.name, level: 'class' });
+            }
+          }
+        }
+        doRender();
+      }
+
+      // ---- Daily Summary (group → day cards) ----
+      function renderDailySummary() {
+        if (!drillGroupId) {
+          showEmpty('无效小组');
+          return;
+        }
+
+        var grp = orgsMap[drillGroupId];
+        if (!grp) {
+          showEmpty('小组不存在');
+          return;
+        }
+
+        // Use only this group's daban's schedules
+        var cls = orgsMap[grp.parent_id];
+        var dabanId = cls ? (orgsMap[cls.parent_id] || {}).id : null;
+        var groupSchedules = dabanId
+          ? weekSchedules.filter(function (s) {
+              return s.org_id == dabanId;
+            })
+          : weekSchedules;
+
+        var groupRecords = weekRecords.filter(function (r) {
+          return r.organization_id === drillGroupId;
+        });
+        var recMap = {};
+        groupRecords.forEach(function (r) {
+          recMap[r.schedule_id] = r;
+        });
+
+        var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        var today = getToday();
+        var cards = [];
+
+        groupSchedules.forEach(function (s) {
+          var cats = getScheduleCategories(s);
+          var formulas = getScheduleFormulas(s);
+          var rec = recMap[s.id];
+          var fd = rec && rec.fill_data ? rec.fill_data : {};
+          var yingdao = parseInt(fd['应到人数']) || 0;
+          var shidao = parseInt(fd['实到人数']) || 0;
+          var yingzuo = parseInt(fd['应做作业人数']) || 0;
+          var zuowan = parseInt(fd['作业完成人数']) || 0;
+          var shipin = parseInt(fd['视频人数']) || 0;
+          var qingjia = parseInt(fd['请假人数']) || 0;
+
+          var fieldMap = {};
+          Object.keys(fd).forEach(function (k) {
+            fieldMap[k] = parseInt(fd[k]) || 0;
+          });
+          var rates = computeRatesFromFormulas(fieldMap, formulas);
+
+          var onlineR = fmtRate(rates.online);
+          var hwR = fmtRate(rates.hw);
+          var shipinR = fmtRate(rates.video);
+          var attR = fmtRate(rates.attendance);
+
+          var dt = new Date(s.schedule_date + 'T00:00:00');
+          var dateLabel = dt.getMonth() + 1 + '/' + dt.getDate() + ' ' + weekDays[dt.getDay()];
+
+          cards.push({
+            scheduleId: s.id,
+            dateLabel: dateLabel,
+            hasAttendance: cats.hasAttendance,
+            hasHomework: cats.hasHomework,
+            onlineR: onlineR,
+            hwR: hwR,
+            shipinR: shipinR,
+            attR: attR,
+            yingdao: yingdao,
+            shidao: shidao,
+            yingzuo: yingzuo,
+            zuowan: zuowan,
+            shipin: shipin,
+            hasData: yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0
+          });
+        });
+
+        // Show all scheduled days even if none have data yet
+        var html =
+          '<div style="margin-bottom:12px;font-size:14px;font-weight:600;color:var(--ink-dark);">' +
+          grp.name +
+          ' 每日汇总</div>';
+        html += '<div class="card-list">';
+
+        cards.forEach(function (c) {
+          var attClass = c.attR
+            ? parseFloat(c.attR) >= 90
+              ? 'high'
+              : parseFloat(c.attR) >= 70
+                ? 'medium'
+                : 'low'
+            : 'medium';
+
+          html += '<div class="day-card" onclick="drillInto(\'raw\',' + drillGroupId + ',' + c.scheduleId + ')">';
+          html += '<div class="day-card-header">';
+          html += '<span class="day-card-date">' + c.dateLabel + '</span>';
+          html +=
+            '<div style="text-align:right;"><div class="day-card-att ' +
+            attClass +
+            '">' +
+            (c.attR || '--') +
+            (c.attR ? '%' : '') +
+            '</div><div style="font-size:10px;color:var(--ink-muted);">出勤率</div></div>';
+          html += '</div>';
+          html += '<div class="day-card-rates">';
+          if (c.hasAttendance) {
+            html +=
+              '<div class="day-card-rate-item"><div class="day-card-rate-val">' +
+              (c.onlineR || '--') +
+              (c.onlineR ? '%' : '') +
+              '</div><div class="day-card-rate-label">上线率</div></div>';
+            html +=
+              '<div class="day-card-rate-item"><div class="day-card-rate-val">' +
+              (c.shipinR || '--') +
+              (c.shipinR ? '%' : '') +
+              '</div><div class="day-card-rate-label">视频率</div></div>';
+          }
+          if (c.hasHomework) {
+            html +=
+              '<div class="day-card-rate-item"><div class="day-card-rate-val">' +
+              (c.hwR || '--') +
+              (c.hwR ? '%' : '') +
+              '</div><div class="day-card-rate-label">作业率</div></div>';
+          }
+          html += '</div>';
+          html += '<div class="day-card-counts">';
+          if (c.hasAttendance) html += '<span>实到 ' + c.shidao + '/' + c.yingdao + '</span>';
+          if (c.hasHomework) html += '<span>完成 ' + c.zuowan + '/' + c.yingzuo + '</span>';
+          if (c.hasAttendance) html += '<span>视频 ' + c.shipin + '人</span>';
+          html += '</div>';
+          html += '<div class="day-card-arrow-row"><span>查看填报详情 &gt;</span></div>';
+          html += '</div>';
+        });
+
+        html += '</div>';
+        document.getElementById('contentArea').innerHTML = html;
+      }
+
+      // ---- Raw Detail (single day fill data, attendance-page style) ----
+      function renderRawDetail(scheduleId) {
+        if (!drillGroupId || !scheduleId) {
+          showEmpty('参数无效');
+          return;
+        }
+
+        var grp = orgsMap[drillGroupId];
+        var sched = null;
+        weekSchedules.forEach(function (s) {
+          if (s.id === scheduleId) sched = s;
+        });
+        if (!sched) {
+          showEmpty('日程不存在');
+          return;
+        }
+
+        var rec = null;
+        weekRecords.forEach(function (r) {
+          if (r.organization_id === drillGroupId && r.schedule_id === scheduleId) rec = r;
+        });
+
+        var fd = rec && rec.fill_data ? rec.fill_data : {};
+
+        var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        var dt = new Date(sched.schedule_date + 'T00:00:00');
+        var dateLabel = dt.getMonth() + 1 + '/' + dt.getDate() + ' ' + weekDays[dt.getDay()];
+
+        var cats = getScheduleCategories(sched);
+        var formulas = getScheduleFormulas(sched);
+
         var yingdao = parseInt(fd['应到人数']) || 0;
         var shidao = parseInt(fd['实到人数']) || 0;
+        var qingjia = parseInt(fd['请假人数']) || 0;
         var yingzuo = parseInt(fd['应做作业人数']) || 0;
         var zuowan = parseInt(fd['作业完成人数']) || 0;
         var shipin = parseInt(fd['视频人数']) || 0;
-        var qingjia = parseInt(fd['请假人数']) || 0;
 
         var fieldMap = {};
-        Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
+        Object.keys(fd).forEach(function (k) {
+          fieldMap[k] = parseInt(fd[k]) || 0;
+        });
         var rates = computeRatesFromFormulas(fieldMap, formulas);
 
         var onlineR = fmtRate(rates.online);
@@ -612,554 +1305,642 @@
         var shipinR = fmtRate(rates.video);
         var attR = fmtRate(rates.attendance);
 
-        var dt = new Date(s.schedule_date + 'T00:00:00');
-        var dateLabel = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + weekDays[dt.getDay()];
+        var rateCls = function (r) {
+          if (r === null) return '';
+          return parseFloat(r) >= 90 ? 'high' : parseFloat(r) >= 70 ? '' : 'low';
+        };
 
-        cards.push({
-          scheduleId: s.id,
-          dateLabel: dateLabel,
-          hasAttendance: cats.hasAttendance,
-          hasHomework: cats.hasHomework,
-          onlineR: onlineR,
-          hwR: hwR,
-          shipinR: shipinR,
-          attR: attR,
-          yingdao: yingdao,
-          shidao: shidao,
-          yingzuo: yingzuo,
-          zuowan: zuowan,
-          shipin: shipin,
-          hasData: yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0
+        var html = '';
+        html += '<div class="raw-data-back" onclick="backToDailySummary()">&lt; 返回每日汇总</div>';
+        html += '<div class="raw-data-title">' + grp.name + ' — ' + dateLabel + ' 填报详情</div>';
+
+        // Section 1: 考勤 (only if attendance is assessed)
+        if (cats.hasAttendance) {
+          html += '<div class="raw-section">';
+          html += '<div class="raw-section-title"><span class="raw-section-icon att">📊</span>考勤</div>';
+          html +=
+            '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">应到人数</div><div class="raw-field-value">' +
+            (yingdao || '--') +
+            '</div></div><div class="raw-field"><div class="raw-field-label">实到人数</div><div class="raw-field-value">' +
+            (shidao || '--') +
+            '</div></div></div>';
+          html +=
+            '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">请假人数</div><div class="raw-field-value">' +
+            (qingjia || '--') +
+            '</div></div><div class="raw-field"><div class="raw-field-label">视频人数</div><div class="raw-field-value">' +
+            (shipin || '--') +
+            '</div></div></div>';
+          html += '<div class="raw-rate-row">';
+          html +=
+            '<div class="raw-rate-item"><span class="raw-rate-label">上线率</span><span class="raw-rate-value ' +
+            rateCls(onlineR) +
+            '">' +
+            (onlineR ? onlineR + '%' : '--') +
+            '</span></div>';
+          html +=
+            '<div class="raw-rate-item"><span class="raw-rate-label">视频率</span><span class="raw-rate-value ' +
+            rateCls(shipinR) +
+            '">' +
+            (shipinR ? shipinR + '%' : '--') +
+            '</span></div>';
+          html += '</div></div>';
+        }
+
+        // Section 2: 作业 (only if homework is assessed)
+        if (cats.hasHomework) {
+          html += '<div class="raw-section">';
+          html += '<div class="raw-section-title"><span class="raw-section-icon hw">📝</span>作业</div>';
+          html +=
+            '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">应做作业人数</div><div class="raw-field-value">' +
+            (yingzuo || '--') +
+            '</div></div><div class="raw-field"><div class="raw-field-label">作业完成人数</div><div class="raw-field-value">' +
+            (zuowan || '--') +
+            '</div></div></div>';
+          html += '<div class="raw-rate-row">';
+          html +=
+            '<div class="raw-rate-item"><span class="raw-rate-label">作业率</span><span class="raw-rate-value ' +
+            rateCls(hwR) +
+            '">' +
+            (hwR ? hwR + '%' : '--') +
+            '</span></div>';
+          html += '</div></div>';
+        }
+
+        // Section 3: 自定义字段 (if any)
+        var standardFields = ['应到人数', '实到人数', '请假人数', '应做作业人数', '作业完成人数', '视频人数'];
+        var customFields = [];
+        Object.keys(fd).forEach(function (k) {
+          if (standardFields.indexOf(k) === -1 && fd[k] !== null && fd[k] !== '') {
+            customFields.push({ name: k, value: fd[k] });
+          }
         });
-      });
 
-      // Show all scheduled days even if none have data yet
-      var html = '<div style="margin-bottom:12px;font-size:14px;font-weight:600;color:var(--ink-dark);">' + grp.name + ' 每日汇总</div>';
-      html += '<div class="card-list">';
-
-      cards.forEach(function (c) {
-        var attClass = c.attR ? (parseFloat(c.attR) >= 90 ? 'high' : parseFloat(c.attR) >= 70 ? 'medium' : 'low') : 'medium';
-
-        html += '<div class="day-card" onclick="drillInto(\'raw\',' + drillGroupId + ',' + c.scheduleId + ')">';
-        html += '<div class="day-card-header">';
-        html += '<span class="day-card-date">' + c.dateLabel + '</span>';
-        html += '<div style="text-align:right;"><div class="day-card-att ' + attClass + '">' + (c.attR || '--') + (c.attR ? '%' : '') + '</div><div style="font-size:10px;color:var(--ink-muted);">出勤率</div></div>';
-        html += '</div>';
-        html += '<div class="day-card-rates">';
-        if (c.hasAttendance) {
-          html += '<div class="day-card-rate-item"><div class="day-card-rate-val">' + (c.onlineR || '--') + (c.onlineR ? '%' : '') + '</div><div class="day-card-rate-label">上线率</div></div>';
-          html += '<div class="day-card-rate-item"><div class="day-card-rate-val">' + (c.shipinR || '--') + (c.shipinR ? '%' : '') + '</div><div class="day-card-rate-label">视频率</div></div>';
+        if (customFields.length > 0) {
+          html += '<div class="raw-section">';
+          html += '<div class="raw-section-title"><span class="raw-section-icon other">📋</span>其他考核项</div>';
+          var cfHtml = '';
+          customFields.forEach(function (cf, i) {
+            if (i % 2 === 0) cfHtml += '<div class="raw-field-row">';
+            cfHtml +=
+              '<div class="raw-field"><div class="raw-field-label">' +
+              cf.name +
+              '</div><div class="raw-field-value">' +
+              (cf.value != null ? cf.value : '--') +
+              '</div></div>';
+            if (i % 2 === 1 || i === customFields.length - 1) cfHtml += '</div>';
+          });
+          html += cfHtml + '</div>';
         }
-        if (c.hasHomework) {
-          html += '<div class="day-card-rate-item"><div class="day-card-rate-val">' + (c.hwR || '--') + (c.hwR ? '%' : '') + '</div><div class="day-card-rate-label">作业率</div></div>';
-        }
-        html += '</div>';
-        html += '<div class="day-card-counts">';
-        if (c.hasAttendance) html += '<span>实到 ' + c.shidao + '/' + c.yingdao + '</span>';
-        if (c.hasHomework) html += '<span>完成 ' + c.zuowan + '/' + c.yingzuo + '</span>';
-        if (c.hasAttendance) html += '<span>视频 ' + c.shipin + '人</span>';
-        html += '</div>';
-        html += '<div class="day-card-arrow-row"><span>查看填报详情 &gt;</span></div>';
-        html += '</div>';
-      });
 
-      html += '</div>';
-      document.getElementById('contentArea').innerHTML = html;
-    }
-
-    // ---- Raw Detail (single day fill data, attendance-page style) ----
-    function renderRawDetail(scheduleId) {
-      if (!drillGroupId || !scheduleId) { showEmpty('参数无效'); return; }
-
-      var grp = orgsMap[drillGroupId];
-      var sched = null;
-      weekSchedules.forEach(function (s) { if (s.id === scheduleId) sched = s; });
-      if (!sched) { showEmpty('日程不存在'); return; }
-
-      var rec = null;
-      weekRecords.forEach(function (r) {
-        if (r.organization_id === drillGroupId && r.schedule_id === scheduleId) rec = r;
-      });
-
-      var fd = (rec && rec.fill_data) ? rec.fill_data : {};
-
-      var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-      var dt = new Date(sched.schedule_date + 'T00:00:00');
-      var dateLabel = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + weekDays[dt.getDay()];
-
-      var cats = getScheduleCategories(sched);
-      var formulas = getScheduleFormulas(sched);
-
-      var yingdao = parseInt(fd['应到人数']) || 0;
-      var shidao = parseInt(fd['实到人数']) || 0;
-      var qingjia = parseInt(fd['请假人数']) || 0;
-      var yingzuo = parseInt(fd['应做作业人数']) || 0;
-      var zuowan = parseInt(fd['作业完成人数']) || 0;
-      var shipin = parseInt(fd['视频人数']) || 0;
-
-      var fieldMap = {};
-      Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
-      var rates = computeRatesFromFormulas(fieldMap, formulas);
-
-      var onlineR = fmtRate(rates.online);
-      var hwR = fmtRate(rates.hw);
-      var shipinR = fmtRate(rates.video);
-      var attR = fmtRate(rates.attendance);
-
-      var rateCls = function (r) {
-        if (r === null) return '';
-        return parseFloat(r) >= 90 ? 'high' : parseFloat(r) >= 70 ? '' : 'low';
-      };
-
-      var html = '';
-      html += '<div class="raw-data-back" onclick="backToDailySummary()">&lt; 返回每日汇总</div>';
-      html += '<div class="raw-data-title">' + grp.name + ' — ' + dateLabel + ' 填报详情</div>';
-
-      // Section 1: 考勤 (only if attendance is assessed)
-      if (cats.hasAttendance) {
+        // Section 4: 出勤率汇总
         html += '<div class="raw-section">';
-        html += '<div class="raw-section-title"><span class="raw-section-icon att">📊</span>考勤</div>';
-        html += '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">应到人数</div><div class="raw-field-value">' + (yingdao || '--') + '</div></div><div class="raw-field"><div class="raw-field-label">实到人数</div><div class="raw-field-value">' + (shidao || '--') + '</div></div></div>';
-        html += '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">请假人数</div><div class="raw-field-value">' + (qingjia || '--') + '</div></div><div class="raw-field"><div class="raw-field-label">视频人数</div><div class="raw-field-value">' + (shipin || '--') + '</div></div></div>';
-        html += '<div class="raw-rate-row">';
-        html += '<div class="raw-rate-item"><span class="raw-rate-label">上线率</span><span class="raw-rate-value ' + rateCls(onlineR) + '">' + (onlineR ? onlineR + '%' : '--') + '</span></div>';
-        html += '<div class="raw-rate-item"><span class="raw-rate-label">视频率</span><span class="raw-rate-value ' + rateCls(shipinR) + '">' + (shipinR ? shipinR + '%' : '--') + '</span></div>';
+        html += '<div class="raw-total-row">';
+        html += '<span class="raw-total-label">出勤率</span>';
+        html +=
+          '<span class="raw-total-value" style="color:' +
+          (attR
+            ? parseFloat(attR) >= 90
+              ? '#2E7D32'
+              : parseFloat(attR) >= 70
+                ? 'var(--ink-dark)'
+                : 'var(--vermillion)'
+            : 'var(--ink-muted)') +
+          '">' +
+          (attR ? attR + '%' : '--') +
+          '</span>';
         html += '</div></div>';
+
+        document.getElementById('contentArea').innerHTML = html;
       }
 
-      // Section 2: 作业 (only if homework is assessed)
-      if (cats.hasHomework) {
-        html += '<div class="raw-section">';
-        html += '<div class="raw-section-title"><span class="raw-section-icon hw">📝</span>作业</div>';
-        html += '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">应做作业人数</div><div class="raw-field-value">' + (yingzuo || '--') + '</div></div><div class="raw-field"><div class="raw-field-label">作业完成人数</div><div class="raw-field-value">' + (zuowan || '--') + '</div></div></div>';
-        html += '<div class="raw-rate-row">';
-        html += '<div class="raw-rate-item"><span class="raw-rate-label">作业率</span><span class="raw-rate-value ' + rateCls(hwR) + '">' + (hwR ? hwR + '%' : '--') + '</span></div>';
-        html += '</div></div>';
-      }
-
-      // Section 3: 自定义字段 (if any)
-      var standardFields = ['应到人数', '实到人数', '请假人数', '应做作业人数', '作业完成人数', '视频人数'];
-      var customFields = [];
-      Object.keys(fd).forEach(function (k) {
-        if (standardFields.indexOf(k) === -1 && fd[k] !== null && fd[k] !== '') {
-          customFields.push({ name: k, value: fd[k] });
-        }
-      });
-
-      if (customFields.length > 0) {
-        html += '<div class="raw-section">';
-        html += '<div class="raw-section-title"><span class="raw-section-icon other">📋</span>其他考核项</div>';
-        var cfHtml = '';
-        customFields.forEach(function (cf, i) {
-          if (i % 2 === 0) cfHtml += '<div class="raw-field-row">';
-          cfHtml += '<div class="raw-field"><div class="raw-field-label">' + cf.name + '</div><div class="raw-field-value">' + (cf.value != null ? cf.value : '--') + '</div></div>';
-          if (i % 2 === 1 || i === customFields.length - 1) cfHtml += '</div>';
+      // ---- Aggregation ----
+      function getScheduleCategories(s) {
+        // Returns { hasAttendance, hasHomework } for a schedule
+        if (!s || !s.item_ids) return { hasAttendance: true, hasHomework: true };
+        var ids = s.item_ids.split(',').map(Number).filter(Boolean);
+        if (ids.length === 0) return { hasAttendance: true, hasHomework: true };
+        var hasAtt = ids.some(function (id) {
+          return assessmentCategoryMap[id] === 'attendance';
         });
-        html += cfHtml + '</div>';
+        var hasHw = ids.some(function (id) {
+          return assessmentCategoryMap[id] === 'homework';
+        });
+        if (!hasAtt && !hasHw) return { hasAttendance: true, hasHomework: true };
+        return { hasAttendance: hasAtt, hasHomework: hasHw };
       }
 
-      // Section 4: 出勤率汇总
-      html += '<div class="raw-section">';
-      html += '<div class="raw-total-row">';
-      html += '<span class="raw-total-label">出勤率</span>';
-      html += '<span class="raw-total-value" style="color:' + (attR ? (parseFloat(attR) >= 90 ? '#2E7D32' : parseFloat(attR) >= 70 ? 'var(--ink-dark)' : 'var(--vermillion)') : 'var(--ink-muted)') + '">' + (attR ? attR + '%' : '--') + '</span>';
-      html += '</div></div>';
-
-      document.getElementById('contentArea').innerHTML = html;
-    }
-
-    // ---- Aggregation ----
-    function getScheduleCategories(s) {
-      // Returns { hasAttendance, hasHomework } for a schedule
-      if (!s || !s.item_ids) return { hasAttendance: true, hasHomework: true };
-      var ids = s.item_ids.split(',').map(Number).filter(Boolean);
-      if (ids.length === 0) return { hasAttendance: true, hasHomework: true };
-      var hasAtt = ids.some(function (id) { return assessmentCategoryMap[id] === 'attendance'; });
-      var hasHw = ids.some(function (id) { return assessmentCategoryMap[id] === 'homework'; });
-      if (!hasAtt && !hasHw) return { hasAttendance: true, hasHomework: true };
-      return { hasAttendance: hasAtt, hasHomework: hasHw };
-    }
-
-    // Get formulas from assessment types for a given schedule (matched by type_name)
-    function getScheduleFormulas(s) {
-      var result = { online: null, video: null, hw: null };
-      if (!s || !s.item_ids) return result;
-      var ids = s.item_ids.split(',').map(Number).filter(Boolean);
-      ids.forEach(function (id) {
-        var at = null;
-        assessmentTypes.forEach(function (t) { if (t.id === id) at = t; });
-        if (!at || !at.formula) return;
-        var name = at.type_name || '';
-        if (name.indexOf('上线率') !== -1) result.online = at.formula;
-        else if (name.indexOf('视频率') !== -1) result.video = at.formula;
-        else if (name.indexOf('作业率') !== -1) result.hw = at.formula;
-      });
-      return result;
-    }
-
-    function hasMult100(f) {
-      return f && (f.indexOf('*100') !== -1 || f.indexOf('×100') !== -1);
-    }
-
-    // Compute rates using assessment type formulas. Returns { online, video, hw, attendance }
-    function computeRatesFromFormulas(fieldMap, formulas) {
-      var online = null, video = null, hw = null;
-
-      if (formulas.online) {
-        var r = calcFormula(formulas.online, fieldMap);
-        if (r != null) online = r * (hasMult100(formulas.online) ? 1 : 100);
-      }
-      if (formulas.video) {
-        var r = calcFormula(formulas.video, fieldMap);
-        if (r != null) video = r * (hasMult100(formulas.video) ? 1 : 100);
-      }
-      if (formulas.hw) {
-        var r = calcFormula(formulas.hw, fieldMap);
-        if (r != null) hw = r * (hasMult100(formulas.hw) ? 1 : 100);
+      // Get formulas from assessment types for a given schedule (matched by type_name)
+      function getScheduleFormulas(s) {
+        var result = { online: null, video: null, hw: null };
+        if (!s || !s.item_ids) return result;
+        var ids = s.item_ids.split(',').map(Number).filter(Boolean);
+        ids.forEach(function (id) {
+          var at = null;
+          assessmentTypes.forEach(function (t) {
+            if (t.id === id) at = t;
+          });
+          if (!at || !at.formula) return;
+          var name = at.type_name || '';
+          if (name.indexOf('上线率') !== -1) result.online = at.formula;
+          else if (name.indexOf('视频率') !== -1) result.video = at.formula;
+          else if (name.indexOf('作业率') !== -1) result.hw = at.formula;
+        });
+        return result;
       }
 
-      var attendance = null;
-      if (online !== null || hw !== null) {
-        attendance = ((online || 0) + (hw || 0)) / ((online !== null && hw !== null) ? 2 : 1);
+      function hasMult100(f) {
+        return f && (f.indexOf('*100') !== -1 || f.indexOf('×100') !== -1);
       }
 
-      return { online: online, video: video, hw: hw, attendance: attendance };
-    }
+      // Compute rates using assessment type formulas. Returns { online, video, hw, attendance }
+      function computeRatesFromFormulas(fieldMap, formulas) {
+        var online = null,
+          video = null,
+          hw = null;
 
-    // Format a computed rate for display
-    function fmtRate(val) {
-      return val != null ? val.toFixed(2) : null;
-    }
+        if (formulas.online) {
+          var r = calcFormula(formulas.online, fieldMap);
+          if (r != null) online = r * (hasMult100(formulas.online) ? 1 : 100);
+        }
+        if (formulas.video) {
+          var r = calcFormula(formulas.video, fieldMap);
+          if (r != null) video = r * (hasMult100(formulas.video) ? 1 : 100);
+        }
+        if (formulas.hw) {
+          var r = calcFormula(formulas.hw, fieldMap);
+          if (r != null) hw = r * (hasMult100(formulas.hw) ? 1 : 100);
+        }
 
-    // Pre-compute per-group AVERAGES once per load cycle
-    function buildGroupStatsCache() {
-      groupStatsCache = {};
-      var today = getToday();
+        var attendance = null;
+        if (online !== null || hw !== null) {
+          attendance = ((online || 0) + (hw || 0)) / (online !== null && hw !== null ? 2 : 1);
+        }
 
-      // Build group→daban map
-      var groupDabanMap = {};
-      orgsList.forEach(function (o) {
-        if (o.level === '小组') {
-          var cls = orgsMap[o.parent_id];
-          if (cls) {
-            var daban = orgsMap[cls.parent_id];
-            if (daban && daban.level === '大班') groupDabanMap[o.id] = daban.id;
+        return { online: online, video: video, hw: hw, attendance: attendance };
+      }
+
+      // Format a computed rate for display
+      function fmtRate(val) {
+        return val != null ? val.toFixed(2) : null;
+      }
+
+      // Pre-compute per-group AVERAGES once per load cycle
+      function buildGroupStatsCache() {
+        groupStatsCache = {};
+        var today = getToday();
+
+        // Build group→daban map
+        var groupDabanMap = {};
+        orgsList.forEach(function (o) {
+          if (o.level === '小组') {
+            var cls = orgsMap[o.parent_id];
+            if (cls) {
+              var daban = orgsMap[cls.parent_id];
+              if (daban && daban.level === '大班') groupDabanMap[o.id] = daban.id;
+            }
+          }
+        });
+
+        // Build daban→schedules map
+        var dabanSchedulesMap = {};
+        weekSchedules.forEach(function (s) {
+          var did = s.org_id;
+          if (!dabanSchedulesMap[did]) dabanSchedulesMap[did] = [];
+          dabanSchedulesMap[did].push(s);
+        });
+
+        // Group records by organization_id
+        var recsByGroup = {};
+        weekRecords.forEach(function (r) {
+          if (!recsByGroup[r.organization_id]) recsByGroup[r.organization_id] = [];
+          recsByGroup[r.organization_id].push(r);
+        });
+
+        var allGids = Object.keys(recsByGroup).map(Number);
+        var visibleIds = getVisibleGroupIds();
+        visibleIds.forEach(function (gid) {
+          if (allGids.indexOf(gid) === -1) allGids.push(gid);
+        });
+
+        allGids.forEach(function (gid) {
+          var recs = recsByGroup[gid] || [];
+          var recMap = {};
+          recs.forEach(function (r) {
+            recMap[r.schedule_id] = r;
+          });
+
+          // Use only this group's daban's schedules
+          var dabanId = groupDabanMap[gid];
+          var groupSchedules = dabanId && dabanSchedulesMap[dabanId] ? dabanSchedulesMap[dabanId] : [];
+
+          // Count total scheduled days up to today for this daban
+          var totalDays = 0;
+          groupSchedules.forEach(function (s) {
+            if (s.schedule_date <= today) totalDays++;
+          });
+          if (totalDays === 0) return;
+
+          var onlineSum = 0,
+            onlineN = 0,
+            hwSum = 0,
+            hwN = 0,
+            videoSum = 0,
+            videoN = 0,
+            attSum = 0,
+            attN = 0;
+          var filledDays = 0;
+
+          groupSchedules.forEach(function (s) {
+            if (s.schedule_date > today) return;
+            var formulas = getScheduleFormulas(s);
+            var rec = recMap[s.id];
+            var fd = rec && rec.fill_data ? rec.fill_data : {};
+            var yingdao = parseInt(fd['应到人数']) || 0;
+            var shidao = parseInt(fd['实到人数']) || 0;
+            var yingzuo = parseInt(fd['应做作业人数']) || 0;
+            var zuowan = parseInt(fd['作业完成人数']) || 0;
+
+            var hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0);
+            if (hasData) filledDays++;
+
+            var fieldMap = {};
+            Object.keys(fd).forEach(function (k) {
+              fieldMap[k] = parseInt(fd[k]) || 0;
+            });
+
+            var rates = computeRatesFromFormulas(fieldMap, formulas);
+
+            // 未填报的天按 0 计入平均，分母为所有考核日
+            var expectOnline = formulas.online !== null;
+            var expectVideo = formulas.video !== null;
+            var expectHw = formulas.hw !== null;
+
+            if (expectOnline) {
+              onlineSum += rates.online !== null ? rates.online : 0;
+              onlineN++;
+            }
+            if (expectVideo) {
+              videoSum += rates.video !== null ? rates.video : 0;
+              videoN++;
+            }
+            if (expectHw) {
+              hwSum += rates.hw !== null ? rates.hw : 0;
+              hwN++;
+            }
+            if (expectOnline || expectHw) {
+              attSum += rates.attendance !== null ? rates.attendance : 0;
+              attN++;
+            }
+          });
+
+          groupStatsCache[gid] = {
+            onlineAvg: onlineN > 0 ? onlineSum / onlineN : null,
+            hwAvg: hwN > 0 ? hwSum / hwN : null,
+            videoAvg: videoN > 0 ? videoSum / videoN : null,
+            attendanceAvg: attN > 0 ? attSum / attN : null,
+            filledDays: filledDays,
+            totalDays: totalDays
+          };
+        });
+      }
+
+      function aggregateGroups(groupIds) {
+        // Average the group-level averages (not re-compute from raw data)
+        if (groupIds.length === 0) return null;
+
+        var onlineSum = 0,
+          onlineCnt = 0;
+        var hwSum = 0,
+          hwCnt = 0;
+        var videoSum = 0,
+          videoCnt = 0;
+        var attSum = 0,
+          attCnt = 0;
+        var filledSum = 0,
+          groupCnt = 0;
+        var maxTotalDays = 0;
+
+        groupIds.forEach(function (gid) {
+          var gs = groupStatsCache[gid];
+          if (!gs) return;
+
+          if (gs.onlineAvg !== null) {
+            onlineSum += gs.onlineAvg;
+            onlineCnt++;
+          }
+          if (gs.hwAvg !== null) {
+            hwSum += gs.hwAvg;
+            hwCnt++;
+          }
+          if (gs.videoAvg !== null) {
+            videoSum += gs.videoAvg;
+            videoCnt++;
+          }
+          if (gs.attendanceAvg !== null) {
+            attSum += gs.attendanceAvg;
+            attCnt++;
+          }
+          filledSum += gs.filledDays;
+          groupCnt++;
+          if (gs.totalDays > maxTotalDays) maxTotalDays = gs.totalDays;
+        });
+
+        return {
+          onlineSum: onlineSum,
+          onlineCount: onlineCnt,
+          hwSum: hwSum,
+          hwCount: hwCnt,
+          videoSum: videoSum,
+          videoCount: videoCnt,
+          attendanceSum: attSum,
+          attendanceCount: attCnt,
+          filledDays: groupCnt > 0 ? Math.round(filledSum / groupCnt) : 0,
+          totalDays: maxTotalDays
+        };
+      }
+
+      // Average class-level stats — each class equally weighted (班级均值)
+      function aggregateClasses(classIds) {
+        if (classIds.length === 0) return null;
+        var onlineSum = 0,
+          onlineCnt = 0,
+          hwSum = 0,
+          hwCnt = 0;
+        var attSum = 0,
+          attCnt = 0,
+          videoSum = 0,
+          videoCnt = 0;
+        var filledSum = 0,
+          classCnt = 0,
+          maxTotalDays = 0;
+
+        classIds.forEach(function (cid) {
+          var groupIds = getAllGroups(cid, orgsList).map(function (g) {
+            return g.id;
+          });
+          var clsStats = aggregateGroups(groupIds);
+          if (!clsStats) return;
+          if (clsStats.onlineCount > 0) {
+            onlineSum += clsStats.onlineSum / clsStats.onlineCount;
+            onlineCnt++;
+          }
+          if (clsStats.hwCount > 0) {
+            hwSum += clsStats.hwSum / clsStats.hwCount;
+            hwCnt++;
+          }
+          if (clsStats.videoCount > 0) {
+            videoSum += clsStats.videoSum / clsStats.videoCount;
+            videoCnt++;
+          }
+          if (clsStats.attendanceCount > 0) {
+            attSum += clsStats.attendanceSum / clsStats.attendanceCount;
+            attCnt++;
+          }
+          filledSum += clsStats.filledDays;
+          classCnt++;
+          if (clsStats.totalDays > maxTotalDays) maxTotalDays = clsStats.totalDays;
+        });
+
+        return {
+          onlineSum: onlineSum,
+          onlineCount: onlineCnt,
+          hwSum: hwSum,
+          hwCount: hwCnt,
+          videoSum: videoSum,
+          videoCount: videoCnt,
+          attendanceSum: attSum,
+          attendanceCount: attCnt,
+          filledDays: classCnt > 0 ? Math.round(filledSum / classCnt) : 0,
+          totalDays: maxTotalDays
+        };
+      }
+
+      // ---- Summary Stats ----
+      function renderSummaryStats() {
+        if (drillLevel === 'raw') {
+          renderDayStats(drillGroupId, drillScheduleId);
+          return;
+        }
+
+        // Use aggregateGroups for ALL levels — same function that buildCard uses,
+        // guaranteeing the top stats match the cards exactly.
+        var stats = null;
+
+        if (drillLevel === 'detail') {
+          stats = aggregateGroups([drillGroupId]);
+        } else if (drillLevel === 'group') {
+          var grps = orgsList.filter(function (o) {
+            return o.parent_id === drillParentId && o.level === '小组';
+          });
+          var allGids = grps.map(function (g) {
+            return g.id;
+          });
+          stats = aggregateGroups(allGids);
+        } else if (drillLevel === 'class') {
+          // 班级均值：各班级等权重
+          var classes = orgsList.filter(function (o) {
+            return o.parent_id === drillParentId && o.level === '班级';
+          });
+          var classIds = classes.map(function (c) {
+            return c.id;
+          });
+          stats = aggregateClasses(classIds);
+        } else {
+          // bigClass: 大班均值：各大班等权重（每个大班 = 其班级均值）
+          var bigClasses = orgsList.filter(function (o) {
+            return o.level === '大班';
+          });
+          var items = [];
+          bigClasses.forEach(function (bc) {
+            var classChildren = orgsList.filter(function (o) {
+              return o.parent_id === bc.id && o.level === '班级';
+            });
+            var cids = classChildren.map(function (c) {
+              return c.id;
+            });
+            var bcStats = aggregateClasses(cids);
+            if (bcStats && bcStats.attendanceCount > 0) items.push(bcStats);
+          });
+          if (items.length > 0) {
+            stats = {
+              onlineSum: 0,
+              onlineCount: 0,
+              hwSum: 0,
+              hwCount: 0,
+              videoSum: 0,
+              videoCount: 0,
+              attendanceSum: 0,
+              attendanceCount: 0,
+              filledDays: 0,
+              totalDays: 0
+            };
+            items.forEach(function (it) {
+              if (it.onlineCount > 0) {
+                stats.onlineSum += it.onlineSum / it.onlineCount;
+                stats.onlineCount++;
+              }
+              if (it.hwCount > 0) {
+                stats.hwSum += it.hwSum / it.hwCount;
+                stats.hwCount++;
+              }
+              if (it.attendanceCount > 0) {
+                stats.attendanceSum += it.attendanceSum / it.attendanceCount;
+                stats.attendanceCount++;
+              }
+            });
           }
         }
-      });
 
-      // Build daban→schedules map
-      var dabanSchedulesMap = {};
-      weekSchedules.forEach(function (s) {
-        var did = s.org_id;
-        if (!dabanSchedulesMap[did]) dabanSchedulesMap[did] = [];
-        dabanSchedulesMap[did].push(s);
-      });
+        var attRate = stats && stats.attendanceCount > 0 ? stats.attendanceSum / stats.attendanceCount : null;
+        var onlineRate = stats && stats.onlineCount > 0 ? stats.onlineSum / stats.onlineCount : null;
+        var hwRate = stats && stats.hwCount > 0 ? stats.hwSum / stats.hwCount : null;
 
-      // Group records by organization_id
-      var recsByGroup = {};
-      weekRecords.forEach(function (r) {
-        if (!recsByGroup[r.organization_id]) recsByGroup[r.organization_id] = [];
-        recsByGroup[r.organization_id].push(r);
-      });
-
-      var allGids = Object.keys(recsByGroup).map(Number);
-      var visibleIds = getVisibleGroupIds();
-      visibleIds.forEach(function (gid) {
-        if (allGids.indexOf(gid) === -1) allGids.push(gid);
-      });
-
-      allGids.forEach(function (gid) {
-        var recs = recsByGroup[gid] || [];
-        var recMap = {};
-        recs.forEach(function (r) { recMap[r.schedule_id] = r; });
-
-        // Use only this group's daban's schedules
-        var dabanId = groupDabanMap[gid];
-        var groupSchedules = (dabanId && dabanSchedulesMap[dabanId]) ? dabanSchedulesMap[dabanId] : [];
-
-        // Count total scheduled days up to today for this daban
-        var totalDays = 0;
-        groupSchedules.forEach(function (s) { if (s.schedule_date <= today) totalDays++; });
-        if (totalDays === 0) return;
-
-        var onlineSum = 0, onlineN = 0, hwSum = 0, hwN = 0, videoSum = 0, videoN = 0, attSum = 0, attN = 0;
-        var filledDays = 0;
-
-        groupSchedules.forEach(function (s) {
-          if (s.schedule_date > today) return;
-          var formulas = getScheduleFormulas(s);
-          var rec = recMap[s.id];
-          var fd = (rec && rec.fill_data) ? rec.fill_data : {};
-          var yingdao = parseInt(fd['应到人数']) || 0;
-          var shidao = parseInt(fd['实到人数']) || 0;
-          var yingzuo = parseInt(fd['应做作业人数']) || 0;
-          var zuowan = parseInt(fd['作业完成人数']) || 0;
-
-          var hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0);
-          if (hasData) filledDays++;
-
-          var fieldMap = {};
-          Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
-
-          var rates = computeRatesFromFormulas(fieldMap, formulas);
-
-          // 未填报的天按 0 计入平均，分母为所有考核日
-          var expectOnline = formulas.online !== null;
-          var expectVideo = formulas.video !== null;
-          var expectHw = formulas.hw !== null;
-
-          if (expectOnline) { onlineSum += (rates.online !== null ? rates.online : 0); onlineN++; }
-          if (expectVideo) { videoSum += (rates.video !== null ? rates.video : 0); videoN++; }
-          if (expectHw) { hwSum += (rates.hw !== null ? rates.hw : 0); hwN++; }
-          if (expectOnline || expectHw) { attSum += (rates.attendance !== null ? rates.attendance : 0); attN++; }
-        });
-
-        groupStatsCache[gid] = {
-          onlineAvg: onlineN > 0 ? (onlineSum / onlineN) : null,
-          hwAvg: hwN > 0 ? (hwSum / hwN) : null,
-          videoAvg: videoN > 0 ? (videoSum / videoN) : null,
-          attendanceAvg: attN > 0 ? (attSum / attN) : null,
-          filledDays: filledDays,
-          totalDays: totalDays
-        };
-      });
-    }
-
-    function aggregateGroups(groupIds) {
-      // Average the group-level averages (not re-compute from raw data)
-      if (groupIds.length === 0) return null;
-
-      var onlineSum = 0, onlineCnt = 0;
-      var hwSum = 0, hwCnt = 0;
-      var videoSum = 0, videoCnt = 0;
-      var attSum = 0, attCnt = 0;
-      var filledSum = 0, groupCnt = 0;
-      var maxTotalDays = 0;
-
-      groupIds.forEach(function (gid) {
-        var gs = groupStatsCache[gid];
-        if (!gs) return;
-
-        if (gs.onlineAvg !== null) { onlineSum += gs.onlineAvg; onlineCnt++; }
-        if (gs.hwAvg !== null) { hwSum += gs.hwAvg; hwCnt++; }
-        if (gs.videoAvg !== null) { videoSum += gs.videoAvg; videoCnt++; }
-        if (gs.attendanceAvg !== null) { attSum += gs.attendanceAvg; attCnt++; }
-        filledSum += gs.filledDays;
-        groupCnt++;
-        if (gs.totalDays > maxTotalDays) maxTotalDays = gs.totalDays;
-      });
-
-      return {
-        onlineSum: onlineSum, onlineCount: onlineCnt,
-        hwSum: hwSum, hwCount: hwCnt,
-        videoSum: videoSum, videoCount: videoCnt,
-        attendanceSum: attSum, attendanceCount: attCnt,
-        filledDays: groupCnt > 0 ? Math.round(filledSum / groupCnt) : 0,
-        totalDays: maxTotalDays
-      };
-    }
-
-    // Average class-level stats — each class equally weighted (班级均值)
-    function aggregateClasses(classIds) {
-      if (classIds.length === 0) return null;
-      var onlineSum = 0, onlineCnt = 0, hwSum = 0, hwCnt = 0;
-      var attSum = 0, attCnt = 0, videoSum = 0, videoCnt = 0;
-      var filledSum = 0, classCnt = 0, maxTotalDays = 0;
-
-      classIds.forEach(function (cid) {
-        var groupIds = getAllGroups(cid, orgsList).map(function (g) { return g.id; });
-        var clsStats = aggregateGroups(groupIds);
-        if (!clsStats) return;
-        if (clsStats.onlineCount > 0) { onlineSum += clsStats.onlineSum / clsStats.onlineCount; onlineCnt++; }
-        if (clsStats.hwCount > 0) { hwSum += clsStats.hwSum / clsStats.hwCount; hwCnt++; }
-        if (clsStats.videoCount > 0) { videoSum += clsStats.videoSum / clsStats.videoCount; videoCnt++; }
-        if (clsStats.attendanceCount > 0) { attSum += clsStats.attendanceSum / clsStats.attendanceCount; attCnt++; }
-        filledSum += clsStats.filledDays;
-        classCnt++;
-        if (clsStats.totalDays > maxTotalDays) maxTotalDays = clsStats.totalDays;
-      });
-
-      return {
-        onlineSum: onlineSum, onlineCount: onlineCnt,
-        hwSum: hwSum, hwCount: hwCnt,
-        videoSum: videoSum, videoCount: videoCnt,
-        attendanceSum: attSum, attendanceCount: attCnt,
-        filledDays: classCnt > 0 ? Math.round(filledSum / classCnt) : 0,
-        totalDays: maxTotalDays
-      };
-    }
-
-    // ---- Summary Stats ----
-    function renderSummaryStats() {
-      if (drillLevel === 'raw') {
-        renderDayStats(drillGroupId, drillScheduleId);
-        return;
+        document.getElementById('summaryStats').style.display = '';
+        document.getElementById('statLabelAtt').textContent = '平均出勤率';
+        document.getElementById('statLabelOnline').textContent = '平均上线率';
+        document.getElementById('statLabelHw').textContent = '平均作业率';
+        setStat('avgAttendance', attRate);
+        setStat('avgOnline', onlineRate);
+        setStat('avgHomework', hwRate);
       }
 
-      // Use aggregateGroups for ALL levels — same function that buildCard uses,
-      // guaranteeing the top stats match the cards exactly.
-      var stats = null;
-
-      if (drillLevel === 'detail') {
-        stats = aggregateGroups([drillGroupId]);
-      } else if (drillLevel === 'group') {
-        var grps = orgsList.filter(function (o) { return o.parent_id === drillParentId && o.level === '小组'; });
-        var allGids = grps.map(function (g) { return g.id; });
-        stats = aggregateGroups(allGids);
-      } else if (drillLevel === 'class') {
-        // 班级均值：各班级等权重
-        var classes = orgsList.filter(function (o) { return o.parent_id === drillParentId && o.level === '班级'; });
-        var classIds = classes.map(function (c) { return c.id; });
-        stats = aggregateClasses(classIds);
-      } else {
-        // bigClass: 大班均值：各大班等权重（每个大班 = 其班级均值）
-        var bigClasses = orgsList.filter(function (o) { return o.level === '大班'; });
-        var items = [];
-        bigClasses.forEach(function (bc) {
-          var classChildren = orgsList.filter(function (o) { return o.parent_id === bc.id && o.level === '班级'; });
-          var cids = classChildren.map(function (c) { return c.id; });
-          var bcStats = aggregateClasses(cids);
-          if (bcStats && bcStats.attendanceCount > 0) items.push(bcStats);
+      function renderDayStats(groupId, scheduleId) {
+        // Show a single day's rates for the group
+        var sched = null;
+        weekSchedules.forEach(function (s) {
+          if (s.id === scheduleId) sched = s;
         });
-        if (items.length > 0) {
-          stats = { onlineSum: 0, onlineCount: 0, hwSum: 0, hwCount: 0, videoSum: 0, videoCount: 0, attendanceSum: 0, attendanceCount: 0, filledDays: 0, totalDays: 0 };
-          items.forEach(function (it) {
-            if (it.onlineCount > 0) { stats.onlineSum += it.onlineSum / it.onlineCount; stats.onlineCount++; }
-            if (it.hwCount > 0) { stats.hwSum += it.hwSum / it.hwCount; stats.hwCount++; }
-            if (it.attendanceCount > 0) { stats.attendanceSum += it.attendanceSum / it.attendanceCount; stats.attendanceCount++; }
-          });
+        var formulas = getScheduleFormulas(sched);
+
+        var rec = null;
+        weekRecords.forEach(function (r) {
+          if (r.organization_id === groupId && r.schedule_id === scheduleId) rec = r;
+        });
+        var fd = rec && rec.fill_data ? rec.fill_data : {};
+        var yingdao = parseInt(fd['应到人数']) || 0;
+        var shidao = parseInt(fd['实到人数']) || 0;
+        var qingjia = parseInt(fd['请假人数']) || 0;
+        var yingzuo = parseInt(fd['应做作业人数']) || 0;
+        var zuowan = parseInt(fd['作业完成人数']) || 0;
+        var shipin = parseInt(fd['视频人数']) || 0;
+
+        var fieldMap = {};
+        Object.keys(fd).forEach(function (k) {
+          fieldMap[k] = parseInt(fd[k]) || 0;
+        });
+        var rates = computeRatesFromFormulas(fieldMap, formulas);
+
+        var onlineR = fmtRate(rates.online);
+        var hwR = fmtRate(rates.hw);
+        var attR = fmtRate(rates.attendance);
+
+        document.getElementById('statLabelAtt').textContent = '出勤率';
+        document.getElementById('statLabelOnline').textContent = '上线率';
+        document.getElementById('statLabelHw').textContent = '作业率';
+        setStat('avgAttendance', attR);
+        setStat('avgOnline', onlineR);
+        setStat('avgHomework', hwR);
+      }
+
+      function setStat(id, val) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = val != null ? Number(val).toFixed(2) + '%' : '--';
+        el.className =
+          'summary-stat-value ' +
+          (val ? (parseFloat(val) >= 90 ? 'high' : parseFloat(val) >= 70 ? 'medium' : 'low') : '');
+      }
+
+      // ---- Helpers ----
+      function rateClass(rate) {
+        if (rate === null) return '';
+        var n = parseFloat(rate);
+        if (n >= 90) return 'high';
+        if (n >= 70) return 'medium';
+        return 'low';
+      }
+
+      function showEmpty(msg) {
+        document.getElementById('contentArea').innerHTML =
+          '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">' +
+          msg +
+          '</div></div>';
+      }
+
+      function getWeekRange(offset) {
+        var now = new Date();
+        var day = now.getDay();
+        var monday = new Date(now);
+        monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+        monday.setHours(0, 0, 0, 0);
+        var sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        sunday.setHours(23, 59, 59, 999);
+        return { monday: monday, sunday: sunday };
+      }
+
+      function formatDate(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var dt = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dt;
+      }
+
+      function getMonday(date) {
+        var d = new Date(date);
+        var day = d.getDay();
+        var diff = (day + 6) % 7;
+        d.setDate(d.getDate() - diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      function computeWeekLabel(weekMonday) {
+        if (!currentSemester) return '本周';
+        var trialStart = currentSemester.trial_start_date
+          ? new Date(currentSemester.trial_start_date + 'T00:00:00')
+          : null;
+        var formalStart = new Date(currentSemester.start_date + 'T00:00:00');
+        var formalMonday = getMonday(formalStart);
+        var wm = new Date(weekMonday);
+        wm.setHours(0, 0, 0, 0);
+        var isTrial = trialStart && wm < formalMonday;
+        if (isTrial) {
+          var trialMonday = getMonday(trialStart);
+          var weeks = Math.floor((wm - trialMonday) / (7 * 86400000)) + 1;
+          return '试晨读第' + weeks + '周';
+        } else {
+          var weeks = Math.floor((wm - formalMonday) / (7 * 86400000)) + 1;
+          return '第' + weeks + '周';
         }
       }
 
-      var attRate = (stats && stats.attendanceCount > 0) ? (stats.attendanceSum / stats.attendanceCount) : null;
-      var onlineRate = (stats && stats.onlineCount > 0) ? (stats.onlineSum / stats.onlineCount) : null;
-      var hwRate = (stats && stats.hwCount > 0) ? (stats.hwSum / stats.hwCount) : null;
-
-      document.getElementById('summaryStats').style.display = '';
-      document.getElementById('statLabelAtt').textContent = '平均出勤率';
-      document.getElementById('statLabelOnline').textContent = '平均上线率';
-      document.getElementById('statLabelHw').textContent = '平均作业率';
-      setStat('avgAttendance', attRate);
-      setStat('avgOnline', onlineRate);
-      setStat('avgHomework', hwRate);
-    }
-
-    function renderDayStats(groupId, scheduleId) {
-      // Show a single day's rates for the group
-      var sched = null;
-      weekSchedules.forEach(function (s) { if (s.id === scheduleId) sched = s; });
-      var formulas = getScheduleFormulas(sched);
-
-      var rec = null;
-      weekRecords.forEach(function (r) {
-        if (r.organization_id === groupId && r.schedule_id === scheduleId) rec = r;
-      });
-      var fd = (rec && rec.fill_data) ? rec.fill_data : {};
-      var yingdao = parseInt(fd['应到人数']) || 0;
-      var shidao = parseInt(fd['实到人数']) || 0;
-      var qingjia = parseInt(fd['请假人数']) || 0;
-      var yingzuo = parseInt(fd['应做作业人数']) || 0;
-      var zuowan = parseInt(fd['作业完成人数']) || 0;
-      var shipin = parseInt(fd['视频人数']) || 0;
-
-      var fieldMap = {};
-      Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
-      var rates = computeRatesFromFormulas(fieldMap, formulas);
-
-      var onlineR = fmtRate(rates.online);
-      var hwR = fmtRate(rates.hw);
-      var attR = fmtRate(rates.attendance);
-
-      document.getElementById('statLabelAtt').textContent = '出勤率';
-      document.getElementById('statLabelOnline').textContent = '上线率';
-      document.getElementById('statLabelHw').textContent = '作业率';
-      setStat('avgAttendance', attR);
-      setStat('avgOnline', onlineR);
-      setStat('avgHomework', hwR);
-    }
-
-    function setStat(id, val) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = val != null ? Number(val).toFixed(2) + '%' : '--';
-      el.className = 'summary-stat-value ' + (val ? (parseFloat(val) >= 90 ? 'high' : parseFloat(val) >= 70 ? 'medium' : 'low') : '');
-    }
-
-    // ---- Helpers ----
-    function rateClass(rate) {
-      if (rate === null) return '';
-      var n = parseFloat(rate);
-      if (n >= 90) return 'high';
-      if (n >= 70) return 'medium';
-      return 'low';
-    }
-
-    function showEmpty(msg) {
-      document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">' + msg + '</div></div>';
-    }
-
-    function getWeekRange(offset) {
-      var now = new Date();
-      var day = now.getDay();
-      var monday = new Date(now);
-      monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
-      monday.setHours(0, 0, 0, 0);
-      var sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      sunday.setHours(23, 59, 59, 999);
-      return { monday: monday, sunday: sunday };
-    }
-
-    function formatDate(d) {
-      var y = d.getFullYear();
-      var m = String(d.getMonth() + 1).padStart(2, '0');
-      var dt = String(d.getDate()).padStart(2, '0');
-      return y + '-' + m + '-' + dt;
-    }
-
-    function getMonday(date) {
-      var d = new Date(date);
-      var day = d.getDay();
-      var diff = (day + 6) % 7;
-      d.setDate(d.getDate() - diff);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }
-
-    function computeWeekLabel(weekMonday) {
-      if (!currentSemester) return '本周';
-      var trialStart = currentSemester.trial_start_date ? new Date(currentSemester.trial_start_date + 'T00:00:00') : null;
-      var formalStart = new Date(currentSemester.start_date + 'T00:00:00');
-      var formalMonday = getMonday(formalStart);
-      var wm = new Date(weekMonday);
-      wm.setHours(0, 0, 0, 0);
-      var isTrial = trialStart && wm < formalMonday;
-      if (isTrial) {
-        var trialMonday = getMonday(trialStart);
-        var weeks = Math.floor((wm - trialMonday) / (7 * 86400000)) + 1;
-        return '试晨读第' + weeks + '周';
-      } else {
-        var weeks = Math.floor((wm - formalMonday) / (7 * 86400000)) + 1;
-        return '第' + weeks + '周';
+      function changeWeek(delta) {
+        if (!currentSemester) {
+          weekOffset += delta;
+          loadAndRender();
+          return;
+        }
+        var newOffset = weekOffset + delta;
+        var range = getWeekRange(newOffset);
+        var effStart = currentSemester.trial_start_date || currentSemester.start_date;
+        var semStart = new Date(effStart + 'T00:00:00');
+        var semEnd = new Date(currentSemester.end_date + 'T23:59:59');
+        if (range.sunday < semStart || range.monday > semEnd) return;
+        weekOffset = newOffset;
+        loadAndRender();
       }
-    }
+      function goToCurrentWeek() {
+        weekOffset = 0;
+        loadAndRender();
+      }
+      function backToDailySummary() {
+        drillLevel = 'detail';
+        drillScheduleId = null;
+        doRender();
+      }
 
-    function changeWeek(delta) {
-      if (!currentSemester) { weekOffset += delta; loadAndRender(); return; }
-      var newOffset = weekOffset + delta;
-      var range = getWeekRange(newOffset);
-      var effStart = currentSemester.trial_start_date || currentSemester.start_date;
-      var semStart = new Date(effStart + 'T00:00:00');
-      var semEnd = new Date(currentSemester.end_date + 'T23:59:59');
-      if (range.sunday < semStart || range.monday > semEnd) return;
-      weekOffset = newOffset;
-      loadAndRender();
-    }
-    function goToCurrentWeek() { weekOffset = 0; loadAndRender(); }
-    function backToDailySummary() { drillLevel = 'detail'; drillScheduleId = null; doRender(); }
-
-    init();
-  </script>
-</body>
+      init();
+    </script>
+  </body>
 </html>

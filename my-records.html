@@ -1,175 +1,315 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>我的填报记录 - 阳明心学督察管理系统</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/common.css">
-  <style>
-    .container { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
-    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
-    .page-title { font-family: 'Noto Serif SC', serif; font-size: 18px; font-weight: 600; }
-    .record-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
-    .record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .record-date { font-size: 14px; font-weight: 500; }
-    .record-time { font-size: 11px; color: var(--ink-muted); }
-    .record-org { font-size: 12px; color: var(--ink-muted); margin-bottom: 8px; }
-    .record-stats { display: flex; gap: 16px; font-size: 13px; }
-    .record-stat span { font-weight: 600; font-family: 'Noto Serif SC', serif; }
-    .record-stat .up { color: #2E7D32; }
-    .record-stat .mid { color: var(--ink-dark); }
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-muted); font-size: 14px; }
-    .info-bar { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; }
-    .info-bar span { font-size: 13px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-      <a href="profile.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
-      <h1 class="page-title">我的填报记录</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>我的填报记录 - 阳明心学督察管理系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/common.css" />
+    <style>
+      .container {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 16px 16px 100px;
+      }
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--ink-dark);
+      }
+      .page-title {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .record-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+      .record-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .record-date {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .record-time {
+        font-size: 11px;
+        color: var(--ink-muted);
+      }
+      .record-org {
+        font-size: 12px;
+        color: var(--ink-muted);
+        margin-bottom: 8px;
+      }
+      .record-stats {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+      }
+      .record-stat span {
+        font-weight: 600;
+        font-family: 'Noto Serif SC', serif;
+      }
+      .record-stat .up {
+        color: #2e7d32;
+      }
+      .record-stat .mid {
+        color: var(--ink-dark);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--ink-muted);
+        font-size: 14px;
+      }
+      .info-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .info-bar span {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <a
+          href="profile.html"
+          class="back-btn"
+          aria-label="返回"
+          onclick="
+            event.preventDefault();
+            window.history.back();
+          "
+          >←</a
+        >
+        <h1 class="page-title">我的填报记录</h1>
+      </div>
+      <div class="info-bar">
+        <span id="infoName">加载中...</span>
+        <span id="infoCount" style="color: var(--ink-muted)"></span>
+      </div>
+      <div id="recordList">
+        <div class="empty-state">加载中...</div>
+      </div>
     </div>
-    <div class="info-bar">
-      <span id="infoName">加载中...</span>
-      <span id="infoCount" style="color:var(--ink-muted);"></span>
-    </div>
-    <div id="recordList">
-      <div class="empty-state">加载中...</div>
-    </div>
-  </div>
-  <div id="bottomNavContainer"></div>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/components.js"></script>
-  <script>renderBottomNav('profile');</script>
-  <script>
-    var currentUser = null;
-    var currentSemesterId = null;
+    <div id="bottomNavContainer"></div>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+      renderBottomNav('profile');
+    </script>
+    <script>
+      var currentUser = null;
+      var currentSemesterId = null;
 
-    async function init() {
-      await waitForDb();
-      await refreshCurrentUser();
-      currentUser = checkLogin();
-      if (!currentUser) return;
-      currentSemesterId = await getCurrentSemesterId();
-      document.getElementById('infoName').textContent = currentUser.name || '';
-      await loadRecords();
-    }
-
-    async function loadRecords() {
-      // 先查记录
-      var { data: records, error } = await window.db.from('attendance_records')
-        .select('*')
-        .eq('fill_user_id', currentUser.id)
-        .order('created_at', { ascending: false })
-        .limit(200);
-
-      if (error || !records || records.length === 0) {
-        document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无填报记录</div>';
-        document.getElementById('infoCount').textContent = '0条';
-        return;
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        currentUser = checkLogin();
+        if (!currentUser) return;
+        currentSemesterId = await getCurrentSemesterId();
+        document.getElementById('infoName').textContent = currentUser.name || '';
+        await loadRecords();
       }
 
-      // 查日程日期和 item_ids（用于公式匹配）
-      var scheduleIds = [...new Set(records.map(function(r) { return r.schedule_id; }))];
-      var { data: schedules } = await window.db.from('schedules').select('id,schedule_date,item_ids').in('id', scheduleIds);
-      var dateMap = {};
-      var schedMap = {};
-      (schedules || []).forEach(function(s) { dateMap[s.id] = s.schedule_date; schedMap[s.id] = s; });
+      async function loadRecords() {
+        // 先查记录
+        var { data: records, error } = await window.db
+          .from('attendance_records')
+          .select('*')
+          .eq('fill_user_id', currentUser.id)
+          .order('created_at', { ascending: false })
+          .limit(200);
 
-      // 加载当前学期考核类型公式
-      var { data: assessmentTypes } = currentSemesterId
-        ? await window.db.from('assessment_types').select('*').eq('semester_id', currentSemesterId)
-        : { data: [] };
-      assessmentTypes = assessmentTypes || [];
+        if (error || !records || records.length === 0) {
+          document.getElementById('recordList').innerHTML = '<div class="empty-state">暂无填报记录</div>';
+          document.getElementById('infoCount').textContent = '0条';
+          return;
+        }
 
-      // 建立日程→公式映射
-      function getScheduleFormulas(s) {
-        var result = { online: null, video: null, hw: null };
-        if (!s || !s.item_ids) return result;
-        var ids = s.item_ids.split(',').map(Number).filter(Boolean);
-        ids.forEach(function(id) {
-          var at = null;
-          assessmentTypes.forEach(function(t) { if (t.id === id) at = t; });
-          if (!at || !at.formula) return;
-          var name = at.type_name || '';
-          if (name.indexOf('上线率') !== -1) result.online = at.formula;
-          else if (name.indexOf('视频率') !== -1) result.video = at.formula;
-          else if (name.indexOf('作业率') !== -1) result.hw = at.formula;
+        // 查日程日期和 item_ids（用于公式匹配）
+        var scheduleIds = [
+          ...new Set(
+            records.map(function (r) {
+              return r.schedule_id;
+            })
+          )
+        ];
+        var { data: schedules } = await window.db
+          .from('schedules')
+          .select('id,schedule_date,item_ids')
+          .in('id', scheduleIds);
+        var dateMap = {};
+        var schedMap = {};
+        (schedules || []).forEach(function (s) {
+          dateMap[s.id] = s.schedule_date;
+          schedMap[s.id] = s;
         });
-        return result;
+
+        // 加载当前学期考核类型公式
+        var { data: assessmentTypes } = currentSemesterId
+          ? await window.db.from('assessment_types').select('*').eq('semester_id', currentSemesterId)
+          : { data: [] };
+        assessmentTypes = assessmentTypes || [];
+
+        // 建立日程→公式映射
+        function getScheduleFormulas(s) {
+          var result = { online: null, video: null, hw: null };
+          if (!s || !s.item_ids) return result;
+          var ids = s.item_ids.split(',').map(Number).filter(Boolean);
+          ids.forEach(function (id) {
+            var at = null;
+            assessmentTypes.forEach(function (t) {
+              if (t.id === id) at = t;
+            });
+            if (!at || !at.formula) return;
+            var name = at.type_name || '';
+            if (name.indexOf('上线率') !== -1) result.online = at.formula;
+            else if (name.indexOf('视频率') !== -1) result.video = at.formula;
+            else if (name.indexOf('作业率') !== -1) result.hw = at.formula;
+          });
+          return result;
+        }
+
+        function hasMult100(f) {
+          return f && (f.indexOf('*100') !== -1 || f.indexOf('×100') !== -1);
+        }
+
+        // 加载组织信息
+        var orgIds = [
+          ...new Set(
+            records.map(function (r) {
+              return r.organization_id;
+            })
+          )
+        ];
+        var { data: orgs } = await window.db.from('organizations').select('id,name').in('id', orgIds);
+        var orgMap = {};
+        (orgs || []).forEach(function (o) {
+          orgMap[o.id] = o.name;
+        });
+
+        // 加载填报人信息
+        var userIds = [
+          ...new Set(
+            records
+              .map(function (r) {
+                return r.fill_user_id;
+              })
+              .filter(Boolean)
+          )
+        ];
+        var userMap = {};
+        if (userIds.length > 0) {
+          var { data: profiles } = await window.db.from('profiles').select('id,name').in('id', userIds);
+          (profiles || []).forEach(function (p) {
+            userMap[p.id] = p.name;
+          });
+        }
+
+        document.getElementById('infoCount').textContent = records.length + '条记录';
+
+        var html = '';
+        records.forEach(function (r) {
+          var fd = r.fill_data || {};
+          var fieldMap = {};
+          Object.keys(fd).forEach(function (k) {
+            fieldMap[k] = parseInt(fd[k]) || 0;
+          });
+
+          var formulas = getScheduleFormulas(schedMap[r.schedule_id]);
+
+          var calcOnline = null,
+            calcVideo = null,
+            calcHw = null;
+          if (formulas.online) {
+            var ro = calcFormula(formulas.online, fieldMap);
+            if (ro != null) calcOnline = ro * (hasMult100(formulas.online) ? 1 : 100);
+          }
+          if (formulas.video) {
+            var rv = calcFormula(formulas.video, fieldMap);
+            if (rv != null) calcVideo = rv * (hasMult100(formulas.video) ? 1 : 100);
+          }
+          if (formulas.hw) {
+            var rh = calcFormula(formulas.hw, fieldMap);
+            if (rh != null) calcHw = rh * (hasMult100(formulas.hw) ? 1 : 100);
+          }
+
+          var online = calcOnline != null ? calcOnline.toFixed(1) : '0.0';
+          var hw = calcHw != null ? calcHw.toFixed(1) : '0.0';
+          var video = calcVideo != null ? calcVideo.toFixed(1) : '0.0';
+          var dateStr = dateMap[r.schedule_id] || (r.created_at || '').slice(0, 10);
+          var timeStr = r.created_at
+            ? new Date(r.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+            : '';
+          var orgName = orgMap[r.organization_id] || '';
+
+          html +=
+            '<div class="record-item">' +
+            '<div class="record-header">' +
+            '<span class="record-date">' +
+            dateStr +
+            '</span>' +
+            '<span class="record-time">' +
+            timeStr +
+            '</span>' +
+            '</div>' +
+            '<div class="record-org">' +
+            (userMap[r.fill_user_id] || '') +
+            ' · ' +
+            orgName +
+            '</div>' +
+            '<div class="record-stats">' +
+            '<div class="record-stat">上线率<span class="up"> ' +
+            online +
+            '%</span></div>' +
+            '<div class="record-stat">作业率<span class="mid"> ' +
+            hw +
+            '%</span></div>' +
+            '<div class="record-stat">视频率<span class="up"> ' +
+            video +
+            '%</span></div>' +
+            '</div>' +
+            '</div>';
+        });
+        document.getElementById('recordList').innerHTML = html;
       }
 
-      function hasMult100(f) { return f && (f.indexOf('*100') !== -1 || f.indexOf('×100') !== -1); }
-
-      // 加载组织信息
-      var orgIds = [...new Set(records.map(function(r) { return r.organization_id; }))];
-      var { data: orgs } = await window.db.from('organizations').select('id,name').in('id', orgIds);
-      var orgMap = {};
-      (orgs || []).forEach(function(o) { orgMap[o.id] = o.name; });
-
-      // 加载填报人信息
-      var userIds = [...new Set(records.map(function(r) { return r.fill_user_id; }).filter(Boolean))];
-      var userMap = {};
-      if (userIds.length > 0) {
-        var { data: profiles } = await window.db.from('profiles').select('id,name').in('id', userIds);
-        (profiles || []).forEach(function(p) { userMap[p.id] = p.name; });
-      }
-
-      document.getElementById('infoCount').textContent = records.length + '条记录';
-
-      var html = '';
-      records.forEach(function (r) {
-        var fd = r.fill_data || {};
-        var fieldMap = {};
-        Object.keys(fd).forEach(function(k) { fieldMap[k] = parseInt(fd[k]) || 0; });
-
-        var formulas = getScheduleFormulas(schedMap[r.schedule_id]);
-
-        var calcOnline = null, calcVideo = null, calcHw = null;
-        if (formulas.online) {
-          var ro = calcFormula(formulas.online, fieldMap);
-          if (ro != null) calcOnline = ro * (hasMult100(formulas.online) ? 1 : 100);
-        }
-        if (formulas.video) {
-          var rv = calcFormula(formulas.video, fieldMap);
-          if (rv != null) calcVideo = rv * (hasMult100(formulas.video) ? 1 : 100);
-        }
-        if (formulas.hw) {
-          var rh = calcFormula(formulas.hw, fieldMap);
-          if (rh != null) calcHw = rh * (hasMult100(formulas.hw) ? 1 : 100);
-        }
-
-        var online = calcOnline != null ? calcOnline.toFixed(1) : '0.0';
-        var hw = calcHw != null ? calcHw.toFixed(1) : '0.0';
-        var video = calcVideo != null ? calcVideo.toFixed(1) : '0.0';
-        var dateStr = dateMap[r.schedule_id] || (r.created_at || '').slice(0, 10);
-        var timeStr = r.created_at ? new Date(r.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) : '';
-        var orgName = orgMap[r.organization_id] || '';
-
-        html += '<div class="record-item">' +
-          '<div class="record-header">' +
-          '<span class="record-date">' + dateStr + '</span>' +
-          '<span class="record-time">' + timeStr + '</span>' +
-          '</div>' +
-          '<div class="record-org">' + (userMap[r.fill_user_id] || '') + ' · ' + orgName + '</div>' +
-          '<div class="record-stats">' +
-          '<div class="record-stat">上线率<span class="up"> ' + online + '%</span></div>' +
-          '<div class="record-stat">作业率<span class="mid"> ' + hw + '%</span></div>' +
-          '<div class="record-stat">视频率<span class="up"> ' + video + '%</span></div>' +
-          '</div>' +
-          '</div>';
-      });
-      document.getElementById('recordList').innerHTML = html;
-    }
-
-    init();
-  </script>
-</body>
+      init();
+    </script>
+  </body>
 </html>
-
-

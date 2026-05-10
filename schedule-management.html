@@ -1,426 +1,717 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>日程管理 - 阳明心学督察管理系统</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/common.css">
-  <style>
-    .container { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
-    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-    .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); }
-    .page-title { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 600; }
-    .semester-info { background: var(--bg-card); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-    .semester-name { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
-    .semester-dates { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
-    .add-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--vermillion); border: none; border-radius: 6px; cursor: pointer; margin-bottom: 16px; }
-    .schedule-list { margin-top: 4px; }
-    .schedule-week { margin-bottom: 20px; }
-    .week-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-card); border-radius: 8px 8px 0 0; border-bottom: 1px solid var(--border); }
-    .week-label { font-weight: 600; font-size: 14px; color: var(--ink-dark); }
-    .week-dates { font-size: 12px; color: var(--ink-muted); }
-    .week-days { display: flex; flex-direction: column; gap: 1px; background: var(--border); }
-    .schedule-day { background: var(--bg-card); padding: 10px 12px; cursor: pointer; transition: background 0.2s; }
-    .schedule-day:hover { background: var(--bg-primary); }
-    .schedule-day.disabled { opacity: 0.5; background: var(--bg-primary); }
-    .day-row { display: flex; align-items: center; gap: 8px; }
-    .day-info { display: flex; align-items: center; gap: 6px; min-width: 70px; }
-    .day-date { font-weight: 600; font-size: 14px; color: var(--ink-dark); }
-    .day-week { font-size: 11px; color: var(--ink-muted); }
-    .day-items-row { flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; -webkit-overflow-scrolling: touch; }
-    .item-check { flex-shrink: 0; display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 10px; font-size: 11px; cursor: pointer; background: var(--bg-primary); color: var(--ink-muted); border: 1px solid var(--border); transition: background 0.15s, color 0.15s, border-color 0.15s; user-select: none; -webkit-tap-highlight-color: transparent; }
-    .item-check.checked { background: var(--vermillion-light); color: var(--vermillion); border-color: var(--vermillion); }
-    .item-check input { margin: 0 4px 0 0; pointer-events: none; }
-    .no-items { font-size: 12px; color: var(--ink-muted); }
-    .day-opts { margin-left: auto; }
-    .switch-pill { position: relative; width: 36px; height: 20px; cursor: pointer; display: block; flex-shrink: 0; }
-    .switch-pill input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 1; }
-    .switch-slider { position: absolute; inset: 0; background: #ccc; border-radius: 20px; transition: background 0.2s, transform 0.2s; pointer-events: none; }
-    .switch-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: transform 0.2s; }
-    .switch-pill input:checked + .switch-slider { background: var(--vermillion); }
-    .switch-pill input:checked + .switch-slider::before { transform: translateX(16px); }
-    .empty-state { text-align: center; padding: 40px; color: var(--ink-muted); }
-    .daban-list { display: flex; flex-direction: column; gap: 10px; }
-    .daban-card { background: var(--bg-card); border-radius: var(--radius); padding: 16px; box-shadow: 0 2px 12px var(--shadow); border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.15s; }
-    .daban-card:active { transform: scale(0.98); }
-    .daban-card-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--vermillion-light); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .daban-card-info { flex: 1; min-width: 0; }
-    .daban-card-name { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
-    .daban-card-meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
-    .daban-card-arrow { font-size: 14px; color: var(--ink-muted); flex-shrink: 0; }
-    .back-to-list { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--vermillion); cursor: pointer; margin-bottom: 12px; padding: 4px 0; }
-
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
-      <h1 class="page-title">日程管理</h1>
-    </div>
-    <div class="semester-info" id="semesterInfo"><div class="empty-state" style="padding:8px;">加载中...</div></div>
-    <div id="dabanListView"><div class="empty-state">加载中...</div></div>
-    <div id="scheduleView" style="display:none;">
-      <div class="back-to-list" onclick="backToDabanList()">← 返回大班列表</div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--ink-dark);" id="scheduleViewTitle"></div>
-      <button class="add-btn" id="generateBtn" onclick="generateSchedules()">📅 自动生成日程</button>
-      <div id="scheduleList" class="schedule-list"></div>
-    </div>
-  </div>
-
-  <script src="js/supabase-config.js"></script>
-  <script src="js/utils.js"></script>
-  <script>
-    const weekDays = ['周日','周一','周二','周三','周四','周五','周六'];
-    let currentSemester = null;
-    let assessmentTypes = [];
-    let schedules = [];
-    let semesterId = null;
-    let selectedDabanId = null;
-    let dabanNameMap = {};
-
-    async function init() {
-      const params = new URLSearchParams(window.location.search);
-      semesterId = parseInt(params.get('semester_id'));
-      if (!semesterId) {
-        document.getElementById('dabanListView').innerHTML = '<div class="empty-state">无效的学期ID</div>';
-        return;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>日程管理 - 阳明心学督察管理系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/common.css" />
+    <style>
+      .container {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 16px 16px 100px;
       }
-      await loadSemester(semesterId);
-      await loadAssessmentTypes();
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--ink-dark);
+      }
+      .page-title {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .semester-info {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .semester-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
+      .semester-dates {
+        font-size: 13px;
+        color: var(--ink-muted);
+        margin-top: 2px;
+      }
+      .add-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: white;
+        background: var(--vermillion);
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-bottom: 16px;
+      }
+      .schedule-list {
+        margin-top: 4px;
+      }
+      .schedule-week {
+        margin-bottom: 20px;
+      }
+      .week-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        background: var(--bg-card);
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .week-label {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--ink-dark);
+      }
+      .week-dates {
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
+      .week-days {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        background: var(--border);
+      }
+      .schedule-day {
+        background: var(--bg-card);
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .schedule-day:hover {
+        background: var(--bg-primary);
+      }
+      .schedule-day.disabled {
+        opacity: 0.5;
+        background: var(--bg-primary);
+      }
+      .day-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .day-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 70px;
+      }
+      .day-date {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--ink-dark);
+      }
+      .day-week {
+        font-size: 11px;
+        color: var(--ink-muted);
+      }
+      .day-items-row {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 4px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .item-check {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        cursor: pointer;
+        background: var(--bg-primary);
+        color: var(--ink-muted);
+        border: 1px solid var(--border);
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .item-check.checked {
+        background: var(--vermillion-light);
+        color: var(--vermillion);
+        border-color: var(--vermillion);
+      }
+      .item-check input {
+        margin: 0 4px 0 0;
+        pointer-events: none;
+      }
+      .no-items {
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
+      .day-opts {
+        margin-left: auto;
+      }
+      .switch-pill {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        cursor: pointer;
+        display: block;
+        flex-shrink: 0;
+      }
+      .switch-pill input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        z-index: 1;
+      }
+      .switch-slider {
+        position: absolute;
+        inset: 0;
+        background: #ccc;
+        border-radius: 20px;
+        transition:
+          background 0.2s,
+          transform 0.2s;
+        pointer-events: none;
+      }
+      .switch-slider::before {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 2px;
+        bottom: 2px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+      .switch-pill input:checked + .switch-slider {
+        background: var(--vermillion);
+      }
+      .switch-pill input:checked + .switch-slider::before {
+        transform: translateX(16px);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--ink-muted);
+      }
+      .daban-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .daban-card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 16px;
+        box-shadow: 0 2px 12px var(--shadow);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: transform 0.15s;
+      }
+      .daban-card:active {
+        transform: scale(0.98);
+      }
+      .daban-card-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--vermillion-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+      .daban-card-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .daban-card-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-dark);
+      }
+      .daban-card-meta {
+        font-size: 12px;
+        color: var(--ink-muted);
+        margin-top: 2px;
+      }
+      .daban-card-arrow {
+        font-size: 14px;
+        color: var(--ink-muted);
+        flex-shrink: 0;
+      }
+      .back-to-list {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--vermillion);
+        cursor: pointer;
+        margin-bottom: 12px;
+        padding: 4px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <a
+          href="index.html"
+          class="back-btn"
+          aria-label="返回"
+          onclick="
+            event.preventDefault();
+            window.history.back();
+          "
+          >←</a
+        >
+        <h1 class="page-title">日程管理</h1>
+      </div>
+      <div class="semester-info" id="semesterInfo"><div class="empty-state" style="padding: 8px">加载中...</div></div>
+      <div id="dabanListView"><div class="empty-state">加载中...</div></div>
+      <div id="scheduleView" style="display: none">
+        <div class="back-to-list" onclick="backToDabanList()">← 返回大班列表</div>
+        <div
+          style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--ink-dark)"
+          id="scheduleViewTitle"
+        ></div>
+        <button class="add-btn" id="generateBtn" onclick="generateSchedules()">📅 自动生成日程</button>
+        <div id="scheduleList" class="schedule-list"></div>
+      </div>
+    </div>
 
-      // 大班总督/大班副督：只看到自己的大班，直接进入日程视图
-      var currentUser = checkLogin();
-      if (currentUser && (currentUser.role === '大班总督' || currentUser.role === '大班副督')) {
-        var myDabanId = currentUser.organization_id;
-        if (myDabanId) {
-          dabanNameMap[myDabanId] = ''; // 占位，后面 loadSemester 区域的名称暂时未知
-          // 直接加载该大班的日程，跳过卡片列表
-          selectedDabanId = myDabanId;
-          document.getElementById('dabanListView').style.display = 'none';
-          document.getElementById('scheduleView').style.display = '';
-          document.getElementById('scheduleViewTitle').textContent = '本大班日程';
-          // 隐藏返回按钮（不能切换到其他大班）
-          document.querySelector('.back-to-list').style.display = 'none';
-          loadSchedules();
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+      const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      let currentSemester = null;
+      let assessmentTypes = [];
+      let schedules = [];
+      let semesterId = null;
+      let selectedDabanId = null;
+      let dabanNameMap = {};
+
+      async function init() {
+        const params = new URLSearchParams(window.location.search);
+        semesterId = parseInt(params.get('semester_id'));
+        if (!semesterId) {
+          document.getElementById('dabanListView').innerHTML = '<div class="empty-state">无效的学期ID</div>';
           return;
+        }
+        await loadSemester(semesterId);
+        await loadAssessmentTypes();
+
+        // 大班总督/大班副督：只看到自己的大班，直接进入日程视图
+        var currentUser = checkLogin();
+        if (currentUser && (currentUser.role === '大班总督' || currentUser.role === '大班副督')) {
+          var myDabanId = currentUser.organization_id;
+          if (myDabanId) {
+            dabanNameMap[myDabanId] = ''; // 占位，后面 loadSemester 区域的名称暂时未知
+            // 直接加载该大班的日程，跳过卡片列表
+            selectedDabanId = myDabanId;
+            document.getElementById('dabanListView').style.display = 'none';
+            document.getElementById('scheduleView').style.display = '';
+            document.getElementById('scheduleViewTitle').textContent = '本大班日程';
+            // 隐藏返回按钮（不能切换到其他大班）
+            document.querySelector('.back-to-list').style.display = 'none';
+            loadSchedules();
+            return;
+          }
+        }
+
+        await loadDabanList();
+        // 如果 URL 带了 org_id 参数，直接进入该大班
+        var urlOrgId = parseInt(params.get('org_id'));
+        if (urlOrgId && dabanNameMap[urlOrgId]) {
+          enterDaban(urlOrgId);
         }
       }
 
-      await loadDabanList();
-      // 如果 URL 带了 org_id 参数，直接进入该大班
-      var urlOrgId = parseInt(params.get('org_id'));
-      if (urlOrgId && dabanNameMap[urlOrgId]) {
-        enterDaban(urlOrgId);
-      }
-    }
-
-    async function loadSemester(id) {
-      const { data, error } = await window.db.from('semesters').select('*').eq('id', id).single();
-      if (error || !data) {
-        document.getElementById('semesterInfo').innerHTML = '<div class="empty-state" style="padding:8px;">学期不存在</div>';
-        return;
-      }
-      currentSemester = data;
-      document.getElementById('semesterInfo').innerHTML = `
+      async function loadSemester(id) {
+        const { data, error } = await window.db.from('semesters').select('*').eq('id', id).single();
+        if (error || !data) {
+          document.getElementById('semesterInfo').innerHTML =
+            '<div class="empty-state" style="padding:8px;">学期不存在</div>';
+          return;
+        }
+        currentSemester = data;
+        document.getElementById('semesterInfo').innerHTML = `
         <div>
           <div class="semester-name">${data.semester_name}</div>
           <div class="semester-dates">${data.start_date} ~ ${data.end_date}</div>
         </div>
         <div style="margin-left:auto;font-size:12px;color:var(--ink-muted);">
-          ${data.trial_start_date ? '试晨读:'+data.trial_start_date : '无试晨读'}
+          ${data.trial_start_date ? '试晨读:' + data.trial_start_date : '无试晨读'}
         </div>
       `;
-      document.title = `${data.semester_name} - 日程管理`;
-    }
-
-    async function loadDabanList() {
-      var { data: orgs } = await window.db.from('organizations')
-        .select('id,name').eq('semester_id', semesterId).eq('level', '大班').order('name');
-      var dabans = orgs || [];
-      dabans.forEach(function(d) { dabanNameMap[d.id] = d.name; });
-      if (dabans.length === 0) {
-        document.getElementById('dabanListView').innerHTML = '<div class="empty-state">本学期无大班</div>';
-        return;
+        document.title = `${data.semester_name} - 日程管理`;
       }
-      // 获取每个大班的日程天数
-      var { data: scheds } = await window.db.from('schedules')
-        .select('org_id').eq('semester_id', semesterId).eq('is_valid', 1);
-      var countMap = {};
-      (scheds || []).forEach(function(s) { countMap[s.org_id] = (countMap[s.org_id] || 0) + 1; });
 
-      var html = '<div class="daban-list">';
-      dabans.forEach(function(d) {
-        var days = countMap[d.id] || 0;
-        html += '<div class="daban-card" onclick="enterDaban(' + d.id + ')">';
-        html += '<div class="daban-card-icon">📅</div>';
-        html += '<div class="daban-card-info">';
-        html += '<div class="daban-card-name">' + d.name + '</div>';
-        html += '<div class="daban-card-meta">' + days + ' 个考核日</div>';
+      async function loadDabanList() {
+        var { data: orgs } = await window.db
+          .from('organizations')
+          .select('id,name')
+          .eq('semester_id', semesterId)
+          .eq('level', '大班')
+          .order('name');
+        var dabans = orgs || [];
+        dabans.forEach(function (d) {
+          dabanNameMap[d.id] = d.name;
+        });
+        if (dabans.length === 0) {
+          document.getElementById('dabanListView').innerHTML = '<div class="empty-state">本学期无大班</div>';
+          return;
+        }
+        // 获取每个大班的日程天数
+        var { data: scheds } = await window.db
+          .from('schedules')
+          .select('org_id')
+          .eq('semester_id', semesterId)
+          .eq('is_valid', 1);
+        var countMap = {};
+        (scheds || []).forEach(function (s) {
+          countMap[s.org_id] = (countMap[s.org_id] || 0) + 1;
+        });
+
+        var html = '<div class="daban-list">';
+        dabans.forEach(function (d) {
+          var days = countMap[d.id] || 0;
+          html += '<div class="daban-card" onclick="enterDaban(' + d.id + ')">';
+          html += '<div class="daban-card-icon">📅</div>';
+          html += '<div class="daban-card-info">';
+          html += '<div class="daban-card-name">' + d.name + '</div>';
+          html += '<div class="daban-card-meta">' + days + ' 个考核日</div>';
+          html += '</div>';
+          html += '<span class="daban-card-arrow">▶</span>';
+          html += '</div>';
+        });
         html += '</div>';
-        html += '<span class="daban-card-arrow">▶</span>';
-        html += '</div>';
-      });
-      html += '</div>';
-      document.getElementById('dabanListView').innerHTML = html;
-    }
-
-    function enterDaban(dabanId) {
-      selectedDabanId = dabanId;
-      document.getElementById('scheduleViewTitle').textContent = dabanNameMap[dabanId] || '大班日程';
-      document.getElementById('dabanListView').style.display = 'none';
-      document.getElementById('scheduleView').style.display = '';
-      loadSchedules();
-    }
-
-    function backToDabanList() {
-      document.getElementById('scheduleView').style.display = 'none';
-      document.getElementById('dabanListView').style.display = '';
-      selectedDabanId = null;
-      schedules = [];
-      loadDabanList(); // 刷新日程天数统计
-    }
-
-    async function loadAssessmentTypes() {
-      const { data } = await window.db.from('assessment_types').select('*').eq('semester_id', semesterId).order('id');
-      assessmentTypes = data || [];
-    }
-
-    async function loadSchedules() {
-      if (!selectedDabanId) {
-        document.getElementById('scheduleList').innerHTML = '<div class="empty-state">请先选择大班</div>';
-        return;
+        document.getElementById('dabanListView').innerHTML = html;
       }
-      const { data, error } = await window.db.from('schedules').select('*')
-        .eq('semester_id', semesterId).eq('org_id', selectedDabanId)
-        .order('schedule_date', { ascending: true });
-      if (error) { document.getElementById('scheduleList').innerHTML = '<div class="empty-state">加载失败</div>'; return; }
-      schedules = data || [];
-      renderScheduleList();
 
-      // 检查日程是否覆盖学期完整日期范围
-      if (currentSemester && schedules.length > 0) {
-        const firstDate = schedules[0].schedule_date;
-        const lastDate = schedules[schedules.length - 1].schedule_date;
-        const expectedFirst = currentSemester.trial_start_date || currentSemester.start_date;
-        const missingStart = firstDate > expectedFirst;
-        const missingEnd = lastDate < currentSemester.end_date;
-        if (missingStart || missingEnd) {
-          const msg = [];
-          if (missingStart) msg.push('缺少 ' + expectedFirst + ' 到 ' + firstDate + ' 的日程');
-          if (missingEnd) msg.push('缺少 ' + lastDate + ' 到 ' + currentSemester.end_date + ' 的日程');
-          document.getElementById('scheduleList').insertAdjacentHTML('beforebegin',
-            '<div style="background:#FFF3E0;border-left:3px solid #FF9800;padding:10px 14px;margin-bottom:12px;border-radius:6px;font-size:13px;">' +
-            '⚠️ 日程与学期日期不匹配：' + msg.join('；') +
-            ' — <a href="javascript:void(0)" onclick="generateSchedules()" style="color:var(--vermillion);text-decoration:underline;">点击重新生成</a></div>'
-          );
+      function enterDaban(dabanId) {
+        selectedDabanId = dabanId;
+        document.getElementById('scheduleViewTitle').textContent = dabanNameMap[dabanId] || '大班日程';
+        document.getElementById('dabanListView').style.display = 'none';
+        document.getElementById('scheduleView').style.display = '';
+        loadSchedules();
+      }
+
+      function backToDabanList() {
+        document.getElementById('scheduleView').style.display = 'none';
+        document.getElementById('dabanListView').style.display = '';
+        selectedDabanId = null;
+        schedules = [];
+        loadDabanList(); // 刷新日程天数统计
+      }
+
+      async function loadAssessmentTypes() {
+        const { data } = await window.db.from('assessment_types').select('*').eq('semester_id', semesterId).order('id');
+        assessmentTypes = data || [];
+      }
+
+      async function loadSchedules() {
+        if (!selectedDabanId) {
+          document.getElementById('scheduleList').innerHTML = '<div class="empty-state">请先选择大班</div>';
+          return;
+        }
+        const { data, error } = await window.db
+          .from('schedules')
+          .select('*')
+          .eq('semester_id', semesterId)
+          .eq('org_id', selectedDabanId)
+          .order('schedule_date', { ascending: true });
+        if (error) {
+          document.getElementById('scheduleList').innerHTML = '<div class="empty-state">加载失败</div>';
+          return;
+        }
+        schedules = data || [];
+        renderScheduleList();
+
+        // 检查日程是否覆盖学期完整日期范围
+        if (currentSemester && schedules.length > 0) {
+          const firstDate = schedules[0].schedule_date;
+          const lastDate = schedules[schedules.length - 1].schedule_date;
+          const expectedFirst = currentSemester.trial_start_date || currentSemester.start_date;
+          const missingStart = firstDate > expectedFirst;
+          const missingEnd = lastDate < currentSemester.end_date;
+          if (missingStart || missingEnd) {
+            const msg = [];
+            if (missingStart) msg.push('缺少 ' + expectedFirst + ' 到 ' + firstDate + ' 的日程');
+            if (missingEnd) msg.push('缺少 ' + lastDate + ' 到 ' + currentSemester.end_date + ' 的日程');
+            document
+              .getElementById('scheduleList')
+              .insertAdjacentHTML(
+                'beforebegin',
+                '<div style="background:#FFF3E0;border-left:3px solid #FF9800;padding:10px 14px;margin-bottom:12px;border-radius:6px;font-size:13px;">' +
+                  '⚠️ 日程与学期日期不匹配：' +
+                  msg.join('；') +
+                  ' — <a href="javascript:void(0)" onclick="generateSchedules()" style="color:var(--vermillion);text-decoration:underline;">点击重新生成</a></div>'
+              );
+          }
         }
       }
-    }
 
-    function renderScheduleList() {
-      const container = document.getElementById('scheduleList');
-      if (schedules.length === 0) {
-        container.innerHTML = '<div class="empty-state">暂无日程，点击"自动生成日程"创建</div>';
-        return;
-      }
-      const formalStart = currentSemester?.start_date ? new Date(currentSemester.start_date) : null;
-      const trialStart = currentSemester?.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
-
-      // Group by week: Monday as start of week
-      const weeks = [];
-      let currentWeek = null;
-      schedules.forEach(s => {
-        const date = new Date(s.schedule_date);
-        const dayOfWeek = date.getDay();
-        const daysFromMonday = (dayOfWeek + 6) % 7;
-        const weekStart = new Date(date);
-        weekStart.setDate(weekStart.getDate() - daysFromMonday);
-        weekStart.setHours(0, 0, 0, 0);
-        const weekKey = weekStart.toISOString().split('T')[0];
-        if (!currentWeek || currentWeek.key !== weekKey) {
-          currentWeek = { key: weekKey, startDate: weekStart, dates: [] };
-          weeks.push(currentWeek);
+      function renderScheduleList() {
+        const container = document.getElementById('scheduleList');
+        if (schedules.length === 0) {
+          container.innerHTML = '<div class="empty-state">暂无日程，点击"自动生成日程"创建</div>';
+          return;
         }
-        currentWeek.dates.push(s);
-      });
+        const formalStart = currentSemester?.start_date ? new Date(currentSemester.start_date) : null;
+        const trialStart = currentSemester?.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
 
-      let html = '';
-      let trialWeekIndex = 0;
-      let formalWeekIndex = 0;
-      let lastIsTrialWeek = null;
-      weeks.forEach(week => {
-        const weekEnd = new Date(week.startDate);
-        weekEnd.setDate(weekEnd.getDate() + 6);
-        // 判断是否试晨读周：第一天在正式期之前
-        const firstDate = new Date(week.dates[0].schedule_date);
-        const isTrialWeek = formalStart && firstDate < formalStart;
-        // 每个周期独立计数
-        const weekNum = isTrialWeek ? (++trialWeekIndex) : (++formalWeekIndex);
-        html += `<div class="schedule-week">
+        // Group by week: Monday as start of week
+        const weeks = [];
+        let currentWeek = null;
+        schedules.forEach((s) => {
+          const date = new Date(s.schedule_date);
+          const dayOfWeek = date.getDay();
+          const daysFromMonday = (dayOfWeek + 6) % 7;
+          const weekStart = new Date(date);
+          weekStart.setDate(weekStart.getDate() - daysFromMonday);
+          weekStart.setHours(0, 0, 0, 0);
+          const weekKey = weekStart.toISOString().split('T')[0];
+          if (!currentWeek || currentWeek.key !== weekKey) {
+            currentWeek = { key: weekKey, startDate: weekStart, dates: [] };
+            weeks.push(currentWeek);
+          }
+          currentWeek.dates.push(s);
+        });
+
+        let html = '';
+        let trialWeekIndex = 0;
+        let formalWeekIndex = 0;
+        let lastIsTrialWeek = null;
+        weeks.forEach((week) => {
+          const weekEnd = new Date(week.startDate);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          // 判断是否试晨读周：第一天在正式期之前
+          const firstDate = new Date(week.dates[0].schedule_date);
+          const isTrialWeek = formalStart && firstDate < formalStart;
+          // 每个周期独立计数
+          const weekNum = isTrialWeek ? ++trialWeekIndex : ++formalWeekIndex;
+          html += `<div class="schedule-week">
           <div class="week-header">
             <span class="week-label">${isTrialWeek ? '试晨读' : '正式'}第${weekNum}周</span>
-            <span class="week-dates">${week.startDate.getMonth()+1}/${week.startDate.getDate()} - ${weekEnd.getMonth()+1}/${weekEnd.getDate()}</span>
+            <span class="week-dates">${week.startDate.getMonth() + 1}/${week.startDate.getDate()} - ${weekEnd.getMonth() + 1}/${weekEnd.getDate()}</span>
           </div>
-          <div class="week-days">${week.dates.map(s => renderDay(s, formalStart)).join('')}</div>
+          <div class="week-days">${week.dates.map((s) => renderDay(s, formalStart)).join('')}</div>
         </div>`;
-      });
-      container.innerHTML = html;
-    }
+        });
+        container.innerHTML = html;
+      }
 
-    function renderDay(s, formalStart) {
-      const date = new Date(s.schedule_date);
-      const dow = date.getDay();
-      const selectedIds = s.item_ids ? s.item_ids.split(',').map(Number).filter(Boolean) : [];
-      return `<div class="schedule-day ${s.is_valid==0?'disabled':''}" id="day-${s.id}">
+      function renderDay(s, formalStart) {
+        const date = new Date(s.schedule_date);
+        const dow = date.getDay();
+        const selectedIds = s.item_ids ? s.item_ids.split(',').map(Number).filter(Boolean) : [];
+        return `<div class="schedule-day ${s.is_valid == 0 ? 'disabled' : ''}" id="day-${s.id}">
         <div class="day-row">
           <div class="day-info">
-            <span class="day-date">${date.getMonth()+1}/${date.getDate()}</span>
+            <span class="day-date">${date.getMonth() + 1}/${date.getDate()}</span>
             <span class="day-week">${weekDays[dow]}</span>
           </div>
           <div class="day-items-row" id="items-${s.id}">
-            ${assessmentTypes.length===0?'<span class="no-items">无考核项</span>':
-              assessmentTypes.map(type => {
-                const isChecked = selectedIds.includes(type.id);
-                return `<div class="item-check ${isChecked?'checked':''}" data-sid="${s.id}" data-tid="${type.id}" data-checked="${isChecked}" onclick="toggleItem(this)">
-                  <input type="checkbox" ${isChecked?'checked':''} onclick="event.stopPropagation()">
+            ${
+              assessmentTypes.length === 0
+                ? '<span class="no-items">无考核项</span>'
+                : assessmentTypes
+                    .map((type) => {
+                      const isChecked = selectedIds.includes(type.id);
+                      return `<div class="item-check ${isChecked ? 'checked' : ''}" data-sid="${s.id}" data-tid="${type.id}" data-checked="${isChecked}" onclick="toggleItem(this)">
+                  <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation()">
                   ${type.type_name}
                 </div>`;
-              }).join('')}
+                    })
+                    .join('')
+            }
           </div>
           <div class="day-opts">
             <label class="switch-pill" onclick="event.stopPropagation()">
-              <input type="checkbox" ${s.is_valid==1?'checked':''} onclick="event.stopPropagation(); toggleValid('${s.id}', ${s.is_valid})">
+              <input type="checkbox" ${s.is_valid == 1 ? 'checked' : ''} onclick="event.stopPropagation(); toggleValid('${s.id}', ${s.is_valid})">
               <span class="switch-slider"></span>
             </label>
           </div>
         </div>
       </div>`;
-    }
+      }
 
-    async function toggleValid(scheduleId, currentVal) {
-      const newVal = currentVal == 0 ? 1 : 0;
-      const sid = parseInt(scheduleId);
-      // 立即更新本地状态和UI
-      const s = schedules.find(x => x.id == sid);
-      if (s) s.is_valid = newVal;
-      const switchEl = document.querySelector(`#day-${sid} .switch-pill input`);
-      if (switchEl) switchEl.checked = newVal == 1;
-      const dayEl = document.querySelector(`#day-${sid}`);
-      if (dayEl) dayEl.classList.toggle('disabled', newVal == 0);
-      // 异步写数据库
-      console.log('[toggleValid] sid=', sid, 'newVal=', newVal, 'typeof sid=', typeof sid);
-      const { data, error } = await window.db.from('schedules').update({ is_valid: newVal }).eq('id', sid).select('id,is_valid');
-      console.log('[toggleValid] result:', data, 'error:', error);
-    }
+      async function toggleValid(scheduleId, currentVal) {
+        const newVal = currentVal == 0 ? 1 : 0;
+        const sid = parseInt(scheduleId);
+        // 立即更新本地状态和UI
+        const s = schedules.find((x) => x.id == sid);
+        if (s) s.is_valid = newVal;
+        const switchEl = document.querySelector(`#day-${sid} .switch-pill input`);
+        if (switchEl) switchEl.checked = newVal == 1;
+        const dayEl = document.querySelector(`#day-${sid}`);
+        if (dayEl) dayEl.classList.toggle('disabled', newVal == 0);
+        // 异步写数据库
+        console.log('[toggleValid] sid=', sid, 'newVal=', newVal, 'typeof sid=', typeof sid);
+        const { data, error } = await window.db
+          .from('schedules')
+          .update({ is_valid: newVal })
+          .eq('id', sid)
+          .select('id,is_valid');
+        console.log('[toggleValid] result:', data, 'error:', error);
+      }
 
-    async function toggleItem(el) {
-      const scheduleId = parseInt(el.dataset.sid);
-      const typeId = parseInt(el.dataset.tid);
-      const currentChecked = el.dataset.checked === 'true';
-      const toChecked = !currentChecked;
-      const s = schedules.find(x => x.id == scheduleId);
-      if (!s) return;
-      let ids = s.item_ids ? s.item_ids.split(',').map(Number).filter(Boolean) : [];
-      if (toChecked) { if (!ids.includes(typeId)) ids.push(typeId); }
-      else { ids = ids.filter(id => id !== typeId); }
-      s.item_ids = ids.join(',');
-      // 立即更新UI
-      el.classList.toggle('checked', toChecked);
-      el.dataset.checked = toChecked;
-      el.querySelector('input').checked = toChecked;
-      // 异步写数据库
-      await window.db.from('schedules').update({ item_ids: ids.join(',') }).eq('id', scheduleId);
-    }
-
-    async function generateSchedules() {
-      if (!currentSemester) return;
-      if (!selectedDabanId) { showToast('请先选择大班'); return; }
-      const trialStart = currentSemester.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
-      const start = new Date(currentSemester.start_date);
-      const end = new Date(currentSemester.end_date);
-
-      // 构建期望的日期集合
-      const expectedDates = new Set();
-      let current = trialStart ? new Date(trialStart) : new Date(start);
-      let jumped = false;
-      while (current <= end) {
-        expectedDates.add(current.toISOString().split('T')[0]);
-        current.setDate(current.getDate() + 1);
-        if (trialStart && !jumped && current.getTime() >= start.getTime()) {
-          current = new Date(start.getTime());
-          jumped = true;
+      async function toggleItem(el) {
+        const scheduleId = parseInt(el.dataset.sid);
+        const typeId = parseInt(el.dataset.tid);
+        const currentChecked = el.dataset.checked === 'true';
+        const toChecked = !currentChecked;
+        const s = schedules.find((x) => x.id == scheduleId);
+        if (!s) return;
+        let ids = s.item_ids ? s.item_ids.split(',').map(Number).filter(Boolean) : [];
+        if (toChecked) {
+          if (!ids.includes(typeId)) ids.push(typeId);
+        } else {
+          ids = ids.filter((id) => id !== typeId);
         }
+        s.item_ids = ids.join(',');
+        // 立即更新UI
+        el.classList.toggle('checked', toChecked);
+        el.dataset.checked = toChecked;
+        el.querySelector('input').checked = toChecked;
+        // 异步写数据库
+        await window.db
+          .from('schedules')
+          .update({ item_ids: ids.join(',') })
+          .eq('id', scheduleId);
       }
 
-      // 已有日期的集合，保留其配置
-      const existingMap = {};
-      (schedules || []).forEach(s => { existingMap[s.schedule_date] = s; });
+      async function generateSchedules() {
+        if (!currentSemester) return;
+        if (!selectedDabanId) {
+          showToast('请先选择大班');
+          return;
+        }
+        const trialStart = currentSemester.trial_start_date ? new Date(currentSemester.trial_start_date) : null;
+        const start = new Date(currentSemester.start_date);
+        const end = new Date(currentSemester.end_date);
 
-      // 找出需要添加的日期和需要删除的日期
-      const toAdd = [];
-      const existingDates = new Set(Object.keys(existingMap));
-      expectedDates.forEach(d => {
-        if (!existingDates.has(d)) toAdd.push(d);
-      });
-      const toDelete = [];
-      existingDates.forEach(d => {
-        if (!expectedDates.has(d)) toDelete.push(d);
-      });
+        // 构建期望的日期集合
+        const expectedDates = new Set();
+        let current = trialStart ? new Date(trialStart) : new Date(start);
+        let jumped = false;
+        while (current <= end) {
+          expectedDates.add(current.toISOString().split('T')[0]);
+          current.setDate(current.getDate() + 1);
+          if (trialStart && !jumped && current.getTime() >= start.getTime()) {
+            current = new Date(start.getTime());
+            jumped = true;
+          }
+        }
 
-      if (toAdd.length === 0 && toDelete.length === 0) {
-        showToast('日程已是最新，无需更新');
-        return;
-      }
-
-      const msg = [];
-      if (toAdd.length > 0) msg.push('新增 ' + toAdd.length + ' 天');
-      if (toDelete.length > 0) msg.push('删除 ' + toDelete.length + ' 天');
-      msg.push('已有配置保持不变');
-      if (!(await showConfirm(msg.join('，') + '，确定继续？'))) return;
-
-      // 获取模板 item_ids
-      const { data: templates } = await window.db.from('assessment_types').select('id').eq('is_template', 1).eq('semester_id', currentSemester.id);
-      const itemIds = templates?.map(t => t.id).join(',') || '';
-
-      // 新增日期
-      if (toAdd.length > 0) {
-        const toInsert = toAdd.map(d => {
-          const dt = new Date(d + 'T00:00:00');
-          return {
-            semester_id: currentSemester.id,
-            org_id: selectedDabanId,
-            schedule_date: d,
-            week_day: dt.getDay() + 1,
-            item_ids: itemIds,
-            is_valid: 1
-          };
+        // 已有日期的集合，保留其配置
+        const existingMap = {};
+        (schedules || []).forEach((s) => {
+          existingMap[s.schedule_date] = s;
         });
-        await window.db.from('schedules').insert(toInsert);
-      }
 
-      // 删除超出范围的日期
-      if (toDelete.length > 0) {
-        const deleteIds = toDelete.map(d => existingMap[d]?.id).filter(Boolean);
-        for (const id of deleteIds) {
-          await window.db.from('schedules').delete().eq('id', id);
+        // 找出需要添加的日期和需要删除的日期
+        const toAdd = [];
+        const existingDates = new Set(Object.keys(existingMap));
+        expectedDates.forEach((d) => {
+          if (!existingDates.has(d)) toAdd.push(d);
+        });
+        const toDelete = [];
+        existingDates.forEach((d) => {
+          if (!expectedDates.has(d)) toDelete.push(d);
+        });
+
+        if (toAdd.length === 0 && toDelete.length === 0) {
+          showToast('日程已是最新，无需更新');
+          return;
         }
+
+        const msg = [];
+        if (toAdd.length > 0) msg.push('新增 ' + toAdd.length + ' 天');
+        if (toDelete.length > 0) msg.push('删除 ' + toDelete.length + ' 天');
+        msg.push('已有配置保持不变');
+        if (!(await showConfirm(msg.join('，') + '，确定继续？'))) return;
+
+        // 获取模板 item_ids
+        const { data: templates } = await window.db
+          .from('assessment_types')
+          .select('id')
+          .eq('is_template', 1)
+          .eq('semester_id', currentSemester.id);
+        const itemIds = templates?.map((t) => t.id).join(',') || '';
+
+        // 新增日期
+        if (toAdd.length > 0) {
+          const toInsert = toAdd.map((d) => {
+            const dt = new Date(d + 'T00:00:00');
+            return {
+              semester_id: currentSemester.id,
+              org_id: selectedDabanId,
+              schedule_date: d,
+              week_day: dt.getDay() + 1,
+              item_ids: itemIds,
+              is_valid: 1
+            };
+          });
+          await window.db.from('schedules').insert(toInsert);
+        }
+
+        // 删除超出范围的日期
+        if (toDelete.length > 0) {
+          const deleteIds = toDelete.map((d) => existingMap[d]?.id).filter(Boolean);
+          for (const id of deleteIds) {
+            await window.db.from('schedules').delete().eq('id', id);
+          }
+        }
+
+        showToast('日程已更新（新增 ' + toAdd.length + '，删除 ' + toDelete.length + '）');
+        await loadSchedules();
       }
 
-      showToast('日程已更新（新增 ' + toAdd.length + '，删除 ' + toDelete.length + '）');
-      await loadSchedules();
-    }
+      waitForDb().then(refreshCurrentUser).then(init);
+    </script>
 
-    waitForDb().then(refreshCurrentUser).then(init);
-  </script>
-
-  <div id="bottomNavContainer"></div>
-  <script src="js/components.js"></script>
-  <script>renderBottomNav('');</script>
-</body>
+    <div id="bottomNavContainer"></div>
+    <script src="js/components.js"></script>
+    <script>
+      renderBottomNav('');
+    </script>
+  </body>
 </html>
-
-

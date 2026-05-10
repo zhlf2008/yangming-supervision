@@ -46,7 +46,9 @@ async function waitForDb() {
   if (window.db) return;
   var startTime = Date.now();
   while (!window.db && Date.now() - startTime < 10000) {
-    await new Promise(function (r) { setTimeout(r, 100); });
+    await new Promise(function (r) {
+      setTimeout(r, 100);
+    });
   }
   if (!window.db) {
     throw new Error('Supabase db not initialized');
@@ -77,7 +79,8 @@ async function waitForDb() {
     client.auth.onAuthStateChange(function (event, session) {
       if (event === 'TOKEN_REFRESHED' && session) {
         // 从 profiles 拉最新数据更新 localStorage
-        client.from('profiles')
+        client
+          .from('profiles')
           .select('*, organizations(*)')
           .eq('id', session.user.id)
           .single()
@@ -97,7 +100,9 @@ async function waitForDb() {
 
     // 统一 db 对象
     window.db = {
-      from: function (table) { return client.from(table); }
+      from: function (table) {
+        return client.from(table);
+      }
     };
   };
   document.head.appendChild(script);

@@ -64,7 +64,9 @@ function renderOrgCascadingSelector(options) {
 
   // Build map for fast lookup
   var orgsMap = {};
-  orgs.forEach(function (o) { orgsMap[o.id] = o; });
+  orgs.forEach(function (o) {
+    orgsMap[o.id] = o;
+  });
 
   // Store state
   var state = {
@@ -82,9 +84,15 @@ function renderOrgCascadingSelector(options) {
   if (showLabels) {
     labelsHtml =
       '<div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--ink-muted);">' +
-      '<span>大班：<b id="' + containerId + '_bigClassName" style="color:var(--ink-dark)">--</b></span>' +
-      '<span>班级：<b id="' + containerId + '_className" style="color:var(--ink-dark)">--</b></span>' +
-      '<span>小组：<b id="' + containerId + '_groupName" style="color:var(--ink-dark)">--</b></span>' +
+      '<span>大班：<b id="' +
+      containerId +
+      '_bigClassName" style="color:var(--ink-dark)">--</b></span>' +
+      '<span>班级：<b id="' +
+      containerId +
+      '_className" style="color:var(--ink-dark)">--</b></span>' +
+      '<span>小组：<b id="' +
+      containerId +
+      '_groupName" style="color:var(--ink-dark)">--</b></span>' +
       '</div>';
   }
 
@@ -92,13 +100,23 @@ function renderOrgCascadingSelector(options) {
     '<div style="background:var(--bg-card);border-radius:var(--radius);padding:16px;' +
     'box-shadow:0 2px 12px var(--shadow);border:1px solid var(--border);">' +
     '<div style="display:flex;gap:8px;align-items:center;">' +
-    '<select id="' + containerId + '_bigClassSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
+    '<select id="' +
+    containerId +
+    '_bigClassSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
     '<option value="">选择大班</option></select>' +
-    '<select id="' + containerId + '_classSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
+    '<select id="' +
+    containerId +
+    '_classSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
     '<option value="">选择班级</option></select>' +
-    '<select id="' + containerId + '_groupSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
-    '<option value="">' + (showAllOption ? '全部小组' : '选择小组') + '</option></select>' +
-    '</div>' + labelsHtml + '</div>';
+    '<select id="' +
+    containerId +
+    '_groupSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
+    '<option value="">' +
+    (showAllOption ? '全部小组' : '选择小组') +
+    '</option></select>' +
+    '</div>' +
+    labelsHtml +
+    '</div>';
 
   // Wire up change handlers
   var bigClassSelect = document.getElementById(containerId + '_bigClassSelect');
@@ -130,7 +148,9 @@ function _initSelector(containerId) {
 
   // 小组督察：直接选中自己的组
   if (role === '小组督察' || role === '小组副督察') {
-    var myOrg = orgs.find(function (o) { return o.id === userOrgId; });
+    var myOrg = orgs.find(function (o) {
+      return o.id === userOrgId;
+    });
     if (myOrg && myOrg.level === '小组') {
       var gs = document.getElementById(containerId + '_groupSelect');
       if (gs) {
@@ -146,17 +166,32 @@ function _initSelector(containerId) {
   var selectableGroupIds = new Set();
   if (role === '班级总督察' || role === '班级副总督察') {
     if (userOrgId) {
-      orgs.filter(function (o) { return o.parent_id === userOrgId && o.level === '小组'; })
-        .forEach(function (g) { selectableGroupIds.add(g.id); });
+      orgs
+        .filter(function (o) {
+          return o.parent_id === userOrgId && o.level === '小组';
+        })
+        .forEach(function (g) {
+          selectableGroupIds.add(g.id);
+        });
     }
   } else if (role === '大班总督' || role === '大班副督') {
     if (userOrgId) {
-      getAllChildOrgs(userOrgId, orgs).filter(function (o) { return o.level === '小组'; })
-        .forEach(function (g) { selectableGroupIds.add(g.id); });
+      getAllChildOrgs(userOrgId, orgs)
+        .filter(function (o) {
+          return o.level === '小组';
+        })
+        .forEach(function (g) {
+          selectableGroupIds.add(g.id);
+        });
     }
   } else if (role === '超级管理员' || role === '管理员') {
-    orgs.filter(function (o) { return o.level === '小组'; })
-      .forEach(function (g) { selectableGroupIds.add(g.id); });
+    orgs
+      .filter(function (o) {
+        return o.level === '小组';
+      })
+      .forEach(function (g) {
+        selectableGroupIds.add(g.id);
+      });
   }
 
   if (selectableGroupIds.size === 0) {
@@ -164,7 +199,9 @@ function _initSelector(containerId) {
     return;
   }
 
-  var groups = orgs.filter(function (o) { return selectableGroupIds.has(o.id); });
+  var groups = orgs.filter(function (o) {
+    return selectableGroupIds.has(o.id);
+  });
   var bigClasses = [];
   var seen = new Set();
   groups.forEach(function (g) {
@@ -179,9 +216,16 @@ function _initSelector(containerId) {
   });
 
   var bcs = document.getElementById(containerId + '_bigClassSelect');
-  bcs.innerHTML = (bigClasses.length === 1 ? '' : '<option value="">请选择</option>') +
-    bigClasses.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-CN'); })
-      .map(function (b) { return '<option value="' + b.id + '">' + b.name + '</option>'; }).join('');
+  bcs.innerHTML =
+    (bigClasses.length === 1 ? '' : '<option value="">请选择</option>') +
+    bigClasses
+      .sort(function (a, b) {
+        return a.name.localeCompare(b.name, 'zh-CN');
+      })
+      .map(function (b) {
+        return '<option value="' + b.id + '">' + b.name + '</option>';
+      })
+      .join('');
 
   if (bigClasses.length === 1) {
     bcs.value = String(bigClasses[0].id);
@@ -220,11 +264,19 @@ function _onBigClassChange(containerId, preselectGroupId) {
   var bigClassNameEl = document.getElementById(containerId + '_bigClassName');
   if (bigClassNameEl) bigClassNameEl.textContent = state.orgsMap[bigClassId] ? state.orgsMap[bigClassId].name : '--';
 
-  if (!bigClassId) { _fireGroupChange(containerId, null); return; }
+  if (!bigClassId) {
+    _fireGroupChange(containerId, null);
+    return;
+  }
 
   var classIds = new Set();
-  orgs.filter(function (o) { return o.parent_id === bigClassId && o.level === '班级'; })
-    .forEach(function (c) { classIds.add(c.id); });
+  orgs
+    .filter(function (o) {
+      return o.parent_id === bigClassId && o.level === '班级';
+    })
+    .forEach(function (c) {
+      classIds.add(c.id);
+    });
 
   // Role filtering at class level
   if (role === '班级总督察' || role === '班级副总督察') {
@@ -245,10 +297,20 @@ function _onBigClassChange(containerId, preselectGroupId) {
   }
 
   var classes = [];
-  classIds.forEach(function (id) { var o = state.orgsMap[id]; if (o) classes.push(o); });
-  classSelect.innerHTML = (classes.length === 1 ? '' : '<option value="">请选择</option>') +
-    classes.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-CN'); })
-      .map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+  classIds.forEach(function (id) {
+    var o = state.orgsMap[id];
+    if (o) classes.push(o);
+  });
+  classSelect.innerHTML =
+    (classes.length === 1 ? '' : '<option value="">请选择</option>') +
+    classes
+      .sort(function (a, b) {
+        return a.name.localeCompare(b.name, 'zh-CN');
+      })
+      .map(function (c) {
+        return '<option value="' + c.id + '">' + c.name + '</option>';
+      })
+      .join('');
 
   if (preselectGroupId) {
     var pg = state.orgsMap[preselectGroupId];
@@ -284,11 +346,19 @@ function _onClassChange(containerId, preselectGroupId) {
   var classNameEl = document.getElementById(containerId + '_className');
   if (classNameEl) classNameEl.textContent = state.orgsMap[classId] ? state.orgsMap[classId].name : '--';
 
-  if (!classId) { _fireGroupChange(containerId, null); return; }
+  if (!classId) {
+    _fireGroupChange(containerId, null);
+    return;
+  }
 
   var groupIds = new Set();
-  orgs.filter(function (o) { return o.parent_id === classId && o.level === '小组'; })
-    .forEach(function (g) { groupIds.add(g.id); });
+  orgs
+    .filter(function (o) {
+      return o.parent_id === classId && o.level === '小组';
+    })
+    .forEach(function (g) {
+      groupIds.add(g.id);
+    });
 
   if (role === '小组督察' || role === '小组副督察') {
     var userOrg = state.orgsMap[userOrgId];
@@ -298,14 +368,24 @@ function _onClassChange(containerId, preselectGroupId) {
   }
 
   var groups = [];
-  groupIds.forEach(function (id) { var o = state.orgsMap[id]; if (o) groups.push(o); });
+  groupIds.forEach(function (id) {
+    var o = state.orgsMap[id];
+    if (o) groups.push(o);
+  });
 
   var defaultOption = state.showAllOption ? '<option value="">全部小组</option>' : '';
   if (groups.length === 1 && !state.showAllOption) defaultOption = '';
 
-  groupSelect.innerHTML = defaultOption +
-    groups.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-CN'); })
-      .map(function (g) { return '<option value="' + g.id + '">' + g.name + '</option>'; }).join('');
+  groupSelect.innerHTML =
+    defaultOption +
+    groups
+      .sort(function (a, b) {
+        return a.name.localeCompare(b.name, 'zh-CN');
+      })
+      .map(function (g) {
+        return '<option value="' + g.id + '">' + g.name + '</option>';
+      })
+      .join('');
 
   if (preselectGroupId) {
     groupSelect.value = String(preselectGroupId);

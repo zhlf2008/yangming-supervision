@@ -2,6 +2,9 @@
 *.xlsx
 *.xls
 *.json
+!package.json
+!package-lock.json
+!tsconfig.json
 *.txt
 *.py
 *.log

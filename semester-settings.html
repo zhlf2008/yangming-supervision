@@ -1,553 +1,575 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>系统设置 - 阳明心学督察管理系统</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/common.css">
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>系统设置 - 阳明心学督察管理系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/common.css" />
+    <style>
+      .container {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 16px 16px 100px;
+      }
 
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 16px 16px 100px;
-    }
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
 
-    .page-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
+      .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--ink-dark);
+      }
 
-    .back-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      text-decoration: none;
-      color: var(--ink-dark);
-    }
+      .page-title {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 20px;
+        font-weight: 600;
+      }
 
-    .page-title {
-      font-family: 'Noto Serif SC', serif;
-      font-size: 20px;
-      font-weight: 600;
-    }
+      .tab-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
 
-    .tab-bar {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
+      .tab {
+        padding: 10px 16px;
+        text-align: center;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
 
-    .tab {
-      padding: 10px 16px;
-      text-align: center;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+      .tab.active {
+        background: var(--vermillion);
+        border-color: var(--vermillion);
+        color: white;
+      }
 
-    .tab.active {
-      background: var(--vermillion);
-      border-color: var(--vermillion);
-      color: white;
-    }
+      .section {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 12px var(--shadow);
+        border: 1px solid var(--border);
+      }
 
-    .section {
-      background: var(--bg-card);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 12px var(--shadow);
-      border: 1px solid var(--border);
-    }
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
 
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
+      .section-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
 
-    .section-title {
-      font-size: 15px;
-      font-weight: 600;
-    }
+      .add-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: white;
+        background: var(--vermillion);
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
 
-    .add-btn {
-      padding: 8px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      color: white;
-      background: var(--vermillion);
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+      /* Semester Card */
+      .semester-card {
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+      }
 
-    /* Semester Card */
-    .semester-card {
-      padding: 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-    }
+      .semester-card.current {
+        border-color: var(--vermillion);
+        background: var(--vermillion-light);
+      }
 
-    .semester-card.current {
-      border-color: var(--vermillion);
-      background: var(--vermillion-light);
-    }
+      .semester-card.current::after {
+        content: '当前';
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 11px;
+        color: var(--vermillion);
+        font-weight: 500;
+      }
 
-    .semester-card.current::after {
-      content: '当前';
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      font-size: 11px;
-      color: var(--vermillion);
-      font-weight: 500;
-    }
+      .semester-name {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        padding-right: 60px;
+      }
 
-    .semester-name {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      padding-right: 60px;
-    }
+      .semester-dates {
+        font-size: 13px;
+        color: var(--ink-muted);
+        margin-bottom: 4px;
+      }
 
-    .semester-dates {
-      font-size: 13px;
-      color: var(--ink-muted);
-      margin-bottom: 4px;
-    }
+      .semester-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
 
-    .semester-meta {
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      color: var(--ink-muted);
-    }
+      .trial-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        background: var(--gold-light);
+        color: var(--gold);
+        border-radius: 4px;
+        font-size: 11px;
+        margin-left: 8px;
+      }
 
-    .trial-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      background: var(--gold-light);
-      color: var(--gold);
-      border-radius: 4px;
-      font-size: 11px;
-      margin-left: 8px;
-    }
+      .item-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
 
-    .item-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
+      .edit-btn,
+      .delete-btn,
+      .schedule-btn,
+      .type-btn,
+      .org-btn {
+        flex: 1;
+        padding: 8px;
+        font-size: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: center;
+      }
 
-    .edit-btn, .delete-btn, .schedule-btn, .type-btn, .org-btn {
-      flex: 1;
-      padding: 8px;
-      font-size: 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
-    }
+      .edit-btn {
+        background: var(--bg-primary);
+        color: var(--ink-dark);
+      }
 
-    .edit-btn {
-      background: var(--bg-primary);
-      color: var(--ink-dark);
-    }
+      .schedule-btn {
+        background: var(--gold-light);
+        color: var(--gold);
+      }
 
-    .schedule-btn {
-      background: var(--gold-light);
-      color: var(--gold);
-    }
+      .type-btn {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
 
-    .type-btn {
-      background: #E3F2FD;
-      color: #1976D2;
-    }
+      .org-btn {
+        background: var(--green-light);
+        color: var(--green);
+      }
 
-    .org-btn {
-      background: var(--green-light);
-      color: var(--green);
-    }
+      .delete-btn {
+        background: #ffebee;
+        color: var(--vermillion);
+      }
 
-    .delete-btn {
-      background: #FFEBEE;
-      color: var(--vermillion);
-    }
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--ink-muted);
+        font-size: 14px;
+      }
 
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: var(--ink-muted);
-      font-size: 14px;
-    }
+      /* Schedule Section */
 
-    /* Schedule Section */
+      .semester-selector {
+        margin-bottom: 16px;
+      }
 
+      .form-select {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-primary);
+        color: var(--ink-dark);
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235C5C5C' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+      }
 
-    .semester-selector {
-      margin-bottom: 16px;
-    }
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+      }
 
-    .form-select {
-      width: 100%;
-      padding: 12px;
-      font-size: 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg-primary);
-      color: var(--ink-dark);
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235C5C5C' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-    }
+      .modal-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
 
-    
+      .modal {
+        background: var(--bg-card);
+        border-radius: var(--radius) var(--radius) 0 0;
+        width: 100%;
+        max-width: 480px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: translateY(100%);
+        transition: transform 0.3s;
+      }
 
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s;
-    }
+      .modal-overlay.show .modal {
+        transform: translateY(0);
+      }
 
-    .modal-overlay.show {
-      opacity: 1;
-      visibility: visible;
-    }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
 
-    .modal {
-      background: var(--bg-card);
-      border-radius: var(--radius) var(--radius) 0 0;
-      width: 100%;
-      max-width: 480px;
-      max-height: 90vh;
-      overflow-y: auto;
-      transform: translateY(100%);
-      transition: transform 0.3s;
-    }
+      .modal-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
 
-    .modal-overlay.show .modal {
-      transform: translateY(0);
-    }
+      .modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-primary);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
 
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-    }
+      .modal-body {
+        padding: 20px;
+      }
 
-    .modal-title {
-      font-size: 16px;
-      font-weight: 600;
-    }
+      .form-item {
+        margin-bottom: 16px;
+      }
 
-    .modal-close {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--bg-primary);
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
+      .form-label {
+        font-size: 13px;
+        color: var(--ink-light);
+        margin-bottom: 6px;
+        display: block;
+      }
 
-    .modal-body {
-      padding: 20px;
-    }
+      .form-input,
+      .form-select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-primary);
+        color: var(--ink-dark);
+        outline: none;
+      }
 
-    .form-item {
-      margin-bottom: 16px;
-    }
+      .form-input:focus,
+      .form-select:focus {
+        border-color: var(--vermillion);
+      }
 
-    .form-label {
-      font-size: 13px;
-      color: var(--ink-light);
-      margin-bottom: 6px;
-      display: block;
-    }
+      /* Toggle */
+      .toggle-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+      }
 
-    .form-input, .form-select {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg-primary);
-      color: var(--ink-dark);
-      outline: none;
-    }
+      .toggle-switch {
+        width: 48px;
+        height: 28px;
+        background: var(--border);
+        border-radius: 14px;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
 
-    .form-input:focus, .form-select:focus {
-      border-color: var(--vermillion);
-    }
+      .toggle-switch.active {
+        background: var(--vermillion);
+      }
 
-    /* Toggle */
-    .toggle-group {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
+      .toggle-switch::after {
+        content: '';
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        background: white;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
 
-    .toggle-switch {
-      width: 48px;
-      height: 28px;
-      background: var(--border);
-      border-radius: 14px;
-      position: relative;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+      .toggle-switch.active::after {
+        transform: translateX(20px);
+      }
 
-    .toggle-switch.active {
-      background: var(--vermillion);
-    }
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+      }
 
-    .toggle-switch::after {
-      content: '';
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      background: white;
-      border-radius: 50%;
-      top: 2px;
-      left: 2px;
-      transition: transform 0.2s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
+      .modal-btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
 
-    .toggle-switch.active::after {
-      transform: translateX(20px);
-    }
+      .modal-btn.cancel {
+        background: var(--bg-primary);
+        color: var(--ink-dark);
+      }
 
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-    }
+      .modal-btn.confirm {
+        background: var(--vermillion);
+        color: white;
+      }
 
-    .modal-btn {
-      flex: 1;
-      padding: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+      /* Toast */
+      .toast {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-100px);
+        background: var(--ink-dark);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 2000;
+        opacity: 0;
+        transition:
+          transform 0.3s,
+          opacity 0.3s;
+      }
 
-    .modal-btn.cancel {
-      background: var(--bg-primary);
-      color: var(--ink-dark);
-    }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <a
+          href="index.html"
+          class="back-btn"
+          aria-label="返回"
+          onclick="
+            event.preventDefault();
+            window.history.back();
+          "
+          >←</a
+        >
+        <h1 class="page-title">设置</h1>
+      </div>
 
-    .modal-btn.confirm {
-      background: var(--vermillion);
-      color: white;
-    }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      background: var(--ink-dark);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 2000;
-      opacity: 0;
-      transition: transform 0.3s, opacity 0.3s;
-    }
-
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-      <a href="index.html" class="back-btn" aria-label="返回" onclick="event.preventDefault(); window.history.back();">←</a>
-      <h1 class="page-title">设置</h1>
+      <!-- 学期列表 Section -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">学期列表</span>
+          <button class="add-btn" onclick="showSemesterModal()">+ 新增学期</button>
+        </div>
+        <div id="semesterList"></div>
+      </div>
     </div>
 
-    <!-- 学期列表 Section -->
-    <div class="section">
-      <div class="section-header">
-        <span class="section-title">学期列表</span>
-        <button class="add-btn" onclick="showSemesterModal()">+ 新增学期</button>
-      </div>
-      <div id="semesterList"></div>
-    </div>
-  </div>
-
-  <!-- 学期 Modal -->
-  <div id="semesterModal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <span id="semesterModalTitle" class="modal-title">新增学期</span>
-        <button class="modal-close" onclick="closeSemesterModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="semesterId">
-        <div class="form-item">
-          <label class="form-label">学期名称</label>
-          <input type="text" id="semesterName" class="form-input" placeholder="如：阳明心学第14期">
+    <!-- 学期 Modal -->
+    <div id="semesterModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <span id="semesterModalTitle" class="modal-title">新增学期</span>
+          <button class="modal-close" onclick="closeSemesterModal()">×</button>
         </div>
-        <div class="toggle-group">
-          <span class="toggle-label">启用试晨读</span>
-          <div id="trialToggle" class="toggle-switch" onclick="toggleTrial()"></div>
-        </div>
-        <div id="trialStartGroup" class="form-item" style="display: none;">
-          <label class="form-label">试晨读开始日期</label>
-          <input type="date" id="trialStart" class="form-input">
-        </div>
-        <div class="form-item">
-          <label class="form-label">正式开始日期</label>
-          <input type="date" id="semesterStart" class="form-input">
-        </div>
-        <div class="form-item">
-          <label class="form-label">结束日期</label>
-          <input type="date" id="semesterEnd" class="form-input">
-        </div>
-        <div class="toggle-group">
-          <span class="toggle-label">设为当前学期</span>
-          <div id="currentToggle" class="toggle-switch active" onclick="toggleCurrent()"></div>
-        </div>
-        <div id="copyOptionsGroup" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
-          <div style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--ink-dark);">从其他学期复制</div>
+        <div class="modal-body">
+          <input type="hidden" id="semesterId" />
           <div class="form-item">
-            <label class="form-label">复制组织架构（可选）</label>
-            <select id="copyOrgsFrom" class="form-select">
-              <option value="">不复制</option>
-            </select>
+            <label class="form-label">学期名称</label>
+            <input type="text" id="semesterName" class="form-input" placeholder="如：阳明心学第14期" />
           </div>
           <div class="toggle-group">
-            <span class="toggle-label">复制考核模板</span>
-            <div id="copyTemplateToggle" class="toggle-switch active" onclick="toggleCopyTemplate()"></div>
+            <span class="toggle-label">启用试晨读</span>
+            <div id="trialToggle" class="toggle-switch" onclick="toggleTrial()"></div>
+          </div>
+          <div id="trialStartGroup" class="form-item" style="display: none">
+            <label class="form-label">试晨读开始日期</label>
+            <input type="date" id="trialStart" class="form-input" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">正式开始日期</label>
+            <input type="date" id="semesterStart" class="form-input" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">结束日期</label>
+            <input type="date" id="semesterEnd" class="form-input" />
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-label">设为当前学期</span>
+            <div id="currentToggle" class="toggle-switch active" onclick="toggleCurrent()"></div>
+          </div>
+          <div id="copyOptionsGroup" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px">
+            <div style="font-size: 13px; font-weight: 500; margin-bottom: 10px; color: var(--ink-dark)">
+              从其他学期复制
+            </div>
+            <div class="form-item">
+              <label class="form-label">复制组织架构（可选）</label>
+              <select id="copyOrgsFrom" class="form-select">
+                <option value="">不复制</option>
+              </select>
+            </div>
+            <div class="toggle-group">
+              <span class="toggle-label">复制考核模板</span>
+              <div id="copyTemplateToggle" class="toggle-switch active" onclick="toggleCopyTemplate()"></div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="modal-actions">
-        <button class="modal-btn cancel" onclick="closeSemesterModal()">取消</button>
-        <button class="modal-btn confirm" onclick="saveSemester()">保存</button>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" onclick="closeSemesterModal()">取消</button>
+          <button class="modal-btn confirm" onclick="saveSemester()">保存</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
 
-  <!-- Toast -->
-  <div id="toast" class="toast"></div>
+    <div id="bottomNavContainer"></div>
+    <script src="js/components.js"></script>
+    <script>
+      renderBottomNav('');
+    </script>
 
-  <div id="bottomNavContainer"></div>
-  <script src="js/components.js"></script>
-  <script>renderBottomNav('');</script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+      // 直接使用 window.db，在 waitForDb 后保证已初始化
 
-  <script src="js/supabase-config.js"></script>
-<script src="js/utils.js"></script>
-  <script>
-    // 直接使用 window.db，在 waitForDb 后保证已初始化
+      let currentUser = null;
+      let semesters = [];
+      let isTrialEnabled = false;
+      let isCurrentEnabled = true;
+      let copyTemplateEnabled = true;
 
-    let currentUser = null;
-    let semesters = [];
-    let isTrialEnabled = false;
-    let isCurrentEnabled = true;
-    let copyTemplateEnabled = true;
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2500);
-    }
-
-    async function init() {
-      // 等待 db 就绪
-      await waitForDb();
-      await refreshCurrentUser();
-
-      const userData = localStorage.getItem('supabase_user');
-      if (!userData) {
-        window.location.href = 'login.html';
-        return;
-      }
-      currentUser = JSON.parse(userData);
-      if (currentUser.role !== '超级管理员' && currentUser.role !== '管理员') {
-        showToast('只有管理员可以访问此页面');
-        setTimeout(() => window.location.href = 'index.html', 1500);
-        return;
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
       }
 
-      await loadSemesters();
-    }
+      async function init() {
+        // 等待 db 就绪
+        await waitForDb();
+        await refreshCurrentUser();
 
-    async function loadSemesters() {
-      const { data, error } = await window.db.from('semesters').select('*').order('start_date', { ascending: false });
-      if (error) { showToast('加载学期失败'); return; }
-      semesters = data || [];
-      renderSemesters();
-      updateSemesterSelector();
-    }
+        const userData = localStorage.getItem('supabase_user');
+        if (!userData) {
+          window.location.href = 'login.html';
+          return;
+        }
+        currentUser = JSON.parse(userData);
+        if (currentUser.role !== '超级管理员' && currentUser.role !== '管理员') {
+          showToast('只有管理员可以访问此页面');
+          setTimeout(() => (window.location.href = 'index.html'), 1500);
+          return;
+        }
 
-    function updateSemesterSelector() {
-      // Kept for compatibility, schedule management now uses separate pages
-    }
-
-    function renderSemesters() {
-      const container = document.getElementById('semesterList');
-      if (semesters.length === 0) {
-        container.innerHTML = '<div class="empty-state">暂无学期，点击上方添加</div>';
-        return;
+        await loadSemesters();
       }
-      container.innerHTML = semesters.map(sem => `
+
+      async function loadSemesters() {
+        const { data, error } = await window.db.from('semesters').select('*').order('start_date', { ascending: false });
+        if (error) {
+          showToast('加载学期失败');
+          return;
+        }
+        semesters = data || [];
+        renderSemesters();
+        updateSemesterSelector();
+      }
+
+      function updateSemesterSelector() {
+        // Kept for compatibility, schedule management now uses separate pages
+      }
+
+      function renderSemesters() {
+        const container = document.getElementById('semesterList');
+        if (semesters.length === 0) {
+          container.innerHTML = '<div class="empty-state">暂无学期，点击上方添加</div>';
+          return;
+        }
+        container.innerHTML = semesters
+          .map(
+            (sem) => `
         <div class="semester-card ${sem.is_current === 1 ? 'current' : ''}">
           <div class="semester-name">${sem.semester_name}${sem.trial_start_date ? '<span class="trial-badge">试晨读</span>' : ''}</div>
           <div class="semester-dates">${sem.start_date} ~ ${sem.end_date}</div>
@@ -564,180 +586,215 @@
             <button class="delete-btn" onclick="deleteSemester('${sem.id}')">删除</button>
           </div>
         </div>
-      `).join('');
-    }
-
-    // Semester Modal
-    async function showSemesterModal(sem = null) {
-      document.getElementById('semesterId').value = sem?.id || '';
-      document.getElementById('semesterName').value = sem?.semester_name || '';
-      document.getElementById('semesterStart').value = sem?.start_date || '';
-      document.getElementById('semesterEnd').value = sem?.end_date || '';
-      document.getElementById('trialStart').value = sem?.trial_start_date || '';
-      isTrialEnabled = !!sem?.trial_start_date;
-      isCurrentEnabled = sem?.is_current === 1;
-      copyTemplateEnabled = true;
-      document.getElementById('trialToggle').classList.toggle('active', isTrialEnabled);
-      document.getElementById('currentToggle').classList.toggle('active', isCurrentEnabled);
-      document.getElementById('copyTemplateToggle').classList.toggle('active', copyTemplateEnabled);
-      document.getElementById('trialStartGroup').style.display = isTrialEnabled ? 'block' : 'none';
-      document.getElementById('semesterModalTitle').textContent = sem ? '编辑学期' : '新增学期';
-      document.getElementById('semesterModal').classList.add('show');
-
-      // 新建模式加载可选源学期
-      var copySection = document.getElementById('copyOptionsGroup');
-      var copySelect = document.getElementById('copyOrgsFrom');
-      if (!sem) {
-        copySection.style.display = 'block';
-        var { data: semesters } = await window.db.from('semesters').select('id,semester_name').order('start_date', { ascending: false });
-        copySelect.innerHTML = '<option value="">不复制</option>' +
-          (semesters || []).map(function(s) { return '<option value="' + s.id + '">' + s.semester_name + '</option>'; }).join('');
-      } else {
-        copySection.style.display = 'none';
-      }
-    }
-
-    function toggleTrial() {
-      isTrialEnabled = !isTrialEnabled;
-      document.getElementById('trialToggle').classList.toggle('active', isTrialEnabled);
-      document.getElementById('trialStartGroup').style.display = isTrialEnabled ? 'block' : 'none';
-    }
-
-    function toggleCurrent() {
-      isCurrentEnabled = !isCurrentEnabled;
-      document.getElementById('currentToggle').classList.toggle('active', isCurrentEnabled);
-    }
-
-    function toggleCopyTemplate() {
-      copyTemplateEnabled = !copyTemplateEnabled;
-      document.getElementById('copyTemplateToggle').classList.toggle('active', copyTemplateEnabled);
-    }
-
-    function closeSemesterModal() {
-      document.getElementById('semesterModal').classList.remove('show');
-    }
-
-    async function saveSemester() {
-      const id = document.getElementById('semesterId').value;
-      const semester_name = document.getElementById('semesterName').value.trim();
-      const start_date = document.getElementById('semesterStart').value;
-      const end_date = document.getElementById('semesterEnd').value;
-      const trial_start_date = isTrialEnabled ? document.getElementById('trialStart').value : null;
-
-      if (!semester_name || !start_date || !end_date) {
-        showToast('请填写完整信息');
-        return;
+      `
+          )
+          .join('');
       }
 
-      if (isCurrentEnabled) {
-        await window.db.from('semesters').update({ is_current: 0 }).eq('is_current', 1);
-      }
+      // Semester Modal
+      async function showSemesterModal(sem = null) {
+        document.getElementById('semesterId').value = sem?.id || '';
+        document.getElementById('semesterName').value = sem?.semester_name || '';
+        document.getElementById('semesterStart').value = sem?.start_date || '';
+        document.getElementById('semesterEnd').value = sem?.end_date || '';
+        document.getElementById('trialStart').value = sem?.trial_start_date || '';
+        isTrialEnabled = !!sem?.trial_start_date;
+        isCurrentEnabled = sem?.is_current === 1;
+        copyTemplateEnabled = true;
+        document.getElementById('trialToggle').classList.toggle('active', isTrialEnabled);
+        document.getElementById('currentToggle').classList.toggle('active', isCurrentEnabled);
+        document.getElementById('copyTemplateToggle').classList.toggle('active', copyTemplateEnabled);
+        document.getElementById('trialStartGroup').style.display = isTrialEnabled ? 'block' : 'none';
+        document.getElementById('semesterModalTitle').textContent = sem ? '编辑学期' : '新增学期';
+        document.getElementById('semesterModal').classList.add('show');
 
-      const data = { semester_name, start_date, end_date, trial_start_date, is_current: isCurrentEnabled ? 1 : 0 };
-      let error, newSemesterId;
-      if (id) {
-        const { error: e } = await window.db.from('semesters').update(data).eq('id', id);
-        error = e;
-      } else {
-        const { data: inserted, error: e } = await window.db.from('semesters').insert(data).select('id');
-        error = e;
-        if (inserted && inserted.length > 0) newSemesterId = inserted[0].id;
-      }
-
-      if (error) {
-        showToast('保存失败: ' + error.message);
-        return;
-      }
-
-      // 新建学期后复制组织架构和考核模板
-      if (newSemesterId) {
-        var copyOrgFromId = document.getElementById('copyOrgsFrom').value;
-        if (copyOrgFromId) {
-          await copyOrgsToSemester(parseInt(copyOrgFromId), newSemesterId);
+        // 新建模式加载可选源学期
+        var copySection = document.getElementById('copyOptionsGroup');
+        var copySelect = document.getElementById('copyOrgsFrom');
+        if (!sem) {
+          copySection.style.display = 'block';
+          var { data: semesters } = await window.db
+            .from('semesters')
+            .select('id,semester_name')
+            .order('start_date', { ascending: false });
+          copySelect.innerHTML =
+            '<option value="">不复制</option>' +
+            (semesters || [])
+              .map(function (s) {
+                return '<option value="' + s.id + '">' + s.semester_name + '</option>';
+              })
+              .join('');
+        } else {
+          copySection.style.display = 'none';
         }
-        if (copyTemplateEnabled) {
-          // 模板从组织复制源学期复制，或从当前学期复制
-          var templateSourceId = copyOrgFromId ? parseInt(copyOrgFromId) : (await getCurrentSemesterId());
-          if (templateSourceId) {
-            await copyTemplatesToSemester(templateSourceId, newSemesterId);
+      }
+
+      function toggleTrial() {
+        isTrialEnabled = !isTrialEnabled;
+        document.getElementById('trialToggle').classList.toggle('active', isTrialEnabled);
+        document.getElementById('trialStartGroup').style.display = isTrialEnabled ? 'block' : 'none';
+      }
+
+      function toggleCurrent() {
+        isCurrentEnabled = !isCurrentEnabled;
+        document.getElementById('currentToggle').classList.toggle('active', isCurrentEnabled);
+      }
+
+      function toggleCopyTemplate() {
+        copyTemplateEnabled = !copyTemplateEnabled;
+        document.getElementById('copyTemplateToggle').classList.toggle('active', copyTemplateEnabled);
+      }
+
+      function closeSemesterModal() {
+        document.getElementById('semesterModal').classList.remove('show');
+      }
+
+      async function saveSemester() {
+        const id = document.getElementById('semesterId').value;
+        const semester_name = document.getElementById('semesterName').value.trim();
+        const start_date = document.getElementById('semesterStart').value;
+        const end_date = document.getElementById('semesterEnd').value;
+        const trial_start_date = isTrialEnabled ? document.getElementById('trialStart').value : null;
+
+        if (!semester_name || !start_date || !end_date) {
+          showToast('请填写完整信息');
+          return;
+        }
+
+        if (isCurrentEnabled) {
+          await window.db.from('semesters').update({ is_current: 0 }).eq('is_current', 1);
+        }
+
+        const data = { semester_name, start_date, end_date, trial_start_date, is_current: isCurrentEnabled ? 1 : 0 };
+        let error, newSemesterId;
+        if (id) {
+          const { error: e } = await window.db.from('semesters').update(data).eq('id', id);
+          error = e;
+        } else {
+          const { data: inserted, error: e } = await window.db.from('semesters').insert(data).select('id');
+          error = e;
+          if (inserted && inserted.length > 0) newSemesterId = inserted[0].id;
+        }
+
+        if (error) {
+          showToast('保存失败: ' + error.message);
+          return;
+        }
+
+        // 新建学期后复制组织架构和考核模板
+        if (newSemesterId) {
+          var copyOrgFromId = document.getElementById('copyOrgsFrom').value;
+          if (copyOrgFromId) {
+            await copyOrgsToSemester(parseInt(copyOrgFromId), newSemesterId);
+          }
+          if (copyTemplateEnabled) {
+            // 模板从组织复制源学期复制，或从当前学期复制
+            var templateSourceId = copyOrgFromId ? parseInt(copyOrgFromId) : await getCurrentSemesterId();
+            if (templateSourceId) {
+              await copyTemplatesToSemester(templateSourceId, newSemesterId);
+            }
           }
         }
+
+        showToast('保存成功');
+        closeSemesterModal();
+        await loadSemesters();
       }
 
-      showToast('保存成功');
-      closeSemesterModal();
-      await loadSemesters();
-    }
+      async function editSemester(id) {
+        const sem = semesters.find((s) => s.id == id);
+        if (sem) showSemesterModal(sem);
+      }
 
-    async function editSemester(id) {
-      const sem = semesters.find(s => s.id == id);
-      if (sem) showSemesterModal(sem);
-    }
+      async function deleteSemester(id) {
+        if (!(await showConfirm('确定删除该学期？删除后无法恢复'))) return;
+        const { error } = await window.db.from('semesters').delete().eq('id', id);
+        if (error) showToast('删除失败');
+        else {
+          showToast('删除成功');
+          await loadSemesters();
+        }
+      }
 
-    async function deleteSemester(id) {
-      if (!(await showConfirm('确定删除该学期？删除后无法恢复'))) return;
-      const { error } = await window.db.from('semesters').delete().eq('id', id);
-      if (error) showToast('删除失败');
-      else { showToast('删除成功'); await loadSemesters(); }
-    }
+      // 从源学期复制组织架构到目标学期
+      async function copyOrgsToSemester(sourceSemesterId, targetSemesterId) {
+        var { data: sourceOrgs } = await window.db
+          .from('organizations')
+          .select('*')
+          .eq('semester_id', sourceSemesterId);
+        if (!sourceOrgs || sourceOrgs.length === 0) return;
 
-    // 从源学期复制组织架构到目标学期
-    async function copyOrgsToSemester(sourceSemesterId, targetSemesterId) {
-      var { data: sourceOrgs } = await window.db.from('organizations').select('*').eq('semester_id', sourceSemesterId);
-      if (!sourceOrgs || sourceOrgs.length === 0) return;
-
-      var idMap = {};
-      var byLevel = { '大班': [], '班级': [], '小组': [] };
-      sourceOrgs.forEach(function(o) { byLevel[o.level].push(o); });
-
-      var levels = ['大班', '班级', '小组'];
-      for (var i = 0; i < levels.length; i++) {
-        var level = levels[i];
-        var batch = (byLevel[level] || []).map(function(o) {
-          var newParentId = o.parent_id ? (idMap[o.parent_id] || null) : null;
-          return { name: o.name, level: o.level, parent_id: newParentId, area_id: o.area_id || 1, semester_id: targetSemesterId };
+        var idMap = {};
+        var byLevel = { 大班: [], 班级: [], 小组: [] };
+        sourceOrgs.forEach(function (o) {
+          byLevel[o.level].push(o);
         });
-        if (batch.length > 0) {
-          var { data: inserted, error } = await window.db.from('organizations').insert(batch).select('id,name');
-          if (error) { console.error('复制组织失败:', error); return; }
-          var sourceNames = (byLevel[level] || []).map(function(o) { return o.id; });
-          inserted.forEach(function(newRow, idx) {
-            if (idx < sourceNames.length) idMap[sourceNames[idx]] = newRow.id;
+
+        var levels = ['大班', '班级', '小组'];
+        for (var i = 0; i < levels.length; i++) {
+          var level = levels[i];
+          var batch = (byLevel[level] || []).map(function (o) {
+            var newParentId = o.parent_id ? idMap[o.parent_id] || null : null;
+            return {
+              name: o.name,
+              level: o.level,
+              parent_id: newParentId,
+              area_id: o.area_id || 1,
+              semester_id: targetSemesterId
+            };
           });
+          if (batch.length > 0) {
+            var { data: inserted, error } = await window.db.from('organizations').insert(batch).select('id,name');
+            if (error) {
+              console.error('复制组织失败:', error);
+              return;
+            }
+            var sourceNames = (byLevel[level] || []).map(function (o) {
+              return o.id;
+            });
+            inserted.forEach(function (newRow, idx) {
+              if (idx < sourceNames.length) idMap[sourceNames[idx]] = newRow.id;
+            });
+          }
         }
-      }
-      // 更新 profiles：将组织ID从旧学期映射到新学期
-      for (var oldId in idMap) {
-        if (idMap.hasOwnProperty(oldId)) {
-          var newId = idMap[oldId];
-          var { error: updateErr } = await window.db.from('profiles')
-            .update({ organization_id: newId })
-            .eq('organization_id', parseInt(oldId));
-          if (updateErr) console.error('更新profiles组织ID失败 (old=' + oldId + ', new=' + newId + '):', updateErr);
+        // 更新 profiles：将组织ID从旧学期映射到新学期
+        for (var oldId in idMap) {
+          if (idMap.hasOwnProperty(oldId)) {
+            var newId = idMap[oldId];
+            var { error: updateErr } = await window.db
+              .from('profiles')
+              .update({ organization_id: newId })
+              .eq('organization_id', parseInt(oldId));
+            if (updateErr) console.error('更新profiles组织ID失败 (old=' + oldId + ', new=' + newId + '):', updateErr);
+          }
         }
+        logAction(
+          '组织修改',
+          '从学期' + sourceSemesterId + '复制组织到学期' + targetSemesterId + '（已更新用户组织映射）'
+        );
       }
-      logAction('组织修改', '从学期' + sourceSemesterId + '复制组织到学期' + targetSemesterId + '（已更新用户组织映射）');
-    }
 
-    // 从源学期复制考核模板到目标学期
-    async function copyTemplatesToSemester(sourceSemesterId, targetSemesterId) {
-      var { data: templates } = await window.db.from('assessment_types').select('*').eq('is_template', 1).eq('semester_id', sourceSemesterId);
-      if (!templates || templates.length === 0) return;
-      var batch = templates.map(function(t) {
-        return {
-          type_name: t.type_name,
-          fields: t.fields,
-          formula: t.formula,
-          is_template: t.is_template,
-          semester_id: targetSemesterId
-        };
-      });
-      await window.db.from('assessment_types').insert(batch);
-    }
+      // 从源学期复制考核模板到目标学期
+      async function copyTemplatesToSemester(sourceSemesterId, targetSemesterId) {
+        var { data: templates } = await window.db
+          .from('assessment_types')
+          .select('*')
+          .eq('is_template', 1)
+          .eq('semester_id', sourceSemesterId);
+        if (!templates || templates.length === 0) return;
+        var batch = templates.map(function (t) {
+          return {
+            type_name: t.type_name,
+            fields: t.fields,
+            formula: t.formula,
+            is_template: t.is_template,
+            semester_id: targetSemesterId
+          };
+        });
+        await window.db.from('assessment_types').insert(batch);
+      }
 
-    init();
-  </script>
-</body>
+      init();
+    </script>
+  </body>
 </html>
-
-
