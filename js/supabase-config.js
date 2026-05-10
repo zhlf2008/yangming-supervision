@@ -47,7 +47,7 @@ async function waitForDb() {
   var startTime = Date.now();
   while (!window.db && Date.now() - startTime < 10000) {
     await new Promise(function (r) {
-      setTimeout(r, 100);
+      setTimeout(r, 30);
     });
   }
   if (!window.db) {
@@ -63,6 +63,7 @@ async function waitForDb() {
 
   var script = document.createElement('script');
   script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  script.async = true;
   script.onload = function () {
     var createClient = window.supabase.createClient;
 
