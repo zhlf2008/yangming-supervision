@@ -12,6 +12,7 @@
 | 004 | `20250508_002_role_rename.sql` | 角色重命名（管理员→超级管理员，地区督委→管理员）+ RLS 策略更新 | 2025-05-08 |
 | 005 | `20250508_003_semester_isolation.sql` | organizations 和 assessment_types 添加 semester_id | 2025-05-08 |
 | 006 | `20250508_004_schedules_per_daban.sql` | schedules 添加 org_id，按大班隔离日程 | 2025-05-08 |
+| 007 | `20260510_001_rls_business_tables.sql` | semesters/assessment_types/schedules/attendance_records/feedback 补 RLS | 待执行 |
 
 ## 开发诊断
 
