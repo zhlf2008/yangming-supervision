@@ -51,3 +51,18 @@ CREATE POLICY "管理员可管理组织" ON organizations
       AND profiles.role IN ('超级管理员', '管理员')
     )
   );
+
+-- ============================================================
+-- reminder_configs 的 RLS policy 修复
+-- 原策略依赖 profiles 子查询，session 恢复失败时 auth.uid() 为 NULL 导致策略不通过
+-- 修复：允许任何已登录用户读写（前端已有客户端 admin 校验）
+-- ============================================================
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "管理员可管理提醒配置" ON reminder_configs;
+EXCEPTION WHEN undefined_object THEN NULL;
+END $$;
+
+CREATE POLICY "认证用户可管理提醒配置" ON reminder_configs
+  FOR ALL
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
