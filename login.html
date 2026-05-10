@@ -293,8 +293,7 @@
 
         if (profileError) throw profileError;
 
-        // 3. 保存用户信息
-        localStorage.setItem('supabase_session', JSON.stringify(authData.session));
+        // 3. 保存用户信息（session 由 SDK 自动持久化到标准 key）
         localStorage.setItem('supabase_user', JSON.stringify(profile));
         localStorage.setItem('currentUser', profile.name);
 
@@ -420,12 +419,7 @@
           // 不阻断注册，profile可以后续补
         }
 
-        // 3. 保存 session
-        if (authData.session) {
-          localStorage.setItem('supabase_session', JSON.stringify(authData.session));
-        }
-
-        // 4. 自动登录
+        // 3. 自动登录（session 由 SDK 自动持久化）
         const { data: profile } = await db
           .from('profiles')
           .select('*, organizations(*)')
@@ -451,16 +445,14 @@
       }
     }
 
-    // 检查是否已登录
+    // 检查是否已登录（用 SDK 原生 getSession）
     async function checkLogin() {
-      const session = JSON.parse(localStorage.getItem('supabase_session') || 'null');
-      if (session) {
-        // 验证 session 是否有效
-        const { data, error } = await db.auth.getUser(session.access_token);
-        if (!error && data.user) {
+      try {
+        var result = await db.auth.getSession();
+        if (result.data && result.data.session) {
           window.location.href = 'index.html';
         }
-      }
+      } catch (e) { /* ignore */ }
     }
     checkRegistrationSetting();
     checkLogin();

@@ -209,7 +209,6 @@ async function logout() {
       await window.supabaseClient.auth.signOut();
     }
   } catch (e) {}
-  localStorage.removeItem('supabase_session');
   localStorage.removeItem('supabase_user');
   localStorage.removeItem('currentUser');
   window.location.replace('login.html');
@@ -276,25 +275,25 @@ function checkLogin() {
 }
 
 // ---- 刷新当前用户数据 ----
+// 从 SDK 原生 session 获取 userId，不再依赖自定义 localStorage key
 
 async function refreshCurrentUser() {
   try {
-    var sessionData = localStorage.getItem('supabase_session');
-    if (!sessionData || !window.db) return null;
-    var session = JSON.parse(sessionData);
-    var userId = session.user ? session.user.id : null;
+    if (!window.supabaseClient) return null;
+    var result = await window.supabaseClient.auth.getSession();
+    var userId = result.data?.session?.user?.id;
     if (!userId) return null;
 
-    var result = await window.db
+    var userResult = await window.db
       .from('profiles')
       .select('*, organizations(*)')
       .eq('id', userId)
       .single();
 
-    if (!result.error && result.data) {
-      localStorage.setItem('supabase_user', JSON.stringify(result.data));
-      localStorage.setItem('currentUser', result.data.name || '');
-      return result.data;
+    if (!userResult.error && userResult.data) {
+      localStorage.setItem('supabase_user', JSON.stringify(userResult.data));
+      localStorage.setItem('currentUser', userResult.data.name || '');
+      return userResult.data;
     }
     return null;
   } catch (e) {
