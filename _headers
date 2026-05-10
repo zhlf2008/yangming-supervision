@@ -1,0 +1,11 @@
+# Cloudflare 缓存策略
+# HTML: 短缓存，快速获取更新
+/*.html
+  Cache-Control: public, max-age=60, stale-while-revalidate=86400
+
+# JS / CSS: 长缓存（文件名无 hash 但变更频率低）
+/js/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/css/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

@@ -4,12 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>榜单 - 阳明心学督察管理系统</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="css/common.css" />
     <style>
       body::before {
@@ -56,7 +50,7 @@
         background: var(--border);
       }
       .header-title {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 20px;
         font-weight: 600;
         color: var(--ink-dark);
@@ -139,7 +133,7 @@
         cursor: pointer;
         transition: all 0.2s;
         position: relative;
-        font-family: 'Noto Sans SC', sans-serif;
+        font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
       }
       .tab-btn.active {
         color: var(--vermillion);
@@ -226,7 +220,7 @@
         line-height: 1;
       }
       .rank-number {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 20px;
         font-weight: 700;
         color: var(--ink-muted);
@@ -288,7 +282,7 @@
         min-width: 64px;
       }
       .rank-rate-value {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 26px;
         font-weight: 700;
         line-height: 1;
@@ -316,7 +310,7 @@
         border: none;
         border-radius: 6px;
         cursor: pointer;
-        font-family: 'Noto Sans SC', sans-serif;
+        font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
       }
       .cert-btn-small:active {
         opacity: 0.7;
@@ -337,7 +331,7 @@
         font-size: 14px;
         color: var(--ink-dark);
         appearance: auto;
-        font-family: 'Noto Sans SC', sans-serif;
+        font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
       }
 
       .empty-state {
@@ -392,8 +386,87 @@
         z-index: 1;
       }
 
+      /* ---- 证书主题变量 ---- */
+      :root {
+        --cert-bg1: #fdfcf8;
+        --cert-bg2: #faf6f0;
+        --cert-bg3: #f5efe4;
+        --cert-title: #c41e3a;
+        --cert-rank: #c41e3a;
+        --cert-gold: #d4a574;
+        --cert-accent: #c41e3a;
+        --cert-body-text: #3a3a3a;
+        --cert-frame-border: #d4a574;
+      }
       .certificate {
         background: #fdfcf8;
+        padding: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      /* 喜庆光晕背景 */
+      .cert-festive-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.35;
+      }
+      .cert-festive-glow::before {
+        content: '';
+        position: absolute;
+        top: -40%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        height: 100%;
+        background: radial-gradient(ellipse at 50% 30%, var(--cert-gold) 0%, transparent 60%);
+        opacity: 0.3;
+      }
+      .cert-festive-glow::after {
+        content: '';
+        position: absolute;
+        bottom: -20%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        height: 60%;
+        background: radial-gradient(ellipse at 50% 70%, var(--cert-accent) 0%, transparent 55%);
+        opacity: 0.15;
+      }
+
+      /* 金红主题（默认·前3名）*/
+      .theme-ceremony {
+        --cert-bg1: #fdfcf8;
+        --cert-bg2: #faf6f0;
+        --cert-bg3: #f5efe4;
+        --cert-title: #c41e3a;
+        --cert-rank: #c41e3a;
+        --cert-gold: #d4a574;
+        --cert-accent: #c41e3a;
+        --cert-body-text: #3a3a3a;
+        --cert-frame-border: #d4a574;
+        --cert-glow-opacity: 0.35;
+      }
+      /* 紫色主题（备用）*/
+      .theme-royal {
+        --cert-bg1: #faf8fc;
+        --cert-bg2: #f3effa;
+        --cert-bg3: #e8e0f4;
+        --cert-title: #5b2c8e;
+        --cert-rank: #7b2d8e;
+        --cert-gold: #c9a84c;
+        --cert-accent: #6b3fa0;
+        --cert-body-text: #2d2d3a;
+        --cert-frame-border: #b8a9d4;
+        --cert-glow-opacity: 0.28;
+      }
+
+      .certificate {
+        background: linear-gradient(135deg, var(--cert-bg1) 0%, var(--cert-bg2) 40%, var(--cert-bg3) 100%);
         padding: 0;
         position: relative;
         overflow: hidden;
@@ -414,7 +487,7 @@
       .cert-frame {
         position: relative;
         margin: 18px;
-        border: 3px solid var(--gold);
+        border: 3px solid var(--cert-frame-border);
         padding: 8px;
         z-index: 1;
       }
@@ -574,22 +647,22 @@
       .cert-top-deco-line {
         flex: 1;
         height: 1px;
-        background: linear-gradient(to right, transparent, var(--gold), transparent);
+        background: linear-gradient(to right, transparent, var(--cert-gold), transparent);
         max-width: 60px;
       }
       .cert-top-deco-diamond {
         width: 8px;
         height: 8px;
-        background: var(--gold);
+        background: var(--cert-gold);
         transform: rotate(45deg);
         flex-shrink: 0;
       }
 
       .cert-heading {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 30px;
         font-weight: 700;
-        color: var(--vermillion);
+        color: var(--cert-title);
         margin: 0 0 36px;
         letter-spacing: 12px;
       }
@@ -598,14 +671,14 @@
         text-align: center;
       }
       .cert-text {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 14px;
         color: #3a3a3a;
         line-height: 2.4;
         margin: 0;
       }
       .cert-entity {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 22px;
         font-weight: 700;
         color: var(--ink-dark);
@@ -619,18 +692,23 @@
         line-height: 2.2;
         margin: 0 0 18px;
       }
+      .cert-award-lead {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 15px;
+        color: #444;
+        margin: 0 0 4px;
+      }
       .cert-highlight {
-        color: var(--vermillion);
+        color: var(--cert-accent);
         font-weight: 600;
       }
       .cert-rank-title {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 36px;
         font-weight: 700;
-        color: var(--vermillion);
-        margin: 4px 0 16px;
-        letter-spacing: 12px;
-        text-indent: 12px;
+        color: var(--cert-rank);
+        margin: 0 0 16px;
+        letter-spacing: 6px;
         text-align: center;
       }
       /* Ornamental divider — traditional fleuron replacing trophy emoji */
@@ -639,17 +717,17 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        margin: 16px 0 20px;
+        margin: 10px 0 14px;
       }
       .cert-ornament-line {
         width: 48px;
         height: 1px;
-        background: linear-gradient(to right, transparent, #d4a574, transparent);
+        background: linear-gradient(to right, transparent, var(--cert-gold), transparent);
       }
       .cert-ornament-diamond {
         width: 7px;
         height: 7px;
-        background: #d4a574;
+        background: var(--cert-gold);
         transform: rotate(45deg);
         flex-shrink: 0;
         opacity: 0.8;
@@ -658,7 +736,7 @@
         display: inline-block;
         margin: 14px 0;
         padding: 10px 28px;
-        background: linear-gradient(135deg, var(--vermillion-light), #fff0f0);
+        background: linear-gradient(135deg, rgba(196,30,58,0.08), rgba(196,30,58,0.04));
         border-radius: 8px;
       }
       .cert-rate-label {
@@ -667,10 +745,10 @@
         margin-bottom: 4px;
       }
       .cert-rate-val {
-        font-family: 'Noto Serif SC', serif;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 26px;
         font-weight: 700;
-        color: var(--vermillion);
+        color: var(--cert-rank);
       }
       .cert-encouragement {
         margin-top: 28px;
@@ -807,7 +885,7 @@
         cursor: pointer;
         text-align: center;
         transition: transform 0.15s;
-        font-family: 'Noto Sans SC', sans-serif;
+        font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
       }
       .cert-action-btn:active {
         transform: scale(0.96);
@@ -820,6 +898,55 @@
         background: var(--bg-card);
         color: var(--ink-dark);
         border: 1px solid var(--border);
+      }
+
+      /* 导出模式 — 移除交互元素 */
+      .export-mode .cert-backdrop {
+        display: none;
+      }
+      .export-mode .cert-wrapper {
+        max-height: none;
+        overflow: visible;
+      }
+      .export-mode .cert-actions {
+        display: none;
+      }
+      .export-mode .cert-overlay {
+        position: relative;
+        opacity: 1;
+        visibility: visible;
+        background: transparent;
+      }
+
+      /* 移动端证书适配 */
+      @media (max-width: 480px) {
+        .cert-heading {
+          font-size: 24px;
+          letter-spacing: 8px;
+        }
+        .cert-rank-title {
+          font-size: 28px;
+          letter-spacing: 8px;
+          text-indent: 8px;
+        }
+        .cert-entity {
+          font-size: 18px;
+        }
+        .cert-text {
+          font-size: 13px;
+        }
+        .cert-context {
+          font-size: 13px;
+        }
+        .cert-seal {
+          width: 64px;
+          height: 64px;
+          bottom: 36px;
+          right: 36px;
+        }
+        .cert-inner {
+          padding: 24px 18px 28px;
+        }
       }
 
       /* Animations */
@@ -937,6 +1064,7 @@
       <div class="cert-wrapper">
         <div class="certificate" id="certificate">
           <div class="cert-noise"></div>
+          <div class="cert-festive-glow"></div>
           <div class="cert-frame">
             <div class="cert-inner-border"></div>
             <!-- Corner ornaments (CSS L-brackets with circles) -->
@@ -986,7 +1114,7 @@
               <div class="cert-body">
                 <p class="cert-entity" id="certEntity">--</p>
                 <p class="cert-context" id="certContext"></p>
-                <p class="cert-text">荣获</p>
+                <p class="cert-award-lead" id="certAwardLead">--</p>
                 <div class="cert-ornament">
                   <span class="cert-ornament-line"></span>
                   <span class="cert-ornament-diamond"></span>
@@ -1046,7 +1174,7 @@
       var certRankTitle = '';
       var certAttRate = '';
       var certParentOrg = '';
-      var certDataStore = {}; // key → { entityName, rankTitle, attRate, parentOrg }
+      var certDataStore = {}; // key → { entityName, rankTitle, rank, attRate, parentOrg }
 
       async function init() {
         await waitForDb();
@@ -1551,7 +1679,7 @@
           var weekSunday = formatDate(getWeekRange(weekOffset).sunday);
           var weekComplete = getToday() >= weekSunday;
           if (weekComplete) {
-            var rankTitle = rank === 1 ? '冠  军' : rank === 2 ? '亚  军' : '季  军';
+            var rankTitle = rank === 1 ? '冠军' : rank === 2 ? '亚军' : '季军';
             var parentOrg;
             if (level === 'class') {
               parentOrg = r.bigClassName;
@@ -1563,6 +1691,7 @@
               entityName: r.name,
               rankTitle: rankTitle,
               rank: rank,
+              level: level,
               attRate: attVal.toFixed(2) + '%',
               parentOrg: parentOrg
             };
@@ -1637,6 +1766,9 @@
         certAttRate = d.attRate;
         certParentOrg = d.parentOrg;
 
+        // 根据排名自动选择主题
+        switchCertTheme(d.rank);
+
         document.getElementById('certEntity').textContent = d.entityName;
 
         var range = getWeekRange(weekOffset);
@@ -1652,7 +1784,10 @@
           d.parentOrg +
           '</span> 考核评比PK赛中';
 
-        document.getElementById('certRank').textContent = d.rankTitle;
+        // "获得第一名，荣获"
+        var awardLead = '获得' + getCertAwardName(d.rank) + '，荣获';
+        document.getElementById('certAwardLead').textContent = awardLead;
+        document.getElementById('certRank').textContent = d.rankTitle + getCertLevelLabel(d.level);
         document.getElementById('certRate').textContent = d.attRate;
         document.getElementById('certDateLine').textContent =
           '颁发日期：' +
@@ -1671,19 +1806,21 @@
 
       function buildSealSvg(d) {
         var bcName = d.parentOrg.split(' · ')[0] || d.parentOrg;
+        // 使用主题色：金红主题 #C41E3A，紫色主题 #5B2C8E
+        var sealColor = (d.rank && d.rank <= 3) ? '#C41E3A' : '#5B2C8E';
         var svg =
           '<svg viewBox="0 0 100 100" width="88" height="88">' +
-          '<circle cx="50" cy="50" r="45" fill="none" stroke="#C41E3A" stroke-width="3.2" opacity="0.82"/>' +
-          '<circle cx="50" cy="50" r="42" fill="none" stroke="#C41E3A" stroke-width="0.8" opacity="0.45"/>' +
+          '<circle cx="50" cy="50" r="45" fill="none" stroke="' + sealColor + '" stroke-width="3.2" opacity="0.82"/>' +
+          '<circle cx="50" cy="50" r="42" fill="none" stroke="' + sealColor + '" stroke-width="0.8" opacity="0.45"/>' +
           '<defs>' +
           '<path id="sealArc" d="M 14,50 A 36,36 0 0,1 86,50"/>' +
           '</defs>' +
-          '<text font-family="\'Noto Serif SC\',serif" font-size="9" fill="#C41E3A" font-weight="700" letter-spacing="1.2" dy="4">' +
+          '<text font-family="\'Noto Serif SC\',serif" font-size="9" fill="' + sealColor + '" font-weight="700" letter-spacing="1.2" dy="4">' +
           '<textPath href="#sealArc" startOffset="50%" text-anchor="middle">阳明心学督察管理系统</textPath>' +
           '</text>' +
-          '<text x="50" y="57" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="20" fill="#C41E3A" font-weight="900">★</text>' +
-          '<line x1="32" y1="67" x2="68" y2="67" stroke="#C41E3A" stroke-width="1.2" opacity="0.7"/>' +
-          '<text x="50" y="80" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="8.5" fill="#C41E3A" font-weight="700" letter-spacing="1.5">' +
+          '<text x="50" y="57" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="20" fill="' + sealColor + '" font-weight="900">★</text>' +
+          '<line x1="32" y1="67" x2="68" y2="67" stroke="' + sealColor + '" stroke-width="1.2" opacity="0.7"/>' +
+          '<text x="50" y="80" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="8.5" fill="' + sealColor + '" font-weight="700" letter-spacing="1.5">' +
           bcName +
           '</text>' +
           '</svg>';
@@ -1711,6 +1848,19 @@
         var CX = W / 2; // center X
         var FONT = "'Noto Serif SC','SimSun','STSong',serif";
 
+        // 主题色
+        var isTop3 = d.rank && d.rank <= 3;
+        var titleColor = isTop3 ? '#C41E3A' : '#5B2C8E';
+        var goldColor = isTop3 ? '#D4A574' : '#C9A84C';
+        var accentColor = isTop3 ? '#C41E3A' : '#6B3FA0';
+        var bgGradTop = isTop3 ? '#FDFCF8' : '#FAF8FC';
+        var bgGradMid = isTop3 ? '#FAF6F0' : '#F3EFFA';
+        var bgGradBot = isTop3 ? '#F5EFE4' : '#E8E0F4';
+        var bodyText = isTop3 ? '#3A3A3A' : '#2D2D3A';
+        var frameBorder = isTop3 ? '#D4A574' : '#B8A9D4';
+        var rateBgColor = isTop3 ? '#FFF0F0' : '#F4EEFA';
+        var sealColor = isTop3 ? '#C41E3A' : '#5B2C8E';
+
         var range = getWeekRange(weekOffset);
         var semName = currentSemester ? escXml(currentSemester.semester_name) : '';
         var weekLabel = escXml(computeWeekLabel(range.monday));
@@ -1736,8 +1886,15 @@
             '">'
         );
 
-        // Background
-        svg.push('<rect width="' + W + '" height="' + CH + '" fill="#FDFCF8"/>');
+        // Background with gradient
+        svg.push('<defs>');
+        svg.push('<linearGradient id="certBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">');
+        svg.push('<stop offset="0%" stop-color="' + bgGradTop + '"/>');
+        svg.push('<stop offset="40%" stop-color="' + bgGradMid + '"/>');
+        svg.push('<stop offset="100%" stop-color="' + bgGradBot + '"/>');
+        svg.push('</linearGradient>');
+        svg.push('</defs>');
+        svg.push('<rect width="' + W + '" height="' + CH + '" fill="url(#certBgGrad)"/>');
 
         // Outer gold border — CSS margin:18px, border:3px, padding:8px
         // Frame outer edge at M=18, inner edge at M+B=21
@@ -1753,7 +1910,7 @@
             (W - 2 * M - B) +
             '" height="' +
             (CH - 2 * M - B) +
-            '" fill="none" stroke="#D4A574" stroke-width="' +
+            '" fill="none" stroke="' + frameBorder + '" stroke-width="' +
             B +
             '"/>'
         );
@@ -1941,7 +2098,7 @@
             (CX - 14) +
             '" y2="' +
             decoY +
-            '" stroke="#D4A574" stroke-width="1"/>'
+            '" stroke="' + goldColor + '" stroke-width="1"/>'
         );
         svg.push(
           '<line x1="' +
@@ -1952,14 +2109,14 @@
             (CX + 74) +
             '" y2="' +
             decoY +
-            '" stroke="#D4A574" stroke-width="1"/>'
+            '" stroke="' + goldColor + '" stroke-width="1"/>'
         );
         svg.push(
           '<rect x="' +
             (CX - 4) +
             '" y="' +
             (decoY - 4) +
-            '" width="8" height="8" fill="#D4A574" transform="rotate(45 ' +
+            '" width="8" height="8" fill="' + goldColor + '" transform="rotate(45 ' +
             CX +
             ' ' +
             decoY +
@@ -1976,7 +2133,7 @@
             contentT +
             '" text-anchor="middle" font-family="' +
             FONT +
-            '" font-size="30" font-weight="bold" fill="#C41E3A" letter-spacing="12">荣 誉 证 书</text>'
+            '" font-size="30" font-weight="bold" fill="' + titleColor + '" letter-spacing="12">荣 誉 证 书</text>'
         );
         contentT += 52;
 
@@ -1990,7 +2147,7 @@
               contentT +
               '" text-anchor="middle" font-family="' +
               FONT +
-              '" font-size="22" font-weight="bold" fill="#2D2D2D" letter-spacing="2">' +
+              '" font-size="22" font-weight="bold" fill="' + bodyText + '" letter-spacing="2">' +
               escXml(line) +
               '</text>'
           );
@@ -2006,10 +2163,10 @@
             contentT +
             '" text-anchor="middle" font-family="' +
             FONT +
-            '" font-size="14" fill="#3A3A3A">' +
-            '在 <tspan fill="#C41E3A" font-weight="600">' +
+            '" font-size="14" fill="' + bodyText + '">' +
+            '在 <tspan fill="' + accentColor + '" font-weight="600">' +
             semName +
-            '</tspan> <tspan fill="#C41E3A" font-weight="600">' +
+            '</tspan> <tspan fill="' + accentColor + '" font-weight="600">' +
             weekLabel +
             '</tspan></text>'
         );
@@ -2023,14 +2180,14 @@
             contentT +
             '" text-anchor="middle" font-family="' +
             FONT +
-            '" font-size="14" fill="#3A3A3A">' +
-            '的 <tspan fill="#C41E3A" font-weight="600">' +
+            '" font-size="14" fill="' + bodyText + '">' +
+            '的 <tspan fill="' + accentColor + '" font-weight="600">' +
             parentOrg +
             '</tspan> 考核评比PK赛中</text>'
         );
         contentT += 36;
 
-        // "荣获"
+        // "获得第一名"
         svg.push(
           '<text x="' +
             CX +
@@ -2038,9 +2195,9 @@
             contentT +
             '" text-anchor="middle" font-family="' +
             FONT +
-            '" font-size="14" fill="#3A3A3A">荣获</text>'
+            '" font-size="15" fill="#444">获得' + getCertAwardName(d.rank) + '，荣获</text>'
         );
-        contentT += 44;
+        contentT += 34;
 
         // Ornamental divider — gold lines + diamond
         var ornY = contentT - 8;
@@ -2053,7 +2210,7 @@
             (CX - 12) +
             '" y2="' +
             ornY +
-            '" stroke="#D4A574" stroke-width="1"/>'
+            '" stroke="' + goldColor + '" stroke-width="1"/>'
         );
         svg.push(
           '<line x1="' +
@@ -2064,20 +2221,20 @@
             (CX + 52) +
             '" y2="' +
             ornY +
-            '" stroke="#D4A574" stroke-width="1"/>'
+            '" stroke="' + goldColor + '" stroke-width="1"/>'
         );
         svg.push(
           '<rect x="' +
             (CX - 3.5) +
             '" y="' +
             (ornY - 3.5) +
-            '" width="7" height="7" fill="#D4A574" opacity="0.8" transform="rotate(45 ' +
+            '" width="7" height="7" fill="' + goldColor + '" opacity="0.8" transform="rotate(45 ' +
             CX +
             ' ' +
             ornY +
             ')"/>'
         );
-        contentT += 36;
+        contentT += 26;
 
         // Rank title
         svg.push(
@@ -2087,8 +2244,8 @@
             contentT +
             '" text-anchor="middle" font-family="' +
             FONT +
-            '" font-size="36" font-weight="bold" fill="#C41E3A" letter-spacing="12">' +
-            rankTitle +
+            '" font-size="36" font-weight="bold" fill="' + titleColor + '" letter-spacing="6">' +
+            rankTitle + getCertLevelLabel(d.level) +
             '</text>'
         );
         contentT += 56;
@@ -2099,7 +2256,7 @@
           rbX = CX - rbW / 2,
           rbY = contentT - 6;
         svg.push(
-          '<rect x="' + rbX + '" y="' + rbY + '" width="' + rbW + '" height="' + rbH + '" rx="8" fill="#FFF0F0"/>'
+          '<rect x="' + rbX + '" y="' + rbY + '" width="' + rbW + '" height="' + rbH + '" rx="8" fill="' + rateBgColor + '"/>'
         );
         svg.push(
           '<text x="' +
@@ -2117,7 +2274,7 @@
             (rbY + 52) +
             '" text-anchor="middle" font-family="' +
             FONT +
-            '" font-size="26" font-weight="bold" fill="#C41E3A">' +
+            '" font-size="26" font-weight="bold" fill="' + titleColor + '">' +
             attRate +
             '</text>'
         );
@@ -2158,10 +2315,10 @@
 
         svg.push('<g transform="translate(' + sealCX + ',' + sealCY + ') rotate(-18)">');
         svg.push(
-          '<circle cx="0" cy="0" r="' + sealR + '" fill="none" stroke="rgba(196,30,58,0.82)" stroke-width="2.8"/>'
+          '<circle cx="0" cy="0" r="' + sealR + '" fill="none" stroke="' + sealColor + '" stroke-opacity="0.82" stroke-width="2.8"/>'
         );
         svg.push(
-          '<circle cx="0" cy="0" r="' + (sealR - 3) + '" fill="none" stroke="rgba(196,30,58,0.45)" stroke-width="0.7"/>'
+          '<circle cx="0" cy="0" r="' + (sealR - 3) + '" fill="none" stroke="' + sealColor + '" stroke-opacity="0.45" stroke-width="0.7"/>'
         );
 
         // Curved top text — place inside the gap between inner/outer rings
@@ -2184,7 +2341,7 @@
               ty.toFixed(1) +
               '" text-anchor="middle" dominant-baseline="central" font-family="' +
               FONT +
-              '" font-size="10" font-weight="bold" fill="#C41E3A" transform="rotate(' +
+              '" font-size="10" font-weight="bold" fill="' + sealColor + '" transform="rotate(' +
               (angleDeg + 90).toFixed(1) +
               ' ' +
               tx.toFixed(1) +
@@ -2200,15 +2357,15 @@
         svg.push(
           '<text x="0" y="-1" text-anchor="middle" dominant-baseline="central" font-family="' +
             FONT +
-            '" font-size="20" font-weight="bold" fill="#C41E3A">★</text>'
+            '" font-size="20" font-weight="bold" fill="' + sealColor + '">★</text>'
         );
         // Line under star
-        svg.push('<line x1="-16" y1="8" x2="16" y2="8" stroke="rgba(196,30,58,0.7)" stroke-width="1"/>');
+        svg.push('<line x1="-16" y1="8" x2="16" y2="8" stroke="' + sealColor + '" stroke-opacity="0.7" stroke-width="1"/>');
         // Big class name
         svg.push(
           '<text x="0" y="22" text-anchor="middle" font-family="' +
             FONT +
-            '" font-size="8" font-weight="bold" fill="#C41E3A">' +
+            '" font-size="8" font-weight="bold" fill="' + sealColor + '">' +
             bcName +
             '</text>'
         );
@@ -2288,7 +2445,8 @@
             canvas.width = w;
             canvas.height = h;
             var ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#FDFCF8';
+            var isTop3 = currentCertData && currentCertData.rank && currentCertData.rank <= 3;
+            ctx.fillStyle = isTop3 ? '#FDFCF8' : '#FAF8FC';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, w, h);
             resolve(canvas);
@@ -2450,6 +2608,31 @@
         });
         if (!hasAtt && !hasHw) return { hasAttendance: true, hasHomework: true };
         return { hasAttendance: hasAtt, hasHomework: hasHw };
+      }
+
+      // 证书主题切换
+      function switchCertTheme(rank) {
+        var certEl = document.getElementById('certificate');
+        certEl.classList.remove('theme-ceremony', 'theme-royal');
+        // 排名1-3使用金红主题，其余默认金红
+        if (rank && rank <= 3) {
+          certEl.classList.add('theme-ceremony');
+        } else {
+          certEl.classList.add('theme-royal');
+        }
+      }
+
+      // 奖项名称映射（纯数字排名）
+      function getCertAwardName(rank) {
+        var suffixes = { 1: '第一名', 2: '第二名', 3: '第三名', 4: '第四名', 5: '第五名', 6: '第六名', 7: '第七名', 8: '第八名', 9: '第九名', 10: '第十名' };
+        return suffixes[rank] || '第' + rank + '名';
+      }
+
+      // 层级标签
+      function getCertLevelLabel(level) {
+        if (level === 'class') return '班级';
+        if (level === 'group') return '小组';
+        return '';
       }
 
       // Get formulas from assessment types for a given schedule (matched by type_name)

@@ -98,10 +98,68 @@ async function waitForDb() {
       }
     });
 
-    // 统一 db 对象
+    // ---- 请求超时 + 重试封装 ----
+    var DB_TIMEOUT = 15000; // 15秒超时
+    var DB_MAX_RETRIES = 2; // 最多重试2次（共3次尝试）
+
+    function dbWithRetry(fn) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      var attempt = 0;
+
+      function tryOnce() {
+        attempt++;
+        return new Promise(function (resolve, reject) {
+          var timedOut = false;
+          var timer = setTimeout(function () {
+            timedOut = true;
+            reject(new Error('请求超时，请检查网络连接'));
+          }, DB_TIMEOUT);
+
+          var promise = fn.apply(null, args);
+          promise
+            .then(function (result) {
+              clearTimeout(timer);
+              if (!timedOut) resolve(result);
+            })
+            .catch(function (err) {
+              clearTimeout(timer);
+              if (timedOut) return; // 超时已处理
+              // 可重试的错误类型：网络错误、服务端错误
+              if (
+                attempt <= DB_MAX_RETRIES &&
+                (err.message.indexOf('fetch') !== -1 ||
+                  err.message.indexOf('network') !== -1 ||
+                  err.message.indexOf('timeout') !== -1 ||
+                  err.message.indexOf('Failed to fetch') !== -1 ||
+                  err.status === 0 ||
+                  err.status >= 500 ||
+                  (err.code && err.code.indexOf('PGRST') !== -1))
+              ) {
+                var delay = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+                setTimeout(function () {
+                  tryOnce().then(resolve).catch(reject);
+                }, delay);
+                return;
+              }
+              reject(err);
+            });
+        });
+      }
+      return tryOnce();
+    }
+
+    // 统一 db 对象（带超时重试）
     window.db = {
       from: function (table) {
-        return client.from(table);
+        var q = client.from(table);
+        // 包装查询链的 then 方法，使其带超时重试
+        var origThen = q.then;
+        q.then = function (onFulfilled, onRejected) {
+          return dbWithRetry(function () {
+            return origThen.call(q, onFulfilled, onRejected);
+          });
+        };
+        return q;
       }
     };
   };
