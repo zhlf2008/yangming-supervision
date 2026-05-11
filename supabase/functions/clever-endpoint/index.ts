@@ -126,22 +126,6 @@ Deno.serve(async (req) => {
       }), { headers });
     }
 
-    // 检查今天是否有考核日程
-    const { data: todaySchedules } = await adminClient
-      .from('schedules')
-      .select('id')
-      .eq('schedule_date', today)
-      .eq('is_valid', 1);
-
-    if (!todaySchedules?.length) {
-      return new Response(JSON.stringify({
-        success: true,
-        message: '今天非考核日，跳过提醒',
-        reminders_sent: 0
-      }), { headers });
-    }
-    const todayScheduleIds = todaySchedules.map((s: { id: number }) => s.id);
-
     // 一次性加载所有组织
     const { data: allOrgs } = await adminClient
       .from('organizations')
@@ -170,6 +154,17 @@ Deno.serve(async (req) => {
       // 获取该大班下所有小组
       const groups = getAllGroups(cfg.org_id, allOrgs);
       if (!groups.length) continue;
+
+      // 查询该大班今天是否有有效考核日程
+      const { data: dabanSchedules } = await adminClient
+        .from('schedules')
+        .select('id')
+        .eq('schedule_date', today)
+        .eq('is_valid', 1)
+        .eq('org_id', cfg.org_id);
+
+      if (!dabanSchedules?.length) continue;
+      const todayScheduleIds = dabanSchedules.map((s: { id: number }) => s.id);
 
       const groupIds = groups.map(g => g.id);
       const groupMap = new Map(groups.map(g => [g.id, g]));
