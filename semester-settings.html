@@ -473,15 +473,6 @@
             <div id="currentToggle" class="toggle-switch active" onclick="toggleCurrent()"></div>
           </div>
           <div id="copyOptionsGroup" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px">
-            <div style="font-size: 13px; font-weight: 500; margin-bottom: 10px; color: var(--ink-dark)">
-              从其他学期复制
-            </div>
-            <div class="form-item">
-              <label class="form-label">复制组织架构（可选）</label>
-              <select id="copyOrgsFrom" class="form-select">
-                <option value="">不复制</option>
-              </select>
-            </div>
             <div class="toggle-group">
               <span class="toggle-label">复制考核模板</span>
               <div id="copyTemplateToggle" class="toggle-switch active" onclick="toggleCopyTemplate()"></div>
@@ -604,22 +595,10 @@
         document.getElementById('semesterModalTitle').textContent = sem ? '编辑学期' : '新增学期';
         document.getElementById('semesterModal').classList.add('show');
 
-        // 新建模式加载可选源学期
+        // 新建模式显示复制选项
         var copySection = document.getElementById('copyOptionsGroup');
-        var copySelect = document.getElementById('copyOrgsFrom');
         if (!sem) {
           copySection.style.display = 'block';
-          var { data: semesters } = await window.db
-            .from('semesters')
-            .select('id,semester_name')
-            .order('start_date', { ascending: false });
-          copySelect.innerHTML =
-            '<option value="">不复制</option>' +
-            (semesters || [])
-              .map(function (s) {
-                return '<option value="' + s.id + '">' + s.semester_name + '</option>';
-              })
-              .join('');
         } else {
           copySection.style.display = 'none';
         }
@@ -677,15 +656,10 @@
           return;
         }
 
-        // 新建学期后复制组织架构和考核模板
+        // 新建学期后复制考核模板
         if (newSemesterId) {
-          var copyOrgFromId = document.getElementById('copyOrgsFrom').value;
-          if (copyOrgFromId) {
-            await copyOrgsToSemester(parseInt(copyOrgFromId), newSemesterId);
-          }
           if (copyTemplateEnabled) {
-            // 模板从组织复制源学期复制，或从当前学期复制
-            var templateSourceId = copyOrgFromId ? parseInt(copyOrgFromId) : await getCurrentSemesterId();
+            var templateSourceId = await getCurrentSemesterId();
             if (templateSourceId) {
               await copyTemplatesToSemester(templateSourceId, newSemesterId);
             }
@@ -710,64 +684,6 @@
           showToast('删除成功');
           await loadSemesters();
         }
-      }
-
-      // 从源学期复制组织架构到目标学期
-      async function copyOrgsToSemester(sourceSemesterId, targetSemesterId) {
-        var { data: sourceOrgs } = await window.db
-          .from('organizations')
-          .select('*')
-          .eq('semester_id', sourceSemesterId);
-        if (!sourceOrgs || sourceOrgs.length === 0) return;
-
-        var idMap = {};
-        var byLevel = { 大班: [], 班级: [], 小组: [] };
-        sourceOrgs.forEach(function (o) {
-          byLevel[o.level].push(o);
-        });
-
-        var levels = ['大班', '班级', '小组'];
-        for (var i = 0; i < levels.length; i++) {
-          var level = levels[i];
-          var batch = (byLevel[level] || []).map(function (o) {
-            var newParentId = o.parent_id ? idMap[o.parent_id] || null : null;
-            return {
-              name: o.name,
-              level: o.level,
-              parent_id: newParentId,
-              area_id: o.area_id || 1,
-              semester_id: targetSemesterId
-            };
-          });
-          if (batch.length > 0) {
-            var { data: inserted, error } = await window.db.from('organizations').insert(batch).select('id,name');
-            if (error) {
-              console.error('复制组织失败:', error);
-              return;
-            }
-            var sourceNames = (byLevel[level] || []).map(function (o) {
-              return o.id;
-            });
-            inserted.forEach(function (newRow, idx) {
-              if (idx < sourceNames.length) idMap[sourceNames[idx]] = newRow.id;
-            });
-          }
-        }
-        // 更新 profiles：将组织ID从旧学期映射到新学期
-        for (var oldId in idMap) {
-          if (idMap.hasOwnProperty(oldId)) {
-            var newId = idMap[oldId];
-            var { error: updateErr } = await window.db
-              .from('profiles')
-              .update({ organization_id: newId })
-              .eq('organization_id', parseInt(oldId));
-            if (updateErr) console.error('更新profiles组织ID失败 (old=' + oldId + ', new=' + newId + '):', updateErr);
-          }
-        }
-        logAction(
-          '组织修改',
-          '从学期' + sourceSemesterId + '复制组织到学期' + targetSemesterId + '（已更新用户组织映射）'
-        );
       }
 
       // 从源学期复制考核模板到目标学期

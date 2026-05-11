@@ -495,17 +495,6 @@
         <h1 class="page-title">组织架构</h1>
       </div>
       <div id="semesterInfo" style="font-size: 12px; color: var(--ink-muted); margin-bottom: 12px"></div>
-      <div
-        id="copySection"
-        style="
-          display: none;
-          background: var(--bg-card);
-          border: 1px dashed var(--border);
-          border-radius: 8px;
-          padding: 12px;
-          margin-bottom: 12px;
-        "
-      ></div>
       <div class="settings-bar">
         <span class="label">允许用户注册</span>
         <div class="toggle-switch" onclick="toggleRegistration()">
@@ -857,15 +846,9 @@
       function renderOrgTree() {
         const container = document.getElementById('orgTree');
         if (organizations.length === 0) {
-          var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
           container.innerHTML = '<div class="empty-state">当前学期暂无组织</div>';
-          if (isAdmin) {
-            document.getElementById('copySection').style.display = 'block';
-            loadCopySection();
-          }
           return;
         }
-        document.getElementById('copySection').style.display = 'none';
         const levelOrder = { 大班: 0, 班级: 1, 小组: 2 };
         const byLevel = { 大班: [], 班级: [], 小组: [] };
         organizations.forEach((org) => {
@@ -1208,91 +1191,6 @@
           logAction('删除组织', orgName + ' id:' + id);
           await loadOrganizations();
         }
-      }
-
-      // ---- 从其他学期复制组织架构 ----
-
-      async function loadCopySection() {
-        var { data: semesters } = await window.db
-          .from('semesters')
-          .select('id,semester_name')
-          .neq('id', currentSemesterId)
-          .order('start_date', { ascending: false });
-        if (!semesters || semesters.length === 0) {
-          document.getElementById('copySection').innerHTML =
-            '<div style="font-size:13px;color:var(--ink-muted);text-align:center;">没有其他学期可供复制</div>';
-          return;
-        }
-        var options = semesters
-          .map(function (s) {
-            return '<option value="' + s.id + '">' + s.semester_name + '</option>';
-          })
-          .join('');
-        document.getElementById('copySection').innerHTML =
-          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-          '<span style="font-size:13px;">从学期</span>' +
-          '<select id="copySourceSelect" style="padding:6px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;">' +
-          options +
-          '</select>' +
-          '<button onclick="copyOrgsFromSemester()" style="padding:6px 14px;font-size:12px;background:var(--vermillion);color:#fff;border:none;border-radius:6px;cursor:pointer;">复制组织架构</button>' +
-          '</div>' +
-          '<div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">将所选学期的组织架构完整复制到当前学期（人员归属不会自动更新）</div>';
-      }
-
-      async function copyOrgsFromSemester() {
-        var sourceSemesterId = parseInt(document.getElementById('copySourceSelect').value);
-        if (!sourceSemesterId) return;
-        if (!(await showConfirm('将从所选学期复制完整的组织架构到当前学期，确定继续？'))) return;
-
-        var { data: sourceOrgs } = await window.db
-          .from('organizations')
-          .select('*')
-          .eq('semester_id', sourceSemesterId);
-        if (!sourceOrgs || sourceOrgs.length === 0) {
-          showToast('源学期无组织可复制');
-          return;
-        }
-
-        // 建立 oldId -> newId 映射，先插入顶级（大班），再插入下级
-        var idMap = {};
-        var byLevel = { 大班: [], 班级: [], 小组: [] };
-        sourceOrgs.forEach(function (o) {
-          byLevel[o.level].push(o);
-        });
-
-        // 逐级插入
-        var levels = ['大班', '班级', '小组'];
-        for (var i = 0; i < levels.length; i++) {
-          var level = levels[i];
-          var batch = (byLevel[level] || []).map(function (o) {
-            var newParentId = o.parent_id ? idMap[o.parent_id] || null : null;
-            return {
-              name: o.name,
-              level: o.level,
-              parent_id: newParentId,
-              area_id: o.area_id || 1,
-              semester_id: currentSemesterId
-            };
-          });
-          if (batch.length > 0) {
-            var { data: inserted, error } = await window.db.from('organizations').insert(batch).select('id,name');
-            if (error) {
-              showToast('复制失败: ' + error.message);
-              return;
-            }
-            // 按名称映射（假设同层级同名）——用原始顺序匹配
-            var sourceNames = (byLevel[level] || []).map(function (o) {
-              return o.id;
-            });
-            inserted.forEach(function (newRow, idx) {
-              if (idx < sourceNames.length) idMap[sourceNames[idx]] = newRow.id;
-            });
-          }
-        }
-
-        showToast('复制完成（' + sourceOrgs.length + ' 个组织）');
-        logAction('组织修改', '从学期' + sourceSemesterId + '复制组织架构到学期' + currentSemesterId);
-        await loadOrganizations();
       }
 
       // User modal - first arg (parentOrgId) is deprecated, second arg for defaultOrgId, third arg systemOnly
