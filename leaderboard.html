@@ -1171,12 +1171,25 @@
       var assessmentTypes = [];
       var assessmentCategoryMap = {};
       var groupStatsCache = {};
+      var visibleDabanIds = new Set();
 
       var certEntityName = '';
       var certRankTitle = '';
       var certAttRate = '';
       var certParentOrg = '';
       var certDataStore = {}; // key → { entityName, rankTitle, rank, attRate, parentOrg }
+
+      // 沿 parent_id 追溯，找到用户所属大班的 ID
+      function findUserDabanId(userOrg, orgs) {
+        if (!userOrg) return null;
+        if (userOrg.level === '大班') return userOrg.id;
+        var current = userOrg;
+        while (current && current.parent_id) {
+          current = orgs.find(function (o) { return o.id === current.parent_id; });
+          if (current && current.level === '大班') return current.id;
+        }
+        return null;
+      }
 
       async function init() {
         await waitForDb();
@@ -1209,6 +1222,19 @@
           else if (name.indexOf('作业率') !== -1) assessmentCategoryMap[at.id] = 'homework';
           else assessmentCategoryMap[at.id] = 'other';
         });
+
+        // 计算当前用户可见的大班 ID 集合
+        var role = currentUser.role;
+        var userOrg = currentUser.organizations;
+        var allDabanIds = new Set(
+          orgsList.filter(function(o) { return o.level === '大班'; }).map(function(o) { return o.id; })
+        );
+        if (role === '超级管理员' || role === '管理员') {
+          visibleDabanIds = allDabanIds;
+        } else {
+          var dabanId = findUserDabanId(userOrg, orgsList);
+          visibleDabanIds = dabanId ? new Set([dabanId]) : new Set();
+        }
 
         await loadAndRender();
       }
@@ -1461,7 +1487,7 @@
       function renderClassBoard() {
         var bigClasses = orgsList
           .filter(function (o) {
-            return o.level === '大班';
+            return o.level === '大班' && visibleDabanIds.has(o.id);
           })
           .sort(function (a, b) {
             return a.name.localeCompare(b.name, 'zh-CN');
@@ -1527,7 +1553,7 @@
       function renderGroupBoard(selectedClassId) {
         var bigClasses = orgsList
           .filter(function (o) {
-            return o.level === '大班';
+            return o.level === '大班' && visibleDabanIds.has(o.id);
           })
           .sort(function (a, b) {
             return a.name.localeCompare(b.name, 'zh-CN');
