@@ -164,32 +164,39 @@
       }
 
       async function loadLogs() {
-        // 并行获取当前学期和日志
-        var currentSemesterId = await getCurrentSemesterId();
-        var semPromise = currentSemesterId
-          ? window.db.from('semesters').select('start_date,end_date').eq('id', currentSemesterId).single()
-          : Promise.resolve({ data: null });
-        var logsPromise = window.db
-          .from('audit_logs')
-          .select('action,user_name,target,detail,created_at')
-          .order('created_at', { ascending: false })
-          .limit(200);
+        try {
+          var logsResult = await window.db
+            .from('audit_logs')
+            .select('action,user_name,target,detail,created_at')
+            .order('created_at', { ascending: false })
+            .limit(200);
 
-        var [semResult, logsResult] = await Promise.all([semPromise, logsPromise]);
+          if (logsResult.error) {
+            document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败: ' + escapeHtml(logsResult.error.message || '未知错误') + '</div>';
+            return;
+          }
+          allLogs = logsResult.data || [];
 
-        var semesterStart = semResult.data ? semResult.data.start_date : null;
-        if (logsResult.error) {
-          document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败</div>';
-          return;
+          // 按学期过滤：只保留当前学期开始日期之后的日志
+          try {
+            var currentSemesterId = await getCurrentSemesterId();
+            if (currentSemesterId) {
+              var semResult = await window.db.from('semesters').select('start_date').eq('id', currentSemesterId).single();
+              if (semResult.data && semResult.data.start_date) {
+                var semesterStart = semResult.data.start_date;
+                allLogs = allLogs.filter(function (l) {
+                  return l.created_at >= semesterStart;
+                });
+              }
+            }
+          } catch (e) {
+            // 学期查询失败不影响日志展示
+          }
+
+          renderLogs();
+        } catch (e) {
+          document.getElementById('logList').innerHTML = '<div class="empty-state">加载异常: ' + escapeHtml(e.message || '') + '</div>';
         }
-        allLogs = logsResult.data || [];
-        // 按学期过滤：只保留当前学期开始日期之后的日志
-        if (semesterStart) {
-          allLogs = allLogs.filter(function (l) {
-            return l.created_at >= semesterStart;
-          });
-        }
-        renderLogs();
       }
 
       function filterLogs(type, el) {
