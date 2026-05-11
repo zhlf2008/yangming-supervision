@@ -45,9 +45,9 @@ function clearLoginState() {
 async function waitForDb() {
   if (window.db) return;
   var startTime = Date.now();
-  while (!window.db && Date.now() - startTime < 10000) {
+  while (!window.db && Date.now() - startTime < 20000) {
     await new Promise(function (r) {
-      setTimeout(r, 30);
+      setTimeout(r, 100);
     });
   }
   if (!window.db) {
@@ -61,10 +61,31 @@ async function waitForDb() {
   if (window.db || window.supabaseLoading) return;
   window.supabaseLoading = true;
 
-  var script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  script.async = true;
-  script.onload = function () {
+  var CDN_LIST = [
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+    'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js'
+  ];
+  var cdnIndex = 0;
+
+  function tryLoadCdn() {
+    if (cdnIndex >= CDN_LIST.length) {
+      window.supabaseLoadFailed = true;
+      return;
+    }
+    var script = document.createElement('script');
+    script.src = CDN_LIST[cdnIndex];
+    script.async = true;
+    script.onload = function () {
+      initSupabase();
+    };
+    script.onerror = function () {
+      cdnIndex++;
+      tryLoadCdn();
+    };
+    document.head.appendChild(script);
+  }
+
+  function initSupabase() {
     var createClient = window.supabase.createClient;
 
     // 使用 SDK 标准持久化 —— session 自动存入 sb-<ref>-auth-token
@@ -163,6 +184,7 @@ async function waitForDb() {
         return q;
       }
     };
-  };
-  document.head.appendChild(script);
+  }
+
+  tryLoadCdn();
 })();
