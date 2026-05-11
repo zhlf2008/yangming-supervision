@@ -164,28 +164,25 @@
       }
 
       async function loadLogs() {
-        // 获取当前学期时间范围
-        var semesterStart = null;
+        // 并行获取当前学期和日志
         var currentSemesterId = await getCurrentSemesterId();
-        if (currentSemesterId) {
-          var { data: sem } = await window.db
-            .from('semesters')
-            .select('start_date,end_date')
-            .eq('id', currentSemesterId)
-            .single();
-          if (sem) semesterStart = sem.start_date;
-        }
-
-        var { data, error } = await window.db
+        var semPromise = currentSemesterId
+          ? window.db.from('semesters').select('start_date,end_date').eq('id', currentSemesterId).single()
+          : Promise.resolve({ data: null });
+        var logsPromise = window.db
           .from('audit_logs')
-          .select('*')
+          .select('action,user_name,target,detail,created_at')
           .order('created_at', { ascending: false })
           .limit(200);
-        if (error) {
+
+        var [semResult, logsResult] = await Promise.all([semPromise, logsPromise]);
+
+        var semesterStart = semResult.data ? semResult.data.start_date : null;
+        if (logsResult.error) {
           document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败</div>';
           return;
         }
-        allLogs = data || [];
+        allLogs = logsResult.data || [];
         // 按学期过滤：只保留当前学期开始日期之后的日志
         if (semesterStart) {
           allLogs = allLogs.filter(function (l) {
