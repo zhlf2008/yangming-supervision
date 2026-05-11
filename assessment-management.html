@@ -646,7 +646,11 @@
         }
       }
 
-      waitForDb().then(refreshCurrentUser).then(init);
+      waitForDb().then(function () {
+        return refreshCurrentUser().catch(function () {});
+      }).then(init).catch(function (e) {
+        document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">数据库连接失败，请检查网络后<a href="assessment-management.html">刷新</a></div>';
+      });
     </script>
 
     <div id="bottomNavContainer"></div>

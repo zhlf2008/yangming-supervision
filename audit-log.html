@@ -158,8 +158,14 @@
           window.location.href = 'index.html';
           return;
         }
-        await waitForDb();
-        await refreshCurrentUser();
+        try {
+          await waitForDb();
+        } catch (e) {
+          document.getElementById('logList').innerHTML = '<div class="empty-state">数据库连接失败，请检查网络后刷新</div>';
+          return;
+        }
+        // refreshCurrentUser 失败不阻塞，loadLogs 只需 db 可用
+        try { await refreshCurrentUser(); } catch (e) {}
         await loadLogs();
       }
 
