@@ -164,6 +164,18 @@
       }
 
       async function loadLogs() {
+        // 获取当前学期时间范围
+        var semesterStart = null;
+        var currentSemesterId = await getCurrentSemesterId();
+        if (currentSemesterId) {
+          var { data: sem } = await window.db
+            .from('semesters')
+            .select('start_date,end_date')
+            .eq('id', currentSemesterId)
+            .single();
+          if (sem) semesterStart = sem.start_date;
+        }
+
         var { data, error } = await window.db
           .from('audit_logs')
           .select('*')
@@ -174,6 +186,12 @@
           return;
         }
         allLogs = data || [];
+        // 按学期过滤：只保留当前学期开始日期之后的日志
+        if (semesterStart) {
+          allLogs = allLogs.filter(function (l) {
+            return l.created_at >= semesterStart;
+          });
+        }
         renderLogs();
       }
 
@@ -214,16 +232,16 @@
               '<span class="log-action ' +
               l.action +
               '">' +
-              l.action +
+              escapeHtml(l.action) +
               '</span>' +
               '<span class="log-time">' +
               time +
               '</span>' +
               '</div>' +
               '<div class="log-user">' +
-              (l.user_name || '系统') +
+              escapeHtml(l.user_name || '系统') +
               '</div>' +
-              (detail ? '<div class="log-detail">' + detail + '</div>' : '') +
+              (detail ? '<div class="log-detail">' + escapeHtml(detail) + '</div>' : '') +
               '</div>'
             );
           })

@@ -1145,9 +1145,6 @@
           const profile = JSON.parse(localStorage.getItem('supabase_user') || '{}');
           const userId = profile.id;
 
-          console.log('[saveProfileInfo] profile:', profile);
-          console.log('[saveProfileInfo] userId:', userId);
-
           // 比较原始值（profile.phone 可能是 null vs 空字符串）
           const originalPhone = profile.phone || '';
           const phoneChanged = phone !== originalPhone;
@@ -1163,11 +1160,8 @@
 
           // 如果手机号变化，先更新 auth.users（登录凭证）
           if (phoneChanged || name !== profile.name) {
-            console.log('[saveProfileInfo] updating auth.users');
             const newEmail = `p${phone}@supabase.io`;
-            console.log('[saveProfileInfo] newEmail:', newEmail);
             const result = await adminApi.updateUser(userId, { email: newEmail, name: name, phone: phone });
-            console.log('[saveProfileInfo] adminApi updateUser result:', result);
             if (result.error) {
               showToast('更新登录信息失败：' + result.error, 'error');
               saveBtn.disabled = false;
@@ -1186,10 +1180,7 @@
           }
 
           // 更新 profiles 表
-          console.log('[saveProfileInfo] updating profiles with:', updateData);
           const { error } = await window.db.from('profiles').update(updateData).eq('id', userId);
-
-          console.log('[saveProfileInfo] profiles error:', error);
           if (error) throw error;
 
           // 更新本地存储

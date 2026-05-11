@@ -285,9 +285,9 @@
             '</span>' +
             '</div>' +
             '<div class="record-org">' +
-            (userMap[r.fill_user_id] || '') +
+            escapeHtml(userMap[r.fill_user_id] || '') +
             ' · ' +
-            orgName +
+            escapeHtml(orgName) +
             '</div>' +
             '<div class="record-stats">' +
             '<div class="record-stat">上线率<span class="up"> ' +

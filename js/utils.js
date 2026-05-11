@@ -87,6 +87,15 @@ function showConfirm(msg) {
   });
 }
 
+// ---- HTML 转义（防 XSS） ----
+
+function escapeHtml(text) {
+  if (!text) return '';
+  var d = document.createElement('div');
+  d.textContent = String(text);
+  return d.innerHTML;
+}
+
 // ---- 周日/周x 转换 ----
 
 var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -424,15 +433,21 @@ function getToday() {
 // ---- 公式计算 ----
 
 // 计算考核公式，fieldMap: { 中文名: 数值 }
+// 仅支持四则运算（+ - * /）、小括号与正数/小数数字，拒绝所有非法字符防止代码注入
 function calcFormula(formula, fieldMap) {
   if (!formula) return null;
   var expr = formula.trim();
 
   Object.keys(fieldMap).forEach(function (name) {
-    expr = expr.replace(new RegExp(name, 'g'), '(' + (fieldMap[name] || 0) + ')');
+    var val = Number(fieldMap[name]) || 0;
+    expr = expr.replace(new RegExp(name, 'g'), '(' + val + ')');
   });
 
+  // 安全检查：只允许数字、运算符、小数点、小括号、空白
+  if (/[^0-9+\-*/().%\s]/.test(expr)) return null;
+
   try {
+    // 使用 Function 前已通过正则白名单过滤，确保表达式中只有数学运算
     var result = new Function('return ' + expr)();
     return typeof result === 'number' && isFinite(result) ? result : null;
   } catch (e) {

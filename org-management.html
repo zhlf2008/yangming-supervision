@@ -801,14 +801,14 @@
               '<div class="user-item">' +
               '<div class="user-info">' +
               '<div class="user-name">' +
-              u.name +
+              escapeHtml(u.name) +
               '<span class="user-role ' +
-              u.role +
+              escapeHtml(u.role) +
               '">' +
-              u.role +
+              escapeHtml(u.role) +
               '</span></div>' +
               '<div class="user-meta">' +
-              (u.phone || '') +
+              escapeHtml(u.phone || '') +
               '</div>' +
               '</div>' +
               '<div class="item-actions">' +
@@ -890,7 +890,7 @@
         return `<div class="tree-node">
         <div class="tree-node-content level-0" onclick="toggleNode('${bigclassId}')">
           <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
-          <span class="tree-node-name">${bigclass.name}</span>
+          <span class="tree-node-name">${escapeHtml(bigclass.name)}</span>
           <span class="tree-node-level">${getTotalUsersCount(bigclass.id)}人</span>
           <div class="tree-node-actions">
             ${
@@ -915,8 +915,8 @@
         const isExpanded = expandedNodes.has(classId);
         const bigClass = organizations.find((o) => o.id === cls.parent_id);
         const canManage = managedOrgIds.has(cls.id);
-        let label = cls.name;
-        if (bigClass) label = bigClass.name + ' - ' + label;
+        let label = escapeHtml(cls.name);
+        if (bigClass) label = escapeHtml(bigClass.name) + ' - ' + label;
         return `<div class="tree-node">
         <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
           <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
@@ -945,7 +945,7 @@
         return `<div class="tree-node">
         <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
           <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
-          <span class="tree-node-name">${path}</span>
+          <span class="tree-node-name">${escapeHtml(path)}</span>
           <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>
           <div class="tree-node-actions">
             <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
@@ -969,7 +969,7 @@
           html += `<div class="tree-node">
           <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
-            <span class="tree-node-name">${cls.name}</span>
+            <span class="tree-node-name">${escapeHtml(cls.name)}</span>
             <span class="tree-node-level">${getTotalUsersCount(cls.id)}人</span>
             <div class="tree-node-actions">
               ${
@@ -1003,7 +1003,7 @@
           html += `<div class="tree-node">
           <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
-            <span class="tree-node-name">${group.name}</span>
+            <span class="tree-node-name">${escapeHtml(group.name)}</span>
             <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>
             <div class="tree-node-actions">
               ${
@@ -1033,8 +1033,8 @@
               u
             ) => `<div class="user-item" style="padding-left: 24px; border-left: 2px solid var(--border); margin-left: 12px;">
         <div class="user-info">
-          <div class="user-name">${u.name}<span class="user-role ${u.role}">${u.role}</span></div>
-          <div class="user-meta">${u.phone}</div>
+          <div class="user-name">${escapeHtml(u.name)}<span class="user-role ${escapeHtml(u.role)}">${escapeHtml(u.role)}</span></div>
+          <div class="user-meta">${escapeHtml(u.phone)}</div>
         </div>
         <div class="item-actions">
           <button class="edit-btn" onclick="showEditUserModal('${u.id}')">编辑</button>

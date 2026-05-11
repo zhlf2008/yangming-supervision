@@ -239,7 +239,7 @@
           '<option value="">全部</option>' +
           bigClasses
             .map(function (b) {
-              return '<option value="' + b.id + '">' + b.name + '</option>';
+              return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>';
             })
             .join('');
 
@@ -268,7 +268,7 @@
           '<option value="">全部</option>' +
           classes
             .map(function (c) {
-              return '<option value="' + c.id + '">' + c.name + '</option>';
+              return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
             })
             .join('');
         // 恢复之前选中的班级（如果仍在可选列表中）
@@ -291,7 +291,7 @@
           '<option value="">全部</option>' +
           groups
             .map(function (g) {
-              return '<option value="' + g.id + '">' + g.name + '</option>';
+              return '<option value="' + g.id + '">' + escapeHtml(g.name) + '</option>';
             })
             .join('');
         // 恢复之前选中的小组
@@ -314,11 +314,26 @@
       }
 
       async function loadRecords() {
-        var { data, error } = await window.db
+        // 先获取当前学期的所有日程 ID，用于过滤 attendance_records
+        var schedIdsBySemester = [];
+        if (currentSemesterId) {
+          var { data: semesterScheds } = await window.db
+            .from('schedules')
+            .select('id')
+            .eq('semester_id', currentSemesterId);
+          schedIdsBySemester = (semesterScheds || []).map(function (s) { return s.id; });
+        }
+
+        var query = window.db
           .from('attendance_records')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(500);
+        // 按学期过滤：只查当前学期日程对应的小组考勤
+        if (schedIdsBySemester.length > 0) {
+          query = query.in('schedule_id', schedIdsBySemester);
+        }
+        var { data, error } = await query;
         if (error) {
           document.getElementById('recordList').innerHTML = '<div class="empty-state">加载失败</div>';
           return;
@@ -332,6 +347,7 @@
             var { data: scheds } = await window.db
               .from('schedules')
               .select('id')
+              .eq('semester_id', currentSemesterId)
               .gte('schedule_date', range.start)
               .lte('schedule_date', range.end);
             var schedIds = (scheds || []).map(function (s) {
@@ -447,14 +463,14 @@
             r.id +
             ')">✕</span>' +
             '<div class="record-header"><span class="record-user">' +
-            (userMap[r.fill_user_id] || '') +
+            escapeHtml(userMap[r.fill_user_id] || '') +
             '</span><span class="record-date">' +
             dateStr +
             ' ' +
             timeStr +
             '</span></div>' +
             '<div class="record-org">' +
-            (orgPathMap[r.organization_id] || '') +
+            escapeHtml(orgPathMap[r.organization_id] || '') +
             '</div>' +
             '<div class="record-stats"><div class="record-stat">上线 ' +
             online +
