@@ -681,7 +681,14 @@
         }
 
         await waitForDb();
-        currentSemesterId = await getCurrentSemesterId();
+        // 优先使用 URL 参数传入的学期 ID，无参数时回退到当前学期
+        var urlParams = new URLSearchParams(window.location.search);
+        var paramSemesterId = urlParams.get('semester_id');
+        if (paramSemesterId) {
+          currentSemesterId = parseInt(paramSemesterId);
+        } else {
+          currentSemesterId = await getCurrentSemesterId();
+        }
         var { data: sem } = await window.db
           .from('semesters')
           .select('semester_name')
