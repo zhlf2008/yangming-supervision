@@ -291,7 +291,9 @@ var adminApi = {
   }
 };
 
-// ---- 操作日志 ----
+// 操作日志：写入失败时降级到 localStorage，连接恢复后批量补传
+var AUDITLOG_BACKLOG_KEY = '_auditlog_backlog';
+var AUDITLOG_FLUSHING = false;
 
 function logAction(action, target, detail) {
   var user = getCurrentUser();
@@ -305,10 +307,44 @@ function logAction(action, target, detail) {
   };
   // 异步写入，不阻塞主流程
   try {
-    return window.db.from('audit_logs').insert(entry);
+    window.db.from('audit_logs').insert(entry).then(function () {
+      // 写入成功后尝试补传积压日志
+      flushAuditBacklog();
+    }).catch(function () {
+      appendAuditBacklog(entry);
+    });
   } catch (e) {
-    /* silent */
+    appendAuditBacklog(entry);
   }
+}
+
+function appendAuditBacklog(entry) {
+  try {
+    var backlog = JSON.parse(localStorage.getItem(AUDITLOG_BACKLOG_KEY) || '[]');
+    backlog.push(entry);
+    // 最多保留 200 条积压，防止撑爆 localStorage
+    if (backlog.length > 200) backlog = backlog.slice(-200);
+    localStorage.setItem(AUDITLOG_BACKLOG_KEY, JSON.stringify(backlog));
+  } catch (e) {
+    /* localStorage 也不可用，放弃 */
+  }
+}
+
+function flushAuditBacklog() {
+  if (AUDITLOG_FLUSHING) return;
+  var backlog = [];
+  try {
+    backlog = JSON.parse(localStorage.getItem(AUDITLOG_BACKLOG_KEY) || '[]');
+  } catch (e) { return; }
+  if (!backlog.length) return;
+
+  AUDITLOG_FLUSHING = true;
+  window.db.from('audit_logs').insert(backlog).then(function () {
+    localStorage.removeItem(AUDITLOG_BACKLOG_KEY);
+    AUDITLOG_FLUSHING = false;
+  }).catch(function () {
+    AUDITLOG_FLUSHING = false;
+  });
 }
 
 function checkLogin() {
