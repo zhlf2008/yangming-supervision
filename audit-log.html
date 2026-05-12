@@ -218,7 +218,8 @@
           updateDebug();
 
           if (logsResult.error) {
-            document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败: ' + escapeHtml(logsResult.error.message || '未知错误') + '</div>';
+            var errMsg = logsResult.error ? (logsResult.error.message || '未知错误') : '未知错误';
+            document.getElementById('logList').textContent = '加载失败: ' + errMsg;
             return;
           }
           allLogs = logsResult.data || [];
@@ -245,7 +246,9 @@
 
           renderLogs();
         } catch (e) {
-          debugInfo.push('8x-异常:' + (e ? (e.message || JSON.stringify(e) || 'unknown') : 'null'));
+          var errMsg = 'unknown';
+          try { errMsg = e ? (e.message || JSON.stringify(e)) : 'null'; } catch (_) {}
+          debugInfo.push('8x-异常:' + errMsg);
           updateDebug();
         }
       }
