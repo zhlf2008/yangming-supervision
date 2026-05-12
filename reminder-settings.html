@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>填报提醒设置 - 阳明心学督察管理系统</title>
+    <!-- 快速session检查：新设备无session则直接跳转登录，避免闪现页面 -->
+    <script>
+      (function(){
+        var supabaseKey = "sb-whvjfurrkusdwujjodwc-auth-token";
+        var raw = localStorage.getItem(supabaseKey);
+        if (!raw) { window.location.replace("login.html"); return; }
+        try {
+          var session = JSON.parse(raw);
+          if (!session || !session.access_token) { window.location.replace("login.html"); }
+        } catch(e) {
+          window.location.replace("login.html");
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
     <link rel="stylesheet" href="css/common.css" />
