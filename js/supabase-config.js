@@ -46,6 +46,7 @@ async function waitForDb() {
   if (window.db) return;
   var startTime = Date.now();
   while (!window.db && Date.now() - startTime < 20000) {
+    if (window.supabaseLoadFailed) break;
     await new Promise(function (r) {
       setTimeout(r, 100);
     });

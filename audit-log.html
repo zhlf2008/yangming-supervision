@@ -258,7 +258,11 @@
           .join('');
       }
 
-      init();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 50); });
+      } else {
+        setTimeout(init, 50);
+      }
     </script>
   </body>
 </html>
