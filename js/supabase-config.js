@@ -14,6 +14,16 @@ window.supabaseConfig = {
 
 // ---- 基础工具 ----
 
+// HTML 转义（防 XSS）—— 与 utils.js 中定义相同，避免 utils.js 缓存问题导致未定义
+if (typeof escapeHtml === 'undefined') {
+  function escapeHtml(text) {
+    if (!text) return '';
+    var d = document.createElement('div');
+    d.textContent = String(text);
+    return d.innerHTML;
+  }
+}
+
 // 检测是否已登录（通过 SDK 原生 getSession）
 async function isLoggedIn() {
   if (!window.supabaseClient) return false;

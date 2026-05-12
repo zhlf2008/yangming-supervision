@@ -147,6 +147,15 @@
       renderBottomNav('');
     </script>
     <script>
+      // 备份定义，防止 utils.js 缓存问题
+      if (typeof escapeHtml === 'undefined') {
+        function escapeHtml(text) {
+          if (!text) return '';
+          var d = document.createElement('div');
+          d.textContent = String(text);
+          return d.innerHTML;
+        }
+      }
       var currentFilter = 'all';
       var allLogs = [];
 
