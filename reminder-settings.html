@@ -319,7 +319,10 @@
           });
 
           // 加载已有配置
-          var { data: configs } = await window.db.from('reminder_configs').select('*');
+          var { data: configs, error: configsErr } = await window.db.from('reminder_configs').select('*');
+          console.log('DEBUG reminder_configs query - data:', configs, 'error:', configsErr, 'status:', configsErr && configsErr.code);
+          console.log('DEBUG auth user:', window.db.auth ? await window.db.auth.getUser() : 'no auth');
+
           (configs || []).forEach(function (c) {
             configsMap[c.org_id] = c;
           });
