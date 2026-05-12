@@ -300,10 +300,28 @@
 
         await loadData();
 
+        // ---- 确保 session 有效 ----
+        async function ensureSession() {
+          var result = await window.supabaseClient.auth.getSession();
+          if (result.data && result.data.session) return true;
+          // 尝试刷新
+          var refreshResult = await window.supabaseClient.auth.refreshSession();
+          if (refreshResult.data && refreshResult.data.session) return true;
+          return false;
+        }
+
         // ---- 数据加载 ----
         async function loadData() {
           document.getElementById('loadingArea').style.display = 'block';
           document.getElementById('cardsContainer').innerHTML = '';
+
+          // 确保 RLS 可用的 session 有效
+          var sessionOk = await ensureSession();
+          if (!sessionOk) {
+            document.getElementById('loadingArea').innerHTML =
+              '<div class="empty-state" style="padding:40px">登录状态已过期，<a href="login.html" style="color:var(--vermillion)">请重新登录</a></div>';
+            return;
+          }
 
           // 加载当前学期的组织
           var { data: orgs } = currentSemesterId
@@ -319,24 +337,10 @@
           });
 
           // 加载已有配置
-          var { data: configs, error: configsErr } = await window.db.from('reminder_configs').select('*');
-          console.log('DEBUG reminder_configs query - data:', configs, 'error:', configsErr, 'status:', configsErr && configsErr.code);
-          console.log('DEBUG auth user:', window.db.auth ? await window.db.auth.getUser() : 'no auth');
-
+          var { data: configs } = await window.db.from('reminder_configs').select('*');
           (configs || []).forEach(function (c) {
             configsMap[c.org_id] = c;
           });
-
-          // DEBUG: 打印 configsMap 和 bigClasses 的 ID 类型
-          var bcIds = bigClasses.map(function(b) { return b.id + ' (' + typeof b.id + ')'; });
-          var cfgKeys = Object.keys(configsMap).map(function(k) { return k + ' (' + typeof k + ')'; });
-          console.log('DEBUG bigClasses ids:', bcIds);
-          console.log('DEBUG configsMap keys:', cfgKeys);
-          var firstBcId = bigClasses[0] ? bigClasses[0].id : null;
-          if (firstBcId !== null) {
-            console.log('DEBUG configsMap[' + firstBcId + ']:', configsMap[firstBcId]);
-            console.log('DEBUG configsMap[' + String(firstBcId) + ']:', configsMap[String(firstBcId)]);
-          }
 
           document.getElementById('loadingArea').style.display = 'none';
           renderCards();
