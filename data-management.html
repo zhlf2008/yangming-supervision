@@ -529,11 +529,7 @@
         loadRecords();
       }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 50); });
-      } else {
-        setTimeout(init, 50);
-      }
+      init();
     </script>
   </body>
 </html>

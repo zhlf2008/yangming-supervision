@@ -150,23 +150,58 @@
       var currentFilter = 'all';
       var allLogs = [];
 
+      var debugInfo = [];
+
       async function init() {
+        debugInfo.push('1-init开始');
+        updateDebug();
         var user = checkLogin();
-        if (!user) return;
+        if (!user) {
+          debugInfo.push('2-未登录');
+          updateDebug();
+          return;
+        }
+        debugInfo.push('2-已登录:' + user.role);
+        updateDebug();
         if (user.role !== '超级管理员' && user.role !== '管理员') {
-          alert('无权访问');
-          window.location.href = 'index.html';
+          debugInfo.push('3-无权限');
+          updateDebug();
+          return;
+        }
+        debugInfo.push('3-权限OK');
+        updateDebug();
+        try {
+          debugInfo.push('4-等待SDK...');
+          updateDebug();
+          await waitForDb();
+          debugInfo.push('5-SDK就绪');
+          updateDebug();
+        } catch (e) {
+          debugInfo.push('5-SDK失败:' + e.message);
+          updateDebug();
           return;
         }
         try {
-          await waitForDb();
+          debugInfo.push('6-刷新用户...');
+          updateDebug();
+          await refreshCurrentUser();
+          debugInfo.push('7-用户已刷新');
+          updateDebug();
         } catch (e) {
-          document.getElementById('logList').innerHTML = '<div class="empty-state">数据库连接失败，请检查网络后刷新</div>';
-          return;
+          debugInfo.push('7-刷新失败:' + e.message);
+          updateDebug();
         }
-        // refreshCurrentUser 失败不阻塞，loadLogs 只需 db 可用
-        try { await refreshCurrentUser(); } catch (e) {}
+        debugInfo.push('8-开始加载日志...');
+        updateDebug();
         await loadLogs();
+        debugInfo.push('9-完成');
+        updateDebug();
+      }
+
+      function updateDebug() {
+        document.getElementById('logList').innerHTML = debugInfo.map(function(s) {
+          return '<div style="padding:4px 12px;font-size:13px;color:#555;font-family:monospace">' + s + '</div>';
+        }).join('');
       }
 
       async function loadLogs() {
@@ -258,11 +293,7 @@
           .join('');
       }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 50); });
-      } else {
-        setTimeout(init, 50);
-      }
+      init();
     </script>
   </body>
 </html>

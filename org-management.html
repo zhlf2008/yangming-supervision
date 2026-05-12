@@ -655,6 +655,14 @@
       let managedRootOrg = null;
 
       async function init() {
+        try {
+          await waitForDb();
+          await refreshCurrentUser();
+        } catch (e) {
+          document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">连接失败，请<a href="org-management.html">刷新</a></div>';
+          return;
+        }
+
         const userData = localStorage.getItem('supabase_user');
         if (!userData) {
           window.location.href = 'login.html';
@@ -669,7 +677,6 @@
           return;
         }
 
-        await waitForDb();
         // 优先使用 URL 参数传入的学期 ID，无参数时回退到当前学期
         var urlParams = new URLSearchParams(window.location.search);
         var paramSemesterId = urlParams.get('semester_id');
@@ -1458,18 +1465,7 @@
         }
       }
 
-      function startInit() {
-        waitForDb().then(function () {
-          return refreshCurrentUser().catch(function () {});
-        }).then(init).catch(function (e) {
-          document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">数据库连接失败，请检查网络后<a href="org-management.html">刷新</a></div>';
-        });
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(startInit, 50); });
-      } else {
-        setTimeout(startInit, 50);
-      }
+      init();
     </script>
 
     <div id="bottomNavContainer"></div>
