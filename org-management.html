@@ -659,7 +659,7 @@
           await waitForDb();
           await refreshCurrentUser();
         } catch (e) {
-          document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">连接失败，请<a href="org-management.html">刷新</a></div>';
+          document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">连接失败: ' + (e.message || '') + ' <a href="org-management.html">刷新</a></div>';
           return;
         }
 
@@ -685,7 +685,8 @@
         } else {
           currentSemesterId = await getCurrentSemesterId();
         }
-        var { data: sem } = await window.db
+        var client = window.supabaseClient || window.db;
+        var { data: sem } = await client
           .from('semesters')
           .select('semester_name')
           .eq('id', currentSemesterId)
@@ -740,9 +741,10 @@
       }
 
       async function loadOrganizations() {
-        const { data, error } = await window.db.from('organizations').select('*').eq('semester_id', currentSemesterId);
+        var client = window.supabaseClient || window.db;
+        var { data, error } = await client.from('organizations').select('*').eq('semester_id', currentSemesterId);
         if (error) {
-          showToast('加载组织失败');
+          document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">加载组织失败: ' + (error.message || '') + '</div>';
           return;
         }
         organizations = data || [];
@@ -757,7 +759,8 @@
       }
 
       async function loadUsers() {
-        let query = window.db
+        var client = window.supabaseClient || window.db;
+        var query = client
           .from('profiles')
           .select('*, organizations(name)')
           .order('created_at', { ascending: false });

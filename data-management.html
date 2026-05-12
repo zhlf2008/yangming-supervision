@@ -219,18 +219,22 @@
         await waitForDb();
         await refreshCurrentUser();
         var user = checkLogin();
-        if (!user) return;
+        if (!user) { document.querySelector('.container').innerHTML = '<div class="empty-state">未登录</div>'; return; }
         if (user.role !== '超级管理员' && user.role !== '管理员') {
-          alert('无权访问');
-          window.location.href = 'index.html';
+          document.querySelector('.container').innerHTML = '<div class="empty-state">无权访问</div>';
           return;
         }
 
+        var client = window.supabaseClient || window.db;
         // 加载当前学期，再加载组织
         currentSemesterId = await getCurrentSemesterId();
-        var { data: orgs } = currentSemesterId
-          ? await window.db.from('organizations').select('*').eq('semester_id', currentSemesterId)
+        var { data: orgs, error: orgsErr } = currentSemesterId
+          ? await client.from('organizations').select('*').eq('semester_id', currentSemesterId)
           : { data: [] };
+        if (orgsErr) {
+          document.querySelector('.container').innerHTML = '<div class="empty-state">加载组织失败: ' + (orgsErr.message || '') + '</div>';
+          return;
+        }
         orgsList = orgs || [];
         var bigClasses = orgsList.filter(function (o) {
           return o.level === '大班';

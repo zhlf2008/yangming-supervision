@@ -150,29 +150,31 @@
       var currentFilter = 'all';
       var allLogs = [];
 
+      function showErr(msg) {
+        document.getElementById('logList').innerHTML = '<div class="empty-state">' + msg + '</div>';
+      }
+
       async function init() {
         var user = checkLogin();
-        if (!user) return;
-        if (user.role !== '超级管理员' && user.role !== '管理员') {
-          alert('无权访问');
-          window.location.href = 'index.html';
-          return;
-        }
-        await waitForDb();
+        if (!user) { showErr('未登录'); return; }
+        if (user.role !== '超级管理员' && user.role !== '管理员') { showErr('无权访问'); return; }
+        try { await waitForDb(); } catch (e) { showErr('SDK失败:' + (e.message||'')); return; }
         try { await refreshCurrentUser(); } catch (e) {}
         await loadLogs();
       }
 
       async function loadLogs() {
         try {
-          var logsResult = await window.supabaseClient
+          // 直接用 supabaseClient，不用 window.db（避免手机端缓存的旧 dbWithRetry 版本）
+          var client = window.supabaseClient || window.db;
+          var logsResult = await client
             .from('audit_logs')
             .select('action,user_name,target,detail,created_at')
             .order('created_at', { ascending: false })
             .limit(200);
 
           if (logsResult.error) {
-            document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败</div>';
+            showErr('查询失败: ' + (logsResult.error.message || ''));
             return;
           }
           allLogs = logsResult.data || [];
