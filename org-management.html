@@ -19,55 +19,6 @@
         gap: 12px;
         margin-bottom: 16px;
       }
-      .settings-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 12px;
-        background: var(--bg-card);
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        margin-bottom: 16px;
-        font-size: 13px;
-      }
-      .settings-bar .label {
-        color: var(--ink-dark);
-      }
-      .settings-bar .toggle-switch {
-        position: relative;
-        width: 44px;
-        height: 24px;
-        cursor: pointer;
-        flex-shrink: 0;
-      }
-      .settings-bar .toggle-switch input {
-        display: none;
-      }
-      .settings-bar .toggle-slider {
-        position: absolute;
-        inset: 0;
-        background: #ccc;
-        border-radius: 12px;
-        transition: background 0.2s;
-      }
-      .settings-bar .toggle-slider::before {
-        content: '';
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        left: 2px;
-        top: 2px;
-        background: white;
-        border-radius: 50%;
-        transition: transform 0.2s;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-      }
-      .settings-bar .toggle-switch input:checked + .toggle-slider {
-        background: var(--vermillion);
-      }
-      .settings-bar .toggle-switch input:checked + .toggle-slider::before {
-        transform: translateX(20px);
-      }
       .back-btn {
         width: 40px;
         height: 40px;
@@ -495,13 +446,6 @@
         <h1 class="page-title">组织架构</h1>
       </div>
       <div id="semesterInfo" style="font-size: 12px; color: var(--ink-muted); margin-bottom: 12px"></div>
-      <div class="settings-bar">
-        <span class="label">允许用户注册</span>
-        <div class="toggle-switch" onclick="toggleRegistration()">
-          <input type="checkbox" id="allowRegToggle" />
-          <span class="toggle-slider"></span>
-        </div>
-      </div>
       <div class="section">
         <div class="section-header">
           <span class="section-title">组织架构</span>
@@ -636,19 +580,6 @@
         setTimeout(() => toast.classList.remove('show'), 2000);
       }
 
-      function toggleRegistration() {
-        const current = localStorage.getItem('system_allow_registration') === 'true';
-        const newValue = !current;
-        localStorage.setItem('system_allow_registration', newValue ? 'true' : 'false');
-        document.getElementById('allowRegToggle').checked = newValue;
-        showToast(newValue ? '已开启用户注册' : '已关闭用户注册');
-      }
-
-      function initRegistrationToggle() {
-        const allowReg = localStorage.getItem('system_allow_registration') === 'true';
-        document.getElementById('allowRegToggle').checked = allowReg;
-      }
-
       // 当前用户有权管理的组织 ID 集合（及其所有下级）
       let managedOrgIds = new Set();
       // 当前用户的可管理根组织（用于判定层级）
@@ -693,14 +624,12 @@
           .single();
         document.getElementById('semesterInfo').textContent = '当前学期：' + (sem ? sem.semester_name : '未知');
 
-        initRegistrationToggle();
         await loadOrganizations();
         calcManagedScope();
-        // 非管理员隐藏添加大班按钮和注册开关
+        // 非管理员隐藏添加大班按钮
         const role = currentUser.role;
         if (role !== '超级管理员' && role !== '管理员') {
           document.getElementById('addBigClassBtn').style.display = 'none';
-          document.querySelector('.settings-bar').style.display = 'none';
         } else if (role === '超级管理员') {
           document.getElementById('addSysAdminBtn').style.display = 'inline-block';
         }
