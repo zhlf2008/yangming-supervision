@@ -324,6 +324,17 @@
             configsMap[c.org_id] = c;
           });
 
+          // DEBUG: 打印 configsMap 和 bigClasses 的 ID 类型
+          var bcIds = bigClasses.map(function(b) { return b.id + ' (' + typeof b.id + ')'; });
+          var cfgKeys = Object.keys(configsMap).map(function(k) { return k + ' (' + typeof k + ')'; });
+          console.log('DEBUG bigClasses ids:', bcIds);
+          console.log('DEBUG configsMap keys:', cfgKeys);
+          var firstBcId = bigClasses[0] ? bigClasses[0].id : null;
+          if (firstBcId !== null) {
+            console.log('DEBUG configsMap[' + firstBcId + ']:', configsMap[firstBcId]);
+            console.log('DEBUG configsMap[' + String(firstBcId) + ']:', configsMap[String(firstBcId)]);
+          }
+
           document.getElementById('loadingArea').style.display = 'none';
           renderCards();
         }
