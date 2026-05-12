@@ -147,75 +147,23 @@
       renderBottomNav('');
     </script>
     <script>
-      // 备份定义，防止 utils.js 缓存问题
-      if (typeof escapeHtml === 'undefined') {
-        function escapeHtml(text) {
-          if (!text) return '';
-          var d = document.createElement('div');
-          d.textContent = String(text);
-          return d.innerHTML;
-        }
-      }
       var currentFilter = 'all';
       var allLogs = [];
 
-      var debugInfo = [];
-
       async function init() {
-        debugInfo.push('1-init开始');
-        updateDebug();
         var user = checkLogin();
-        if (!user) {
-          debugInfo.push('2-未登录');
-          updateDebug();
-          return;
-        }
-        debugInfo.push('2-已登录:' + user.role);
-        updateDebug();
+        if (!user) return;
         if (user.role !== '超级管理员' && user.role !== '管理员') {
-          debugInfo.push('3-无权限');
-          updateDebug();
+          alert('无权访问');
+          window.location.href = 'index.html';
           return;
         }
-        debugInfo.push('3-权限OK');
-        updateDebug();
-        try {
-          debugInfo.push('4-等待SDK...');
-          updateDebug();
-          await waitForDb();
-          debugInfo.push('5-SDK就绪');
-          updateDebug();
-        } catch (e) {
-          debugInfo.push('5-SDK失败:' + e.message);
-          updateDebug();
-          return;
-        }
-        try {
-          debugInfo.push('6-刷新用户...');
-          updateDebug();
-          await refreshCurrentUser();
-          debugInfo.push('7-用户已刷新');
-          updateDebug();
-        } catch (e) {
-          debugInfo.push('7-刷新失败:' + e.message);
-          updateDebug();
-        }
-        debugInfo.push('8-开始加载日志...');
-        updateDebug();
+        await waitForDb();
+        try { await refreshCurrentUser(); } catch (e) {}
         await loadLogs();
-        debugInfo.push('9-完成');
-        updateDebug();
-      }
-
-      function updateDebug() {
-        document.getElementById('logList').innerHTML = debugInfo.map(function(s) {
-          return '<div style="padding:4px 12px;font-size:13px;color:#555;font-family:monospace">' + s + '</div>';
-        }).join('');
       }
 
       async function loadLogs() {
-        debugInfo.push('8a-查询日志(直连)...');
-        updateDebug();
         try {
           var logsResult = await window.supabaseClient
             .from('audit_logs')
@@ -223,24 +171,16 @@
             .order('created_at', { ascending: false })
             .limit(200);
 
-          debugInfo.push('8b-日志查询完成,data=' + (logsResult.data ? logsResult.data.length : 'null') + ',error=' + (logsResult.error ? logsResult.error.message : 'null'));
-          updateDebug();
-
           if (logsResult.error) {
-            var errMsg = logsResult.error ? (logsResult.error.message || '未知错误') : '未知错误';
-            document.getElementById('logList').textContent = '加载失败: ' + errMsg;
+            document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败</div>';
             return;
           }
           allLogs = logsResult.data || [];
 
           try {
-            debugInfo.push('8c-查询学期...');
-            updateDebug();
             var currentSemesterId = await getCurrentSemesterId();
             if (currentSemesterId) {
               var semResult = await window.supabaseClient.from('semesters').select('start_date').eq('id', currentSemesterId).single();
-              debugInfo.push('8d-学期查询完成');
-              updateDebug();
               if (semResult.data && semResult.data.start_date) {
                 var semesterStart = semResult.data.start_date;
                 allLogs = allLogs.filter(function (l) {
@@ -248,17 +188,11 @@
                 });
               }
             }
-          } catch (e) {
-            debugInfo.push('8d-学期失败:' + e.message);
-            updateDebug();
-          }
+          } catch (e) {}
 
           renderLogs();
         } catch (e) {
-          var errMsg = 'unknown';
-          try { errMsg = e ? (e.message || JSON.stringify(e)) : 'null'; } catch (_) {}
-          debugInfo.push('8x-异常:' + errMsg);
-          updateDebug();
+          document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败</div>';
         }
       }
 
