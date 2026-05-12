@@ -205,10 +205,10 @@
       }
 
       async function loadLogs() {
-        debugInfo.push('8a-查询日志...');
+        debugInfo.push('8a-查询日志(直连)...');
         updateDebug();
         try {
-          var logsResult = await window.db
+          var logsResult = await window.supabaseClient
             .from('audit_logs')
             .select('action,user_name,target,detail,created_at')
             .order('created_at', { ascending: false })
@@ -228,7 +228,7 @@
             updateDebug();
             var currentSemesterId = await getCurrentSemesterId();
             if (currentSemesterId) {
-              var semResult = await window.db.from('semesters').select('start_date').eq('id', currentSemesterId).single();
+              var semResult = await window.supabaseClient.from('semesters').select('start_date').eq('id', currentSemesterId).single();
               debugInfo.push('8d-学期查询完成');
               updateDebug();
               if (semResult.data && semResult.data.start_date) {
@@ -245,9 +245,8 @@
 
           renderLogs();
         } catch (e) {
-          debugInfo.push('8x-异常:' + e.message);
+          debugInfo.push('8x-异常:' + (e ? (e.message || JSON.stringify(e) || 'unknown') : 'null'));
           updateDebug();
-          document.getElementById('logList').innerHTML = '<div class="empty-state">加载异常: ' + escapeHtml(e.message || '') + '</div>';
         }
       }
 
