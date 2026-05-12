@@ -205,6 +205,8 @@
       }
 
       async function loadLogs() {
+        debugInfo.push('8a-查询日志...');
+        updateDebug();
         try {
           var logsResult = await window.db
             .from('audit_logs')
@@ -212,17 +214,23 @@
             .order('created_at', { ascending: false })
             .limit(200);
 
+          debugInfo.push('8b-日志查询完成,data=' + (logsResult.data ? logsResult.data.length : 'null') + ',error=' + (logsResult.error ? logsResult.error.message : 'null'));
+          updateDebug();
+
           if (logsResult.error) {
             document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败: ' + escapeHtml(logsResult.error.message || '未知错误') + '</div>';
             return;
           }
           allLogs = logsResult.data || [];
 
-          // 按学期过滤：只保留当前学期开始日期之后的日志
           try {
+            debugInfo.push('8c-查询学期...');
+            updateDebug();
             var currentSemesterId = await getCurrentSemesterId();
             if (currentSemesterId) {
               var semResult = await window.db.from('semesters').select('start_date').eq('id', currentSemesterId).single();
+              debugInfo.push('8d-学期查询完成');
+              updateDebug();
               if (semResult.data && semResult.data.start_date) {
                 var semesterStart = semResult.data.start_date;
                 allLogs = allLogs.filter(function (l) {
@@ -231,11 +239,14 @@
               }
             }
           } catch (e) {
-            // 学期查询失败不影响日志展示
+            debugInfo.push('8d-学期失败:' + e.message);
+            updateDebug();
           }
 
           renderLogs();
         } catch (e) {
+          debugInfo.push('8x-异常:' + e.message);
+          updateDebug();
           document.getElementById('logList').innerHTML = '<div class="empty-state">加载异常: ' + escapeHtml(e.message || '') + '</div>';
         }
       }
