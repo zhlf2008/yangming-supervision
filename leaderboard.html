@@ -759,7 +759,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.25.0/dist/pinyin-pro.min.js"></script>
+    <script src="https://unpkg.com/pinyin-pro@3.25.0/dist/pinyin-pro.min.js"></script>
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
     <script src="js/components.js?v=3"></script>
@@ -1650,6 +1650,8 @@
       // 汉字→拼音首字母（pinyin-pro 库，完整覆盖所有汉字）
       function toOrgAbbr(name) {
         if (!name) return '';
+        // CDN 加载失败时降级：只保留 ASCII 字母数字
+        if (typeof pinyinPro === 'undefined') return name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
         // pattern:'first' 取拼音首字母，toneType:'none' 去声调
         return pinyinPro.pinyin(name, { pattern: 'first', toneType: 'none' })
           .replace(/\s+/g, '').toUpperCase().substring(0, 8);
