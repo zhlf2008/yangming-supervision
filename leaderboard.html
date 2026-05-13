@@ -423,6 +423,11 @@
           radial-gradient(circle at 40% 85%, rgba(196,30,58,.03) 0%, transparent 50%);
         pointer-events: none;
       }
+      /* 移动端捕获时移除 gradient 装饰，避免 html2canvas createPattern 零尺寸 */
+      .certificate.cert-capturing::before { display: none; }
+      .certificate.cert-capturing .cert-watermark { display: none; }
+      .certificate.cert-capturing .cert-inner-saffron,
+      .certificate.cert-capturing .cert-inner-gold { display: none; }
 
       .cert-watermark {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -1474,15 +1479,10 @@
 
           // 移动端 html2canvas 将 gradient 背景转为 pattern 时触发零尺寸错误
           var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-          var saffronEl = certEl.querySelector('.cert-inner-saffron');
-          var goldEl = certEl.querySelector('.cert-inner-gold');
-          var prevMinHeight = certEl.style.minHeight;
-          var prevBg = certEl.style.background;
           if (isMobile) {
             certEl.style.minHeight = certEl.scrollHeight + 'px';
-            certEl.style.background = '#fff5ec'; // 固定色替代 gradient
-            if (saffronEl) saffronEl.style.display = 'none';
-            if (goldEl) goldEl.style.display = 'none';
+            certEl.style.background = '#fff5ec';
+            certEl.classList.add('cert-capturing');
           }
 
           var rawCanvas = await html2canvas(certEl, {
@@ -1493,10 +1493,9 @@
           });
 
           if (isMobile) {
-            certEl.style.minHeight = prevMinHeight;
-            certEl.style.background = prevBg;
-            if (saffronEl) saffronEl.style.display = '';
-            if (goldEl) goldEl.style.display = '';
+            certEl.style.minHeight = '';
+            certEl.style.background = '';
+            certEl.classList.remove('cert-capturing');
           }
 
           if (!rawCanvas) {
