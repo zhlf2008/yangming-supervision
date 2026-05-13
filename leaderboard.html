@@ -1472,12 +1472,14 @@
             return;
           }
 
-          // 移动端 html2canvas 对内嵌 border div 会触发 createPattern 零尺寸错误，
-          // 捕获前隐藏它们，之后在 Canvas 上手动补画
+          // 移动端 html2canvas 对内嵌 border div 会触发 createPattern 零尺寸错误
+          var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           var saffronEl = certEl.querySelector('.cert-inner-saffron');
           var goldEl = certEl.querySelector('.cert-inner-gold');
-          if (saffronEl) saffronEl.style.display = 'none';
-          if (goldEl) goldEl.style.display = 'none';
+          if (isMobile) {
+            if (saffronEl) saffronEl.style.display = 'none';
+            if (goldEl) goldEl.style.display = 'none';
+          }
 
           var rawCanvas = await html2canvas(certEl, {
             scale: 2,
@@ -1487,35 +1489,37 @@
           });
 
           // 恢复显示
-          if (saffronEl) saffronEl.style.display = '';
-          if (goldEl) goldEl.style.display = '';
+          if (isMobile) {
+            if (saffronEl) saffronEl.style.display = '';
+            if (goldEl) goldEl.style.display = '';
+          }
 
           if (!rawCanvas) {
             showToast('截图失败', 'error');
             return;
           }
 
-          // --- 手动补画内嵌 saffron+金色边框 ---
-          var rctx = rawCanvas.getContext('2d');
-          var isMob = window.matchMedia('(max-width: 700px)').matches;
-          var sc = 2;                               // html2canvas scale
-          var innerGold = 1 * sc;                   // 金线 1 CSS px
-          var innerSaffronW = (isMob ? 4 : 12) * sc; // saffron 色带
-          var rw = rawCanvas.width, rh = rawCanvas.height;
+          // 移动端：手动补画内嵌 saffron+金色边框
+          if (isMobile) {
+            var rctx = rawCanvas.getContext('2d');
+            var isMobView = window.matchMedia('(max-width: 700px)').matches;
+            var sc = 2;
+            var innerGold = 1 * sc;
+            var innerSaffronW = (isMobView ? 4 : 12) * sc;
+            var rw = rawCanvas.width, rh = rawCanvas.height;
 
-          // 金色线 (4 边，fillRect 精确)
-          rctx.fillStyle = '#d4a017';
-          rctx.fillRect(0, 0, rw, innerGold);
-          rctx.fillRect(0, rh - innerGold, rw, innerGold);
-          rctx.fillRect(0, 0, innerGold, rh);
-          rctx.fillRect(rw - innerGold, 0, innerGold, rh);
+            rctx.fillStyle = '#d4a017';
+            rctx.fillRect(0, 0, rw, innerGold);
+            rctx.fillRect(0, rh - innerGold, rw, innerGold);
+            rctx.fillRect(0, 0, innerGold, rh);
+            rctx.fillRect(rw - innerGold, 0, innerGold, rh);
 
-          // Saffron 色带 (紧贴金线内侧)
-          rctx.fillStyle = '#ffe8d6';
-          rctx.fillRect(innerGold, innerGold, rw - 2*innerGold, innerSaffronW);
-          rctx.fillRect(innerGold, rh - innerGold - innerSaffronW, rw - 2*innerGold, innerSaffronW);
-          rctx.fillRect(innerGold, innerGold, innerSaffronW, rh - 2*innerGold);
-          rctx.fillRect(rw - innerGold - innerSaffronW, innerGold, innerSaffronW, rh - 2*innerGold);
+            rctx.fillStyle = '#ffe8d6';
+            rctx.fillRect(innerGold, innerGold, rw - 2*innerGold, innerSaffronW);
+            rctx.fillRect(innerGold, rh - innerGold - innerSaffronW, rw - 2*innerGold, innerSaffronW);
+            rctx.fillRect(innerGold, innerGold, innerSaffronW, rh - 2*innerGold);
+            rctx.fillRect(rw - innerGold - innerSaffronW, innerGold, innerSaffronW, rh - 2*innerGold);
+          }
 
           // 创建更大的画布，在内容外围画多层边框
           // 三层边框总宽度 = 外金2px + 红10px + 内金2px = 14px
@@ -1592,6 +1596,15 @@
           }
         } catch (e) {
           console.error('saveCertificate error:', e);
+          // 降级：全屏展示图片
+          try {
+            var dataUrl = canvas ? canvas.toDataURL('image/png') : (rawCanvas ? rawCanvas.toDataURL('image/png') : null);
+            if (dataUrl) {
+              document.getElementById('imgOverlayImg').src = dataUrl;
+              document.getElementById('imgOverlay').classList.add('show');
+              return;
+            }
+          } catch (_) {}
           showToast('保存失败: ' + (e.message || '未知错误'), 'error');
         }
       }
