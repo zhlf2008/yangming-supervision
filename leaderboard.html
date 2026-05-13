@@ -423,13 +423,6 @@
           radial-gradient(circle at 40% 85%, rgba(196,30,58,.03) 0%, transparent 50%);
         pointer-events: none;
       }
-      /* 移动端捕获时移除 gradient 装饰，避免 html2canvas createPattern 零尺寸 */
-      .certificate.cert-capturing::before { display: none; }
-      .certificate.cert-capturing .cert-watermark { display: none; }
-      .certificate.cert-capturing .cert-inner-saffron,
-      .certificate.cert-capturing .cert-inner-gold,
-      .certificate.cert-capturing .cert-corner,
-      .certificate.cert-capturing .cert-seal { display: none; }
 
       .cert-watermark {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -766,6 +759,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
@@ -1479,56 +1473,22 @@
             return;
           }
 
-          // 移动端 html2canvas 将 gradient 背景转为 pattern 时触发零尺寸错误
           var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-          if (isMobile) {
-            // 确保元素已布局；微信 WebView 中 scrollHeight 可能为 0
-            var h = certEl.scrollHeight || certEl.offsetHeight || 600;
-            certEl.style.minHeight = h + 'px';
-            certEl.style.background = '#fff5ec';
-            certEl.classList.add('cert-capturing');
-          }
 
-          var rawCanvas = await html2canvas(certEl, {
-            scale: 2,
-            backgroundColor: null,
-            allowTaint: false,
-            useCORS: true
-          });
-
+          var rawCanvas;
           if (isMobile) {
-            certEl.style.minHeight = '';
-            certEl.style.background = '';
-            certEl.classList.remove('cert-capturing');
+            // 移动端用 html-to-image（SVG foreignObject），避开 html2canvas 的 createPattern bug
+            rawCanvas = await htmlToImage.toCanvas(certEl, { pixelRatio: 2, backgroundColor: null });
+          } else {
+            rawCanvas = await html2canvas(certEl, {
+              scale: 2, backgroundColor: null, allowTaint: false, useCORS: true
+            });
           }
 
           if (!rawCanvas) {
             showToast('截图失败', 'error');
             return;
           }
-
-          // 移动端：手动补画内嵌 saffron+金色边框
-          if (isMobile) {
-            var rctx = rawCanvas.getContext('2d');
-            var isMobView = window.matchMedia('(max-width: 700px)').matches;
-            var sc = 2;
-            var innerGold = 1 * sc;
-            var innerSaffronW = (isMobView ? 4 : 12) * sc;
-            var rw = rawCanvas.width, rh = rawCanvas.height;
-
-            rctx.fillStyle = '#d4a017';
-            rctx.fillRect(0, 0, rw, innerGold);
-            rctx.fillRect(0, rh - innerGold, rw, innerGold);
-            rctx.fillRect(0, 0, innerGold, rh);
-            rctx.fillRect(rw - innerGold, 0, innerGold, rh);
-
-            rctx.fillStyle = '#ffe8d6';
-            rctx.fillRect(innerGold, innerGold, rw - 2*innerGold, innerSaffronW);
-            rctx.fillRect(innerGold, rh - innerGold - innerSaffronW, rw - 2*innerGold, innerSaffronW);
-            rctx.fillRect(innerGold, innerGold, innerSaffronW, rh - 2*innerGold);
-            rctx.fillRect(rw - innerGold - innerSaffronW, innerGold, innerSaffronW, rh - 2*innerGold);
-          }
-
           // 创建更大的画布，在内容外围画多层边框
           // 三层边框总宽度 = 外金2px + 红10px + 内金2px = 14px
           var M = 14;
