@@ -1474,10 +1474,7 @@
           if (!certEl) { showToast('证书元素不存在', 'error'); return; }
           var rawCanvas;
           if (isMobile) {
-            var origWidth = certEl.style.width;
-            certEl.style.width = '660px';
-            rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
-            certEl.style.width = origWidth;
+            rawCanvas = await htmlToImage.toCanvas(certEl, { pixelRatio: 2, backgroundColor: null });
           } else {
             rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
           }
