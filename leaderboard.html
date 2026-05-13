@@ -759,7 +759,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
@@ -1463,121 +1462,169 @@
         document.body.style.overflow = '';
       }
 
-      // ========== SVG Certificate Rendering (竖版荣誉证书) ==========
+      // ========== SVG Certificate Generation (移动端导出) ==========
+
+      function escXml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+      }
+      function wrapTextSimple(text, maxChars) {
+        if (text.length <= maxChars) return [text];
+        var mid = Math.floor(text.length / 2);
+        return [text.substring(0, mid), text.substring(mid)];
+      }
+      function generateCertSVG() {
+        var d = currentCertData; if (!d) return null;
+        var W = 440, CH = 640, M = 18, B = 3, CX = W / 2;
+        var FONT = "'Noto Serif SC','SimSun','STSong',serif";
+        var isTop3 = d.rank && d.rank <= 3;
+        var titleColor = isTop3 ? '#C41E3A' : '#5B2C8E';
+        var goldColor = isTop3 ? '#D4A574' : '#C9A84C';
+        var accentColor = isTop3 ? '#C41E3A' : '#6B3FA0';
+        var bgGradTop = isTop3 ? '#FDFCF8' : '#FAF8FC';
+        var bgGradMid = isTop3 ? '#FAF6F0' : '#F3EFFA';
+        var bgGradBot = isTop3 ? '#F5EFE4' : '#E8E0F4';
+        var bodyText = isTop3 ? '#3A3A3A' : '#2D2D3A';
+        var frameBorder = isTop3 ? '#D4A574' : '#B8A9D4';
+        var rateBgColor = isTop3 ? '#FFF0F0' : '#F4EEFA';
+        var sealColor = isTop3 ? '#C41E3A' : '#5B2C8E';
+        var range = getWeekRange(weekOffset);
+        var semName = currentSemester ? escXml(currentSemester.semester_name) : '';
+        var weekLabel = escXml(computeWeekLabel(range.monday));
+        var dateStr = range.sunday.getFullYear() + '年' + (range.sunday.getMonth() + 1) + '月' + range.sunday.getDate() + '日';
+        var bcName = escXml((d.parentOrg || '').split(' · ')[0] || d.parentOrg || '');
+        var entityName = escXml(d.entityName);
+        var parentOrg = escXml(d.parentOrg || '');
+        var rankTitle = escXml(d.rankTitle);
+        var attRate = escXml(d.attRate);
+        var svg = [];
+        svg.push('<?xml version="1.0" encoding="UTF-8"?>');
+        svg.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W*2 + '" height="' + CH*2 + '" viewBox="0 0 ' + W + ' ' + CH + '">');
+        svg.push('<defs><linearGradient id="certBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">');
+        svg.push('<stop offset="0%" stop-color="' + bgGradTop + '"/>');
+        svg.push('<stop offset="40%" stop-color="' + bgGradMid + '"/>');
+        svg.push('<stop offset="100%" stop-color="' + bgGradBot + '"/>');
+        svg.push('</linearGradient></defs>');
+        svg.push('<rect width="' + W + '" height="' + CH + '" fill="url(#certBgGrad)"/>');
+        svg.push('<rect x="' + (M+B/2) + '" y="' + (M+B/2) + '" width="' + (W-2*M-B) + '" height="' + (CH-2*M-B) + '" fill="none" stroke="' + frameBorder + '" stroke-width="' + B + '"/>');
+        var IB = 32;
+        svg.push('<rect x="' + (IB+0.5) + '" y="' + (IB+0.5) + '" width="' + (W-2*IB-1) + '" height="' + (CH-2*IB-1) + '" fill="none" stroke="rgba(212,165,116,0.4)" stroke-width="1"/>');
+        function cornerDefs() {
+          return '<line x1="-1" y1="0" x2="-1" y2="37" stroke="#D4A574" stroke-width="2.4"/>' +
+            '<line x1="0" y1="-1" x2="37" y2="-1" stroke="#D4A574" stroke-width="2.4"/>' +
+            '<line x1="8.5" y1="9" x2="8.5" y2="28" stroke="#D4A574" stroke-width="1.1"/>' +
+            '<line x1="9" y1="8.5" x2="28" y2="8.5" stroke="#D4A574" stroke-width="1.1"/>' +
+            '<circle cx="34.5" cy="7.5" r="2.5" fill="none" stroke="#D4A574" stroke-width="1.3"/>' +
+            '<circle cx="34.5" cy="7.5" r="1" fill="rgba(212,165,116,0.65)"/>' +
+            '<circle cx="7.5" cy="34.5" r="2.5" fill="none" stroke="#D4A574" stroke-width="1.3"/>' +
+            '<circle cx="7.5" cy="34.5" r="1" fill="rgba(212,165,116,0.65)"/>';
+        }
+        var CO = 33;
+        svg.push('<g transform="translate(' + CO + ',' + CO + ')">' + cornerDefs() + '</g>');
+        svg.push('<g transform="translate(' + (W-CO) + ',' + CO + ') scale(-1,1)">' + cornerDefs() + '</g>');
+        svg.push('<g transform="translate(' + CO + ',' + (CH-CO) + ') scale(1,-1)">' + cornerDefs() + '</g>');
+        svg.push('<g transform="translate(' + (W-CO) + ',' + (CH-CO) + ') scale(-1,-1)">' + cornerDefs() + '</g>');
+        function cc(cx,cy){return '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="none" stroke="#D4A574" stroke-width="1.3"/><circle cx="'+cx+'" cy="'+cy+'" r="1.25" fill="rgba(212,165,116,0.65)"/>';}
+        var tY=CO+7.5,tL=CO+34.5+5.5,tR=W-CO-34.5-5.5;
+        svg.push('<line x1="'+tL+'" y1="'+tY+'" x2="'+(CX-8)+'" y2="'+tY+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push('<line x1="'+(CX+8)+'" y1="'+tY+'" x2="'+tR+'" y2="'+tY+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push(cc(CX,tY));
+        var bY=CH-CO-7.5,bL=CO+34.5+5.5,bR=W-CO-34.5-5.5;
+        svg.push('<line x1="'+bL+'" y1="'+bY+'" x2="'+(CX-8)+'" y2="'+bY+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push('<line x1="'+(CX+8)+'" y1="'+bY+'" x2="'+bR+'" y2="'+bY+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push(cc(CX,bY));
+        var lX=CO+7.5,lT=CO+34.5+5.5,lB=CH-CO-34.5-5.5;
+        svg.push('<line x1="'+lX+'" y1="'+lT+'" x2="'+lX+'" y2="'+(CH/2-8)+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push('<line x1="'+lX+'" y1="'+(CH/2+8)+'" x2="'+lX+'" y2="'+lB+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push(cc(lX,CH/2));
+        var rX=W-CO-7.5,rT=CO+34.5+5.5,rB=CH-CO-34.5-5.5;
+        svg.push('<line x1="'+rX+'" y1="'+rT+'" x2="'+rX+'" y2="'+(CH/2-8)+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push('<line x1="'+rX+'" y1="'+(CH/2+8)+'" x2="'+rX+'" y2="'+rB+'" stroke="#D4A574" stroke-width="1"/>');
+        svg.push(cc(rX,CH/2));
+        var cT=82,dY=cT+4;
+        svg.push('<line x1="'+(CX-74)+'" y1="'+dY+'" x2="'+(CX-14)+'" y2="'+dY+'" stroke="'+goldColor+'" stroke-width="1"/>');
+        svg.push('<line x1="'+(CX+14)+'" y1="'+dY+'" x2="'+(CX+74)+'" y2="'+dY+'" stroke="'+goldColor+'" stroke-width="1"/>');
+        svg.push('<rect x="'+(CX-4)+'" y="'+(dY-4)+'" width="8" height="8" fill="'+goldColor+'" transform="rotate(45 '+CX+' '+dY+')"/>');
+        cT+=44;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="30" font-weight="bold" fill="'+titleColor+'" letter-spacing="12">荣 誉 证 书</text>');
+        cT+=52;
+        var eLines=wrapTextSimple(d.entityName,14);
+        eLines.forEach(function(l){svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="22" font-weight="bold" fill="'+bodyText+'" letter-spacing="2">'+escXml(l)+'</text>');cT+=30;});
+        cT+=12;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="14" fill="'+bodyText+'">在 <tspan fill="'+accentColor+'" font-weight="600">'+semName+'</tspan> <tspan fill="'+accentColor+'" font-weight="600">'+weekLabel+'</tspan></text>');
+        cT+=28;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="14" fill="'+bodyText+'">的 <tspan fill="'+accentColor+'" font-weight="600">'+parentOrg+'</tspan> 出勤考核评比PK赛中</text>');
+        cT+=36;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="15" fill="#444">获得'+getCertAwardName(d.rank)+'，</text>');
+        cT+=28;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="15" fill="#444">荣 获</text>');
+        cT+=34;
+        var oY=cT-8;
+        svg.push('<line x1="'+(CX-52)+'" y1="'+oY+'" x2="'+(CX-12)+'" y2="'+oY+'" stroke="'+goldColor+'" stroke-width="1"/>');
+        svg.push('<line x1="'+(CX+12)+'" y1="'+oY+'" x2="'+(CX+52)+'" y2="'+oY+'" stroke="'+goldColor+'" stroke-width="1"/>');
+        svg.push('<rect x="'+(CX-3.5)+'" y="'+(oY-3.5)+'" width="7" height="7" fill="'+goldColor+'" opacity="0.8" transform="rotate(45 '+CX+' '+oY+')"/>');
+        cT+=26;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="36" font-weight="bold" fill="'+titleColor+'" letter-spacing="6">'+rankTitle+getCertLevelLabel(d.level)+'</text>');
+        cT+=56;
+        var rbW=180,rbH=70,rbX=CX-rbW/2,rbY=cT-6;
+        svg.push('<rect x="'+rbX+'" y="'+rbY+'" width="'+rbW+'" height="'+rbH+'" rx="8" fill="'+rateBgColor+'"/>');
+        svg.push('<text x="'+CX+'" y="'+(rbY+22)+'" text-anchor="middle" font-family="'+FONT+'" font-size="13" fill="#999">周平均出勤率</text>');
+        svg.push('<text x="'+CX+'" y="'+(rbY+52)+'" text-anchor="middle" font-family="'+FONT+'" font-size="26" font-weight="bold" fill="'+titleColor+'">'+attRate+'</text>');
+        cT+=88;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="14" fill="#666" letter-spacing="3">特发此证 · 以资鼓励</text>');
+        cT+=36;
+        svg.push('<text x="'+CX+'" y="'+cT+'" text-anchor="middle" font-family="'+FONT+'" font-size="13" fill="#999">颁发日期：'+dateStr+'</text>');
+        var sCX=W-48-40,sCY=CH-48-40,sR=40;
+        svg.push('<g transform="translate('+sCX+','+sCY+') rotate(-18)">');
+        svg.push('<circle cx="0" cy="0" r="'+sR+'" fill="none" stroke="'+sealColor+'" stroke-opacity="0.82" stroke-width="2.8"/>');
+        svg.push('<circle cx="0" cy="0" r="'+(sR-3)+'" fill="none" stroke="'+sealColor+'" stroke-opacity="0.45" stroke-width="0.7"/>');
+        var aT='阳明心学督察管理系统',n=aT.length,taD=150,sD=taD/(n-1),sDeg=-90-taD/2,aR=sR-10;
+        for(var i=0;i<n;i++){var aDeg=sDeg+i*sD,aRad=(aDeg*Math.PI)/180,tx=aR*Math.cos(aRad),ty=aR*Math.sin(aRad);svg.push('<text x="'+tx.toFixed(1)+'" y="'+ty.toFixed(1)+'" text-anchor="middle" dominant-baseline="central" font-family="'+FONT+'" font-size="10" font-weight="bold" fill="'+sealColor+'" transform="rotate('+(aDeg+90).toFixed(1)+' '+tx.toFixed(1)+' '+ty.toFixed(1)+')">'+aT[i]+'</text>');}
+        svg.push('<text x="0" y="-1" text-anchor="middle" dominant-baseline="central" font-family="'+FONT+'" font-size="20" font-weight="bold" fill="'+sealColor+'">★</text>');
+        svg.push('<line x1="-16" y1="8" x2="16" y2="8" stroke="'+sealColor+'" stroke-opacity="0.7" stroke-width="1"/>');
+        svg.push('<text x="0" y="22" text-anchor="middle" font-family="'+FONT+'" font-size="8" font-weight="bold" fill="'+sealColor+'">'+bcName+'</text>');
+        svg.push('</g>');
+        svg.push('</svg>');
+        return svg.join('\n');
+      }
+      function svgToCanvas(svgString){return new Promise(function(resolve,reject){var p=new DOMParser(),d=p.parseFromString(svgString,'image/svg+xml');if(d.querySelector('parsererror')){reject(new Error('SVG语法错误'));return;}var img=new Image(),bytes=[];for(var i=0;i<svgString.length;i++){var c=svgString.charCodeAt(i);if(c<0x80)bytes.push(c);else if(c<0x800)bytes.push(0xc0|(c>>6),0x80|(c&0x3f));else if(c<0xd800||c>=0xe000)bytes.push(0xe0|(c>>12),0x80|((c>>6)&0x3f),0x80|(c&0x3f));else{i++;var c2=svgString.charCodeAt(i),cp=0x10000+((c-0xd800)<<10)+(c2-0xdc00);bytes.push(0xf0|(cp>>18),0x80|((cp>>12)&0x3f),0x80|((cp>>6)&0x3f),0x80|(cp&0x3f));}}var bin='';for(var j=0;j<bytes.length;j+=4096)bin+=String.fromCharCode.apply(null,bytes.slice(j,j+4096));var b64='data:image/svg+xml;base64,'+btoa(bin);img.onload=function(){var c=document.createElement('canvas');c.width=880;c.height=1280;var ctx=c.getContext('2d'),t3=currentCertData&&currentCertData.rank&&currentCertData.rank<=3;ctx.fillStyle=t3?'#FDFCF8':'#FAF8FC';ctx.fillRect(0,0,880,1280);ctx.drawImage(img,0,0,880,1280);resolve(c);};img.onerror=function(){reject(new Error('SVG load failed'));};img.src=b64;});}
+
+      // ========== Certificate Export ==========
 
       async function saveCertificate() {
         try {
-          var certEl = document.getElementById('certificate');
-          if (!certEl) {
-            showToast('证书元素不存在', 'error');
-            return;
-          }
-
           var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-          var rawCanvas;
+          var canvas;
           if (isMobile) {
-            // 移动端用 html-to-image（SVG foreignObject），避开 html2canvas 的 createPattern bug
-            rawCanvas = await htmlToImage.toCanvas(certEl, { pixelRatio: 2, backgroundColor: null });
+            var svg = generateCertSVG();
+            if (!svg) { showToast('证书数据不完整', 'error'); return; }
+            canvas = await svgToCanvas(svg);
+            document.getElementById('imgOverlayImg').src = canvas.toDataURL('image/png');
+            document.getElementById('imgOverlay').classList.add('show');
           } else {
-            rawCanvas = await html2canvas(certEl, {
-              scale: 2, backgroundColor: null, allowTaint: false, useCORS: true
-            });
-          }
-
-          if (!rawCanvas) {
-            showToast('截图失败', 'error');
-            return;
-          }
-          // 创建更大的画布，在内容外围画多层边框
-          // 三层边框总宽度 = 外金2px + 红10px + 内金2px = 14px
-          var M = 14;
-          var W = rawCanvas.width + M * 2;
-          var H = rawCanvas.height + M * 2;
-          var canvas = document.createElement('canvas');
-          canvas.width = W;
-          canvas.height = H;
-          var ctx = canvas.getContext('2d');
-
-          // 白底
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, W, H);
-
-          // 线 1: 最外金线 2px（对齐 .cert-frame box-shadow: 0 0 0 7px #d4a017）
-          ctx.strokeStyle = '#D4A574';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(1, 1, W - 2, H - 2);
-
-          // 线 2: 红色 10px（对齐 outline: 5px #c41e3a + outline-offset: 1px）
-          ctx.strokeStyle = '#C41E3A';
-          ctx.lineWidth = 10;
-          ctx.strokeRect(7, 7, W - 14, H - 14);
-
-          // 线 3: 内层金线 2px（对齐 border: 1px #d4a017）
-          ctx.strokeStyle = '#D4A574';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(13, 13, W - 26, H - 26);
-
-          // 贴入证书内容，紧贴内层金线内边界
-          // 内层金线 strokeRect(13,...) 内边界 = 14，内容从此处开始
-          // 内容右边界 = 14+RW = 14+(W-28) = W-14，恰好对接右侧内层金线
-          ctx.drawImage(rawCanvas, M, M);
-
-          var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-          if (isMobile) {
-            // 移动端：优先尝试 Web Share 分享图片文件
-            var blob = await new Promise(function (r) { canvas.toBlob(r, 'image/png'); });
-            var file = new File([blob], '荣誉证书.png', { type: 'image/png' });
-            var shareText = certEntityName + ' - ' + certParentOrg + ' - ' + certRankTitle;
-            var shared = false;
-            try {
-              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: '荣誉证书', text: shareText });
-                shared = true;
-              }
-            } catch (_) {}
-            if (!shared) {
-              try {
-                if (navigator.share) {
-                  var shareUrl = URL.createObjectURL(blob);
-                  await navigator.share({ title: '荣誉证书', text: shareText, url: shareUrl });
-                  setTimeout(function () { URL.revokeObjectURL(shareUrl); }, 60000);
-                  shared = true;
-                }
-              } catch (_) {}
-            }
-            if (!shared) {
-              // 降级：全屏展示图片，长按保存
-              document.getElementById('imgOverlayImg').src = canvas.toDataURL('image/png');
-              document.getElementById('imgOverlay').classList.add('show');
-            }
-          } else {
-            // 桌面端：直接下载
+            var certEl = document.getElementById('certificate');
+            if (!certEl) { showToast('证书元素不存在', 'error'); return; }
+            var rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
+            if (!rawCanvas) { showToast('截图失败', 'error'); return; }
+            var M = 14, W = rawCanvas.width + M*2, H = rawCanvas.height + M*2;
+            canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W-2, H-2);
+            ctx.strokeStyle = '#C41E3A'; ctx.lineWidth = 10; ctx.strokeRect(7, 7, W-14, H-14);
+            ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(13, 13, W-26, H-26);
+            ctx.drawImage(rawCanvas, M, M);
             var a = document.createElement('a');
             a.download = '荣誉证书_' + certEntityName + '.png';
             a.href = canvas.toDataURL('image/png');
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
             showToast('证书已保存');
           }
         } catch (e) {
           console.error('saveCertificate error:', e);
-          // 降级：全屏展示图片
-          try {
-            var dataUrl = canvas ? canvas.toDataURL('image/png') : (rawCanvas ? rawCanvas.toDataURL('image/png') : null);
-            if (dataUrl) {
-              document.getElementById('imgOverlayImg').src = dataUrl;
-              document.getElementById('imgOverlay').classList.add('show');
-              return;
-            }
-          } catch (_) {}
           showToast('保存失败: ' + (e.message || '未知错误'), 'error');
         }
       }
-
-      function closeImgOverlay() {
         document.getElementById('imgOverlay').classList.remove('show');
         // 延迟清空 src，避免关闭动画时闪烁
         setTimeout(function () {
