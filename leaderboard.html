@@ -759,7 +759,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://unpkg.com/pinyin-pro@3.25.0/dist/pinyin-pro.min.js"></script>
+    <script src="https://unpkg.com/pinyin-pro"></script>
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
     <script src="js/components.js?v=3"></script>
@@ -1558,6 +1558,8 @@
         } catch (e) {
           console.error('saveCertificate error:', e);
           showToast('保存失败: ' + (e.message || '未知错误'), 'error');
+          // 调试：alert 完整错误信息
+          alert('保存失败详情:\n' + (e.message || '') + '\n\n' + (e.stack || '').substring(0, 500));
         }
       }
 
