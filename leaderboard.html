@@ -1593,27 +1593,30 @@
       async function saveCertificate() {
         try {
           var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-          var canvas;
+          var certEl = document.getElementById('certificate');
+          if (!certEl) { showToast('证书元素不存在', 'error'); return; }
+
+          // 移动端临时恢复桌面 min-height + 固定背景，确保 html2canvas 不触发零尺寸
+          if (isMobile) { certEl.style.minHeight = '920px'; certEl.style.background = '#fff5ec'; }
+          var rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
+          if (isMobile) { certEl.style.minHeight = ''; certEl.style.background = ''; }
+
+          if (!rawCanvas) { showToast('截图失败', 'error'); return; }
+
+          var M = 14, W = rawCanvas.width + M*2, H = rawCanvas.height + M*2;
+          var canvas = document.createElement('canvas');
+          canvas.width = W; canvas.height = H;
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+          ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W-2, H-2);
+          ctx.strokeStyle = '#C41E3A'; ctx.lineWidth = 10; ctx.strokeRect(7, 7, W-14, H-14);
+          ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(13, 13, W-26, H-26);
+          ctx.drawImage(rawCanvas, M, M);
+
           if (isMobile) {
-            var svg = generateCertSVG();
-            if (!svg) { showToast('证书数据不完整', 'error'); return; }
-            canvas = await svgToCanvas(svg);
             document.getElementById('imgOverlayImg').src = canvas.toDataURL('image/png');
             document.getElementById('imgOverlay').classList.add('show');
           } else {
-            var certEl = document.getElementById('certificate');
-            if (!certEl) { showToast('证书元素不存在', 'error'); return; }
-            var rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
-            if (!rawCanvas) { showToast('截图失败', 'error'); return; }
-            var M = 14, W = rawCanvas.width + M*2, H = rawCanvas.height + M*2;
-            canvas = document.createElement('canvas');
-            canvas.width = W; canvas.height = H;
-            var ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
-            ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W-2, H-2);
-            ctx.strokeStyle = '#C41E3A'; ctx.lineWidth = 10; ctx.strokeRect(7, 7, W-14, H-14);
-            ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(13, 13, W-26, H-26);
-            ctx.drawImage(rawCanvas, M, M);
             var a = document.createElement('a');
             a.download = '荣誉证书_' + certEntityName + '.png';
             a.href = canvas.toDataURL('image/png');
