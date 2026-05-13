@@ -764,7 +764,7 @@
         });
         var query = window.db
           .from('attendance_records')
-          .select('organization_id,fill_data,schedule_id')
+          .select('organization_id,fill_data,schedule_id,created_at,fill_user_id')
           .in('schedule_id', sIds);
 
         var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
@@ -1267,7 +1267,7 @@
       }
 
       // ---- Raw Detail (single day fill data, attendance-page style) ----
-      function renderRawDetail(scheduleId) {
+      async function renderRawDetail(scheduleId) {
         if (!drillGroupId || !scheduleId) {
           showEmpty('参数无效');
           return;
@@ -1419,6 +1419,38 @@
           (attR ? attR + '%' : '--') +
           '</span>';
         html += '</div></div>';
+
+        // 提交时间和提交人
+        if (rec) {
+          var submitTime = '';
+          var submitterName = '';
+          if (rec.created_at) {
+            submitTime = new Date(rec.created_at).toLocaleString('zh-CN', {
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit'
+            });
+          }
+          if (rec.fill_user_id) {
+            try {
+              var { data: profileData } = await window.db.from('profiles')
+                .select('name').eq('id', rec.fill_user_id).maybeSingle();
+              submitterName = profileData ? profileData.name : '';
+            } catch (_) {}
+          }
+          if (submitTime || submitterName) {
+            html += '<div class="raw-section"><div class="raw-section-title"><span class="raw-section-icon other">📋</span>提交信息</div>';
+            if (submitTime) {
+              html += '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">提交时间</div><div class="raw-field-value">' + submitTime + '</div></div>';
+              if (submitterName) {
+                html += '<div class="raw-field"><div class="raw-field-label">提交人</div><div class="raw-field-value">' + submitterName + '</div></div>';
+              }
+              html += '</div>';
+            } else if (submitterName) {
+              html += '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">提交人</div><div class="raw-field-value">' + submitterName + '</div></div></div>';
+            }
+            html += '</div>';
+          }
+        }
 
         document.getElementById('contentArea').innerHTML = html;
       }
