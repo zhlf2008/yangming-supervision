@@ -1476,7 +1476,7 @@
           if (isMobile) {
             var origWidth = certEl.style.width;
             certEl.style.width = '660px';
-            rawCanvas = await htmlToImage.toCanvas(certEl, { pixelRatio: 2, backgroundColor: null });
+            rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
             certEl.style.width = origWidth;
           } else {
             rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
