@@ -1625,6 +1625,7 @@
           showToast('保存失败: ' + (e.message || '未知错误'), 'error');
         }
       }
+      function closeImgOverlay() {
         document.getElementById('imgOverlay').classList.remove('show');
         // 延迟清空 src，避免关闭动画时闪烁
         setTimeout(function () {
