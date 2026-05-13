@@ -1465,14 +1465,28 @@
           });
         });
 
-        const submission = {
+        // 检查是否已有记录，首次提交设置 first_submitted_*，每次提交都更新 last_modified_*
+        const { data: existingForCheck } = await window.db
+          .from('attendance_records')
+          .select('id')
+          .eq('schedule_id', currentSchedule.id)
+          .eq('organization_id', parseInt(selectedOrgId))
+          .limit(1);
+        var isFirstSubmit = !existingForCheck || existingForCheck.length === 0;
+
+        var submission = {
           schedule_id: currentSchedule.id,
           semester_id: currentSemester.id,
           fill_user_id: currentUser.id,
           organization_id: parseInt(selectedOrgId),
           fill_data: fillData,
-          created_at: new Date().toISOString()
+          last_modified_at: new Date().toISOString(),
+          last_modified_by: currentUser.id
         };
+        if (isFirstSubmit) {
+          submission.first_submitted_at = new Date().toISOString();
+          submission.first_submitted_by = currentUser.id;
+        }
 
         // upsert 防止重复提交（同小组同一天只保留最新记录）
         const { error } = await window.db

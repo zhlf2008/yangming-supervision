@@ -764,7 +764,7 @@
         });
         var query = window.db
           .from('attendance_records')
-          .select('organization_id,fill_data,schedule_id,created_at,fill_user_id')
+          .select('organization_id,fill_data,schedule_id,created_at,fill_user_id,first_submitted_at,first_submitted_by,last_modified_at,last_modified_by')
           .in('schedule_id', sIds);
 
         var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
@@ -1420,33 +1420,32 @@
           '</span>';
         html += '</div></div>';
 
-        // 提交时间和提交人
+        // 提交信息和修改信息
         if (rec) {
-          var submitTime = '';
-          var submitterName = '';
-          if (rec.created_at) {
-            submitTime = new Date(rec.created_at).toLocaleString('zh-CN', {
-              year: 'numeric', month: '2-digit', day: '2-digit',
-              hour: '2-digit', minute: '2-digit'
-            });
-          }
-          if (rec.fill_user_id) {
-            try {
-              var { data: profileData } = await window.db.from('profiles')
-                .select('name').eq('id', rec.fill_user_id).maybeSingle();
-              submitterName = profileData ? profileData.name : '';
-            } catch (_) {}
-          }
-          if (submitTime || submitterName) {
-            html += '<div class="raw-section"><div class="raw-section-title"><span class="raw-section-icon other">📋</span>提交信息</div>';
-            if (submitTime) {
-              html += '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">提交时间</div><div class="raw-field-value">' + submitTime + '</div></div>';
-              if (submitterName) {
-                html += '<div class="raw-field"><div class="raw-field-label">提交人</div><div class="raw-field-value">' + submitterName + '</div></div>';
+          var firstTime = rec.first_submitted_at || rec.created_at;
+          if (firstTime) {
+            html += '<div class="raw-section"><div class="raw-section-title"><span class="raw-section-icon other">📋</span>填报信息</div>';
+            html += '<div class="raw-field-row">';
+            html += '<div class="raw-field"><div class="raw-field-label">提交时间</div><div class="raw-field-value">' + new Date(firstTime).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+            var firstBy = rec.first_submitted_by || rec.fill_user_id;
+            if (firstBy) {
+              try {
+                var { data: p } = await window.db.from('profiles').select('name').eq('id', firstBy).maybeSingle();
+                if (p && p.name) html += '<div class="raw-field"><div class="raw-field-label">提交人</div><div class="raw-field-value">' + escapeHtml(p.name) + '</div></div>';
+              } catch (_) {}
+            }
+            html += '</div>';
+            // 有修改才显示修改信息
+            if (rec.last_modified_at && rec.last_modified_at !== firstTime) {
+              html += '<div class="raw-field-row">';
+              html += '<div class="raw-field"><div class="raw-field-label">修改时间</div><div class="raw-field-value">' + new Date(rec.last_modified_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+              if (rec.last_modified_by) {
+                try {
+                  var { data: mp } = await window.db.from('profiles').select('name').eq('id', rec.last_modified_by).maybeSingle();
+                  if (mp && mp.name) html += '<div class="raw-field"><div class="raw-field-label">修改人</div><div class="raw-field-value">' + escapeHtml(mp.name) + '</div></div>';
+                } catch (_) {}
               }
               html += '</div>';
-            } else if (submitterName) {
-              html += '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">提交人</div><div class="raw-field-value">' + submitterName + '</div></div></div>';
             }
             html += '</div>';
           }
