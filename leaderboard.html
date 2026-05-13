@@ -427,7 +427,9 @@
       .certificate.cert-capturing::before { display: none; }
       .certificate.cert-capturing .cert-watermark { display: none; }
       .certificate.cert-capturing .cert-inner-saffron,
-      .certificate.cert-capturing .cert-inner-gold { display: none; }
+      .certificate.cert-capturing .cert-inner-gold,
+      .certificate.cert-capturing .cert-corner,
+      .certificate.cert-capturing .cert-seal { display: none; }
 
       .cert-watermark {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -1480,7 +1482,9 @@
           // 移动端 html2canvas 将 gradient 背景转为 pattern 时触发零尺寸错误
           var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           if (isMobile) {
-            certEl.style.minHeight = certEl.scrollHeight + 'px';
+            // 确保元素已布局；微信 WebView 中 scrollHeight 可能为 0
+            var h = certEl.scrollHeight || certEl.offsetHeight || 600;
+            certEl.style.minHeight = h + 'px';
             certEl.style.background = '#fff5ec';
             certEl.classList.add('cert-capturing');
           }
