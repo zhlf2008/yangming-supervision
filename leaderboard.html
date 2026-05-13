@@ -1472,14 +1472,15 @@
             return;
           }
 
-          // 移动端 html2canvas 对内嵌 border div + gradient 背景会触发
-          // createPattern 零尺寸错误，捕获前锁定证书高度并隐藏内嵌 div
+          // 移动端 html2canvas 将 gradient 背景转为 pattern 时触发零尺寸错误
           var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           var saffronEl = certEl.querySelector('.cert-inner-saffron');
           var goldEl = certEl.querySelector('.cert-inner-gold');
           var prevMinHeight = certEl.style.minHeight;
+          var prevBg = certEl.style.background;
           if (isMobile) {
             certEl.style.minHeight = certEl.scrollHeight + 'px';
+            certEl.style.background = '#fff5ec'; // 固定色替代 gradient
             if (saffronEl) saffronEl.style.display = 'none';
             if (goldEl) goldEl.style.display = 'none';
           }
@@ -1493,6 +1494,7 @@
 
           if (isMobile) {
             certEl.style.minHeight = prevMinHeight;
+            certEl.style.background = prevBg;
             if (saffronEl) saffronEl.style.display = '';
             if (goldEl) goldEl.style.display = '';
           }
