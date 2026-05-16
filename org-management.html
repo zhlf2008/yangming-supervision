@@ -703,13 +703,19 @@
 
       async function loadUsers() {
         var client = window.supabaseClient || window.db;
+        // 管理员加载所有用户，非管理员加载管辖范围内
+        var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
         var query = client
           .from('profiles')
-          .select('*, organizations(name)')
+          .select('*')
           .order('created_at', { ascending: false });
-        // 非管理员只加载管辖范围内的用户
-        if (managedOrgIds.size > 0 && !(currentUser.role === '超级管理员' || currentUser.role === '管理员')) {
-          query = query.in('organization_id', [...managedOrgIds]);
+        if (!isAdmin) {
+          if (managedOrgIds.size > 0) {
+            query = query.in('organization_id', [...managedOrgIds]);
+          } else {
+            // 无可管理范围时只加载自己
+            query = query.eq('id', currentUser.id);
+          }
         }
         const { data, error } = await query;
         if (error) {
@@ -1247,14 +1253,32 @@
           '• 合并后原组将被删除\n\n此操作不可撤销！'
         ))) return;
 
-        // 1. 迁移 profiles
-        var profileResult = await window.db
+        // 先统计待迁移的用户数
+        var countResult = await window.db
           .from('profiles')
-          .update({ organization_id: keepId })
+          .select('id', { count: 'exact', head: true })
           .eq('organization_id', mergeId);
-        if (profileResult.error) {
-          showToast('迁移用户失败: ' + profileResult.error.message);
-          return;
+        var mergeUserCount = countResult.count || 0;
+
+        // 1. 迁移 profiles
+        if (mergeUserCount > 0) {
+          var profileResult = await window.db
+            .from('profiles')
+            .update({ organization_id: keepId })
+            .eq('organization_id', mergeId);
+          if (profileResult.error) {
+            showToast('迁移用户失败: ' + profileResult.error.message);
+            return;
+          }
+          // 验证迁移结果
+          var verifyResult = await window.db
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('organization_id', mergeId);
+          if (verifyResult.count > 0) {
+            showToast('迁移失败：仍有 ' + verifyResult.count + ' 个用户未迁移，操作已取消');
+            return;
+          }
         }
 
         // 2. 处理 attendance_records（需处理唯一约束冲突）
