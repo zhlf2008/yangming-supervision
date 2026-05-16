@@ -418,6 +418,47 @@
         color: white;
       }
 
+      /* Toggle Switch */
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #ccc;
+        border-radius: 24px;
+        transition: 0.3s;
+      }
+      .toggle-slider::before {
+        content: '';
+        position: absolute;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+      }
+      .toggle-switch input:checked + .toggle-slider {
+        background: var(--vermillion);
+      }
+      .toggle-switch input:checked + .toggle-slider::before {
+        transform: translateX(20px);
+      }
+
       /* Toast */
       .toast {
         position: fixed;
@@ -463,6 +504,13 @@
       <div class="section">
         <div class="section-header">
           <span class="section-title">组织架构</span>
+          <div id="editToggleContainer" style="display: none; align-items: center; gap: 8px">
+            <span style="font-size: 12px; color: var(--ink-muted)">编辑开关</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="editToggle" onchange="toggleOrgEditable()" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
           <div style="display: flex; gap: 8px">
             <button
               class="add-sysadmin-btn"
@@ -574,6 +622,7 @@
       let editingUser = null;
       let currentUser = null;
       let currentSemesterId = null;
+      let orgEditable = true; // 组织架构编辑开关
 
       // 角色层级定义（索引越小级别越高）
       const ROLE_HIERARCHY = [
@@ -633,10 +682,12 @@
         var client = window.supabaseClient || window.db;
         var { data: sem } = await client
           .from('semesters')
-          .select('semester_name')
+          .select('semester_name, org_editable')
           .eq('id', currentSemesterId)
           .single();
         document.getElementById('semesterInfo').textContent = '当前学期：' + (sem ? sem.semester_name : '未知');
+        orgEditable = sem ? (sem.org_editable !== false) : true;
+        updateEditToggleUI();
 
         await loadOrganizations();
         calcManagedScope();
@@ -810,6 +861,11 @@
 
         const role = currentUser.role;
         let html = '';
+
+        // 编辑关闭时的提示
+        if (!orgEditable && role !== '超级管理员' && role !== '管理员') {
+          html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e65100;">🔒 组织架构编辑已关闭，请联系管理员开启</div>';
+        }
 
         // 系统管理员区域
         if (role === '超级管理员' || role === '管理员') {
@@ -1004,7 +1060,52 @@
         renderOrgTree();
       }
 
+      // 更新编辑开关 UI
+      function updateEditToggleUI() {
+        var container = document.getElementById('editToggleContainer');
+        var toggle = document.getElementById('editToggle');
+        var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
+        if (isAdmin) {
+          container.style.display = 'flex';
+          toggle.checked = orgEditable;
+        } else {
+          container.style.display = 'none';
+        }
+      }
+
+      // 切换编辑开关
+      async function toggleOrgEditable() {
+        var toggle = document.getElementById('editToggle');
+        var newVal = toggle.checked;
+        var { error } = await window.db
+          .from('semesters')
+          .update({ org_editable: newVal })
+          .eq('id', currentSemesterId);
+        if (error) {
+          showToast('切换失败: ' + error.message);
+          toggle.checked = !newVal;
+          return;
+        }
+        orgEditable = newVal;
+        showToast(newVal ? '已开启编辑' : '已关闭编辑');
+        logAction('切换编辑开关', newVal ? '开启' : '关闭');
+        await loadOrganizations();
+        renderOrgTree();
+      }
+
+      // 检查编辑权限（管理员始终可编辑）
+      function canEditOrg() {
+        var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
+        if (isAdmin) return true;
+        if (!orgEditable) {
+          showToast('组织架构编辑已关闭，请联系管理员开启');
+          return false;
+        }
+        return true;
+      }
+
       function showAddOrgModal(level, parentId) {
+        if (!canEditOrg()) return;
         // 权限守卫：仅超级管理员/管理员可添加大班
         var role = currentUser.role;
         if (level === 'bigclass' && role !== '超级管理员' && role !== '管理员') {
@@ -1077,6 +1178,7 @@
       }
 
       async function saveOrg() {
+        if (!canEditOrg()) return;
         var role = currentUser.role;
 
         // 权限校验：与 showAddOrgModal 保持一致的规则
@@ -1140,6 +1242,7 @@
       }
 
       async function deleteOrg(id) {
+        if (!canEditOrg()) return;
         if (!(await showConfirm('确定删除该组织？'))) return;
         const hasChildren = organizations.some((o) => o.parent_id === id);
         if (hasChildren) {
