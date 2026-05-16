@@ -811,6 +811,24 @@
         const role = currentUser.role;
         let html = '';
 
+        // 检查是否存在同名重复组织，显示警告
+        var duplicates = findDuplicateGroups();
+        if (duplicates.length > 0) {
+          html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:13px;">';
+          html += '<div style="font-weight:600;color:#e65100;margin-bottom:6px;">⚠️ 检测到同名重复组织：</div>';
+          duplicates.forEach(function (dupGroup) {
+            var path = buildOrgPath(dupGroup[0].id, organizations);
+            var lastName = dupGroup[0].name;
+            html += '<div style="color:#bf360c;margin-bottom:4px;">• ' + escapeHtml(path) + '（' + dupGroup.length + '个重复）</div>';
+            html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">';
+            for (var di = 0; di < dupGroup.length; di++) {
+              html += '<button style="padding:2px 8px;font-size:11px;border:1px solid #ff9800;border-radius:4px;background:#fff;color:#e65100;cursor:pointer;" onclick="event.stopPropagation();mergeOrgs(' + dupGroup[0].id + ',' + dupGroup[di].id + ')">合并到第一个</button>';
+            }
+            html += '</div>';
+          });
+          html += '</div>';
+        }
+
         // 系统管理员区域
         if (role === '超级管理员' || role === '管理员') {
           html += renderSystemUsers();
@@ -919,6 +937,7 @@
           const classId = `class-${cls.id}`;
           const isExpanded = expandedNodes.has(classId);
           const canManage = managedOrgIds.has(cls.id);
+          var siblings = getSiblingDuplicates(cls);
           html += `<div class="tree-node">
           <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
@@ -927,7 +946,10 @@
             <div class="tree-node-actions">
               ${
                 canManage
-                  ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
+                  ? (siblings.length > 0
+                    ? `<button class="tree-btn tree-btn-add" style="background:#ff9800;color:#fff" onclick="event.stopPropagation(); mergeOrgs(${cls.id}, ${siblings[0].id})">合并重复</button>`
+                    : '') +
+                    `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${cls.id})">+人员</button>
               <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${cls.id})">编辑</button>
               <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${cls.id})">删除</button>`
@@ -953,6 +975,7 @@
           const groupId = `group-${group.id}`;
           const isExpanded = expandedNodes.has(groupId);
           const canManage = managedOrgIds.has(group.id);
+          var siblings = getSiblingDuplicates(group);
           html += `<div class="tree-node">
           <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
@@ -961,7 +984,10 @@
             <div class="tree-node-actions">
               ${
                 canManage
-                  ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
+                  ? (siblings.length > 0
+                    ? `<button class="tree-btn tree-btn-add" style="background:#ff9800;color:#fff" onclick="event.stopPropagation(); mergeOrgs(${group.id}, ${siblings[0].id})">合并重复</button>`
+                    : '') +
+                    `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
               <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${group.id})">编辑</button>
               <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${group.id})">删除</button>`
                   : ''
@@ -1111,6 +1137,16 @@
           showToast('请选择上级组织');
           return;
         }
+        // 检查同级同名（同一父级下不允许重复名称）
+        if (!id) {
+          const duplicate = organizations.find(
+            (o) => o.name === name && o.level === level && o.parent_id === parentId
+          );
+          if (duplicate) {
+            showToast('已存在同名「' + name + '」，不能重复创建');
+            return;
+          }
+        }
         const data = { name, level, parent_id: parentId, area_id: 1, semester_id: currentSemesterId };
         let error;
         if (id) {
@@ -1144,6 +1180,104 @@
           logAction('删除组织', orgName + ' id:' + id);
           await loadOrganizations();
         }
+      }
+
+      // 查找同名重复的组织（同一父级下同级别同名）
+      function findDuplicateGroups() {
+        var dupMap = {};
+        organizations.forEach(function (org) {
+          var key = (org.parent_id || 'root') + '||' + org.level + '||' + org.name;
+          if (!dupMap[key]) dupMap[key] = [];
+          dupMap[key].push(org);
+        });
+        var result = [];
+        Object.values(dupMap).forEach(function (group) {
+          if (group.length > 1) result.push(group);
+        });
+        return result;
+      }
+
+      // 检测某个组是否存在同名重复项，返回重复的组列表（不含自身）
+      function getSiblingDuplicates(org) {
+        return organizations.filter(function (o) {
+          return o.id !== org.id && o.name === org.name && o.level === org.level && o.parent_id === org.parent_id;
+        });
+      }
+
+      // 合并重复组织：将 mergeId 的数据合并到 keepId
+      async function mergeOrgs(keepId, mergeId) {
+        var keepOrg = organizations.find(function (o) { return o.id === keepId; });
+        var mergeOrg = organizations.find(function (o) { return o.id === mergeId; });
+        if (!keepOrg || !mergeOrg) {
+          showToast('组织不存在');
+          return;
+        }
+        if (!(await showConfirm(
+          '确定将「' + mergeOrg.name + '」合并到「' + keepOrg.name + '」？\n\n' +
+          '合并操作：\n' +
+          '• 成员将迁移到保留组\n' +
+          '• 考勤记录冲突时保留目标组数据\n' +
+          '• 合并后原组将被删除\n\n此操作不可撤销！'
+        ))) return;
+
+        // 1. 迁移 profiles
+        var profileResult = await window.db
+          .from('profiles')
+          .update({ organization_id: keepId })
+          .eq('organization_id', mergeId);
+        if (profileResult.error) {
+          showToast('迁移用户失败: ' + profileResult.error.message);
+          return;
+        }
+
+        // 2. 处理 attendance_records（需处理唯一约束冲突）
+        var keepRecordsResult = await window.db
+          .from('attendance_records')
+          .select('schedule_id')
+          .eq('organization_id', keepId);
+        var keepScheduleIds = new Set((keepRecordsResult.data || []).map(function (r) { return r.schedule_id; }));
+
+        var mergeRecordsResult = await window.db
+          .from('attendance_records')
+          .select('*')
+          .eq('organization_id', mergeId);
+        if (mergeRecordsResult.data && mergeRecordsResult.data.length > 0) {
+          for (var i = 0; i < mergeRecordsResult.data.length; i++) {
+            var rec = mergeRecordsResult.data[i];
+            if (keepScheduleIds.has(rec.schedule_id)) {
+              await window.db.from('attendance_records').delete().eq('id', rec.id);
+            } else {
+              await window.db
+                .from('attendance_records')
+                .update({ organization_id: keepId })
+                .eq('id', rec.id);
+            }
+          }
+        }
+
+        // 3. 处理 reminder_configs（org_id 有 UNIQUE 约束）
+        var keepReminderResult = await window.db
+          .from('reminder_configs')
+          .select('id')
+          .eq('org_id', keepId)
+          .maybeSingle();
+        if (!keepReminderResult.data) {
+          await window.db
+            .from('reminder_configs')
+            .update({ org_id: keepId })
+            .eq('org_id', mergeId);
+        }
+
+        // 4. 删除被合并的组织
+        var delResult = await window.db.from('organizations').delete().eq('id', mergeId);
+        if (delResult.error) {
+          showToast('合并完成但删除原组失败: ' + delResult.error.message);
+        } else {
+          showToast('合并成功！');
+          logAction('合并组织', mergeOrg.name + ' → ' + keepOrg.name);
+        }
+        await loadOrganizations();
+        await loadUsers();
       }
 
       // User modal - first arg (parentOrgId) is deprecated, second arg for defaultOrgId, third arg systemOnly
