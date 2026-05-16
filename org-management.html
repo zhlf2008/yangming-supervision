@@ -1111,6 +1111,16 @@
           showToast('请选择上级组织');
           return;
         }
+        // 新建时检查同级同名（同一父级下同级别不允许重复名称）
+        if (!id) {
+          var duplicate = organizations.find(function (o) {
+            return o.name === name && o.level === level && o.parent_id === parentId;
+          });
+          if (duplicate) {
+            showToast('已存在同名「' + name + '」，不能重复创建');
+            return;
+          }
+        }
         const data = { name, level, parent_id: parentId, area_id: 1, semester_id: currentSemesterId };
         let error;
         if (id) {
