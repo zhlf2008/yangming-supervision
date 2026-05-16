@@ -821,16 +821,13 @@
             var lastName = dupGroup[0].name;
             html += '<div style="color:#bf360c;margin-bottom:4px;">• ' + escapeHtml(path) + '（' + dupGroup.length + '个重复）</div>';
             html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">';
-            for (var di = 1; di < dupGroup.length; di++) {
-              html += '<button style="padding:2px 8px;font-size:11px;border:1px solid #ff9800;border-radius:4px;background:#fff;color:#e65100;cursor:pointer;" onclick="event.stopPropagation();mergeOrgs(' + dupGroup[0].id + ',' + dupGroup[di].id + ')">合并此项</button>';
+            for (var di = 0; di < dupGroup.length; di++) {
+              html += '<button style="padding:2px 8px;font-size:11px;border:1px solid #ff9800;border-radius:4px;background:#fff;color:#e65100;cursor:pointer;" onclick="event.stopPropagation();mergeOrgs(' + dupGroup[0].id + ',' + dupGroup[di].id + ')">合并到第一个</button>';
             }
             html += '</div>';
           });
           html += '</div>';
         }
-
-        // 检测并显示孤儿用户（organization_id 指向不存在的组织）
-        html += renderOrphanedUsers();
 
         // 系统管理员区域
         if (role === '超级管理员' || role === '管理员') {
@@ -1027,26 +1024,6 @@
           .join('');
       }
 
-      // 渲染孤儿用户（organization_id 指向不存在的组织）
-      function renderOrphanedUsers() {
-        var orgIds = new Set(organizations.map(function (o) { return o.id; }));
-        var orphaned = users.filter(function (u) {
-          return u.organization_id !== null && !orgIds.has(u.organization_id);
-        });
-        if (orphaned.length === 0) return '';
-        var sorted = sortUsers(orphaned);
-        var html = '<div style="background:#ffebee;border:2px solid #e53935;border-radius:8px;padding:12px 16px;margin-bottom:12px;">';
-        html += '<div style="font-weight:600;color:#c62828;margin-bottom:8px;">⚠️ 检测到 ' + orphaned.length + ' 个人员所属组织已不存在，请编辑重新分配：</div>';
-        sorted.forEach(function (u) {
-          html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ffcdd2;">';
-          html += '<span style="font-size:13px;">' + escapeHtml(u.name) + ' <span style="color:#999;font-size:11px;">' + escapeHtml(u.role) + '</span> ' + escapeHtml(u.phone || '') + '</span>';
-          html += '<button class="edit-btn" onclick="event.stopPropagation();showEditUserModal(\'' + u.id + '\')">重新分配</button>';
-          html += '</div>';
-        });
-        html += '</div>';
-        return html;
-      }
-
       function toggleNode(nodeId) {
         if (expandedNodes.has(nodeId)) expandedNodes.delete(nodeId);
         else expandedNodes.add(nodeId);
@@ -1233,10 +1210,6 @@
         var mergeOrg = organizations.find(function (o) { return o.id === mergeId; });
         if (!keepOrg || !mergeOrg) {
           showToast('组织不存在');
-          return;
-        }
-        if (keepId === mergeId) {
-          showToast('不能将组织合并到自身');
           return;
         }
         if (!(await showConfirm(
