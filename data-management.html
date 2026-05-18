@@ -243,7 +243,7 @@
         // 加载当前学期，再加载组织
         currentSemesterId = await getCurrentSemesterId();
         var { data: orgs, error: orgsErr } = currentSemesterId
-          ? await client.from('organizations').select('*').eq('semester_id', currentSemesterId).eq('is_active', true)
+          ? await client.from('organizations').select('*').eq('semester_id', currentSemesterId)
           : { data: [] };
         if (orgsErr) {
           document.querySelector('.container').innerHTML = '<div class="empty-state">加载组织失败: ' + (orgsErr.message || '') + '</div>';

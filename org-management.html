@@ -1327,7 +1327,7 @@
 
         if (!(await showConfirm(parts.join('')))) return;
 
-        const { error } = await client.from('organizations').update({ is_active: false }).eq('id', id);
+        const { error } = await client.from('organizations').update({ is_active: false, archived_at: new Date().toISOString() }).eq('id', id);
         if (error) showToast('归档失败: ' + error.message);
         else {
           showToast('已归档');
@@ -1349,7 +1349,7 @@
         if (!(await showConfirm(parts.join('')))) return;
 
         var client = window.supabaseClient || window.db;
-        const { error } = await client.from('organizations').update({ is_active: true }).eq('id', id);
+        const { error } = await client.from('organizations').update({ is_active: true, archived_at: null }).eq('id', id);
         if (error) showToast('恢复失败: ' + error.message);
         else {
           showToast('已恢复');

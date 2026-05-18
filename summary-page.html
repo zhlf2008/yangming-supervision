@@ -651,7 +651,7 @@
 
         var [orgRes, atRes] = await Promise.all([
           semId
-            ? window.db.from('organizations').select('*').eq('semester_id', semId).eq('is_active', true).order('level', { ascending: true })
+            ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true })
             : Promise.resolve({ data: [] }),
           semId
             ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id')
@@ -1576,8 +1576,14 @@
 
           // Count total scheduled days up to today for this daban
           var totalDays = 0;
+          var groupOrg = orgsMap[gid];
+          var groupArchivedAt = groupOrg && groupOrg.archived_at ? new Date(groupOrg.archived_at) : null;
           groupSchedules.forEach(function (s) {
-            if (s.schedule_date <= today) totalDays++;
+            if (s.schedule_date <= today) {
+              // 已归档小组：只统计归档日期之前的日程
+              if (groupArchivedAt && new Date(s.schedule_date) > groupArchivedAt) return;
+              totalDays++;
+            }
           });
           if (totalDays === 0) return;
 
@@ -1593,6 +1599,8 @@
 
           groupSchedules.forEach(function (s) {
             if (s.schedule_date > today) return;
+            // 已归档小组：跳过归档日期之后的日程
+            if (groupArchivedAt && new Date(s.schedule_date) > groupArchivedAt) return;
             var formulas = getScheduleFormulas(s);
             var rec = recMap[s.id];
             var fd = rec && rec.fill_data ? rec.fill_data : {};
