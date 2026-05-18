@@ -945,11 +945,11 @@
           var groupSchedules = dabanId && dabanSchedulesMap[dabanId] ? dabanSchedulesMap[dabanId] : [];
 
           var totalDays = 0;
-          var groupArchivedAt = g.archived_at ? new Date(g.archived_at) : null;
+          var groupArchivedDate = g.archived_at ? (g.archived_at + '').substring(0, 10) : null;
           groupSchedules.forEach(function (s) {
             if (s.schedule_date <= today) {
               // 已归档小组：只统计归档日期之前的日程
-              if (groupArchivedAt && new Date(s.schedule_date) >= groupArchivedAt) return;
+              if (groupArchivedDate && (s.schedule_date + '').substring(0, 10) >= groupArchivedDate) return;
               totalDays++;
             }
           });
@@ -969,7 +969,7 @@
           groupSchedules.forEach(function (s) {
             if (s.schedule_date > today) return;
             // 已归档小组：跳过归档日期之后的日程
-            if (groupArchivedAt && new Date(s.schedule_date) >= groupArchivedAt) return;
+            if (groupArchivedDate && (s.schedule_date + '').substring(0, 10) >= groupArchivedDate) return;
             var formulas = getScheduleFormulas(s);
             var rec = recMap[s.id];
             var fd = rec && rec.fill_data ? rec.fill_data : {};
