@@ -658,7 +658,7 @@
 
         var semId = await getCurrentSemesterId();
         var { data: orgs } = semId
-          ? await window.db.from('organizations').select('id,name,parent_id,level').eq('semester_id', semId)
+          ? await window.db.from('organizations').select('id,name,parent_id,level').eq('semester_id', semId).eq('is_active', true)
           : { data: [] };
         orgs = orgs || [];
 

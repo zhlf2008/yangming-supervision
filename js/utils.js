@@ -61,12 +61,12 @@ function showConfirm(msg) {
     overlay.style.cssText =
       'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:3000;animation:confirmFadeIn 0.2s;';
     overlay.innerHTML =
-      '<div style="background:#fff;border-radius:14px;width:calc(100% - 64px);max-width:300px;padding:28px 24px 20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.25);">' +
-      '<div style="font-size:30px;margin-bottom:12px;">⚠️</div>' +
-      '<div style="font-size:15px;color:#2D2D2D;margin-bottom:8px;line-height:1.6;">' +
+      '<div style="background:#fff;border-radius:14px;width:calc(100% - 64px);max-width:340px;padding:28px 24px 20px;text-align:left;box-shadow:0 12px 40px rgba(0,0,0,0.25);">' +
+      '<div style="font-size:30px;margin-bottom:12px;text-align:center;">⚠️</div>' +
+      '<div style="font-size:14px;color:#2D2D2D;margin-bottom:8px;line-height:1.7;">' +
       msg +
       '</div>' +
-      '<div style="font-size:12px;color:#E63946;margin-bottom:8px;">此操作不可撤销</div>' +
+      '<div style="font-size:12px;color:#E63946;margin-bottom:8px;text-align:center;">此操作不可撤销</div>' +
       '<div style="display:flex;gap:12px;margin-top:20px;">' +
       '<button style="flex:1;padding:11px 0;font-size:14px;border:1px solid #E8E4DF;border-radius:8px;background:#FAFAF8;color:#5C5C5C;cursor:pointer;">取消</button>' +
       '<button style="flex:1;padding:11px 0;font-size:14px;border:none;border-radius:8px;background:#E63946;color:#fff;cursor:pointer;font-weight:500;">确认删除</button>' +

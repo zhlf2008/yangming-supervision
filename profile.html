@@ -923,7 +923,7 @@
         // 加载所有组织（用于 group→daban 追溯）
         var semId = await getCurrentSemesterId();
         var { data: allOrgs } = semId
-          ? await window.db.from('organizations').select('*').eq('semester_id', semId)
+          ? await window.db.from('organizations').select('*').eq('semester_id', semId).eq('is_active', true)
           : { data: [] };
         allOrgs = allOrgs || [];
         var orgMap = {};

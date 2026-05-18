@@ -682,6 +682,7 @@
                 .from('organizations')
                 .select('*')
                 .eq('semester_id', currentSemester.id)
+                .eq('is_active', true)
                 .order('level', { ascending: true })
             : Promise.resolve({ data: [] })
         ]);

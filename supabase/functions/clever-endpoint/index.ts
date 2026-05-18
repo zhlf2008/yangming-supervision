@@ -130,10 +130,11 @@ Deno.serve(async (req) => {
       }), { headers });
     }
 
-    // 一次性加载所有组织
+    // 一次性加载所有活跃组织
     const { data: allOrgs } = await adminClient
       .from('organizations')
-      .select('id, name, level, parent_id');
+      .select('id, name, level, parent_id')
+      .eq('is_active', true);
 
     if (!allOrgs?.length) {
       return new Response(JSON.stringify({ error: '无法加载组织数据' }), { headers, status: 500 });

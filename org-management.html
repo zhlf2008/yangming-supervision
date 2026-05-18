@@ -115,6 +115,25 @@
         border-left: 3px solid #2196f3;
         padding-left: 12px;
       }
+      .tree-node-content.archived {
+        opacity: 0.55;
+      }
+      .tree-node-content.archived .tree-node-name {
+        text-decoration: line-through;
+      }
+      .tree-archived-badge {
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 3px;
+        background: #f5f5f5;
+        color: #999;
+        margin-right: 6px;
+        flex-shrink: 0;
+      }
+      .tree-btn-restore {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
       .tree-expand-btn {
         width: 16px;
         height: 16px;
@@ -502,14 +521,23 @@
       </div>
       <div id="semesterInfo" style="font-size: 12px; color: var(--ink-muted); margin-bottom: 12px"></div>
       <div class="section">
-        <div class="section-header">
+        <div class="section-header" style="flex-wrap: wrap; gap: 8px;">
           <span class="section-title">组织架构</span>
-          <div id="editToggleContainer" style="display: none; align-items: center; gap: 8px">
-            <span style="font-size: 12px; color: var(--ink-muted)">编辑开关</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="editToggle" onchange="toggleOrgEditable()" />
-              <span class="toggle-slider"></span>
-            </label>
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div id="editToggleContainer" style="display: none; align-items: center; gap: 6px">
+              <span style="font-size: 11px; color: var(--ink-muted)">编辑</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="editToggle" onchange="toggleOrgEditable()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div id="archiveToggleContainer" style="display: none; align-items: center; gap: 6px">
+              <span style="font-size: 11px; color: var(--ink-muted)">显示已归档</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="archiveToggle" onchange="toggleShowArchived()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
           </div>
           <div style="display: flex; gap: 8px">
             <button
@@ -734,8 +762,11 @@
         }
       }
 
+      var showArchivedOrgs = false;
+
       async function loadOrganizations() {
         var client = window.supabaseClient || window.db;
+        // 管理页面始终加载全部组织（包括已归档），确保树结构完整
         var { data, error } = await client.from('organizations').select('*').eq('semester_id', currentSemesterId);
         if (error) {
           document.body.innerHTML = '<div class="empty-state" style="padding-top:40vh">加载组织失败: ' + (error.message || '') + '</div>';
@@ -856,6 +887,8 @@
         const levelOrder = { 大班: 0, 班级: 1, 小组: 2 };
         const byLevel = { 大班: [], 班级: [], 小组: [] };
         organizations.forEach((org) => {
+          // 不显示已归档时，跳过归档组织（管理员可通过开关切换）
+          if (org.is_active === false && !showArchivedOrgs) return;
           if (byLevel[org.level]) byLevel[org.level].push(org);
         });
 
@@ -907,7 +940,7 @@
                 ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('class', ${bigclass.id})">+班级</button>
             <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${bigclass.id})">+人员</button>
             <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${bigclass.id})">编辑</button>
-            <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${bigclass.id})">删除</button>`
+            <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${bigclass.id})">归档</button>`
                 : ''
             }
           </div>
@@ -975,19 +1008,23 @@
           const classId = `class-${cls.id}`;
           const isExpanded = expandedNodes.has(classId);
           const canManage = managedOrgIds.has(cls.id);
+          const isArchived = cls.is_active === false;
           html += `<div class="tree-node">
-          <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
+          <div class="tree-node-content level-1${isArchived ? ' archived' : ''}" onclick="toggleNode('${classId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+            ${isArchived ? '<span class="tree-archived-badge">已归档</span>' : ''}
             <span class="tree-node-name">${escapeHtml(cls.name)}</span>
             <span class="tree-node-level">${getTotalUsersCount(cls.id)}人</span>
             <div class="tree-node-actions">
               ${
-                canManage
-                  ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
+                isArchived
+                  ? `<button class="tree-btn tree-btn-restore" onclick="event.stopPropagation(); restoreOrg(${cls.id})">恢复</button>`
+                  : canManage
+                    ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showAddOrgModal('group', ${cls.id})">+小组</button>
               <button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${cls.id})">+人员</button>
               <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${cls.id})">编辑</button>
-              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${cls.id})">删除</button>`
-                  : ''
+              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${cls.id})">归档</button>`
+                    : ''
               }
             </div>
           </div>
@@ -1009,18 +1046,22 @@
           const groupId = `group-${group.id}`;
           const isExpanded = expandedNodes.has(groupId);
           const canManage = managedOrgIds.has(group.id);
+          const isArchived = group.is_active === false;
           html += `<div class="tree-node">
-          <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
+          <div class="tree-node-content level-2${isArchived ? ' archived' : ''}" onclick="toggleNode('${groupId}')">
             <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+            ${isArchived ? '<span class="tree-archived-badge">已归档</span>' : ''}
             <span class="tree-node-name">${escapeHtml(group.name)}</span>
             <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>
             <div class="tree-node-actions">
               ${
-                canManage
-                  ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
+                isArchived
+                  ? `<button class="tree-btn tree-btn-restore" onclick="event.stopPropagation(); restoreOrg(${group.id})">恢复</button>`
+                  : canManage
+                    ? `<button class="tree-btn tree-btn-add" onclick="event.stopPropagation(); showUserModal(null, ${group.id})">+人员</button>
               <button class="tree-btn tree-btn-edit" onclick="event.stopPropagation(); showEditOrgModal(${group.id})">编辑</button>
-              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${group.id})">删除</button>`
-                  : ''
+              <button class="tree-btn tree-btn-delete" onclick="event.stopPropagation(); deleteOrg(${group.id})">归档</button>`
+                    : ''
               }
             </div>
           </div>
@@ -1062,15 +1103,25 @@
 
       // 更新编辑开关 UI
       function updateEditToggleUI() {
-        var container = document.getElementById('editToggleContainer');
+        var editContainer = document.getElementById('editToggleContainer');
         var toggle = document.getElementById('editToggle');
+        var archiveContainer = document.getElementById('archiveToggleContainer');
         var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
         if (isAdmin) {
-          container.style.display = 'flex';
+          editContainer.style.display = 'flex';
           toggle.checked = orgEditable;
+          archiveContainer.style.display = 'flex';
+          document.getElementById('archiveToggle').checked = showArchivedOrgs;
         } else {
-          container.style.display = 'none';
+          editContainer.style.display = 'none';
+          archiveContainer.style.display = 'none';
         }
+      }
+
+      // 切换是否显示已归档组织
+      function toggleShowArchived() {
+        showArchivedOrgs = document.getElementById('archiveToggle').checked;
+        renderOrgTree();
       }
 
       // 切换编辑开关
@@ -1241,20 +1292,68 @@
         }
       }
 
+      // 软归档：将组织标记为非活跃，保留全部关联数据
       async function deleteOrg(id) {
         if (!canEditOrg()) return;
-        if (!(await showConfirm('确定删除该组织？'))) return;
-        const hasChildren = organizations.some((o) => o.parent_id === id);
-        if (hasChildren) {
-          showToast('请先删除下级组织');
+
+        // 检查是否有活跃的子组织
+        const hasActiveChildren = organizations.some((o) => o.parent_id === id && o.is_active !== false);
+        if (hasActiveChildren) {
+          showToast('请先归档下级组织');
           return;
         }
-        const orgName = (organizations.find((o) => o.id === id) || {}).name || '';
-        const { error } = await window.db.from('organizations').delete().eq('id', id);
-        if (error) showToast('删除失败');
+
+        const org = organizations.find((o) => o.id === id);
+        const orgName = (org || {}).name || '';
+        const orgPath = buildOrgPath(id, organizations);
+
+        // 统计关联数据（仅作提示，不删除）
+        var client = window.supabaseClient || window.db;
+        var [{ count: userCount }, { count: recordCount }] = await Promise.all([
+          client.from('profiles').select('*', { count: 'exact', head: true }).eq('organization_id', id),
+          client.from('attendance_records').select('*', { count: 'exact', head: true }).eq('organization_id', id)
+        ]);
+
+        var parts = [];
+        parts.push('<b>确定归档「' + escapeHtml(orgPath) + '」？</b>');
+        parts.push('<br><span style="color:#856404;">归档后组织将不再出现在业务页面中</span>');
+        if (userCount > 0) {
+          parts.push('<br>• ' + userCount + ' 名人员仍归属于此组织（不会被清除）');
+        }
+        if (recordCount > 0) {
+          parts.push('<br>• ' + recordCount + ' 条历史考勤记录完整保留');
+        }
+        parts.push('<br><span style="color:#5C5C5C;">可随时恢复</span>');
+
+        if (!(await showConfirm(parts.join('')))) return;
+
+        const { error } = await client.from('organizations').update({ is_active: false }).eq('id', id);
+        if (error) showToast('归档失败: ' + error.message);
         else {
-          showToast('删除成功');
-          logAction('删除组织', orgName + ' id:' + id);
+          showToast('已归档');
+          logAction('归档组织', orgPath);
+          await loadOrganizations();
+        }
+      }
+
+      // 恢复已归档的组织
+      async function restoreOrg(id) {
+        if (!canEditOrg()) return;
+        const org = organizations.find((o) => o.id === id);
+        const orgPath = org ? buildOrgPath(id, organizations) : '';
+
+        var parts = [];
+        parts.push('<b>确定恢复「' + escapeHtml(orgPath) + '」？</b>');
+        parts.push('<br>恢复后将重新出现在所有业务页面中');
+
+        if (!(await showConfirm(parts.join('')))) return;
+
+        var client = window.supabaseClient || window.db;
+        const { error } = await client.from('organizations').update({ is_active: true }).eq('id', id);
+        if (error) showToast('恢复失败: ' + error.message);
+        else {
+          showToast('已恢复');
+          logAction('恢复组织', orgPath);
           await loadOrganizations();
         }
       }

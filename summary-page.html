@@ -651,7 +651,7 @@
 
         var [orgRes, atRes] = await Promise.all([
           semId
-            ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true })
+            ? window.db.from('organizations').select('*').eq('semester_id', semId).eq('is_active', true).order('level', { ascending: true })
             : Promise.resolve({ data: [] }),
           semId
             ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id')

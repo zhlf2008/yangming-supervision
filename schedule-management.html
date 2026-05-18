@@ -398,6 +398,7 @@
           .from('organizations')
           .select('id,name')
           .eq('semester_id', semesterId)
+          .eq('is_active', true)
           .eq('level', '大班')
           .order('name');
         var dabans = orgs || [];

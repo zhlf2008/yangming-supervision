@@ -343,6 +343,7 @@
                 .from('organizations')
                 .select('id, name, level, parent_id')
                 .eq('semester_id', currentSemesterId)
+                .eq('is_active', true)
                 .order('name')
             : { data: [] };
 
