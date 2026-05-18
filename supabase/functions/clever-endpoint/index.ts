@@ -1,9 +1,10 @@
 // Supabase Edge Function: clever-endpoint
-// 部署命令: supabase functions deploy clever-endpoint --project-ref whvjfurrkusdwujjodwc
-// Cron 触发器 (Supabase Dashboard 设置):
-//   名称: reminder-cron
-//   表达式: */15 12-21 * * *  (每天 12:00-21:59 每15分钟)
-//   请求体: {"action":"send"}
+// ⚠️  部署必须加 --no-verify-jwt（cron-job.org 调用不带 JWT）:
+//     npm run deploy:function
+//     或: npx supabase functions deploy clever-endpoint --no-verify-jwt
+// Cron 触发器 (cron-job.org 设置):
+//   URL: https://whvjfurrkusdwujjodwc.supabase.co/functions/v1/clever-endpoint
+//   请求体: {"action":"send"}  请求方法: POST
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
