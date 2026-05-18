@@ -1327,7 +1327,7 @@
 
         if (!(await showConfirm(parts.join('')))) return;
 
-        const { error } = await client.from('organizations').update({ is_active: false, archived_at: new Date().toISOString() }).eq('id', id);
+        const { error } = await client.from('organizations').update({ is_active: false, archived_at: new Date().toISOString().split('T')[0] }).eq('id', id);
         if (error) showToast('归档失败: ' + error.message);
         else {
           showToast('已归档');

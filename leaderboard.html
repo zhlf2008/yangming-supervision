@@ -949,7 +949,7 @@
           groupSchedules.forEach(function (s) {
             if (s.schedule_date <= today) {
               // 已归档小组：只统计归档日期之前的日程
-              if (groupArchivedAt && new Date(s.schedule_date) > groupArchivedAt) return;
+              if (groupArchivedAt && new Date(s.schedule_date) >= groupArchivedAt) return;
               totalDays++;
             }
           });
@@ -969,7 +969,7 @@
           groupSchedules.forEach(function (s) {
             if (s.schedule_date > today) return;
             // 已归档小组：跳过归档日期之后的日程
-            if (groupArchivedAt && new Date(s.schedule_date) > groupArchivedAt) return;
+            if (groupArchivedAt && new Date(s.schedule_date) >= groupArchivedAt) return;
             var formulas = getScheduleFormulas(s);
             var rec = recMap[s.id];
             var fd = rec && rec.fill_data ? rec.fill_data : {};
