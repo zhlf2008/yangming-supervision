@@ -318,7 +318,10 @@ async function getWinners() {
     return { attendanceAvg: attSum / attCnt, filledDays: Math.round(filledSum / (groupCnt || 1)), totalDays, earliestCreatedAt, groupCount: groupCnt };
   }
 
-  // 11. Build winners
+  // 11. Build winners (top 3 for each category)
+  const rankNames = ['第一名', '第二名', '第三名'];
+  const titleNames = ['冠军', '亚军', '季军'];
+  const medalEmoji = ['🥇', '🥈', '🥉'];
   const weekdayLabel = computeWeekLabel(monday, semester);
   const winners = [];
 
@@ -326,7 +329,7 @@ async function getWinners() {
     const cfg = awardConfigMap.get(bc.id);
     if (!cfg || !cfg.webhook_url) continue;
 
-    // Top class in this 大班
+    // Top 3 classes in this 大班
     const classes = orgs.filter(o => o.parent_id === bc.id && o.level === '班级');
     const classRankings = [];
     for (const cls of classes) {
@@ -338,53 +341,56 @@ async function getWinners() {
       return (a.stats.earliestCreatedAt || 'z') < (b.stats.earliestCreatedAt || 'z') ? -1 : 1;
     });
 
-    if (classRankings.length > 0) {
-      const r = classRankings[0];
-      const abbr = (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8);
+    const abbr = (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8);
+    for (let i = 0; i < Math.min(3, classRankings.length); i++) {
+      const r = classRankings[i];
+      const rank = i + 1;
       winners.push({
-        orgName: r.name, rank: 1, title: '冠军', level: 'class',
+        orgName: r.name, rank, title: titleNames[i], level: 'class',
         bigClassName: bc.name, parentName: bc.name,
         attRate: r.stats.attendanceAvg.toFixed(2) + '%',
         webhookUrl: cfg.webhook_url,
         certParams: {
           name: r.name,
           context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + bc.name,
-          rank: '第一名', title: '冠军班级',
+          rank: rankNames[i], title: titleNames[i] + '班级',
           date: formatDateCN(sundayDate),
-          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-01',
-          sealColor: '#C41E3A', sealName: bc.name
+          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-0' + rank,
+          sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E', sealName: bc.name
         }
       });
     }
 
-    // Best group in this 大班
-    let bestGroup = null;
+    // Top 3 groups across all classes in this 大班
+    const allGroupRankings = [];
     for (const cls of classes) {
       const groups = orgs.filter(o => o.parent_id === cls.id && o.level === '小组');
       for (const g of groups) {
         const gs = groupStats[g.id];
         if (!gs || gs.attendanceAvg === null) continue;
-        if (!bestGroup || gs.attendanceAvg > bestGroup.stats.attendanceAvg ||
-          (gs.attendanceAvg === bestGroup.stats.attendanceAvg && (gs.earliestCreatedAt || 'z') < (bestGroup.stats.earliestCreatedAt || 'z'))) {
-          bestGroup = { id: g.id, name: g.name, className: cls.name, stats: gs };
-        }
+        allGroupRankings.push({ id: g.id, name: g.name, className: cls.name, stats: gs });
       }
     }
+    allGroupRankings.sort((a, b) => {
+      if (a.stats.attendanceAvg !== b.stats.attendanceAvg) return b.stats.attendanceAvg - a.stats.attendanceAvg;
+      return (a.stats.earliestCreatedAt || 'z') < (b.stats.earliestCreatedAt || 'z') ? -1 : 1;
+    });
 
-    if (bestGroup) {
-      const abbr = (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8);
+    for (let i = 0; i < Math.min(3, allGroupRankings.length); i++) {
+      const r = allGroupRankings[i];
+      const rank = i + 1;
       winners.push({
-        orgName: bestGroup.name, rank: 1, title: '冠军', level: 'group',
-        bigClassName: bc.name, parentName: bc.name + ' · ' + bestGroup.className,
-        attRate: bestGroup.stats.attendanceAvg.toFixed(2) + '%',
+        orgName: r.name, rank, title: titleNames[i], level: 'group',
+        bigClassName: bc.name, parentName: bc.name + ' · ' + r.className,
+        attRate: r.stats.attendanceAvg.toFixed(2) + '%',
         webhookUrl: cfg.webhook_url,
         certParams: {
-          name: bestGroup.name,
-          context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + bc.name + ' · ' + bestGroup.className,
-          rank: '第一名', title: '冠军小组',
+          name: r.name,
+          context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + bc.name + ' · ' + r.className,
+          rank: rankNames[i], title: titleNames[i] + '小组',
           date: formatDateCN(sundayDate),
-          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-G1',
-          sealColor: '#C41E3A', sealName: bc.name
+          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-G' + rank,
+          sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E', sealName: bc.name
         }
       });
     }
@@ -515,15 +521,34 @@ async function main() {
     console.log('\n  推送到: ' + bigClassName);
 
     // Build markdown message
+    const medalEmoji = ['🥇', '🥈', '🥉'];
     let md = '## 🏆 本周获奖通报\n\n';
     md += '> ' + semester.semester_name + ' ' + weekdayLabel + '\n';
     md += '> 考核周期：' + monday + ' ~ ' + sunday + '\n\n';
-    md += '**' + bigClassName + '** 本周获奖名单：\n\n';
+    md += '**' + bigClassName + '** 获奖名单：\n';
 
-    for (const item of items) {
-      const w = item.winner;
-      md += '- 🥇 **' + w.orgName + '**（' + w.certParams.title + '）\n';
-      md += '  出勤率：<font color="warning">' + w.attRate + '</font>\n';
+    // Group by level: class first, then group
+    const classItems = items.filter(it => it.winner.level === 'class');
+    const groupItems = items.filter(it => it.winner.level === 'group');
+
+    if (classItems.length > 0) {
+      md += '\n**班级榜**\n';
+      for (const item of classItems) {
+        const w = item.winner;
+        const emoji = medalEmoji[w.rank - 1] || '';
+        md += '- ' + emoji + ' **' + w.orgName + '**（' + w.title + '）\n';
+        md += '  出勤率：<font color="warning">' + w.attRate + '</font>\n';
+      }
+    }
+
+    if (groupItems.length > 0) {
+      md += '\n**小组榜**\n';
+      for (const item of groupItems) {
+        const w = item.winner;
+        const emoji = medalEmoji[w.rank - 1] || '';
+        md += '- ' + emoji + ' **' + w.orgName + '**（' + w.title + '）\n';
+        md += '  出勤率：<font color="warning">' + w.attRate + '</font>\n';
+      }
     }
 
     md += '\n> 颁发日期：' + sundayDate + '\n';

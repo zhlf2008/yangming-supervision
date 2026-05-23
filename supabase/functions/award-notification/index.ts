@@ -333,8 +333,8 @@ async function getWinners() {
     };
   }
 
-  // 11. Build winner list
-  const rankNames = ['第一名', '第二名', '第三名', '第四名', '第五名', '第六名', '第七名', '第八名', '第九名', '第十名'];
+  // 11. Build winner list (top 3 for each category)
+  const rankNames = ['第一名', '第二名', '第三名'];
   const titleNames = ['冠军', '亚军', '季军'];
 
   interface Winner {
@@ -355,7 +355,7 @@ async function getWinners() {
     const cfg = awardConfigMap.get(bc.id);
     if (!cfg || !cfg.webhook_url) continue;
 
-    // Top class
+    // Top 3 classes
     const classes = getClassesOfBigClass(bc.id, orgs!);
     const classRankings: { id: number; name: string; stats: ReturnType<typeof getClassStats> }[] = [];
     for (const cls of classes) {
@@ -369,75 +369,57 @@ async function getWinners() {
       return ca < cb ? -1 : 1;
     });
 
-    if (classRankings.length > 0) {
-      const r = classRankings[0];
-      const rank = 1;
-      const weekdayLabel = computeWeekLabel(monday, semester);
-      const serialNo = 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') +
-        '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' +
-        (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8) + '-01';
-
+    const abbr = (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8);
+    const weekdayLabel = computeWeekLabel(monday, semester);
+    for (let i = 0; i < Math.min(3, classRankings.length); i++) {
+      const r = classRankings[i];
+      const rank = i + 1;
       winners.push({
-        orgName: r.name,
-        rank: 1,
-        title: '冠军',
-        level: 'class',
-        bigClassName: bc.name,
-        parentName: bc.name,
+        orgName: r.name, rank, title: titleNames[i], level: 'class',
+        bigClassName: bc.name, parentName: bc.name,
         attRate: r.stats!.attendanceAvg.toFixed(2) + '%',
         webhookUrl: cfg.webhook_url,
         certParams: {
           name: r.name,
           context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + bc.name,
-          rank: '第一名',
-          title: '冠军班级',
+          rank: rankNames[i], title: titleNames[i] + '班级',
           date: formatDateCN(sundayDate),
-          serial: serialNo,
-          sealColor: '#C41E3A',
-          sealName: bc.name
+          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-0' + rank,
+          sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E', sealName: bc.name
         }
       });
     }
 
-    // Top group - find the best group across all classes in this big class
-    let bestGroup: { id: number; name: string; className: string; stats: typeof groupStats[number] } | null = null;
+    // Top 3 groups across all classes in this big class
+    const allGroupRankings: { id: number; name: string; className: string; stats: typeof groupStats[number] }[] = [];
     for (const cls of classes) {
       const groups = getGroupsOfClass(cls.id, orgs!);
       for (const g of groups) {
         const gs = groupStats[g.id];
         if (!gs || gs.attendanceAvg === null) continue;
-        if (!bestGroup ||
-          gs.attendanceAvg > bestGroup.stats!.attendanceAvg! ||
-          (gs.attendanceAvg === bestGroup.stats!.attendanceAvg! &&
-            (gs.earliestCreatedAt || 'z') < (bestGroup.stats!.earliestCreatedAt || 'z'))) {
-          bestGroup = { id: g.id, name: g.name, className: cls.name, stats: gs };
-        }
+        allGroupRankings.push({ id: g.id, name: g.name, className: cls.name, stats: gs });
       }
     }
+    allGroupRankings.sort((a, b) => {
+      if (a.stats!.attendanceAvg !== b.stats!.attendanceAvg) return b.stats!.attendanceAvg - a.stats!.attendanceAvg;
+      return (a.stats!.earliestCreatedAt || 'z') < (b.stats!.earliestCreatedAt || 'z') ? -1 : 1;
+    });
 
-    if (bestGroup) {
-      const serialNo = 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') +
-        '-' + computeWeekLabel(monday, semester).replace(/[^0-9]/g, '') + '-' +
-        (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8) + '-G1';
-
+    for (let i = 0; i < Math.min(3, allGroupRankings.length); i++) {
+      const r = allGroupRankings[i];
+      const rank = i + 1;
       winners.push({
-        orgName: bestGroup.name,
-        rank: 1,
-        title: '冠军',
-        level: 'group',
-        bigClassName: bc.name,
-        parentName: bc.name + ' · ' + bestGroup.className,
-        attRate: bestGroup.stats!.attendanceAvg!.toFixed(2) + '%',
+        orgName: r.name, rank, title: titleNames[i], level: 'group',
+        bigClassName: bc.name, parentName: bc.name + ' · ' + r.className,
+        attRate: r.stats!.attendanceAvg!.toFixed(2) + '%',
         webhookUrl: cfg.webhook_url,
         certParams: {
-          name: bestGroup.name,
-          context: semester.semester_name + ' ' + computeWeekLabel(monday, semester) + ' 的 ' + bc.name + ' · ' + bestGroup.className,
-          rank: '第一名',
-          title: '冠军小组',
+          name: r.name,
+          context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + bc.name + ' · ' + r.className,
+          rank: rankNames[i], title: titleNames[i] + '小组',
           date: formatDateCN(sundayDate),
-          serial: serialNo,
-          sealColor: '#C41E3A',
-          sealName: bc.name
+          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-G' + rank,
+          sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E', sealName: bc.name
         }
       });
     }
