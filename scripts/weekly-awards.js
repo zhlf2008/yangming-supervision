@@ -2,7 +2,7 @@
 // 由 GitHub Actions 在每周日 0:00 UTC 触发
 //
 // 流程：
-// 1. 从 Supabase 查询本周获奖名单（含班级榜 + 小组榜第一名）
+// 1. 从 Supabase 查询本周获奖名单（班级榜冠亚季军）
 // 2. 使用 Playwright 打开 certificate-render.html 渲染证书 PNG
 // 3. 通过企业微信 Webhook 推送到对应大班群
 
@@ -346,7 +346,7 @@ async function getWinners() {
       const r = classRankings[i];
       const rank = i + 1;
       winners.push({
-        orgName: r.name, rank, title: titleNames[i], level: 'class',
+        orgName: r.name, rank, title: titleNames[i],
         bigClassName: bc.name, parentName: bc.name,
         attRate: r.stats.attendanceAvg.toFixed(2) + '%',
         webhookUrl: cfg.webhook_url,
@@ -361,39 +361,6 @@ async function getWinners() {
       });
     }
 
-    // Top 3 groups across all classes in this 大班
-    const allGroupRankings = [];
-    for (const cls of classes) {
-      const groups = orgs.filter(o => o.parent_id === cls.id && o.level === '小组');
-      for (const g of groups) {
-        const gs = groupStats[g.id];
-        if (!gs || gs.attendanceAvg === null) continue;
-        allGroupRankings.push({ id: g.id, name: g.name, className: cls.name, stats: gs });
-      }
-    }
-    allGroupRankings.sort((a, b) => {
-      if (a.stats.attendanceAvg !== b.stats.attendanceAvg) return b.stats.attendanceAvg - a.stats.attendanceAvg;
-      return (a.stats.earliestCreatedAt || 'z') < (b.stats.earliestCreatedAt || 'z') ? -1 : 1;
-    });
-
-    for (let i = 0; i < Math.min(3, allGroupRankings.length); i++) {
-      const r = allGroupRankings[i];
-      const rank = i + 1;
-      winners.push({
-        orgName: r.name, rank, title: titleNames[i], level: 'group',
-        bigClassName: bc.name, parentName: bc.name + ' · ' + r.className,
-        attRate: r.stats.attendanceAvg.toFixed(2) + '%',
-        webhookUrl: cfg.webhook_url,
-        certParams: {
-          name: r.name,
-          context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + bc.name + ' · ' + r.className,
-          rank: rankNames[i], title: titleNames[i] + '小组',
-          date: formatDateCN(sundayDate),
-          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-G' + rank,
-          sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E', sealName: bc.name
-        }
-      });
-    }
   }
 
   return { winners, semester, monday, sunday, sundayDate, weekdayLabel };
@@ -527,23 +494,9 @@ async function main() {
     md += '> 考核周期：' + monday + ' ~ ' + sunday + '\n\n';
     md += '**' + bigClassName + '** 获奖名单：\n';
 
-    // Group by level: class first, then group
-    const classItems = items.filter(it => it.winner.level === 'class');
-    const groupItems = items.filter(it => it.winner.level === 'group');
-
-    if (classItems.length > 0) {
+    if (items.length > 0) {
       md += '\n**班级榜**\n';
-      for (const item of classItems) {
-        const w = item.winner;
-        const emoji = medalEmoji[w.rank - 1] || '';
-        md += '- ' + emoji + ' **' + w.orgName + '**（' + w.title + '）\n';
-        md += '  出勤率：<font color="warning">' + w.attRate + '</font>\n';
-      }
-    }
-
-    if (groupItems.length > 0) {
-      md += '\n**小组榜**\n';
-      for (const item of groupItems) {
+      for (const item of items) {
         const w = item.winner;
         const emoji = medalEmoji[w.rank - 1] || '';
         md += '- ' + emoji + ' **' + w.orgName + '**（' + w.title + '）\n';
@@ -552,7 +505,7 @@ async function main() {
     }
 
     md += '\n> 颁发日期：' + sundayDate + '\n';
-    md += '> 证书编号可在电脑端榜单页面查看\n';
+    md += '> 恭喜以上获奖班级，望再接再厉，再创佳绩！\n';
 
     try {
       // Push markdown + images
