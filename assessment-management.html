@@ -393,10 +393,11 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 8px;
-        background: var(--bg-primary);
-        border-radius: 6px;
-        margin-top: 6px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 8px;
+        background: var(--bg-card);
         font-size: 12px;
       }
       .deadline-save-btn {
@@ -475,14 +476,14 @@
         <div class="modal-header" id="dlHeaderList">
           <span class="modal-title">截止时间管理</span>
           <div style="display:flex; align-items:center; gap:8px;">
-            <button onclick="showAddRuleForm()" style="padding:6px 16px; border-radius:20px; background:var(--vermillion); color:#fff; border:none; font-size:13px; font-weight:500; cursor:pointer;">添加规则</button>
-            <button onclick="closeDeadlineModal()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-muted); padding:0;">关闭</button>
+            <button onclick="showAddRuleForm()" style="padding:6px 16px; border-radius:20px; background:var(--vermillion); color:#fff; border:none; font-size:13px; font-weight:500; cursor:pointer;">添加</button>
+            <button onclick="closeDeadlineModal()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-muted); padding:4px 8px;">关闭</button>
           </div>
         </div>
         <div class="modal-header" id="dlHeaderForm" style="display:none;">
           <button onclick="backToDeadlineList()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-dark); padding:0;">← 返回</button>
           <span class="modal-title" id="dlFormTitle">添加规则</span>
-          <button onclick="closeDeadlineModal()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-muted); padding:0;">关闭</button>
+          <button onclick="closeDeadlineModal()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-muted); padding:4px 8px;">关闭</button>
         </div>
         <div class="modal-body">
           <div id="dlListView">
@@ -821,15 +822,16 @@
           var orgName = (bigClasses.find(function (b) { return b.id === c.org_id; }) || {}).name || '未知大班';
           var dayName = dayNames[c.day_of_week] || '';
           var timeStr = (c.cutoff_time || '').substring(0, 5);
-          return '<div class="deadline-rule-row" style="padding:10px 8px; margin-bottom:6px;">' +
+          return '<div class="deadline-rule-row">' +
             '<div style="flex:1; min-width:0;">' +
-              '<div style="font-size:13px; font-weight:500;">' + escapeHtml(typeName) + ' · ' + escapeHtml(orgName) + '</div>' +
-              '<div style="font-size:11px; color:var(--ink-muted); margin-top:2px;">' + dayName + ' · ' + timeStr + ' 截止</div>' +
+              '<div style="font-size:14px; font-weight:600;">' + escapeHtml(typeName) + ' · ' + escapeHtml(orgName) + '</div>' +
+              '<div style="font-size:12px; color:var(--ink-muted); margin-top:4px;">' + dayName + ' · ' + timeStr + ' 截止</div>' +
             '</div>' +
-            '<button onclick="editDeadlineRule(' + c.id + ')" style="background:none; border:none; color:var(--ink-dark); font-size:12px; cursor:pointer; flex-shrink:0; padding:4px 6px;">编辑</button>' +
-            '<div class="toggle-switch' + (c.is_enabled ? ' active' : '') + '" onclick="toggleDeadlineRule(' + c.id + ', this)" style="flex-shrink:0; margin:0 4px;"></div>' +
-            '<button onclick="deleteDeadlineRule(' + c.id + ')" style="background:none; border:none; color:var(--vermillion); font-size:12px; cursor:pointer; flex-shrink:0; padding:4px 6px;">删除</button>' +
-            '</div>';
+            '<div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">' +
+              '<button class="edit-btn" onclick="editDeadlineRule(' + c.id + ')">编辑</button>' +
+              '<div class="toggle-switch' + (c.is_enabled ? ' active' : '') + '" onclick="toggleDeadlineRule(' + c.id + ', this)"></div>' +
+              '<button class="delete-btn" onclick="deleteDeadlineRule(' + c.id + ')">删除</button>' +
+            '</div></div>';
         }).join('');
       }
 
