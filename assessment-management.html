@@ -504,7 +504,13 @@
         <div class="modal-header" id="dlHeaderForm" style="display:none;">
           <button onclick="backToDeadlineList()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-dark); padding:0;">← 返回</button>
           <span class="modal-title" id="dlFormTitle">添加规则</span>
-          <button onclick="closeDeadlineModal()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-muted); padding:4px 8px;">关闭</button>
+          <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;color:var(--ink-muted);">启用</span>
+              <div id="dlEnabled" class="toggle-switch active" onclick="toggleDlEnabled()"></div>
+            </div>
+            <button onclick="closeDeadlineModal()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-muted); padding:4px 8px;">关闭</button>
+          </div>
         </div>
         <div class="modal-body">
           <div id="dlListView">
@@ -521,7 +527,7 @@
                 <select id="dlOrgId" class="form-select" style="font-size:13px; padding:10px;"></select>
               </div>
             </div>
-            <div class="input-row" style="margin-bottom:12px;">
+            <div class="input-row">
               <div class="input-group" style="flex:1;">
                 <label class="input-label">星期（可多选）</label>
                 <div class="multi-select" id="dlDaysWrap">
@@ -532,17 +538,9 @@
                   <div class="multi-select-dropdown" id="dlDaysDropdown" style="display:none;"></div>
                 </div>
               </div>
-            </div>
-            <div class="input-row">
-              <div class="input-group">
+              <div class="input-group" style="flex:1;">
                 <label class="input-label">截止时间</label>
                 <input type="time" id="dlTime" class="form-input" value="07:30" style="font-size:13px; padding:10px;">
-              </div>
-              <div class="input-group" style="display:flex; align-items:flex-end; padding-bottom:2px;">
-                <div class="toggle-group" style="margin:0;">
-                  <span style="font-size:14px;">启用</span>
-                  <div id="dlEnabled" class="toggle-switch active" onclick="toggleDlEnabled()"></div>
-                </div>
               </div>
             </div>
             <button class="modal-btn confirm" id="dlSubmitBtn" onclick="addDeadlineRule()" style="width:100%; margin-top:16px;">保存</button>
