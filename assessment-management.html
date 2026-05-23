@@ -369,6 +369,20 @@
       .toast.show {
         opacity: 1;
       }
+      .input-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .input-row .input-group {
+        flex: 1;
+      }
+      .input-label {
+        display: block;
+        font-size: 12px;
+        color: var(--ink-light);
+        margin-bottom: 4px;
+      }
       /* 截止设置面板 */
       .deadline-config {
         margin-top: 12px;
@@ -417,6 +431,7 @@
       <p class="section-desc">管理考勤填报的考核项目模板。设为"模板"的项目会在生成日程时自动添加。</p>
       <div id="semesterLabel" style="font-size: 12px; color: var(--ink-muted); margin-bottom: 12px"></div>
       <button class="add-btn" onclick="showTypeModal()">+ 新增考核项目</button>
+      <button class="add-btn" onclick="showDeadlineModal()" style="margin-left:8px; background:var(--ink-dark);">截止时间管理</button>
       <div id="typeList"><div class="empty-state">加载中...</div></div>
     </div>
 
@@ -450,6 +465,47 @@
         <div class="modal-actions">
           <button class="modal-btn cancel" onclick="closeTypeModal()">取消</button>
           <button class="modal-btn confirm" onclick="saveType()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deadline Config Modal -->
+    <div id="deadlineModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">截止时间管理</span>
+          <button class="modal-close" onclick="closeDeadlineModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="deadlineRuleList" style="max-height:45vh; overflow-y:auto;"></div>
+          <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+            <div style="font-size:14px; font-weight:600; margin-bottom:12px;">添加规则</div>
+            <div class="input-row">
+              <div class="input-group">
+                <label class="input-label">考核项目</label>
+                <select id="dlTypeId" class="form-select" style="font-size:12px; padding:8px;"></select>
+              </div>
+              <div class="input-group">
+                <label class="input-label">大班</label>
+                <select id="dlOrgId" class="form-select" style="font-size:12px; padding:8px;"></select>
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label class="input-label">星期</label>
+                <select id="dlDay" class="form-select" style="font-size:12px; padding:8px;"></select>
+              </div>
+              <div class="input-group">
+                <label class="input-label">截止时间</label>
+                <input type="time" id="dlTime" class="form-input" value="07:30" style="font-size:12px; padding:8px;">
+              </div>
+            </div>
+            <div class="toggle-group">
+              <span style="font-size:13px;">启用</span>
+              <div id="dlEnabled" class="toggle-switch active" onclick="toggleDlEnabled()"></div>
+            </div>
+            <button class="modal-btn confirm" onclick="addDeadlineRule()" style="width:100%; margin-top:12px;">添加规则</button>
+          </div>
         </div>
       </div>
     </div>
@@ -508,7 +564,6 @@
           container.innerHTML = '<div class="empty-state">暂无考核项目，点击上方添加</div>';
           return;
         }
-        const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
         container.innerHTML = assessmentTypes
           .map((type) => {
             const fields = type.fields || {};
@@ -518,8 +573,6 @@
                 return `<span class="field-tag">${name}${isRequired ? '<span class="required">*</span>' : ''}</span>`;
               })
               .join('');
-            const typeConfigs = allDeadlineConfigs.filter(function (c) { return c.assessment_type_id === type.id; });
-            const hasBigClasses = bigClasses.length > 0;
             return `
           <div class="type-card">
             <div class="type-header">
@@ -530,53 +583,8 @@
             ${type.formula ? `<div class="type-formula">${escapeHtml(type.formula)}</div>` : ''}
             <div class="field-tags">${fieldsList}</div>
 
-            <div class="deadline-config" id="deadline-${type.id}" style="display:none;">
-              <div style="font-size:13px; font-weight:600; margin-bottom:8px;">提交截止规则</div>
-              ${hasBigClasses ? `
-                <div class="input-row" style="margin-bottom:6px;">
-                  <div class="input-group">
-                    <label class="input-label">大班</label>
-                    <select id="dl-org-${type.id}" class="form-select" style="font-size:12px; padding:6px;">
-                      ${bigClasses.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>'; }).join('')}
-                    </select>
-                  </div>
-                  <div class="input-group">
-                    <label class="input-label">周几</label>
-                    <select id="dl-day-${type.id}" class="form-select" style="font-size:12px; padding:6px;">
-                      ${dayNames.map(function (d, i) { return '<option value="' + i + '"' + (i === 5 ? ' selected' : '') + '>' + d + '</option>'; }).join('')}
-                    </select>
-                  </div>
-                </div>
-                <div class="input-row" style="margin-bottom:6px;">
-                  <div class="input-group">
-                    <label class="input-label">截止时间</label>
-                    <input type="time" id="dl-time-${type.id}" value="07:30" class="form-input" style="font-size:12px; padding:6px;">
-                  </div>
-                  <div class="input-group" style="display:flex; align-items:flex-end;">
-                    <label class="field-required" style="font-size:12px; padding-bottom:6px; cursor:pointer;">
-                      <input type="checkbox" id="dl-enabled-${type.id}" checked> 启用
-                    </label>
-                  </div>
-                </div>
-                <button class="deadline-save-btn" onclick="saveDeadlineConfig(${type.id})">保存规则</button>
-              ` : '<div style="font-size:12px; color:var(--ink-muted); padding:8px 0;">当前学期暂无大班</div>'}
-              ${typeConfigs.length > 0 ? `
-                <div style="margin-top:10px; font-size:12px; color:var(--ink-muted);">已有规则：</div>
-                ${typeConfigs.map(function (c) {
-                  var orgName = (bigClasses.find(function (b) { return b.id === c.org_id; }) || {}).name || '未知';
-                  var dayName = dayNames[c.day_of_week] || '';
-                  var timeStr = (c.cutoff_time || '').substring(0, 5);
-                  return '<div class="deadline-rule-row">' +
-                    '<span>' + escapeHtml(orgName) + ' · ' + dayName + ' · ' + timeStr + ' · ' + (c.is_enabled ? '<span style="color:var(--green);">启用</span>' : '<span style="color:var(--ink-muted);">关闭</span>') + '</span>' +
-                    '<button onclick="deleteDeadlineConfig(' + c.id + ', ' + type.id + ')" style="background:none; border:none; color:var(--vermillion); font-size:11px; cursor:pointer;">删除</button>' +
-                    '</div>';
-                }).join('')}
-              ` : ''}
-            </div>
-
             <div class="type-actions">
               <button class="edit-btn" onclick="editType('${type.id}')">编辑</button>
-              <button class="edit-btn" onclick="toggleDeadlineConfig('${type.id}')" style="color:var(--vermillion);">截止设置</button>
               <button class="delete-btn" onclick="deleteType('${type.id}')">删除</button>
             </div>
           </div>
@@ -718,17 +726,63 @@
         if (type) showTypeModal(type);
       }
 
-      function toggleDeadlineConfig(typeId) {
-        var el = document.getElementById('deadline-' + typeId);
-        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      var dlNewEnabled = true;
+      var dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+      function showDeadlineModal() {
+        dlNewEnabled = true;
+        document.getElementById('dlEnabled').classList.toggle('active', true);
+        document.getElementById('dlTime').value = '07:30';
+        // Populate assessment type dropdown
+        var typeSel = document.getElementById('dlTypeId');
+        typeSel.innerHTML = assessmentTypes.map(function (t) { return '<option value="' + t.id + '">' + escapeHtml(t.type_name) + '</option>'; }).join('');
+        // Populate org dropdown
+        var orgSel = document.getElementById('dlOrgId');
+        orgSel.innerHTML = bigClasses.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>'; }).join('');
+        // Populate day dropdown (default 周五)
+        var daySel = document.getElementById('dlDay');
+        daySel.innerHTML = dayNames.map(function (d, i) { return '<option value="' + i + '"' + (i === 5 ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+        renderDeadlineRules();
+        document.getElementById('deadlineModal').classList.add('show');
       }
 
-      async function saveDeadlineConfig(typeId) {
-        var orgId = parseInt(document.getElementById('dl-org-' + typeId).value);
-        var day = parseInt(document.getElementById('dl-day-' + typeId).value);
-        var timeVal = document.getElementById('dl-time-' + typeId).value;
-        var enabled = document.getElementById('dl-enabled-' + typeId).checked;
-        if (!orgId || isNaN(day)) { showToast('请填写完整'); return; }
+      function closeDeadlineModal() {
+        document.getElementById('deadlineModal').classList.remove('show');
+      }
+
+      function toggleDlEnabled() {
+        dlNewEnabled = !dlNewEnabled;
+        document.getElementById('dlEnabled').classList.toggle('active', dlNewEnabled);
+      }
+
+      function renderDeadlineRules() {
+        var container = document.getElementById('deadlineRuleList');
+        if (allDeadlineConfigs.length === 0) {
+          container.innerHTML = '<div style="text-align:center; padding:24px; color:var(--ink-muted); font-size:13px;">暂无截止规则</div>';
+          return;
+        }
+        container.innerHTML = allDeadlineConfigs.map(function (c) {
+          var typeName = (assessmentTypes.find(function (t) { return t.id === c.assessment_type_id; }) || {}).type_name || '未知项目';
+          var orgName = (bigClasses.find(function (b) { return b.id === c.org_id; }) || {}).name || '未知大班';
+          var dayName = dayNames[c.day_of_week] || '';
+          var timeStr = (c.cutoff_time || '').substring(0, 5);
+          return '<div class="deadline-rule-row" style="padding:10px 8px; margin-bottom:6px;">' +
+            '<div style="flex:1; min-width:0;">' +
+              '<div style="font-size:13px; font-weight:500;">' + escapeHtml(typeName) + ' · ' + escapeHtml(orgName) + '</div>' +
+              '<div style="font-size:11px; color:var(--ink-muted); margin-top:2px;">' + dayName + ' · ' + timeStr + ' 截止</div>' +
+            '</div>' +
+            '<div class="toggle-switch' + (c.is_enabled ? ' active' : '') + '" onclick="toggleDeadlineRule(' + c.id + ', this)" style="flex-shrink:0; margin-right:8px;"></div>' +
+            '<button onclick="deleteDeadlineRule(' + c.id + ')" style="background:none; border:none; color:var(--vermillion); font-size:13px; cursor:pointer; flex-shrink:0; padding:4px 8px;">删除</button>' +
+            '</div>';
+        }).join('');
+      }
+
+      async function addDeadlineRule() {
+        var typeId = parseInt(document.getElementById('dlTypeId').value);
+        var orgId = parseInt(document.getElementById('dlOrgId').value);
+        var day = parseInt(document.getElementById('dlDay').value);
+        var timeVal = document.getElementById('dlTime').value;
+        if (!typeId || !orgId || isNaN(day)) { showToast('请填写完整'); return; }
         var cutOff = timeVal || '07:30';
         if (cutOff.length === 5) cutOff += ':00';
 
@@ -737,25 +791,36 @@
           org_id: orgId,
           day_of_week: day,
           cutoff_time: cutOff,
-          is_enabled: enabled
+          is_enabled: dlNewEnabled
         }, { onConflict: 'assessment_type_id, org_id, day_of_week' });
 
-        if (error) { showToast('保存失败: ' + error.message); return; }
-        showToast('规则已保存');
-        // Reload configs and re-render
+        if (error) { showToast('添加失败: ' + error.message); return; }
+        showToast('规则已添加');
         var { data: configs } = await window.db.from('assessment_deadline_configs').select('*').order('created_at');
         allDeadlineConfigs = configs || [];
-        renderAssessmentTypes();
+        renderDeadlineRules();
       }
 
-      async function deleteDeadlineConfig(configId, typeId) {
+      async function toggleDeadlineRule(configId, el) {
+        var enabled = !el.classList.contains('active');
+        el.classList.toggle('active', enabled);
+        var { error } = await window.db.from('assessment_deadline_configs').update({ is_enabled: enabled, updated_at: new Date().toISOString() }).eq('id', configId);
+        if (error) {
+          el.classList.toggle('active', !enabled);
+          showToast('操作失败');
+          return;
+        }
+        var config = allDeadlineConfigs.find(function (c) { return c.id === configId; });
+        if (config) config.is_enabled = enabled;
+      }
+
+      async function deleteDeadlineRule(configId) {
         if (!(await showConfirm('确定删除该截止规则？'))) return;
         var { error } = await window.db.from('assessment_deadline_configs').delete().eq('id', configId);
         if (error) { showToast('删除失败: ' + error.message); return; }
         showToast('已删除');
-        var { data: configs } = await window.db.from('assessment_deadline_configs').select('*').order('created_at');
-        allDeadlineConfigs = configs || [];
-        renderAssessmentTypes();
+        allDeadlineConfigs = allDeadlineConfigs.filter(function (c) { return c.id !== configId; });
+        renderDeadlineRules();
       }
 
       async function deleteType(id) {
