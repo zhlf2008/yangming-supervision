@@ -412,6 +412,27 @@
         cursor: pointer;
         margin-top: 8px;
       }
+      .multi-select { position: relative; }
+      .multi-select-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px; font-size: 13px; border: 1px solid var(--border);
+        border-radius: 6px; background: var(--bg-card); cursor: pointer;
+        min-height: 40px; user-select: none;
+      }
+      .multi-select-arrow { font-size: 10px; color: var(--ink-muted); margin-left: 8px; transition: transform 0.2s; }
+      .multi-select.open .multi-select-arrow { transform: rotate(180deg); }
+      .multi-select-dropdown {
+        position: absolute; top: 100%; left: 0; right: 0; z-index: 10;
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 6px; margin-top: 4px; max-height: 240px; overflow-y: auto;
+        box-shadow: 0 4px 12px var(--shadow); padding: 4px 0;
+      }
+      .multi-select-option {
+        display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+        font-size: 13px; cursor: pointer;
+      }
+      .multi-select-option:hover { background: var(--bg-primary); }
+      .multi-select-option input[type=checkbox] { margin: 0; width: 16px; height: 16px; accent-color: var(--vermillion); }
     </style>
   </head>
   <body>
@@ -503,7 +524,13 @@
             <div class="input-row" style="margin-bottom:12px;">
               <div class="input-group" style="flex:1;">
                 <label class="input-label">星期（可多选）</label>
-                <div id="dlDays" style="display:flex; flex-wrap:wrap; gap:6px; padding-top:4px;"></div>
+                <div class="multi-select" id="dlDaysWrap">
+                  <div class="multi-select-trigger" id="dlDaysTrigger" onclick="toggleDlDaysDropdown()">
+                    <span id="dlDaysText">请选择星期</span>
+                    <span class="multi-select-arrow">▾</span>
+                  </div>
+                  <div class="multi-select-dropdown" id="dlDaysDropdown" style="display:none;"></div>
+                </div>
               </div>
             </div>
             <div class="input-row">
@@ -749,25 +776,50 @@
         typeSel.innerHTML = assessmentTypes.map(function (t) { return '<option value="' + t.id + '">' + escapeHtml(t.type_name) + '</option>'; }).join('');
         var orgSel = document.getElementById('dlOrgId');
         orgSel.innerHTML = bigClasses.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>'; }).join('');
-        // 星期复选框
-        var container = document.getElementById('dlDays');
-        container.innerHTML = dayNames.map(function (d, i) {
-          return '<label style="display:inline-flex;align-items:center;gap:3px;font-size:13px;cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:4px;user-select:none;" class="dl-day-chip">' +
-            '<input type="checkbox" value="' + i + '" style="margin:0;">' + d + '</label>';
+        // 星期下拉多选
+        var dropdown = document.getElementById('dlDaysDropdown');
+        dropdown.innerHTML = dayNames.map(function (d, i) {
+          return '<label class="multi-select-option">' +
+            '<input type="checkbox" value="' + i + '" onchange="updateDlDaysText()">' + d + '</label>';
         }).join('');
+        updateDlDaysText();
       }
 
       function getCheckedDays() {
-        var checks = document.querySelectorAll('#dlDays input[type=checkbox]:checked');
+        var checks = document.querySelectorAll('#dlDaysDropdown input[type=checkbox]:checked');
         return Array.from(checks).map(function (c) { return parseInt(c.value); });
       }
 
       function setCheckedDays(days) {
-        var checks = document.querySelectorAll('#dlDays input[type=checkbox]');
+        var checks = document.querySelectorAll('#dlDaysDropdown input[type=checkbox]');
         checks.forEach(function (c) {
           c.checked = days.indexOf(parseInt(c.value)) !== -1;
         });
+        updateDlDaysText();
       }
+
+      function toggleDlDaysDropdown() {
+        var wrap = document.getElementById('dlDaysWrap');
+        var dd = document.getElementById('dlDaysDropdown');
+        var open = dd.style.display !== 'none';
+        if (open) { wrap.classList.remove('open'); dd.style.display = 'none'; }
+        else { wrap.classList.add('open'); dd.style.display = 'block'; }
+      }
+
+      function updateDlDaysText() {
+        var days = getCheckedDays();
+        var textEl = document.getElementById('dlDaysText');
+        textEl.textContent = days.length ? days.map(function(d){return dayNames[d];}).join('、') : '请选择星期';
+      }
+
+      // 点击空白关闭下拉
+      document.addEventListener('click', function(e) {
+        var wrap = document.getElementById('dlDaysWrap');
+        if (wrap && !wrap.contains(e.target)) {
+          wrap.classList.remove('open');
+          document.getElementById('dlDaysDropdown').style.display = 'none';
+        }
+      });
 
       // 紧凑格式：连续 → "周一至周五"，非连续 → "周一、周三"
       function formatDaysOfWeek(daysStr) {
