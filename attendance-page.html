@@ -1151,11 +1151,12 @@
               '">--</span>' +
               '</div>';
           });
+          html += '</div>';
           html +=
             '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:100%;"' +
             ' onclick="submitSection(\'att\')" id="attSubmitBtn"' + disabledAttr(attLocked) + '>' +
             (attLocked ? '🔒 已截止' : '提交晨读数据') + '</button>' +
-            '</div></div>';
+            '</div>';
         }
 
         // === 作业率 Section ===
