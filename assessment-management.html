@@ -419,20 +419,30 @@
         border-radius: 6px; background: var(--bg-card); cursor: pointer;
         min-height: 40px; user-select: none;
       }
-      .multi-select-arrow { font-size: 10px; color: var(--ink-muted); margin-left: 8px; transition: transform 0.2s; }
-      .multi-select.open .multi-select-arrow { transform: rotate(180deg); }
-      .multi-select-dropdown {
-        position: absolute; top: 100%; left: 0; right: 0; z-index: 10;
-        background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: 6px; margin-top: 4px; max-height: 240px; overflow-y: auto;
-        box-shadow: 0 4px 12px var(--shadow); padding: 4px 0;
+      .multi-select-arrow { font-size: 10px; color: var(--ink-muted); margin-left: 8px; }
+      .dl-days-popup-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.35); z-index: 1000;
+        display: flex; align-items: center; justify-content: center;
       }
-      .multi-select-option {
-        display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-        font-size: 13px; cursor: pointer;
+      .dl-days-popup {
+        background: var(--bg-card); border-radius: 12px; padding: 20px;
+        width: 280px; max-height: 70vh; overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       }
-      .multi-select-option:hover { background: var(--bg-primary); }
-      .multi-select-option input[type=checkbox] { margin: 0; width: 16px; height: 16px; accent-color: var(--vermillion); }
+      .dl-days-popup-title {
+        font-size: 15px; font-weight: 600; margin-bottom: 12px; text-align: center;
+      }
+      .dl-days-popup-option {
+        display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+        font-size: 14px; cursor: pointer; border-radius: 8px;
+      }
+      .dl-days-popup-option:hover { background: var(--bg-primary); }
+      .dl-days-popup-option input[type=checkbox] { margin: 0; width: 18px; height: 18px; accent-color: var(--vermillion); }
+      .dl-days-popup-btn {
+        width: 100%; margin-top: 14px; padding: 10px; font-size: 14px; font-weight: 600;
+        color: white; background: var(--vermillion); border: none; border-radius: 8px; cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -531,11 +541,10 @@
               <div class="input-group" style="flex:1;">
                 <label class="input-label">星期（可多选）</label>
                 <div class="multi-select" id="dlDaysWrap">
-                  <div class="multi-select-trigger" id="dlDaysTrigger" onclick="toggleDlDaysDropdown()">
+                  <div class="multi-select-trigger" id="dlDaysTrigger" onclick="toggleDlDaysPopup()">
                     <span id="dlDaysText">请选择星期</span>
                     <span class="multi-select-arrow">▾</span>
                   </div>
-                  <div class="multi-select-dropdown" id="dlDaysDropdown" style="display:none;"></div>
                 </div>
               </div>
               <div class="input-group" style="flex:1;">
@@ -550,6 +559,14 @@
     </div>
 
     <div id="toast" class="toast"></div>
+
+    <div id="dlDaysPopup" class="dl-days-popup-overlay" style="display:none;" onclick="if(event.target===this)closeDlDaysPopup()">
+      <div class="dl-days-popup">
+        <div class="dl-days-popup-title">选择星期</div>
+        <div id="dlDaysPopupOptions"></div>
+        <button class="dl-days-popup-btn" onclick="closeDlDaysPopup()">确定</button>
+      </div>
+    </div>
 
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
@@ -774,34 +791,34 @@
         typeSel.innerHTML = assessmentTypes.map(function (t) { return '<option value="' + t.id + '">' + escapeHtml(t.type_name) + '</option>'; }).join('');
         var orgSel = document.getElementById('dlOrgId');
         orgSel.innerHTML = bigClasses.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>'; }).join('');
-        // 星期下拉多选
-        var dropdown = document.getElementById('dlDaysDropdown');
-        dropdown.innerHTML = dayNames.map(function (d, i) {
-          return '<label class="multi-select-option">' +
+        // 星期弹窗多选
+        var popupOpts = document.getElementById('dlDaysPopupOptions');
+        popupOpts.innerHTML = dayNames.map(function (d, i) {
+          return '<label class="dl-days-popup-option">' +
             '<input type="checkbox" value="' + i + '" onchange="updateDlDaysText()">' + d + '</label>';
         }).join('');
         updateDlDaysText();
       }
 
       function getCheckedDays() {
-        var checks = document.querySelectorAll('#dlDaysDropdown input[type=checkbox]:checked');
+        var checks = document.querySelectorAll('#dlDaysPopupOptions input[type=checkbox]:checked');
         return Array.from(checks).map(function (c) { return parseInt(c.value); });
       }
 
       function setCheckedDays(days) {
-        var checks = document.querySelectorAll('#dlDaysDropdown input[type=checkbox]');
+        var checks = document.querySelectorAll('#dlDaysPopupOptions input[type=checkbox]');
         checks.forEach(function (c) {
           c.checked = days.indexOf(parseInt(c.value)) !== -1;
         });
         updateDlDaysText();
       }
 
-      function toggleDlDaysDropdown() {
-        var wrap = document.getElementById('dlDaysWrap');
-        var dd = document.getElementById('dlDaysDropdown');
-        var open = dd.style.display !== 'none';
-        if (open) { wrap.classList.remove('open'); dd.style.display = 'none'; }
-        else { wrap.classList.add('open'); dd.style.display = 'block'; }
+      function toggleDlDaysPopup() {
+        document.getElementById('dlDaysPopup').style.display = 'flex';
+      }
+
+      function closeDlDaysPopup() {
+        document.getElementById('dlDaysPopup').style.display = 'none';
       }
 
       function updateDlDaysText() {
@@ -809,15 +826,6 @@
         var textEl = document.getElementById('dlDaysText');
         textEl.textContent = days.length ? days.map(function(d){return dayNames[d];}).join('、') : '请选择星期';
       }
-
-      // 点击空白关闭下拉
-      document.addEventListener('click', function(e) {
-        var wrap = document.getElementById('dlDaysWrap');
-        if (wrap && !wrap.contains(e.target)) {
-          wrap.classList.remove('open');
-          document.getElementById('dlDaysDropdown').style.display = 'none';
-        }
-      });
 
       // 紧凑格式：连续 → "周一至周五"，非连续 → "周一、周三"
       function formatDaysOfWeek(daysStr) {
