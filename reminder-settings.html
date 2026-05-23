@@ -255,6 +255,25 @@
         color: var(--ink-muted);
         font-size: 14px;
       }
+
+      .award-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--gold-light);
+        gap: 12px;
+      }
+      .award-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+      }
+      .award-icon { font-size: 16px; }
+      .award-label { font-weight: 600; color: var(--ink-dark); }
+      .award-desc { color: var(--ink-muted); font-size: 12px; }
     </style>
   </head>
   <body>
@@ -452,6 +471,21 @@
               '">' +
               formatPushInfo(cfg.last_reminded_at, enabled) +
               '</div>';
+
+            // 获奖推送开关
+            var awardEnabled = cfg.award_enabled || false;
+            html += '  <div class="award-row" id="awardRow_' + bc.id + '">';
+            html += '    <div class="award-info">';
+            html += '      <span class="award-icon">🏆</span>';
+            html += '      <span class="award-label">获奖推送</span>';
+            html += '      <span class="award-desc">· 周日 8:00</span>';
+            html += '    </div>';
+            html += '    <label class="toggle-switch">';
+            html += '      <input type="checkbox" id="awardToggle_' + bc.id + '" ' + (awardEnabled ? 'checked' : '') + ' onchange="window._markDirty(\'' + bc.id + '\')">';
+            html += '      <span class="toggle-slider"></span>';
+            html += '    </label>';
+            html += '  </div>';
+
             html += '  <div class="card-actions">';
             html +=
               '    <button class="btn btn-save" id="saveBtn_' +
@@ -504,15 +538,17 @@
           var startTime = document.getElementById('starttime_' + orgId).value || '12:00';
           var endTime = document.getElementById('endtime_' + orgId).value || '20:00';
           var interval = parseInt(document.getElementById('interval_' + orgId).value) || 60;
+          var awardToggle = document.getElementById('awardToggle_' + orgId);
+          var awardEnabled = awardToggle ? awardToggle.checked : false;
 
           // 基本校验
-          if (enabled && !webhook) {
+          if ((enabled || awardEnabled) && !webhook) {
             showToast('请填写 Webhook 地址', 'error');
             btn.disabled = false;
             btn.textContent = '保存配置';
             return;
           }
-          if (startTime >= endTime) {
+          if (enabled && startTime >= endTime) {
             showToast('开始时间必须小于结束时间', 'error');
             btn.disabled = false;
             btn.textContent = '保存配置';
@@ -532,6 +568,7 @@
             start_time: startTime,
             end_time: endTime,
             interval_minutes: interval,
+            award_enabled: awardEnabled,
             updated_at: new Date().toISOString()
           };
 

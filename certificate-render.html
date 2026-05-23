@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=680, initial-scale=1.0" />
+    <title>证书渲染</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700;900&display=block" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+      :root {
+        --vermillion: #c41e3a;
+        --vermillion-light: #f9e6e6;
+        --gold: #d4a017;
+        --gold-light: #fef9e7;
+        --green: #2e7d32;
+        --green-light: #e8f5e9;
+        --ink-dark: #2c1810;
+        --ink-light: #5c4033;
+        --ink-muted: #8b7160;
+        --bg-primary: #faf7f2;
+        --bg-card: #fffbf7;
+        --border: #e0d5c7;
+        --shadow: rgba(44, 24, 16, 0.04);
+        --radius: 16px;
+        --radius-sm: 10px;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Noto Serif SC', 'STSong', 'SimSun', serif;
+        background: #f0ebe3;
+        display: flex; align-items: center; justify-content: center;
+        min-height: 100vh; padding: 20px;
+      }
+      /* 证书专用页面默认导出模式 */
+      .export-mode .cert-overlay {
+        position: relative; opacity: 1; visibility: visible; background: transparent;
+      }
+      .cert-overlay { display: none; }
+      .export-mode .cert-overlay { display: block; }
+      .cert-backdrop { display: none; }
+
+      .cert-wrapper {
+        max-width: 680px; width: 100%;
+      }
+      .cert-frame {
+        width: 100%;
+        border: 1px solid #d4a017;
+        outline: 5px solid #c41e3a;
+        outline-offset: 1px;
+        box-shadow: 0 0 0 7px #d4a017, 0 20px 60px rgba(0,0,0,.6), 0 0 80px rgba(220,40,40,.15);
+      }
+      .certificate {
+        width: 100%; min-height: 920px; box-sizing: border-box;
+        background: linear-gradient(180deg, #fff5ec 0%, #ffe8d6 20%, #fff2e8 40%, #ffe4cc 60%, #fff0e6 80%, #ffdbc0 100%);
+        position: relative; overflow: hidden;
+        padding: 56px 60px 50px; z-index: 1;
+      }
+      .cert-inner-saffron {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        border: 12px solid #ffe8d6;
+        pointer-events: none; z-index: 2;
+      }
+      .cert-inner-gold {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        border: 1px solid #d4a017;
+        pointer-events: none;
+      }
+      .certificate::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background:
+          radial-gradient(circle at 30% 25%, rgba(196,30,58,.04) 0%, transparent 45%),
+          radial-gradient(circle at 70% 55%, rgba(212,160,23,.06) 0%, transparent 45%),
+          radial-gradient(circle at 40% 85%, rgba(196,30,58,.03) 0%, transparent 50%);
+        pointer-events: none;
+      }
+      .cert-watermark {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none; opacity: .025;
+        font-size: 340px; font-weight: 900;
+        color: #c41e3a; letter-spacing: .4em;
+        transform: rotate(-25deg) translateX(150px); user-select: none; z-index: 0;
+      }
+      .cert-corner { position: absolute; width: 64px; height: 64px; opacity: .55; pointer-events: none; z-index: 1; }
+      .cert-corner.tl { top: 24px; left: 24px; }
+      .cert-corner.tr { top: 24px; right: 24px; }
+      .cert-corner.bl { bottom: 24px; left: 24px; }
+      .cert-corner.br { bottom: 24px; right: 24px; }
+      .cert-corner svg { width: 100%; height: 100%; }
+      .cert-content {
+        position: relative; display: flex; flex-direction: column;
+        align-items: center; z-index: 3; text-align: center;
+      }
+      .cert-top-ornament { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 16px; }
+      .cert-orn-line { width: 140px; height: 1px; background: linear-gradient(90deg,transparent,rgba(212,160,23,.5),transparent); }
+      .cert-orn-star { font-size: 18px; color: #c41e3a; opacity: .5; line-height: 1; }
+      .cert-org-name { font-size: 21px; font-weight: 700; letter-spacing: .4em; color: #6b1010; margin-bottom: 10px; }
+      .cert-title-area { display: flex; flex-direction: column; align-items: center; margin: 10px 0 22px; }
+      .cert-title {
+        font-family: 'Ma Shan Zheng', 'Liu Jian Mao Cao', cursive;
+        font-size: 72px; color: #c41e3a; letter-spacing: .3em; line-height: 1.2;
+        text-shadow: 2px 2px 0 rgba(212,160,23,.25);
+      }
+      .cert-title-deco {
+        width: 380px; height: 1px;
+        background: linear-gradient(90deg,transparent,rgba(212,160,23,.4),rgba(196,30,58,.3),rgba(212,160,23,.4),transparent);
+        margin: 8px 0 0;
+      }
+      .cert-body-text { text-align: center; font-size: 19px; color: #4a1515; line-height: 2.4; max-width: 480px; }
+      .cert-recipient { font-size: 40px; font-weight: 900; color: #c41e3a; letter-spacing: .25em; display: inline-block; position: relative; text-shadow: 1px 1px 0 rgba(212,160,23,.3); }
+      .cert-recipient::after {
+        content: ''; position: absolute; bottom: 0; left: 8%; right: 8%; height: 1px;
+        background: linear-gradient(90deg,transparent,rgba(212,160,23,.4),rgba(196,30,58,.3),rgba(212,160,23,.4),transparent);
+      }
+      .cert-achievement { display: inline-block; font-size: 40px; font-weight: 900; color: #c41e3a; letter-spacing: .2em; margin: 0 8px; padding: 4px 14px; text-shadow: 1px 1px 0 rgba(212,160,23,.3); }
+      .cert-divider { display: flex; align-items: center; gap: 14px; margin: 20px 0; }
+      .cert-div-line { width: 140px; height: 1px; background: linear-gradient(90deg,transparent,rgba(212,160,23,.5),transparent); }
+      .cert-div-dot { width: 6px; height: 6px; border-radius: 50%; background: #c41e3a; opacity: .5; }
+      .cert-footer { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; position: relative; }
+      .cert-seal { width: 110px; height: 110px; transform: rotate(-15deg); position: absolute; right: 0; bottom: 0; opacity: .85; }
+      .cert-seal svg { width: 100%; height: 100%; }
+      .cert-signature-col { text-align: center; }
+      .cert-issuer { font-size: 18px; color: #8b1a1a; margin-bottom: 4px; font-weight: 700; letter-spacing: .1em; }
+      .cert-issue-info { text-align: center; font-size: 14px; color: #8b1a1a; line-height: 2.2; }
+
+      @media (max-width: 700px) {
+        .certificate {
+          min-height: auto;
+          padding: 8.6% 9.2% 7.7%;
+          box-shadow: 0 0 0 1px #d4a017, 0 0 0 4px #c41e3a, 0 0 0 6px #d4a017, 0 15px 40px rgba(0,0,0,.6), 0 0 60px rgba(220,40,40,.15);
+        }
+        .cert-inner-saffron { border-width: 4px; }
+        .cert-corner { width: 42px; height: 42px; }
+        .cert-corner.tl { top: 16px; left: 16px; } .cert-corner.tr { top: 16px; right: 16px; }
+        .cert-corner.bl { bottom: 16px; left: 16px; } .cert-corner.br { bottom: 16px; right: 16px; }
+        .cert-top-ornament { gap: 10px; margin-bottom: 12px; }
+        .cert-orn-line { width: 100px; } .cert-orn-star { font-size: 15px; }
+        .cert-org-name { font-size: 16px; letter-spacing: .3em; margin-bottom: 8px; }
+        .cert-title { font-size: 48px; } .cert-title-deco { width: 260px; }
+        .cert-body-text { font-size: 15px; max-width: 100%; line-height: 2.2; }
+        .cert-recipient { font-size: 28px; } .cert-achievement { font-size: 28px; padding: 2px 10px; }
+        .cert-divider { gap: 10px; margin: 16px 0; } .cert-div-line { width: 100px; }
+        .cert-seal { width: 80px; height: 80px; }
+        .cert-watermark { font-size: 220px; transform: rotate(-25deg) translateX(100px); }
+      }
+      @media (max-width: 400px) {
+        .cert-corner { width: 32px; height: 32px; }
+        .cert-corner.tl { top: 10px; left: 10px; } .cert-corner.tr { top: 10px; right: 10px; }
+        .cert-corner.bl { bottom: 10px; left: 10px; } .cert-corner.br { bottom: 10px; right: 10px; }
+        .cert-top-ornament { gap: 6px; margin-bottom: 8px; }
+        .cert-orn-line { width: 60px; } .cert-orn-star { font-size: 12px; }
+        .cert-org-name { font-size: 13px; letter-spacing: .2em; }
+        .cert-title { font-size: 36px; } .cert-title-deco { width: 200px; }
+        .cert-title-area { margin: 6px 0 14px; }
+        .cert-body-text { font-size: 13px; line-height: 2; }
+        .cert-recipient { font-size: 22px; } .cert-achievement { font-size: 22px; }
+        .cert-divider { gap: 6px; margin: 12px 0; } .cert-div-line { width: 60px; }
+        .cert-seal { width: 60px; height: 60px; }
+        .cert-watermark { font-size: 160px; transform: rotate(-25deg) translateX(70px); }
+      }
+    </style>
+  </head>
+  <body class="export-mode">
+    <div class="cert-overlay" id="certOverlay">
+      <div class="cert-wrapper">
+        <div class="cert-frame" id="certFrame">
+        <div class="certificate" id="certificate">
+          <div class="cert-inner-saffron"><div class="cert-inner-gold"></div></div>
+          <div class="cert-watermark">荣 誉</div>
+
+          <div class="cert-corner tl">
+            <svg viewBox="0 0 64 64" fill="none">
+              <rect x="0" y="0" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="0" y="0" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="10" y="10" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
+              <rect x="10" y="10" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
+            </svg>
+          </div>
+          <div class="cert-corner tr">
+            <svg viewBox="0 0 64 64" fill="none">
+              <rect x="38" y="0" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="61.5" y="0" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="40" y="10" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
+              <rect x="52.5" y="10" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
+            </svg>
+          </div>
+          <div class="cert-corner bl">
+            <svg viewBox="0 0 64 64" fill="none">
+              <rect x="0" y="61.5" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="0" y="38" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="10" y="52.5" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
+              <rect x="10" y="40" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
+            </svg>
+          </div>
+          <div class="cert-corner br">
+            <svg viewBox="0 0 64 64" fill="none">
+              <rect x="38" y="61.5" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="61.5" y="38" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
+              <rect x="40" y="52.5" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
+              <rect x="52.5" y="40" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
+            </svg>
+          </div>
+
+          <div class="cert-content">
+            <div class="cert-top-ornament">
+              <span class="cert-orn-line"></span>
+              <span class="cert-orn-star">&#9733;</span>
+              <span class="cert-orn-star">&#9733;</span>
+              <span class="cert-orn-star">&#9733;</span>
+              <span class="cert-orn-line"></span>
+            </div>
+
+            <div class="cert-org-name">阳明心学督察管理系统</div>
+
+            <div class="cert-title-area">
+              <h1 class="cert-title">荣 誉 证 书</h1>
+              <div class="cert-title-deco"></div>
+            </div>
+
+            <div class="cert-body-text">
+              <p style="margin-bottom:8px;color:#8b1a1a;">兹证明</p>
+              <p style="margin-bottom:14px;">
+                <span class="cert-recipient" id="certRecipient">--</span>
+              </p>
+              <p style="margin-bottom:4px;">在 <strong id="certContextStrong">--</strong></p>
+              <p>出勤考核评比PK赛中，获得考核成绩<strong style="color:#c41e3a;" id="certAwardName">第一名</strong>，</p>
+              <p>荣 获</p>
+              <p style="margin:12px 0 6px;">
+                <span class="cert-achievement" id="certRank">--</span>
+              </p>
+              <p style="font-size:16px;color:#8b1a1a;">特发此证，以资鼓励</p>
+            </div>
+
+            <div class="cert-divider">
+              <span class="cert-div-line"></span>
+              <span class="cert-div-dot"></span>
+              <span class="cert-div-dot"></span>
+              <span class="cert-div-dot"></span>
+              <span class="cert-div-line"></span>
+            </div>
+
+            <div class="cert-footer">
+              <div class="cert-signature-col">
+                <div class="cert-issuer">阳明心学督察管理系统</div>
+              </div>
+              <div class="cert-issue-info">
+                <div id="certDateLine">颁发日期：--</div>
+                <div id="certSerialNo">证书编号：--</div>
+              </div>
+              <div class="cert-seal" id="certSealSvg"></div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ---- 从 URL 参数读取证书数据 ----
+      // 参数: name, rank, context, date, serial, sealColor, sealName
+      function getParam(name) {
+        var u = new URL(window.location.href);
+        return u.searchParams.get(name) || '';
+      }
+
+      (function populateCert() {
+        document.getElementById('certRecipient').textContent = decodeURIComponent(getParam('name'));
+        document.getElementById('certContextStrong').innerHTML = decodeURIComponent(getParam('context'));
+        document.getElementById('certAwardName').textContent = decodeURIComponent(getParam('rank') || '第一名');
+        document.getElementById('certRank').textContent = decodeURIComponent(getParam('title') || '');
+        document.getElementById('certDateLine').textContent = '颁发日期：' + decodeURIComponent(getParam('date'));
+        document.getElementById('certSerialNo').textContent = '证书编号：' + decodeURIComponent(getParam('serial'));
+
+        // 印章
+        var sealColor = getParam('sealColor') || '#C41E3A';
+        var sealName = decodeURIComponent(getParam('sealName') || '阳明心学');
+        var svg =
+          '<svg viewBox="0 0 100 100" width="88" height="88">' +
+          '<circle cx="50" cy="50" r="45" fill="none" stroke="' + sealColor + '" stroke-width="3.2" opacity="0.82"/>' +
+          '<circle cx="50" cy="50" r="42" fill="none" stroke="' + sealColor + '" stroke-width="0.8" opacity="0.45"/>' +
+          '<defs>' +
+          '<path id="sealArc" d="M 14,50 A 36,36 0 0,1 86,50"/>' +
+          '</defs>' +
+          '<text font-family="\'Noto Serif SC\',serif" font-size="9" fill="' + sealColor + '" font-weight="700" letter-spacing="1.2" dy="4">' +
+          '<textPath href="#sealArc" startOffset="50%" text-anchor="middle">阳明心学督察管理系统</textPath>' +
+          '</text>' +
+          '<text x="50" y="57" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="20" fill="' + sealColor + '" font-weight="900">★</text>' +
+          '<line x1="32" y1="67" x2="68" y2="67" stroke="' + sealColor + '" stroke-width="1.2" opacity="0.7"/>' +
+          '<text x="50" y="80" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="8.5" fill="' + sealColor + '" font-weight="700" letter-spacing="1.5">' +
+          sealName +
+          '</text>' +
+          '</svg>';
+        document.getElementById('certSealSvg').innerHTML = svg;
+      })();
+
+      // ---- 对外暴露：渲染 PNG 并返回 dataURL ----
+      window.renderCertificatePng = async function () {
+        await document.fonts.ready;
+        var certEl = document.getElementById('certificate');
+        if (!certEl) throw new Error('Cert element not found');
+        var canvas = await html2canvas(certEl, {
+          backgroundColor: null,
+          scale: 2,
+          useCORS: true,
+          allowTaint: false
+        });
+        var M = 14;
+        var W = canvas.width + M * 2;
+        var H = canvas.height + M * 2;
+        var outCanvas = document.createElement('canvas');
+        outCanvas.width = W;
+        outCanvas.height = H;
+        var ctx = outCanvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = '#D4A574';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, W - 2, H - 2);
+        ctx.strokeStyle = '#C41E3A';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(7, 7, W - 14, H - 14);
+        ctx.strokeStyle = '#D4A574';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(13, 13, W - 26, H - 26);
+        ctx.drawImage(canvas, M, M);
+        return outCanvas.toDataURL('image/png');
+      };
+    </script>
+  </body>
+</html>
