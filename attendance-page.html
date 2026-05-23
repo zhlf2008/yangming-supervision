@@ -658,20 +658,22 @@
 
       async function init() {
         await waitForDb();
-        await refreshCurrentUser();
+
+        // 并行：刷新用户 + 加载学期（互不依赖）
+        const [_, semesters] = await Promise.all([
+          refreshCurrentUser(),
+          window.db.from('semesters').select('*').eq('is_current', 1).limit(1)
+        ]);
 
         currentUser = checkLogin();
         if (!currentUser) return;
+        currentSemester = semesters.data?.[0] || null;
 
         // Update header info
         const today = getToday();
         document.getElementById('currentDate').textContent = today;
         document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
         document.getElementById('reporterName').textContent = currentUser.name || '未知';
-
-        // 先加载学期，再按学期加载组织
-        const semesters = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1);
-        currentSemester = semesters.data?.[0] || null;
 
         const [orgNameResult, orgsResult] = await Promise.all([
           currentUser.organization_id
@@ -951,17 +953,11 @@
         // 从小组追溯到大班
         var dabanId = null;
         if (selectedGroupId) {
-          var group = orgs.find(function (o) {
-            return o.id === parseInt(selectedGroupId);
-          });
+          var group = orgs.find(function (o) { return o.id === parseInt(selectedGroupId); });
           if (group) {
-            var classOrg = orgs.find(function (o) {
-              return o.id === group.parent_id;
-            });
+            var classOrg = orgs.find(function (o) { return o.id === group.parent_id; });
             if (classOrg) {
-              var daban = orgs.find(function (o) {
-                return o.id === classOrg.parent_id;
-              });
+              var daban = orgs.find(function (o) { return o.id === classOrg.parent_id; });
               if (daban && daban.level === '大班') dabanId = daban.id;
             }
           }
@@ -969,14 +965,25 @@
 
         const today = getToday();
 
-        // Query today's schedule for this 大班
-        const { data: schedules } = await window.db
-          .from('schedules')
-          .select('*')
-          .eq('semester_id', currentSemester.id)
-          .eq('org_id', dabanId)
-          .eq('schedule_date', today)
-          .eq('is_valid', 1);
+        // 3 个查询并行执行（互不依赖）
+        var [schedulesResult, typesResult, deadlinesResult] = await Promise.all([
+          window.db.from('schedules').select('*')
+            .eq('semester_id', currentSemester.id)
+            .eq('org_id', dabanId)
+            .eq('schedule_date', today)
+            .eq('is_valid', 1),
+          window.db.from('assessment_types').select('*')
+            .eq('semester_id', currentSemester.id),
+          dabanId
+            ? window.db.from('assessment_deadline_configs').select('*')
+                .eq('org_id', parseInt(dabanId))
+                .eq('is_enabled', true)
+            : Promise.resolve({ data: [] })
+        ]);
+
+        var schedules = schedulesResult.data;
+        var types = typesResult.data;
+        var deadlines = deadlinesResult.data;
 
         currentSchedule = schedules?.find((s) => s.schedule_date === today);
 
@@ -989,8 +996,7 @@
           return;
         }
 
-        // Get assessment type IDs from schedule
-        const itemIds = currentSchedule.item_ids ? currentSchedule.item_ids.split(',').filter(Boolean).map(Number) : [];
+        var itemIds = currentSchedule.item_ids ? currentSchedule.item_ids.split(',').filter(Boolean).map(Number) : [];
 
         if (itemIds.length === 0) {
           document.getElementById('formsContainer').innerHTML = `
@@ -1001,15 +1007,7 @@
           return;
         }
 
-        // Load assessment types
-        await loadAssessmentForms(itemIds, selectedGroupId, dabanId);
-      }
-
-      async function loadAssessmentForms(itemIds, selectedGroupId, dabanId) {
-        const { data: types, error } = currentSemester
-          ? await window.db.from('assessment_types').select('*').eq('semester_id', currentSemester.id)
-          : { data: [], error: null };
-        if (error || !types) {
+        if (!types || typesResult.error) {
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">📋</div>
@@ -1017,9 +1015,15 @@
           </div>`;
           return;
         }
+
+        // Process assessment types and render forms
+        await renderAssessmentForms(itemIds, selectedGroupId, types, deadlines);
+      }
+
+      async function renderAssessmentForms(itemIds, selectedGroupId, types, deadlines) {
         assessmentTypes = types;
 
-        todayTypes = assessmentTypes.filter((t) => itemIds.includes(t.id));
+        todayTypes = types.filter((t) => itemIds.includes(t.id));
 
         if (todayTypes.length === 0) {
           document.getElementById('formsContainer').innerHTML = `
@@ -1045,8 +1049,6 @@
         const showHw = typeNames.some((n) => n.indexOf('作业率') !== -1);
 
         // Group assessment types by category and merge shared sections
-        // Attendance group: 上线率 + 视频率 (share fields like 实到人数)
-        // Homework group: 作业率
         const attendanceTypes = todayTypes.filter((t) => {
           const n = t.type_name || '';
           return n.indexOf('上线率') !== -1 || n.indexOf('视频率') !== -1;
@@ -1056,19 +1058,14 @@
           return n.indexOf('作业率') !== -1;
         });
 
-        // 查询截止规则，锁定超时的考核项目
+        // 截止规则 JS 端判断
         var attLocked = false;
-        if (dabanId) {
-          var today = new Date();
-          var nowTime = today.toTimeString().substring(0, 8);
-          var todayDay = today.getDay();
-          var { data: deadlines } = await window.db
-            .from('assessment_deadline_configs')
-            .select('*')
-            .eq('org_id', parseInt(dabanId))
-            .eq('is_enabled', true);
+        if (deadlines && deadlines.length > 0) {
+          var now = new Date();
+          var nowTime = now.toTimeString().substring(0, 8);
+          var todayDay = now.getDay();
           lockedTypeIds = new Set();
-          (deadlines || []).forEach(function (d) {
+          deadlines.forEach(function (d) {
             var days = (d.days_of_week || '').split(',').map(Number);
             if (days.indexOf(todayDay) !== -1 && nowTime >= d.cutoff_time) lockedTypeIds.add(d.assessment_type_id);
           });
