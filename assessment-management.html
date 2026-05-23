@@ -369,6 +369,34 @@
       .toast.show {
         opacity: 1;
       }
+      /* 截止设置面板 */
+      .deadline-config {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+      .deadline-rule-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 8px;
+        background: var(--bg-primary);
+        border-radius: 6px;
+        margin-top: 6px;
+        font-size: 12px;
+      }
+      .deadline-save-btn {
+        width: 100%;
+        padding: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: white;
+        background: var(--vermillion);
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 8px;
+      }
     </style>
   </head>
   <body>
@@ -444,14 +472,19 @@
         setTimeout(() => t.classList.remove('show'), 2000);
       }
 
+      var bigClasses = [];
+      var allDeadlineConfigs = [];
+
       async function init() {
         currentSemesterId = await getCurrentSemesterId();
-        var { data: sem } = await window.db
-          .from('semesters')
-          .select('semester_name')
-          .eq('id', currentSemesterId)
-          .single();
+        var [{ data: sem }, { data: orgs }, { data: configs }] = await Promise.all([
+          window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single(),
+          window.db.from('organizations').select('id,name').eq('semester_id', currentSemesterId).eq('level', '大班').order('sort_order'),
+          window.db.from('assessment_deadline_configs').select('*').order('created_at')
+        ]);
         document.getElementById('semesterLabel').textContent = '当前学期：' + (sem ? sem.semester_name : '未知');
+        bigClasses = orgs || [];
+        allDeadlineConfigs = configs || [];
         await loadAssessmentTypes();
       }
 
@@ -475,6 +508,7 @@
           container.innerHTML = '<div class="empty-state">暂无考核项目，点击上方添加</div>';
           return;
         }
+        const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
         container.innerHTML = assessmentTypes
           .map((type) => {
             const fields = type.fields || {};
@@ -484,17 +518,65 @@
                 return `<span class="field-tag">${name}${isRequired ? '<span class="required">*</span>' : ''}</span>`;
               })
               .join('');
+            const typeConfigs = allDeadlineConfigs.filter(function (c) { return c.assessment_type_id === type.id; });
+            const hasBigClasses = bigClasses.length > 0;
             return `
           <div class="type-card">
             <div class="type-header">
-              <span class="type-name">${type.type_name}</span>
+              <span class="type-name">${escapeHtml(type.type_name)}</span>
               <span class="type-badge ${type.is_template === 1 ? 'template' : 'active'}">${type.is_template === 1 ? '模板' : '启用'}</span>
             </div>
             <div class="type-fields">字段：${Object.keys(fields).join('、') || '无'}</div>
-            ${type.formula ? `<div class="type-formula">${type.formula}</div>` : ''}
+            ${type.formula ? `<div class="type-formula">${escapeHtml(type.formula)}</div>` : ''}
             <div class="field-tags">${fieldsList}</div>
+
+            <div class="deadline-config" id="deadline-${type.id}" style="display:none;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:8px;">提交截止规则</div>
+              ${hasBigClasses ? `
+                <div class="input-row" style="margin-bottom:6px;">
+                  <div class="input-group">
+                    <label class="input-label">大班</label>
+                    <select id="dl-org-${type.id}" class="form-select" style="font-size:12px; padding:6px;">
+                      ${bigClasses.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>'; }).join('')}
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label">周几</label>
+                    <select id="dl-day-${type.id}" class="form-select" style="font-size:12px; padding:6px;">
+                      ${dayNames.map(function (d, i) { return '<option value="' + i + '"' + (i === 5 ? ' selected' : '') + '>' + d + '</option>'; }).join('')}
+                    </select>
+                  </div>
+                </div>
+                <div class="input-row" style="margin-bottom:6px;">
+                  <div class="input-group">
+                    <label class="input-label">截止时间</label>
+                    <input type="time" id="dl-time-${type.id}" value="07:30" class="form-input" style="font-size:12px; padding:6px;">
+                  </div>
+                  <div class="input-group" style="display:flex; align-items:flex-end;">
+                    <label class="field-required" style="font-size:12px; padding-bottom:6px; cursor:pointer;">
+                      <input type="checkbox" id="dl-enabled-${type.id}" checked> 启用
+                    </label>
+                  </div>
+                </div>
+                <button class="deadline-save-btn" onclick="saveDeadlineConfig(${type.id})">保存规则</button>
+              ` : '<div style="font-size:12px; color:var(--ink-muted); padding:8px 0;">当前学期暂无大班</div>'}
+              ${typeConfigs.length > 0 ? `
+                <div style="margin-top:10px; font-size:12px; color:var(--ink-muted);">已有规则：</div>
+                ${typeConfigs.map(function (c) {
+                  var orgName = (bigClasses.find(function (b) { return b.id === c.org_id; }) || {}).name || '未知';
+                  var dayName = dayNames[c.day_of_week] || '';
+                  var timeStr = (c.cutoff_time || '').substring(0, 5);
+                  return '<div class="deadline-rule-row">' +
+                    '<span>' + escapeHtml(orgName) + ' · ' + dayName + ' · ' + timeStr + ' · ' + (c.is_enabled ? '<span style="color:var(--green);">启用</span>' : '<span style="color:var(--ink-muted);">关闭</span>') + '</span>' +
+                    '<button onclick="deleteDeadlineConfig(' + c.id + ', ' + type.id + ')" style="background:none; border:none; color:var(--vermillion); font-size:11px; cursor:pointer;">删除</button>' +
+                    '</div>';
+                }).join('')}
+              ` : ''}
+            </div>
+
             <div class="type-actions">
               <button class="edit-btn" onclick="editType('${type.id}')">编辑</button>
+              <button class="edit-btn" onclick="toggleDeadlineConfig('${type.id}')" style="color:var(--vermillion);">截止设置</button>
               <button class="delete-btn" onclick="deleteType('${type.id}')">删除</button>
             </div>
           </div>
@@ -634,6 +716,46 @@
       async function editType(id) {
         const type = assessmentTypes.find((t) => t.id == id);
         if (type) showTypeModal(type);
+      }
+
+      function toggleDeadlineConfig(typeId) {
+        var el = document.getElementById('deadline-' + typeId);
+        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
+
+      async function saveDeadlineConfig(typeId) {
+        var orgId = parseInt(document.getElementById('dl-org-' + typeId).value);
+        var day = parseInt(document.getElementById('dl-day-' + typeId).value);
+        var timeVal = document.getElementById('dl-time-' + typeId).value;
+        var enabled = document.getElementById('dl-enabled-' + typeId).checked;
+        if (!orgId || isNaN(day)) { showToast('请填写完整'); return; }
+        var cutOff = timeVal || '07:30';
+        if (cutOff.length === 5) cutOff += ':00';
+
+        var { error } = await window.db.from('assessment_deadline_configs').upsert({
+          assessment_type_id: typeId,
+          org_id: orgId,
+          day_of_week: day,
+          cutoff_time: cutOff,
+          is_enabled: enabled
+        }, { onConflict: 'assessment_type_id, org_id, day_of_week' });
+
+        if (error) { showToast('保存失败: ' + error.message); return; }
+        showToast('规则已保存');
+        // Reload configs and re-render
+        var { data: configs } = await window.db.from('assessment_deadline_configs').select('*').order('created_at');
+        allDeadlineConfigs = configs || [];
+        renderAssessmentTypes();
+      }
+
+      async function deleteDeadlineConfig(configId, typeId) {
+        if (!(await showConfirm('确定删除该截止规则？'))) return;
+        var { error } = await window.db.from('assessment_deadline_configs').delete().eq('id', configId);
+        if (error) { showToast('删除失败: ' + error.message); return; }
+        showToast('已删除');
+        var { data: configs } = await window.db.from('assessment_deadline_configs').select('*').order('created_at');
+        allDeadlineConfigs = configs || [];
+        renderAssessmentTypes();
       }
 
       async function deleteType(id) {

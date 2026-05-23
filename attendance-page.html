@@ -655,6 +655,7 @@
       var todayTypes = [];
       var formData = {};
       var orgs = [];
+      var lockedTypeIds = new Set();  // 被截止规则锁定的考核项目 ID 集合
 
       async function init() {
         await waitForDb();
@@ -1002,10 +1003,10 @@
         }
 
         // Load assessment types
-        await loadAssessmentForms(itemIds, selectedGroupId);
+        await loadAssessmentForms(itemIds, selectedGroupId, dabanId);
       }
 
-      async function loadAssessmentForms(itemIds, selectedGroupId) {
+      async function loadAssessmentForms(itemIds, selectedGroupId, dabanId) {
         const { data: types, error } = currentSemester
           ? await window.db.from('assessment_types').select('*').eq('semester_id', currentSemester.id)
           : { data: [], error: null };
@@ -1056,6 +1057,27 @@
           return n.indexOf('作业率') !== -1;
         });
 
+        // 查询截止规则，锁定超时的考核项目
+        var attLocked = false, hwLocked = false;
+        if (dabanId) {
+          var today = new Date();
+          var nowTime = today.toTimeString().substring(0, 8); // "HH:MM:SS"
+          var { data: deadlines } = await window.db
+            .from('assessment_deadline_configs')
+            .select('*')
+            .eq('org_id', parseInt(dabanId))
+            .eq('day_of_week', today.getDay())
+            .eq('is_enabled', true);
+          lockedTypeIds = new Set();
+          (deadlines || []).forEach(function (d) {
+            if (nowTime >= d.cutoff_time) lockedTypeIds.add(d.assessment_type_id);
+          });
+          attLocked = lockedTypeIds.size > 0 && attendanceTypes.some(function (t) { return lockedTypeIds.has(t.id); });
+          hwLocked = lockedTypeIds.size > 0 && homeworkTypes.some(function (t) { return lockedTypeIds.has(t.id); });
+        }
+
+        var disabledAttr = function (locked) { return locked ? ' disabled' : ''; };
+
         let html = '';
 
         // === 考勤 Section (上线率 + 视频率 merged) ===
@@ -1088,6 +1110,7 @@
             '<div class="section-title">' +
             '<span class="section-icon 考勤">📊</span>' +
             '上线率' +
+            (attLocked ? ' <span style="font-size:11px; color:var(--vermillion);">🔒 已超截止时间</span>' : '') +
             '</div>';
 
           // Render merged fields in pairs
@@ -1104,7 +1127,7 @@
                 '</label>' +
                 '<input type="number" class="form-input compact" id="' +
                 fn +
-                '" placeholder="0" min="0" oninput="recalcRates()">' +
+                '" placeholder="0" min="0" oninput="recalcRates()"' + disabledAttr(attLocked) + '>' +
                 '</div>';
             }
             html += '</div>';
@@ -1162,6 +1185,7 @@
               '<div class="section-title">' +
               '<span class="section-icon 作业">📝</span>' +
               (type.type_name || '作业率') +
+              (hwLocked ? ' <span style="font-size:11px; color:var(--vermillion);">🔒 已超截止时间</span>' : '') +
               '</div>';
 
             for (let i = 0; i < fields.length; i += 2) {
@@ -1177,7 +1201,7 @@
                   '</label>' +
                   '<input type="number" class="form-input compact" id="' +
                   fn +
-                  '" placeholder="0" min="0" oninput="recalcRates()">' +
+                  '" placeholder="0" min="0" oninput="recalcRates()"' + disabledAttr(hwLocked) + '>' +
                   '</div>';
               }
               html += '</div>';
@@ -1443,9 +1467,10 @@
           return;
         }
 
-        // Check required fields
+        // Check required fields (skip locked types)
         let missingRequired = false;
         todayTypes.forEach((type) => {
+          if (lockedTypeIds.has(type.id)) return;
           Object.entries(type.fields || {}).forEach(([fn, fcfg]) => {
             if (String(fcfg).includes('必填') && !fieldValues[fn]) {
               missingRequired = true;

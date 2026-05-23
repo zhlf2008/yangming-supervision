@@ -1501,20 +1501,21 @@
 
         if (formulas.online) {
           var r = calcFormula(formulas.online, fieldMap);
-          if (r != null) online = r * (hasMult100(formulas.online) ? 1 : 100);
+          online = r != null ? r * (hasMult100(formulas.online) ? 1 : 100) : 0;
         }
         if (formulas.video) {
           var r = calcFormula(formulas.video, fieldMap);
-          if (r != null) video = r * (hasMult100(formulas.video) ? 1 : 100);
+          video = r != null ? r * (hasMult100(formulas.video) ? 1 : 100) : 0;
         }
         if (formulas.hw) {
           var r = calcFormula(formulas.hw, fieldMap);
-          if (r != null) hw = r * (hasMult100(formulas.hw) ? 1 : 100);
+          hw = r != null ? r * (hasMult100(formulas.hw) ? 1 : 100) : 0;
         }
 
         var attendance = null;
         if (online !== null || hw !== null) {
-          attendance = ((online || 0) + (hw || 0)) / (online !== null && hw !== null ? 2 : 1);
+          var denom = (online !== null ? 1 : 0) + (hw !== null ? 1 : 0);
+          attendance = ((online || 0) + (hw || 0)) / denom;
         }
 
         return { online: online, video: video, hw: hw, attendance: attendance };
