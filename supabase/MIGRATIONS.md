@@ -21,7 +21,7 @@
 | 013 | `20260516_002_org_archived_at.sql` | organizations 归档时间戳 | 待执行 |
 | 014 | `20260523_001_deadline_configs.sql` | 考核项目截止规则表 | 待执行 |
 | 015 | `20260523_002_award_notification.sql` | 获奖推送通知表 | 待执行 |
-| 016 | `20260523_003_section_submit_times.sql` | section 级别提交时间/提交人 + 截止规则多选星期 | 待执行 |
+| 016 | `20260523_003_section_submit_times.sql` | section 级别提交时间/提交人 + 截止规则多选星期 | 2026-05-23 |
 
 ## 开发诊断
 
