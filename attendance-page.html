@@ -628,8 +628,7 @@
         </div>
       </div>
 
-      <!-- Submit Button -->
-      <button class="submit-btn" id="submitBtn" onclick="submitAttendance()">提交填报</button>
+      <!-- Submit buttons are now per-section inside formsContainer -->
     </div>
 
     <!-- Toast -->
@@ -1058,22 +1057,22 @@
         });
 
         // 查询截止规则，锁定超时的考核项目
-        var attLocked = false, hwLocked = false;
+        var attLocked = false;
         if (dabanId) {
           var today = new Date();
-          var nowTime = today.toTimeString().substring(0, 8); // "HH:MM:SS"
+          var nowTime = today.toTimeString().substring(0, 8);
+          var todayDay = today.getDay();
           var { data: deadlines } = await window.db
             .from('assessment_deadline_configs')
             .select('*')
             .eq('org_id', parseInt(dabanId))
-            .eq('day_of_week', today.getDay())
             .eq('is_enabled', true);
           lockedTypeIds = new Set();
           (deadlines || []).forEach(function (d) {
-            if (nowTime >= d.cutoff_time) lockedTypeIds.add(d.assessment_type_id);
+            var days = (d.days_of_week || '').split(',').map(Number);
+            if (days.indexOf(todayDay) !== -1 && nowTime >= d.cutoff_time) lockedTypeIds.add(d.assessment_type_id);
           });
           attLocked = lockedTypeIds.size > 0 && attendanceTypes.some(function (t) { return lockedTypeIds.has(t.id); });
-          hwLocked = lockedTypeIds.size > 0 && homeworkTypes.some(function (t) { return lockedTypeIds.has(t.id); });
         }
 
         var disabledAttr = function (locked) { return locked ? ' disabled' : ''; };
@@ -1107,7 +1106,7 @@
 
           html +=
             '<div class="section">' +
-            '<div class="section-title">' +
+            '<div class="section-title" id="attSectionTitle">' +
             '<span class="section-icon 考勤">📊</span>' +
             '上线率' +
             (attLocked ? ' <span style="font-size:11px; color:var(--vermillion);">🔒 已超截止时间</span>' : '') +
@@ -1155,7 +1154,11 @@
               '">--</span>' +
               '</div>';
           });
-          html += '</div></div>';
+          html +=
+            '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:auto;"' +
+            ' onclick="submitSection(\'att\')" id="attSubmitBtn"' + disabledAttr(attLocked) + '>' +
+            (attLocked ? '🔒 已截止' : '提交考勤') + '</button>' +
+            '</div></div>';
         }
 
         // === 作业率 Section ===
@@ -1182,10 +1185,10 @@
 
             html +=
               '<div class="section">' +
-              '<div class="section-title">' +
+              '<div class="section-title hw-section-title">' +
               '<span class="section-icon 作业">📝</span>' +
               (type.type_name || '作业率') +
-              (hwLocked ? ' <span style="font-size:11px; color:var(--vermillion);">🔒 已超截止时间</span>' : '') +
+              (lockedTypeIds.has(type.id) ? ' <span style="font-size:11px; color:var(--vermillion);">🔒 已超截止时间</span>' : '') +
               '</div>';
 
             for (let i = 0; i < fields.length; i += 2) {
@@ -1201,11 +1204,13 @@
                   '</label>' +
                   '<input type="number" class="form-input compact" id="' +
                   fn +
-                  '" placeholder="0" min="0" oninput="recalcRates()"' + disabledAttr(hwLocked) + '>' +
+                  '" placeholder="0" min="0" oninput="recalcRates()"' + disabledAttr(lockedTypeIds.has(type.id)) + '>' +
                   '</div>';
               }
               html += '</div>';
             }
+
+            var typeLocked = lockedTypeIds.has(type.id);
 
             html +=
               '<div class="rate-row">' +
@@ -1218,6 +1223,12 @@
               '">--</span>' +
               '</div>' +
               '</div>';
+
+            html +=
+              '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:auto;"' +
+              ' onclick="submitSection(\'hw\',' + type.id + ')" id="hwSubmitBtn_' + type.id + '"' +
+              disabledAttr(typeLocked) + '>' +
+              (typeLocked ? '🔒 已截止' : '提交作业率') + '</button>';
 
             html += '</div>';
           });
@@ -1251,19 +1262,16 @@
         if (selectedGroupId && currentSchedule) {
           const { data: existingRecords } = await window.db
             .from('attendance_records')
-            .select('fill_data,created_at')
+            .select('fill_data,created_at,att_submitted_at,hw_submitted_at')
             .eq('schedule_id', currentSchedule.id)
             .eq('organization_id', parseInt(selectedGroupId))
             .limit(1);
           if (existingRecords && existingRecords.length > 0) {
-            document.getElementById('filledTip').style.display = 'block';
-            document.getElementById('filledTime').textContent =
-              '提交时间: ' +
-              new Date(existingRecords[0].created_at).toLocaleTimeString('zh-CN', {
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            const fd = existingRecords[0].fill_data || {};
+            var rec = existingRecords[0];
+            // 显示 section 级别的提交状态
+            if (rec.att_submitted_at) updateSectionStatus('att', rec.att_submitted_at);
+            if (rec.hw_submitted_at) updateSectionStatus('hw', rec.hw_submitted_at);
+            const fd = rec.fill_data || {};
             Object.keys(fd).forEach((name) => {
               const el = document.getElementById(name);
               if (el) {
@@ -1272,9 +1280,7 @@
               }
             });
             recalcRates();
-          } else {
-            document.getElementById('filledTip').style.display = 'none';
-            document.getElementById('filledTime').textContent = '';
+          }
           }
         }
       }
@@ -1385,7 +1391,8 @@
         }
       }
 
-      async function submitAttendance() {
+      // 分 section 提交：'att' = 考勤（上线率+视频率），'hw' = 作业率
+      async function submitSection(sectionKey, typeId) {
         if (!currentSchedule) {
           showToast('今日无日程安排');
           return;
@@ -1399,109 +1406,128 @@
           return;
         }
 
-        // Validate it's a 小组
         const selectedOrg = orgs.find((o) => o.id === parseInt(selectedOrgId));
         if (!selectedOrg || selectedOrg.level !== '小组') {
           showToast('必须选择到小组才能提交');
           return;
         }
 
-        // Dynamically collect field values from all assessment types
+        // 筛选该 section 的考核项目
+        var sectionTypes = sectionKey === 'att'
+          ? attendanceTypes
+          : homeworkTypes.filter(function (t) { return t.id === typeId; });
+
+        if (sectionTypes.length === 0) { showToast('无考核项目'); return; }
+
+        // 截止时间二次校验，防止客户端绕过
+        if (lockedTypeIds.size > 0) {
+          var anyLocked = sectionTypes.some(function (t) { return lockedTypeIds.has(t.id); });
+          if (anyLocked) { showToast('已超截止时间，无法提交'); return; }
+        }
+
+        // 只收集该 section 的字段值
         const getInt = (id) => parseInt(document.getElementById(id)?.value) || 0;
         const fieldValues = {};
-        todayTypes.forEach((type) => {
+        sectionTypes.forEach((type) => {
           Object.keys(type.fields || {}).forEach((fn) => {
             fieldValues[fn] = getInt(fn);
           });
         });
 
-        // Conditional validations: only check field relationships if both fields exist
-        if (fieldValues['应到人数'] && fieldValues['实到人数'] !== undefined) {
-          if (fieldValues['实到人数'] + (fieldValues['请假人数'] || 0) > fieldValues['应到人数']) {
-            showToast('实到人数 + 请假人数不能超过应到人数');
-            return;
+        // 字段关系校验（仅当相关字段都在当前 section 中）
+        if (sectionKey === 'att') {
+          if (fieldValues['应到人数'] && fieldValues['实到人数'] !== undefined) {
+            if (fieldValues['实到人数'] + (fieldValues['请假人数'] || 0) > fieldValues['应到人数']) {
+              showToast('实到人数 + 请假人数不能超过应到人数'); return;
+            }
+          }
+          if (fieldValues['实到人数'] && fieldValues['视频人数'] !== undefined) {
+            if (fieldValues['视频人数'] > fieldValues['实到人数']) {
+              showToast('视频人数不能超过实到人数'); return;
+            }
           }
         }
-        if (fieldValues['实到人数'] && fieldValues['视频人数'] !== undefined) {
-          if (fieldValues['视频人数'] > fieldValues['实到人数']) {
-            showToast('视频人数不能超过实到人数');
-            return;
-          }
-        }
-        if (fieldValues['应做作业人数'] && fieldValues['作业完成人数'] !== undefined) {
-          if (fieldValues['作业完成人数'] > fieldValues['应做作业人数']) {
-            showToast('作业完成人数不能超过应做作业人数');
-            return;
+        if (sectionKey === 'hw') {
+          if (fieldValues['应做作业人数'] && fieldValues['作业完成人数'] !== undefined) {
+            if (fieldValues['作业完成人数'] > fieldValues['应做作业人数']) {
+              showToast('作业完成人数不能超过应做作业人数'); return;
+            }
           }
         }
 
-        // Validate rates <= 100% using actual formulas from DB (matched by type_name)
-        let onlineFormula = null,
-          videoFormula = null,
-          hwFormula = null;
-        todayTypes.forEach((type) => {
-          if (!type.formula) return;
-          const name = type.type_name || '';
-          if (name.indexOf('上线率') !== -1) onlineFormula = type.formula;
-          else if (name.indexOf('视频率') !== -1) videoFormula = type.formula;
-          else if (name.indexOf('作业率') !== -1) hwFormula = type.formula;
+        // 校验率值 <= 100%
+        var rateOverflow = false;
+        sectionTypes.forEach((type) => {
+          if (rateOverflow || !type.formula) return;
+          var r = calcFormula(type.formula, fieldValues);
+          if (r !== null && r > 100) {
+            showToast((type.type_name || '') + '不能超过100%');
+            rateOverflow = true;
+          }
         });
+        if (rateOverflow) return;
 
-        const calcRate = (f) => (f ? calcFormula(f, fieldValues) : null);
-
-        const rates = [];
-        if (onlineFormula) {
-          const r = calcRate(onlineFormula);
-          if (r !== null && r > 100) rates.push('上线率');
-        }
-        if (videoFormula) {
-          const r = calcRate(videoFormula);
-          if (r !== null && r > 100) rates.push('视频率');
-        }
-        if (hwFormula) {
-          const r = calcRate(hwFormula);
-          if (r !== null && r > 100) rates.push('作业率');
-        }
-        if (rates.length > 0) {
-          showToast(rates.join('、') + '不能超过100%');
-          return;
-        }
-
-        // Check required fields (skip locked types)
-        let missingRequired = false;
-        todayTypes.forEach((type) => {
+        // 必填校验（跳过锁定的 type）
+        var missingRequired = false;
+        sectionTypes.forEach((type) => {
           if (lockedTypeIds.has(type.id)) return;
-          Object.entries(type.fields || {}).forEach(([fn, fcfg]) => {
+          Object.entries(type.fields || {}).forEach(function (entry) {
+            var fn = entry[0], fcfg = entry[1];
             if (String(fcfg).includes('必填') && !fieldValues[fn]) {
               missingRequired = true;
             }
           });
         });
-
         if (missingRequired) {
           showToast('请填写所有必填项');
           return;
         }
 
-        // Build fill_data dynamically from all visible fields
-        const fillData = {};
-        todayTypes.forEach((type) => {
-          Object.keys(type.fields || {}).forEach((fn) => {
-            fillData[fn] = fieldValues[fn] || 0;
-          });
-        });
+        // 加载已有记录，合并 fill_data
+        var { data: existing } = await window.db
+          .from('attendance_records')
+          .select('fill_data, first_submitted_at, first_submitted_by')
+          .eq('schedule_id', currentSchedule.id)
+          .eq('organization_id', parseInt(selectedOrgId))
+          .limit(1);
 
+        var existingFd = (existing && existing[0] && existing[0].fill_data) || {};
+        var existingFirstAt = (existing && existing[0]) ? existing[0].first_submitted_at : null;
+        var existingFirstBy = (existing && existing[0]) ? existing[0].first_submitted_by : null;
+
+        var mergedFd = {};
+        // 先复制已有数据
+        Object.keys(existingFd).forEach(function (k) { mergedFd[k] = existingFd[k]; });
+        // 覆盖本次 section 的字段
+        Object.keys(fieldValues).forEach(function (k) { mergedFd[k] = fieldValues[k] || 0; });
+
+        var now = new Date().toISOString();
         var submission = {
           schedule_id: currentSchedule.id,
           semester_id: currentSemester.id,
           fill_user_id: currentUser.id,
           organization_id: parseInt(selectedOrgId),
-          fill_data: fillData,
-          created_at: new Date().toISOString()
+          fill_data: mergedFd
         };
 
-        // upsert 防止重复提交（同小组同一天只保留最新记录）
-        const { error } = await window.db
+        // 首次提交字段
+        if (!existingFirstAt) {
+          submission.first_submitted_at = now;
+          submission.first_submitted_by = currentUser.id;
+        }
+
+        // section 级别的时间戳和提交人
+        if (sectionKey === 'att') {
+          submission.att_submitted_at = now;
+          submission.att_submitted_by = currentUser.id;
+        } else {
+          submission.hw_submitted_at = now;
+          submission.hw_submitted_by = currentUser.id;
+        }
+        submission.last_modified_at = now;
+        submission.last_modified_by = currentUser.id;
+
+        var { error } = await window.db
           .from('attendance_records')
           .upsert(submission, { onConflict: 'schedule_id, organization_id' });
 
@@ -1509,26 +1535,34 @@
           showToast('提交失败: ' + error.message);
           console.error('Submit error:', error);
         } else {
-          showToast('提交成功！');
-          // Log with formula-based rates
-          const logVals = [];
-          if (onlineFormula) {
-            const r = calcFormula(onlineFormula, fieldValues);
-            if (r != null) logVals.push('上线率:' + r.toFixed(1) + '%');
+          showToast(sectionKey === 'att' ? '考勤已提交' : '作业率已提交');
+          logAction(sectionKey === 'att' ? '考勤提交' : '作业率提交', selectedOrg.name,
+            Object.keys(fieldValues).map(function(k){return k+':'+fieldValues[k];}).join(', '));
+          // 更新 section 提交状态显示
+          updateSectionStatus(sectionKey, now);
+        }
+      }
+
+      // 更新 section 标题旁的提交状态标记
+      function updateSectionStatus(sectionKey, timeStr) {
+        var displayTime = '';
+        if (timeStr) {
+          var d = new Date(timeStr);
+          displayTime = d.toTimeString().substring(0, 5);
+        }
+        var badge = ' <span class="section-status" style="font-size:11px; color:var(--green);">✅ 已填报' + (displayTime ? ' ' + displayTime : '') + '</span>';
+        if (sectionKey === 'att') {
+          var attTitle = document.getElementById('attSectionTitle');
+          if (attTitle) {
+            attTitle.querySelector('.section-status') && attTitle.querySelector('.section-status').remove();
+            attTitle.insertAdjacentHTML('beforeend', badge);
           }
-          if (hwFormula) {
-            const r = calcFormula(hwFormula, fieldValues);
-            if (r != null) logVals.push('作业率:' + r.toFixed(1) + '%');
-          }
-          logAction('考勤提交', selectedOrg.name, logVals.join(', '));
-          // Clear all dynamic input fields
-          todayTypes.forEach((type) => {
-            Object.keys(type.fields || {}).forEach((fn) => {
-              const el = document.getElementById(fn);
-              if (el) el.value = '';
-            });
+        } else {
+          var hwTitles = document.querySelectorAll('.hw-section-title');
+          hwTitles.forEach(function (el) {
+            el.querySelector('.section-status') && el.querySelector('.section-status').remove();
+            el.insertAdjacentHTML('beforeend', badge);
           });
-          recalcRates();
         }
       }
 

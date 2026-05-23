@@ -217,7 +217,7 @@ async function getWinners() {
   // 7. Records
   const { data: records } = await adminClient
     .from('attendance_records')
-    .select('organization_id, schedule_id, fill_data, created_at')
+    .select('organization_id, schedule_id, fill_data, created_at, att_submitted_at, hw_submitted_at')
     .in('schedule_id', scheduleIds);
 
   const recsByGroup = {};
@@ -262,7 +262,7 @@ async function getWinners() {
     let onlineSum = 0, onlineN = 0, hwSum = 0, hwN = 0;
     let attSum = 0, attN = 0;
     let filledDays = 0;
-    let earliestCreatedAt = null;
+    let earliestCompletedAt = null;
 
     for (const s of schedules) {
       if (s.schedule_date > today) continue;
@@ -275,12 +275,17 @@ async function getWinners() {
       const shidao = parseInt(fd['实到人数']) || 0;
       const yingzuo = parseInt(fd['应做作业人数']) || 0;
       const zuowan = parseInt(fd['作业完成人数']) || 0;
+      const shipin = parseInt(fd['视频人数']) || 0;
 
-      const hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0);
+      const hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0);
       if (hasData) {
         filledDays++;
-        if (rec.created_at && (!earliestCreatedAt || rec.created_at < earliestCreatedAt)) {
-          earliestCreatedAt = rec.created_at;
+        const completedAt = [rec.created_at, rec.att_submitted_at, rec.hw_submitted_at]
+          .filter(Boolean)
+          .sort()
+          .reverse()[0];
+        if (completedAt && (!earliestCompletedAt || completedAt < earliestCompletedAt)) {
+          earliestCompletedAt = completedAt;
         }
       }
 
@@ -293,7 +298,7 @@ async function getWinners() {
     groupStats[g.id] = {
       attendanceAvg: attN > 0 ? attSum / attN : null,
       filledDays, totalDays,
-      earliestCreatedAt
+      earliestCompletedAt
     };
   }
 
@@ -301,7 +306,7 @@ async function getWinners() {
   function getClassStats(classId) {
     const groups = orgs.filter(o => o.parent_id === classId && o.level === '小组');
     let attSum = 0, attCnt = 0, filledSum = 0, groupCnt = 0, totalDays = 0;
-    let earliestCreatedAt = null;
+    let earliestCompletedAt = null;
     for (const g of groups) {
       const gs = groupStats[g.id];
       if (!gs || gs.attendanceAvg === null) continue;
@@ -310,12 +315,12 @@ async function getWinners() {
       filledSum += gs.filledDays;
       groupCnt++;
       if (gs.totalDays > totalDays) totalDays = gs.totalDays;
-      if (gs.earliestCreatedAt && (!earliestCreatedAt || gs.earliestCreatedAt < earliestCreatedAt)) {
-        earliestCreatedAt = gs.earliestCreatedAt;
+      if (gs.earliestCompletedAt && (!earliestCompletedAt || gs.earliestCompletedAt < earliestCompletedAt)) {
+        earliestCompletedAt = gs.earliestCompletedAt;
       }
     }
     if (attCnt === 0) return null;
-    return { attendanceAvg: attSum / attCnt, filledDays: Math.round(filledSum / (groupCnt || 1)), totalDays, earliestCreatedAt, groupCount: groupCnt };
+    return { attendanceAvg: attSum / attCnt, filledDays: Math.round(filledSum / (groupCnt || 1)), totalDays, earliestCompletedAt, groupCount: groupCnt };
   }
 
   // 11. Build winners (top 3 for each category)
@@ -338,7 +343,7 @@ async function getWinners() {
     }
     classRankings.sort((a, b) => {
       if (a.stats.attendanceAvg !== b.stats.attendanceAvg) return b.stats.attendanceAvg - a.stats.attendanceAvg;
-      return (a.stats.earliestCreatedAt || 'z') < (b.stats.earliestCreatedAt || 'z') ? -1 : 1;
+      return (a.stats.earliestCompletedAt || 'z') < (b.stats.earliestCompletedAt || 'z') ? -1 : 1;
     });
 
     const abbr = (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8);

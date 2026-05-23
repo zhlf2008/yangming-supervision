@@ -764,7 +764,7 @@
         });
         var query = window.db
           .from('attendance_records')
-          .select('organization_id,fill_data,schedule_id,created_at,fill_user_id,first_submitted_at,first_submitted_by,last_modified_at,last_modified_by')
+          .select('organization_id,fill_data,schedule_id,created_at,fill_user_id,first_submitted_at,first_submitted_by,last_modified_at,last_modified_by,att_submitted_at,att_submitted_by,hw_submitted_at,hw_submitted_by')
           .in('schedule_id', sIds);
 
         var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
@@ -1187,6 +1187,11 @@
           var dt = new Date(s.schedule_date + 'T00:00:00');
           var dateLabel = dt.getMonth() + 1 + '/' + dt.getDate() + ' ' + weekDays[dt.getDay()];
 
+          var fmtTime = function (ts) {
+            if (!ts) return '';
+            var d = new Date(ts);
+            return d.toTimeString().substring(0, 5);
+          };
           cards.push({
             scheduleId: s.id,
             dateLabel: dateLabel,
@@ -1201,7 +1206,9 @@
             yingzuo: yingzuo,
             zuowan: zuowan,
             shipin: shipin,
-            hasData: yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0
+            hasData: yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0,
+            attTime: fmtTime(rec && rec.att_submitted_at),
+            hwTime: fmtTime(rec && rec.hw_submitted_at)
           });
         });
 
@@ -1253,6 +1260,13 @@
               '</div><div class="day-card-rate-label">作业率</div></div>';
           }
           html += '</div>';
+          // 显示各 section 的提交时间
+          var timeParts = [];
+          if (c.hasAttendance && c.attTime) timeParts.push('考勤 ' + c.attTime);
+          if (c.hasHomework && c.hwTime) timeParts.push('作业 ' + c.hwTime);
+          if (timeParts.length > 0) {
+            html += '<div style="font-size:10px; color:var(--ink-muted); margin-top:4px;">' + timeParts.join(' · ') + ' 提交</div>';
+          }
           html += '<div class="day-card-counts">';
           if (c.hasAttendance) html += '<span>实到 ' + c.shidao + '/' + c.yingdao + '</span>';
           if (c.hasHomework) html += '<span>完成 ' + c.zuowan + '/' + c.yingzuo + '</span>';
@@ -1426,19 +1440,46 @@
           if (firstTime) {
             html += '<div class="raw-section"><div class="raw-section-title"><span class="raw-section-icon other">📋</span>填报信息</div>';
             html += '<div class="raw-field-row">';
-            html += '<div class="raw-field"><div class="raw-field-label">提交时间</div><div class="raw-field-value">' + new Date(firstTime).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+            html += '<div class="raw-field"><div class="raw-field-label">首次提交</div><div class="raw-field-value">' + new Date(firstTime).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
             var firstBy = rec.first_submitted_by || rec.fill_user_id;
             if (firstBy) {
               try {
                 var { data: p } = await window.db.from('profiles').select('name').eq('id', firstBy).maybeSingle();
-                if (p && p.name) html += '<div class="raw-field"><div class="raw-field-label">提交人</div><div class="raw-field-value">' + escapeHtml(p.name) + '</div></div>';
+                if (p && p.name) html += '<div class="raw-field"><div class="raw-field-label">首次提交人</div><div class="raw-field-value">' + escapeHtml(p.name) + '</div></div>';
               } catch (_) {}
             }
             html += '</div>';
+
+            // 考勤 section 提交信息
+            if (rec.att_submitted_at) {
+              html += '<div class="raw-field-row">';
+              html += '<div class="raw-field"><div class="raw-field-label">考勤提交时间</div><div class="raw-field-value">' + new Date(rec.att_submitted_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+              if (rec.att_submitted_by) {
+                try {
+                  var { data: ap } = await window.db.from('profiles').select('name').eq('id', rec.att_submitted_by).maybeSingle();
+                  if (ap && ap.name) html += '<div class="raw-field"><div class="raw-field-label">考勤提交人</div><div class="raw-field-value">' + escapeHtml(ap.name) + '</div></div>';
+                } catch (_) {}
+              }
+              html += '</div>';
+            }
+
+            // 作业率 section 提交信息
+            if (rec.hw_submitted_at) {
+              html += '<div class="raw-field-row">';
+              html += '<div class="raw-field"><div class="raw-field-label">作业提交时间</div><div class="raw-field-value">' + new Date(rec.hw_submitted_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+              if (rec.hw_submitted_by) {
+                try {
+                  var { data: hp } = await window.db.from('profiles').select('name').eq('id', rec.hw_submitted_by).maybeSingle();
+                  if (hp && hp.name) html += '<div class="raw-field"><div class="raw-field-label">作业提交人</div><div class="raw-field-value">' + escapeHtml(hp.name) + '</div></div>';
+                } catch (_) {}
+              }
+              html += '</div>';
+            }
+
             // 有修改才显示修改信息
             if (rec.last_modified_at && rec.last_modified_at !== firstTime) {
               html += '<div class="raw-field-row">';
-              html += '<div class="raw-field"><div class="raw-field-label">修改时间</div><div class="raw-field-value">' + new Date(rec.last_modified_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+              html += '<div class="raw-field"><div class="raw-field-label">最后修改</div><div class="raw-field-value">' + new Date(rec.last_modified_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
               if (rec.last_modified_by) {
                 try {
                   var { data: mp } = await window.db.from('profiles').select('name').eq('id', rec.last_modified_by).maybeSingle();
@@ -1609,8 +1650,9 @@
             var shidao = parseInt(fd['实到人数']) || 0;
             var yingzuo = parseInt(fd['应做作业人数']) || 0;
             var zuowan = parseInt(fd['作业完成人数']) || 0;
+            var shipin = parseInt(fd['视频人数']) || 0;
 
-            var hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0);
+            var hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0);
             if (hasData) filledDays++;
 
             var fieldMap = {};

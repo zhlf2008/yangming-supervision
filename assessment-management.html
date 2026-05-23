@@ -500,19 +500,23 @@
                 <select id="dlOrgId" class="form-select" style="font-size:13px; padding:10px;"></select>
               </div>
             </div>
-            <div class="input-row">
-              <div class="input-group">
-                <label class="input-label">星期</label>
-                <select id="dlDay" class="form-select" style="font-size:13px; padding:10px;"></select>
+            <div class="input-row" style="margin-bottom:12px;">
+              <div class="input-group" style="flex:1;">
+                <label class="input-label">星期（可多选）</label>
+                <div id="dlDays" style="display:flex; flex-wrap:wrap; gap:6px; padding-top:4px;"></div>
               </div>
+            </div>
+            <div class="input-row">
               <div class="input-group">
                 <label class="input-label">截止时间</label>
                 <input type="time" id="dlTime" class="form-input" value="07:30" style="font-size:13px; padding:10px;">
               </div>
-            </div>
-            <div class="toggle-group">
-              <span style="font-size:14px;">启用</span>
-              <div id="dlEnabled" class="toggle-switch active" onclick="toggleDlEnabled()"></div>
+              <div class="input-group" style="display:flex; align-items:flex-end; padding-bottom:2px;">
+                <div class="toggle-group" style="margin:0;">
+                  <span style="font-size:14px;">启用</span>
+                  <div id="dlEnabled" class="toggle-switch active" onclick="toggleDlEnabled()"></div>
+                </div>
+              </div>
             </div>
             <button class="modal-btn confirm" id="dlSubmitBtn" onclick="addDeadlineRule()" style="width:100%; margin-top:16px;">保存</button>
           </div>
@@ -745,8 +749,40 @@
         typeSel.innerHTML = assessmentTypes.map(function (t) { return '<option value="' + t.id + '">' + escapeHtml(t.type_name) + '</option>'; }).join('');
         var orgSel = document.getElementById('dlOrgId');
         orgSel.innerHTML = bigClasses.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>'; }).join('');
-        var daySel = document.getElementById('dlDay');
-        daySel.innerHTML = dayNames.map(function (d, i) { return '<option value="' + i + '"' + (i === 5 ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+        // 星期复选框
+        var container = document.getElementById('dlDays');
+        container.innerHTML = dayNames.map(function (d, i) {
+          return '<label style="display:inline-flex;align-items:center;gap:3px;font-size:13px;cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:4px;user-select:none;" class="dl-day-chip">' +
+            '<input type="checkbox" value="' + i + '" style="margin:0;">' + d + '</label>';
+        }).join('');
+      }
+
+      function getCheckedDays() {
+        var checks = document.querySelectorAll('#dlDays input[type=checkbox]:checked');
+        return Array.from(checks).map(function (c) { return parseInt(c.value); });
+      }
+
+      function setCheckedDays(days) {
+        var checks = document.querySelectorAll('#dlDays input[type=checkbox]');
+        checks.forEach(function (c) {
+          c.checked = days.indexOf(parseInt(c.value)) !== -1;
+        });
+      }
+
+      // 紧凑格式：连续 → "周一至周五"，非连续 → "周一、周三"
+      function formatDaysOfWeek(daysStr) {
+        if (!daysStr) return '';
+        var days = daysStr.split(',').map(Number).sort(function(a,b){return a-b;});
+        var ranges = [], start = days[0], end = days[0];
+        for (var i = 1; i < days.length; i++) {
+          if (days[i] === end + 1) { end = days[i]; }
+          else { ranges.push([start, end]); start = days[i]; end = days[i]; }
+        }
+        ranges.push([start, end]);
+        return ranges.map(function (r) {
+          if (r[0] === r[1]) return dayNames[r[0]];
+          return dayNames[r[0]] + '至' + dayNames[r[1]];
+        }).join('、');
       }
 
       function switchDlView(view) {
@@ -783,7 +819,7 @@
         dlNewEnabled = true;
         document.getElementById('dlEnabled').classList.toggle('active', true);
         document.getElementById('dlTime').value = '07:30';
-        document.getElementById('dlDay').value = '5';
+        setCheckedDays([5]);  // 默认周五
         document.getElementById('dlTypeId').value = assessmentTypes[0] ? assessmentTypes[0].id : '';
         document.getElementById('dlOrgId').value = bigClasses[0] ? bigClasses[0].id : '';
         document.getElementById('dlSubmitBtn').textContent = '保存';
@@ -802,7 +838,8 @@
         editingConfigId = configId;
         document.getElementById('dlTypeId').value = config.assessment_type_id;
         document.getElementById('dlOrgId').value = config.org_id;
-        document.getElementById('dlDay').value = config.day_of_week;
+        var days = (config.days_of_week || '').split(',').map(Number).filter(function(n){return !isNaN(n);});
+        setCheckedDays(days);
         document.getElementById('dlTime').value = (config.cutoff_time || '').substring(0, 5);
         dlNewEnabled = config.is_enabled;
         document.getElementById('dlEnabled').classList.toggle('active', dlNewEnabled);
@@ -820,12 +857,12 @@
         container.innerHTML = allDeadlineConfigs.map(function (c) {
           var typeName = (assessmentTypes.find(function (t) { return t.id === c.assessment_type_id; }) || {}).type_name || '未知项目';
           var orgName = (bigClasses.find(function (b) { return b.id === c.org_id; }) || {}).name || '未知大班';
-          var dayName = dayNames[c.day_of_week] || '';
+          var dayStr = formatDaysOfWeek(c.days_of_week);
           var timeStr = (c.cutoff_time || '').substring(0, 5);
           return '<div class="deadline-rule-row">' +
             '<div style="flex:1; min-width:0;">' +
               '<div style="font-size:14px; font-weight:600;">' + escapeHtml(typeName) + ' · ' + escapeHtml(orgName) + '</div>' +
-              '<div style="font-size:12px; color:var(--ink-muted); margin-top:4px;">' + dayName + ' · ' + timeStr + ' 截止</div>' +
+              '<div style="font-size:12px; color:var(--ink-muted); margin-top:4px;">' + dayStr + ' · ' + timeStr + ' 截止</div>' +
             '</div>' +
             '<div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">' +
               '<button class="edit-btn" onclick="editDeadlineRule(' + c.id + ')">编辑</button>' +
@@ -838,17 +875,18 @@
       async function addDeadlineRule() {
         var typeId = parseInt(document.getElementById('dlTypeId').value);
         var orgId = parseInt(document.getElementById('dlOrgId').value);
-        var day = parseInt(document.getElementById('dlDay').value);
+        var days = getCheckedDays();
         var timeVal = document.getElementById('dlTime').value;
-        if (!typeId || !orgId || isNaN(day)) { showToast('请填写完整'); return; }
+        if (!typeId || !orgId || days.length === 0) { showToast('请填写完整（至少选一个星期）'); return; }
         var cutOff = timeVal || '07:30';
         if (cutOff.length === 5) cutOff += ':00';
+        var daysStr = days.join(',');
 
         if (editingConfigId) {
           var { error } = await window.db.from('assessment_deadline_configs').update({
             assessment_type_id: typeId,
             org_id: orgId,
-            day_of_week: day,
+            days_of_week: daysStr,
             cutoff_time: cutOff,
             is_enabled: dlNewEnabled,
             updated_at: new Date().toISOString()
@@ -859,10 +897,10 @@
           var { error } = await window.db.from('assessment_deadline_configs').upsert({
             assessment_type_id: typeId,
             org_id: orgId,
-            day_of_week: day,
+            days_of_week: daysStr,
             cutoff_time: cutOff,
             is_enabled: dlNewEnabled
-          }, { onConflict: 'assessment_type_id, org_id, day_of_week' });
+          }, { onConflict: 'assessment_type_id, org_id' });
           if (error) { showToast('添加失败: ' + error.message); return; }
           showToast('规则已添加');
         }

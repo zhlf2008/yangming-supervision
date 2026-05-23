@@ -892,7 +892,7 @@
         });
         var recRes = await window.db
           .from('attendance_records')
-          .select('organization_id,schedule_id,fill_data,created_at')
+          .select('organization_id,schedule_id,fill_data,created_at,att_submitted_at,hw_submitted_at')
           .in('schedule_id', sIds);
         weekRecords = recRes.data || [];
 
@@ -964,7 +964,7 @@
             attSum = 0,
             attN = 0;
           var filledDays = 0;
-          var earliestCreatedAt = null;
+          var earliestCompletedAt = null;
 
           groupSchedules.forEach(function (s) {
             if (s.schedule_date > today) return;
@@ -983,8 +983,12 @@
             var hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0);
             if (hasData) {
               filledDays++;
-              if (rec.created_at && (!earliestCreatedAt || rec.created_at < earliestCreatedAt)) {
-                earliestCreatedAt = rec.created_at;
+              // 该记录的最后提交时间 = 两个 section 中较晚的时间
+              var recCompletedAt = rec.created_at || null;
+              if (rec.att_submitted_at && (!recCompletedAt || rec.att_submitted_at > recCompletedAt)) recCompletedAt = rec.att_submitted_at;
+              if (rec.hw_submitted_at && (!recCompletedAt || rec.hw_submitted_at > recCompletedAt)) recCompletedAt = rec.hw_submitted_at;
+              if (recCompletedAt && (!earliestCompletedAt || recCompletedAt < earliestCompletedAt)) {
+                earliestCompletedAt = recCompletedAt;
               }
             }
 
@@ -1025,7 +1029,7 @@
             videoAvg: videoN > 0 ? videoSum / videoN : null,
             filledDays: filledDays,
             totalDays: totalDays,
-            earliestCreatedAt: earliestCreatedAt
+            earliestCompletedAt: earliestCompletedAt
           };
         });
       }
@@ -1039,7 +1043,7 @@
           filledSum = 0,
           groupCnt = 0,
           totalDays = 0;
-        var earliestCreatedAt = null;
+        var earliestCompletedAt = null;
 
         groupIds.forEach(function (gid) {
           var gs = groupStatsCache[gid];
@@ -1049,8 +1053,8 @@
           filledSum += gs.filledDays;
           groupCnt++;
           if (gs.totalDays > totalDays) totalDays = gs.totalDays;
-          if (gs.earliestCreatedAt && (!earliestCreatedAt || gs.earliestCreatedAt < earliestCreatedAt)) {
-            earliestCreatedAt = gs.earliestCreatedAt;
+          if (gs.earliestCompletedAt && (!earliestCompletedAt || gs.earliestCompletedAt < earliestCompletedAt)) {
+            earliestCompletedAt = gs.earliestCompletedAt;
           }
         });
 
@@ -1059,15 +1063,15 @@
           attendanceAvg: attSum / attCnt,
           filledDays: Math.round(filledSum / (groupCnt || 1)),
           totalDays: totalDays,
-          earliestCreatedAt: earliestCreatedAt,
+          earliestCompletedAt: earliestCompletedAt,
           groupCount: groupCnt
         };
       }
 
       function rankSorter(a, b) {
         if (a.attendanceAvg !== b.attendanceAvg) return b.attendanceAvg - a.attendanceAvg;
-        var ca = a.earliestCreatedAt || 'z';
-        var cb = b.earliestCreatedAt || 'z';
+        var ca = a.earliestCompletedAt || 'z';
+        var cb = b.earliestCompletedAt || 'z';
         if (ca !== cb) return ca < cb ? -1 : 1;
         return (a.name || '').localeCompare(b.name || '', 'zh-CN');
       }
@@ -1130,7 +1134,7 @@
                 attendanceAvg: stats.attendanceAvg,
                 filledDays: stats.filledDays,
                 totalDays: stats.totalDays,
-                earliestCreatedAt: stats.earliestCreatedAt,
+                earliestCompletedAt: stats.earliestCompletedAt,
                 bigClassName: bc.name
               });
             }
@@ -1263,7 +1267,7 @@
               attendanceAvg: gs.attendanceAvg,
               filledDays: gs.filledDays,
               totalDays: gs.totalDays,
-              earliestCreatedAt: gs.earliestCreatedAt,
+              earliestCompletedAt: gs.earliestCompletedAt,
               bigClassName: bigClassName,
               className: cls.name
             });

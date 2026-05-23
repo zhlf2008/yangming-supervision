@@ -75,6 +75,7 @@ interface Schedule {
 interface AttendanceRec {
   organization_id: number; schedule_id: number;
   fill_data?: Record<string, any>; created_at?: string;
+  att_submitted_at?: string | null; hw_submitted_at?: string | null;
 }
 
 interface AssessmentType {
@@ -223,7 +224,7 @@ async function getWinners() {
   // 7. Get attendance records for this week
   const { data: records } = await adminClient
     .from('attendance_records')
-    .select('organization_id, schedule_id, fill_data, created_at')
+    .select('organization_id, schedule_id, fill_data, created_at, att_submitted_at, hw_submitted_at')
     .in('schedule_id', scheduleIds);
 
   const recsByGroup: Record<number, AttendanceRec[]> = {};
@@ -248,7 +249,7 @@ async function getWinners() {
   const today = getBeijingNow().date;
   const groupStats: Record<number, {
     attendanceAvg: number | null; filledDays: number; totalDays: number;
-    earliestCreatedAt: string | null;
+    earliestCompletedAt: string | null;
   }> = {};
 
   const allGroups = orgs.filter(o => o.level === '小组');
@@ -271,7 +272,7 @@ async function getWinners() {
     let onlineSum = 0, onlineN = 0, hwSum = 0, hwN = 0;
     let attSum = 0, attN = 0;
     let filledDays = 0;
-    let earliestCreatedAt: string | null = null;
+    let earliestCompletedAt: string | null = null;
 
     for (const s of schedules) {
       if (s.schedule_date > today) continue;
@@ -284,12 +285,17 @@ async function getWinners() {
       const shidao = parseInt(fd['实到人数']) || 0;
       const yingzuo = parseInt(fd['应做作业人数']) || 0;
       const zuowan = parseInt(fd['作业完成人数']) || 0;
+      const shipin = parseInt(fd['视频人数']) || 0;
 
-      const hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0);
+      const hasData = rec && (yingdao > 0 || shidao > 0 || yingzuo > 0 || zuowan > 0 || shipin > 0);
       if (hasData) {
         filledDays++;
-        if (rec.created_at && (!earliestCreatedAt || rec.created_at < earliestCreatedAt)) {
-          earliestCreatedAt = rec.created_at;
+        const completedAt = [rec.created_at, rec.att_submitted_at, rec.hw_submitted_at]
+          .filter(Boolean)
+          .sort()
+          .reverse()[0];
+        if (completedAt && (!earliestCompletedAt || completedAt < earliestCompletedAt)) {
+          earliestCompletedAt = completedAt;
         }
       }
 
@@ -302,7 +308,7 @@ async function getWinners() {
     groupStats[g.id] = {
       attendanceAvg: attN > 0 ? attSum / attN : null,
       filledDays, totalDays,
-      earliestCreatedAt
+      earliestCompletedAt
     };
   }
 
@@ -310,7 +316,7 @@ async function getWinners() {
   function getClassStats(classId: number) {
     const groups = getGroupsOfClass(classId, orgs!);
     let attSum = 0, attCnt = 0, filledSum = 0, groupCnt = 0, totalDays = 0;
-    let earliestCreatedAt: string | null = null;
+    let earliestCompletedAt: string | null = null;
     for (const g of groups) {
       const gs = groupStats[g.id];
       if (!gs || gs.attendanceAvg === null) continue;
@@ -319,8 +325,8 @@ async function getWinners() {
       filledSum += gs.filledDays;
       groupCnt++;
       if (gs.totalDays > totalDays) totalDays = gs.totalDays;
-      if (gs.earliestCreatedAt && (!earliestCreatedAt || gs.earliestCreatedAt < earliestCreatedAt)) {
-        earliestCreatedAt = gs.earliestCreatedAt;
+      if (gs.earliestCompletedAt && (!earliestCompletedAt || gs.earliestCompletedAt < earliestCompletedAt)) {
+        earliestCompletedAt = gs.earliestCompletedAt;
       }
     }
     if (attCnt === 0) return null;
@@ -328,7 +334,7 @@ async function getWinners() {
       attendanceAvg: attSum / attCnt,
       filledDays: Math.round(filledSum / (groupCnt || 1)),
       totalDays,
-      earliestCreatedAt,
+      earliestCompletedAt,
       groupCount: groupCnt
     };
   }
@@ -363,8 +369,8 @@ async function getWinners() {
     }
     classRankings.sort((a, b) => {
       if (a.stats!.attendanceAvg !== b.stats!.attendanceAvg) return b.stats!.attendanceAvg - a.stats!.attendanceAvg;
-      const ca = a.stats!.earliestCreatedAt || 'z';
-      const cb = b.stats!.earliestCreatedAt || 'z';
+      const ca = a.stats!.earliestCompletedAt || 'z';
+      const cb = b.stats!.earliestCompletedAt || 'z';
       return ca < cb ? -1 : 1;
     });
 

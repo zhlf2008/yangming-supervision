@@ -13,6 +13,15 @@
 | 005 | `20250508_003_semester_isolation.sql` | organizations 和 assessment_types 添加 semester_id | 2025-05-08 |
 | 006 | `20250508_004_schedules_per_daban.sql` | schedules 添加 org_id，按大班隔离日程 | 2025-05-08 |
 | 007 | `20260510_001_rls_business_tables.sql` | semesters/assessment_types/schedules/attendance_records/feedback 补 RLS | 待执行 |
+| 008 | `20260511_001_fix_profiles_rls.sql` | 修复 profiles RLS 递归问题 | 待执行 |
+| 009 | `20260511_002_fix_reminder_configs_rls.sql` | 修复 reminder_configs RLS | 待执行 |
+| 010 | `20260512_002_org_editable_flag.sql` | organizations 添加 editable 标记 | 待执行 |
+| 011 | `20260512_merge_duplicate_groups.sql` | 合并重复小组数据 | 待执行 |
+| 012 | `20260516_001_org_soft_delete.sql` | organizations 软删除支持 | 待执行 |
+| 013 | `20260516_002_org_archived_at.sql` | organizations 归档时间戳 | 待执行 |
+| 014 | `20260523_001_deadline_configs.sql` | 考核项目截止规则表 | 待执行 |
+| 015 | `20260523_002_award_notification.sql` | 获奖推送通知表 | 待执行 |
+| 016 | `20260523_003_section_submit_times.sql` | section 级别提交时间/提交人 + 截止规则多选星期 | 待执行 |
 
 ## 开发诊断
 
