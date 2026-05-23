@@ -1152,9 +1152,9 @@
               '</div>';
           });
           html +=
-            '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:auto;"' +
+            '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:100%;"' +
             ' onclick="submitSection(\'att\')" id="attSubmitBtn"' + disabledAttr(attLocked) + '>' +
-            (attLocked ? '🔒 已截止' : '提交考勤') + '</button>' +
+            (attLocked ? '🔒 已截止' : '提交晨读数据') + '</button>' +
             '</div></div>';
         }
 
@@ -1222,10 +1222,10 @@
               '</div>';
 
             html +=
-              '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:auto;"' +
+              '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:100%;"' +
               ' onclick="submitSection(\'hw\',' + type.id + ')" id="hwSubmitBtn_' + type.id + '"' +
               disabledAttr(typeLocked) + '>' +
-              (typeLocked ? '🔒 已截止' : '提交作业率') + '</button>';
+              (typeLocked ? '🔒 已截止' : '提交作业数据') + '</button>';
 
             html += '</div>';
           });
