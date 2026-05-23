@@ -1400,6 +1400,7 @@
       // ========== Certificate ==========
 
       var currentCertData = null;
+      var cachedCertCanvas = null;
 
       function openCertificate(certKey) {
         var d = certDataStore[certKey];
@@ -1440,6 +1441,28 @@
         buildSealSvg(d);
         document.getElementById('certOverlay').classList.add('show');
         document.body.style.overflow = 'hidden';
+        // 预渲染证书到 canvas，导出时直接使用
+        cachedCertCanvas = null;
+        var exportBtn = document.querySelector('.cert-action-btn.primary');
+        if (exportBtn) exportBtn.textContent = '💾 导出';
+        setTimeout(function () { preRenderCert(); }, 400);
+      }
+
+      async function preRenderCert() {
+        var certEl = document.getElementById('certificate');
+        if (!certEl) return;
+        try {
+          var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+          if (isMobile) {
+            cachedCertCanvas = await htmlToImage.toCanvas(certEl, { pixelRatio: 2, backgroundColor: null });
+          } else {
+            cachedCertCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
+          }
+          var exportBtn = document.querySelector('.cert-action-btn.primary');
+          if (exportBtn) exportBtn.textContent = '💾 导出 ✓';
+        } catch (e) {
+          cachedCertCanvas = null;
+        }
       }
 
       function buildSealSvg(d) {
@@ -1468,6 +1491,7 @@
       function closeCertificate() {
         document.getElementById('certOverlay').classList.remove('show');
         document.body.style.overflow = '';
+        cachedCertCanvas = null;
       }
 
       // ========== SVG Certificate Generation (移动端导出) ==========
@@ -1477,15 +1501,12 @@
       async function saveCertificate() {
         try {
           var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-          var certEl = document.getElementById('certificate');
-          if (!certEl) { showToast('证书元素不存在', 'error'); return; }
-          var rawCanvas;
-          if (isMobile) {
-            rawCanvas = await htmlToImage.toCanvas(certEl, { pixelRatio: 2, backgroundColor: null });
-          } else {
-            rawCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
+          if (!cachedCertCanvas) {
+            showToast('正在准备证书…');
+            await preRenderCert();
+            if (!cachedCertCanvas) { showToast('证书渲染失败', 'error'); return; }
           }
-          if (!rawCanvas) { showToast('截图失败', 'error'); return; }
+          var rawCanvas = cachedCertCanvas;
           var M = 14, W = rawCanvas.width + M*2, H = rawCanvas.height + M*2;
           var canvas = document.createElement('canvas');
           canvas.width = W; canvas.height = H;
