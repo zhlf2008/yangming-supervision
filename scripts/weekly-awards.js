@@ -154,13 +154,18 @@ function calcRates(fd, formulas) {
 
 async function getWinners() {
   // 1. Current semester
-  const { data: semesters } = await adminClient
+  const { data: semesters, error: semError } = await adminClient
     .from('semesters')
     .select('*')
     .eq('is_current', 1)
     .order('start_date', { ascending: false })
     .limit(1);
 
+  if (semError) {
+    console.error('查询学期失败:', JSON.stringify(semError));
+    throw new Error('查询学期失败: ' + semError.message);
+  }
+  console.log('学期查询结果:', JSON.stringify(semesters));
   if (!semesters?.length) throw new Error('无活跃学期');
   const semester = semesters[0];
 
