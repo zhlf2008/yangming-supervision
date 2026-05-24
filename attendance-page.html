@@ -1507,9 +1507,10 @@
           fill_data: mergedFd
         };
 
-        // 首次提交时间
+        // 首次提交字段
         if (!existingFirstAt) {
           submission.first_submitted_at = now;
+          submission.first_submitted_by = currentUser.id;
         }
 
         // section 级别的时间戳和提交人
@@ -1521,6 +1522,7 @@
           submission.hw_submitted_by = currentUser.id;
         }
         submission.last_modified_at = now;
+        submission.last_modified_by = currentUser.id;
 
         var { error } = await window.db
           .from('attendance_records')
