@@ -87,17 +87,19 @@ function checkWebhookResponse(resText, label) {
 }
 
 async function pushToWechat(webhookUrl, markdownContent, imageBase64) {
-  console.log('  发送祝贺消息...');
-  const mdRes = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      msgtype: 'markdown',
-      markdown: { content: markdownContent }
-    })
-  });
-  const mdText = await mdRes.text();
-  checkWebhookResponse(mdText, '祝贺消息');
+  if (markdownContent) {
+    console.log('  发送祝贺消息...');
+    const mdRes = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        msgtype: 'markdown',
+        markdown: { content: markdownContent }
+      })
+    });
+    const mdText = await mdRes.text();
+    checkWebhookResponse(mdText, '祝贺消息');
+  }
 
   if (imageBase64) {
     console.log('  发送证书图片...');
