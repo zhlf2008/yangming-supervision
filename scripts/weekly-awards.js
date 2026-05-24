@@ -157,7 +157,7 @@ async function getWinners() {
   const { data: semesters } = await adminClient
     .from('semesters')
     .select('*')
-    .eq('is_active', true)
+    .eq('is_current', 1)
     .order('start_date', { ascending: false })
     .limit(1);
 
