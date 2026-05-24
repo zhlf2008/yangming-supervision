@@ -29,7 +29,7 @@ async function getWinnersFromEdge() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
+      'apikey': SERVICE_ROLE_KEY
     },
     body: JSON.stringify({ action: 'get_winners' })
   });
