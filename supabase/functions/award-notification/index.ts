@@ -441,6 +441,15 @@ Deno.serve(async (req) => {
     'Content-Type': 'application/json'
   };
 
+  const EXPECTED_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SB_SERVICE_ROLE_SECRET') || '';
+  const reqKey = req.headers.get('apikey') || '';
+  if (!EXPECTED_KEY || reqKey !== EXPECTED_KEY) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const body = await req.json();
     const { action = 'get_winners' } = body;
