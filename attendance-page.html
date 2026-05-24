@@ -1507,10 +1507,9 @@
           fill_data: mergedFd
         };
 
-        // 首次提交字段
+        // 首次提交时间
         if (!existingFirstAt) {
           submission.first_submitted_at = now;
-          submission.first_submitted_by = currentUser.id;
         }
 
         // section 级别的时间戳和提交人
@@ -1522,11 +1521,10 @@
           submission.hw_submitted_by = currentUser.id;
         }
         submission.last_modified_at = now;
-        submission.last_modified_by = currentUser.id;
 
         var { error } = await window.db
           .from('attendance_records')
-          .upsert(submission, { onConflict: 'schedule_id, organization_id' });
+          .upsert(submission, { onConflict: 'organization_id, schedule_id' });
 
         if (error) {
           showToast('提交失败: ' + error.message);
