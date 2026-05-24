@@ -243,7 +243,7 @@
         var sealColor = getParam('sealColor') || '#C41E3A';
         var sealName = decodeURIComponent(getParam('sealName') || '阳明心学');
         var sealC = sealColor;
-        // 沿圆弧排列字符：每个字符旋转角度a，再向外偏移radius
+        // 沿圆弧排列字符：每个字符旋转角度a，再向外偏移radius（与前端的 textPath 弧线效果一致）
         function arc(r, startA, endA, text, fs) {
           var ch = text.split(''), n = ch.length;
           var range = endA - startA, step = n > 1 ? range / (n - 1) : 0;
@@ -260,11 +260,10 @@
         var sealHtml =
           '<div style="position:relative;width:88px;height:88px;border:3.2px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;opacity:0.82">' +
           '<div style="position:absolute;left:4px;top:4px;width:76px;height:76px;border:0.8px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;opacity:0.5"></div>' +
-          arc(30, -78, 78, '阳明心学督察', 8) +
-          arc(22, -50, 50, '管理系统', 8) +
+          arc(30, -80, 80, '阳明心学督察管理系统', 9) +
           '<div style="position:absolute;left:50%;top:50%;transform:translate(-12px,-14px);font-size:22px;color:' + sealC + ';font-weight:900;font-family:\'Noto Serif SC\',serif;line-height:1">★</div>' +
-          '<div style="position:absolute;left:50%;top:50%;width:36px;height:1px;background:' + sealC + ';opacity:0.7;transform:translate(-18px,6px)"></div>' +
-          arc(28, 108, 252, sealName, 8.5) +
+          '<div style="position:absolute;left:50%;top:50%;width:36px;height:1px;background:' + sealC + ';opacity:0.7;transform:translate(-18px,8px)"></div>' +
+          '<div style="position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:8.5px;color:' + sealC + ';font-weight:700;font-family:\'Noto Serif SC\',serif;letter-spacing:1.5px">' + sealName + '</div>' +
           '</div>';
         document.getElementById('certSealSvg').innerHTML = sealHtml;
       })();
