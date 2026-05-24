@@ -69,7 +69,8 @@ for (const file of jsFiles) {
 
   // 检查 console.log（排除 supabase-config.js）
   const rel2 = file.replace(root + '/', '').replace(root + '\\', '');
-  if (rel2 !== 'js/supabase-config.js') {
+  // supabase-config.js 有调试日志，scripts/ 下是 CLI 工具
+  if (rel2 !== 'js/supabase-config.js' && !rel2.startsWith('scripts/') && !rel2.startsWith('scripts\\')) {
     for (const m of content.matchAll(/console\.log\(/g)) {
       warn(rel2, '包含 console.log');
       break;
