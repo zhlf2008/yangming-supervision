@@ -398,6 +398,20 @@ async function renderCertificate(page, certParams) {
 
 // ---- push to WeChat Work ----
 
+function checkWebhookResponse(resText, label) {
+  try {
+    const json = JSON.parse(resText);
+    if (json.errcode !== 0) {
+      throw new Error(label + '失败: errcode=' + json.errcode + ' ' + (json.errmsg || ''));
+    }
+    console.log('  ' + label + '成功');
+  } catch (e) {
+    if (e.message.startsWith(label)) throw e; // re-throw our own error
+    // Response is not JSON or can't parse — log but don't fail (some proxies return non-JSON)
+    console.log('  ' + label + '响应(非JSON):', resText);
+  }
+}
+
 async function pushToWechat(webhookUrl, markdownContent, imageBase64) {
   // 1. Send markdown message
   console.log('  发送祝贺消息...');
@@ -410,12 +424,11 @@ async function pushToWechat(webhookUrl, markdownContent, imageBase64) {
     })
   });
   const mdText = await mdRes.text();
-  console.log('  消息响应:', mdText);
+  checkWebhookResponse(mdText, '祝贺消息');
 
   // 2. Send certificate image
   if (imageBase64) {
     console.log('  发送证书图片...');
-    // Compute MD5 from raw bytes (not base64 string)
     const rawBytes = Buffer.from(imageBase64, 'base64');
     const md5 = crypto.createHash('md5').update(rawBytes).digest('hex');
 
@@ -428,7 +441,7 @@ async function pushToWechat(webhookUrl, markdownContent, imageBase64) {
       })
     });
     const imgText = await imgRes.text();
-    console.log('  图片响应:', imgText);
+    checkWebhookResponse(imgText, '证书图片');
     return { md: mdText, img: imgText };
   }
 

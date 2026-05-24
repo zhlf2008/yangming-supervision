@@ -460,9 +460,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: '缺少 webhook_url' }), { headers, status: 400 });
       }
 
+      const errors: string[] = [];
+
       // Send markdown message first
       if (markdown_content) {
-        await fetch(webhook_url, {
+        const mdRes = await fetch(webhook_url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -470,11 +472,15 @@ Deno.serve(async (req) => {
             markdown: { content: markdown_content }
           })
         });
+        const mdText = await mdRes.text();
+        try {
+          const j = JSON.parse(mdText);
+          if (j.errcode !== 0) errors.push('祝贺消息失败: errcode=' + j.errcode + ' ' + (j.errmsg || ''));
+        } catch { /* non-JSON response, ignore */ }
       }
 
       // Send image message
       if (image_base64) {
-        // Decode base64 to bytes, compute MD5
         const rawBytes = Uint8Array.from(atob(image_base64), c => c.charCodeAt(0));
         const md5Hash = md5(rawBytes);
 
@@ -490,7 +496,14 @@ Deno.serve(async (req) => {
           })
         });
         const imgText = await imgRes.text();
-        return new Response(JSON.stringify({ success: true, response: imgText }), { headers });
+        try {
+          const j = JSON.parse(imgText);
+          if (j.errcode !== 0) errors.push('证书图片失败: errcode=' + j.errcode + ' ' + (j.errmsg || ''));
+        } catch { /* non-JSON response, ignore */ }
+      }
+
+      if (errors.length > 0) {
+        return new Response(JSON.stringify({ success: false, errors }), { headers, status: 502 });
       }
 
       return new Response(JSON.stringify({ success: true }), { headers });
