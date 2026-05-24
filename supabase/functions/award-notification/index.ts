@@ -96,25 +96,22 @@ function getClassesOfBigClass(bigClassId: number, orgs: Org[]): Org[] {
 function hasMult100(f: string) { return f.includes('*100') || f.includes('×100'); }
 
 function calcFormula(formula: string, fields: Record<string, number>): number | null {
+  if (!formula) return null;
+  let expr = formula.trim();
+
+  // 按字段名长度降序排列，避免短名称误匹配长名称的子串
+  const names = Object.keys(fields).sort((a, b) => b.length - a.length);
+  for (const name of names) {
+    const val = Number(fields[name]) || 0;
+    expr = expr.replace(new RegExp(name, 'g'), '(' + val + ')');
+  }
+
+  // 安全检查：只允许数字、运算符、小数点、小括号、空白
+  if (/[^0-9+\-*/().%\s]/.test(expr)) return null;
+
   try {
-    let expr = formula;
-    const varNames: string[] = [];
-    const re = /[a-zA-Z_]\w*/g;
-    let m;
-    while ((m = re.exec(formula)) !== null) {
-      if (!varNames.includes(m[0])) varNames.push(m[0]);
-    }
-    // sort longest first
-    varNames.sort((a, b) => b.length - a.length);
-    for (const v of varNames) {
-      const val = fields[v] ?? 0;
-      const escaped = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      expr = expr.replace(new RegExp(escaped, 'g'), String(val));
-    }
-    // safety: only allow numbers, operators, parens, dots
-    if (!/^[\d.+\-*/()%\s]+$/.test(expr)) return null;
     const result = Function('"use strict"; return (' + expr + ')')();
-    return typeof result === 'number' && !isNaN(result) ? result : null;
+    return typeof result === 'number' && isFinite(result) ? result : null;
   } catch {
     return null;
   }

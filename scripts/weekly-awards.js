@@ -89,23 +89,22 @@ function computeWeekLabel(weekMondayStr, semester) {
 function hasMult100(f) { return f.includes('*100') || f.includes('×100'); }
 
 function calcFormula(formula, fields) {
+  if (!formula) return null;
+  let expr = formula.trim();
+
+  // 按字段名长度降序排列，避免短名称误匹配长名称的子串
+  const names = Object.keys(fields).sort((a, b) => b.length - a.length);
+  for (const name of names) {
+    const val = Number(fields[name]) || 0;
+    expr = expr.replace(new RegExp(name, 'g'), '(' + val + ')');
+  }
+
+  // 安全检查：只允许数字、运算符、小数点、小括号、空白
+  if (/[^0-9+\-*/().%\s]/.test(expr)) return null;
+
   try {
-    let expr = formula;
-    const varNames = [];
-    const re = /[a-zA-Z_]\w*/g;
-    let m;
-    while ((m = re.exec(formula)) !== null) {
-      if (!varNames.includes(m[0])) varNames.push(m[0]);
-    }
-    varNames.sort((a, b) => b.length - a.length);
-    for (const v of varNames) {
-      const val = fields[v] ?? 0;
-      const escaped = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      expr = expr.replace(new RegExp(escaped, 'g'), String(val));
-    }
-    if (!/^[\d.+\-*/()%\s]+$/.test(expr)) return null;
     const result = Function('"use strict"; return (' + expr + ')')();
-    return typeof result === 'number' && !isNaN(result) ? result : null;
+    return typeof result === 'number' && isFinite(result) ? result : null;
   } catch {
     return null;
   }
@@ -476,7 +475,7 @@ async function main() {
   // 2. Render certificates
   console.log('\n[2/3] 渲染证书图片...');
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 680, height: 960 } });
+  const context = await browser.newContext({ viewport: { width: 800, height: 960 } });
   const page = await context.newPage();
 
   const renderedImages = []; // { winner, imageBase64 }
@@ -527,7 +526,7 @@ async function main() {
       }
     }
 
-    md += '\n> 颁发日期：' + sundayDate + '\n';
+    md += '\n> 颁发日期：' + formatDateCN(sundayDate) + '\n';
     md += '> 恭喜以上获奖班级，望再接再厉，再创佳绩！\n';
 
     try {
