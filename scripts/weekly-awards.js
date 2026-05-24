@@ -87,6 +87,7 @@ function checkWebhookResponse(resText, label) {
 }
 
 async function pushToWechat(webhookUrl, markdownContent, imageBase64) {
+  let mdText = '';
   if (markdownContent) {
     console.log('  发送祝贺消息...');
     const mdRes = await fetch(webhookUrl, {
@@ -97,7 +98,7 @@ async function pushToWechat(webhookUrl, markdownContent, imageBase64) {
         markdown: { content: markdownContent }
       })
     });
-    const mdText = await mdRes.text();
+    mdText = await mdRes.text();
     checkWebhookResponse(mdText, '祝贺消息');
   }
 
