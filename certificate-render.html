@@ -243,7 +243,11 @@
         var sealColor = getParam('sealColor') || '#C41E3A';
         var sealName = decodeURIComponent(getParam('sealName') || '阳明心学');
         var sealC = sealColor;
-        // 沿圆弧排列字符：每个字符旋转角度a，再向外偏移radius（与前端的 textPath 弧线效果一致）
+        // 与前端 buildSealSvg 保持一致的布局：
+        // - SVG 画圆形和横线（html2canvas 支持，保证同心圆精度）
+        // - HTML 覆盖圆弧文字和五星（html2canvas 不支持 SVG text/textPath）
+        // 坐标按 88/100=0.88 比例从 SVG viewBox(100) 缩放到实际像素(88)
+        var s = 0.88;
         function arc(r, startA, endA, text, fs) {
           var ch = text.split(''), n = ch.length;
           var range = endA - startA, step = n > 1 ? range / (n - 1) : 0;
@@ -257,15 +261,26 @@
           }
           return h;
         }
-        var sealHtml =
-          '<div style="position:relative;width:88px;height:88px;border:3.2px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;opacity:0.82">' +
-          '<div style="position:absolute;left:4px;top:4px;width:76px;height:76px;border:0.8px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;opacity:0.5"></div>' +
-          arc(34, -90, 90, '阳明心学督察管理系统', 9) +
-          '<div style="position:absolute;left:50%;top:50%;transform:translate(-12px,-14px);font-size:22px;color:' + sealC + ';font-weight:900;font-family:\'Noto Serif SC\',serif;line-height:1">★</div>' +
-          '<div style="position:absolute;left:50%;top:50%;width:36px;height:1px;background:' + sealC + ';opacity:0.7;transform:translate(-18px,8px)"></div>' +
-          '<div style="position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:8.5px;color:' + sealC + ';font-weight:700;font-family:\'Noto Serif SC\',serif;letter-spacing:1.5px">' + sealName + '</div>' +
+        var svg =
+          '<svg viewBox="0 0 100 100" width="88" height="88">' +
+          '<circle cx="50" cy="50" r="45" fill="none" stroke="' + sealC + '" stroke-width="3.2" opacity="0.82"/>' +
+          '<circle cx="50" cy="50" r="42" fill="none" stroke="' + sealC + '" stroke-width="0.8" opacity="0.45"/>' +
+          '<line x1="32" y1="67" x2="68" y2="67" stroke="' + sealC + '" stroke-width="1.2" opacity="0.7"/>' +
+          '</svg>';
+        // 文字叠加层：SVG viewBox 100 → 实际 88px，按比例缩放坐标
+        var textOverlay =
+          '<div style="position:absolute;top:0;left:0;width:88px;height:88px;">' +
+          arc(36 * s, -90, 90, '阳明心学督察管理系统', Math.round(9 * s)) +
+          '<div style="position:absolute;left:50%;top:' + (57 * s).toFixed(1) + 'px;' +
+            'transform:translateX(-50%);font-size:' + (20 * s).toFixed(0) + 'px;' +
+            'color:' + sealC + ';font-weight:900;' +
+            'font-family:\'Noto Serif SC\',serif;line-height:1">★</div>' +
+          '<div style="position:absolute;left:0;right:0;top:' + (80 * s).toFixed(1) + 'px;' +
+            'text-align:center;font-size:' + (8.5 * s).toFixed(0) + 'px;' +
+            'color:' + sealC + ';font-weight:700;' +
+            'font-family:\'Noto Serif SC\',serif;letter-spacing:1px">' + sealName + '</div>' +
           '</div>';
-        document.getElementById('certSealSvg').innerHTML = sealHtml;
+        document.getElementById('certSealSvg').innerHTML = svg + textOverlay;
       })();
 
       // ---- 对外暴露：渲染 PNG 并返回 dataURL ----
