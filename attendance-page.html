@@ -655,6 +655,8 @@
       var formData = {};
       var orgs = [];
       var lockedTypeIds = new Set();  // 被截止规则锁定的考核项目 ID 集合
+      var attendanceTypes = [];
+      var homeworkTypes = [];
 
       async function init() {
         await waitForDb();
@@ -1049,11 +1051,11 @@
         const showHw = typeNames.some((n) => n.indexOf('作业率') !== -1);
 
         // Group assessment types by category and merge shared sections
-        const attendanceTypes = todayTypes.filter((t) => {
+        attendanceTypes = todayTypes.filter((t) => {
           const n = t.type_name || '';
           return n.indexOf('上线率') !== -1 || n.indexOf('视频率') !== -1;
         });
-        const homeworkTypes = todayTypes.filter((t) => {
+        homeworkTypes = todayTypes.filter((t) => {
           const n = t.type_name || '';
           return n.indexOf('作业率') !== -1;
         });
