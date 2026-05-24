@@ -243,15 +243,29 @@
         var sealColor = getParam('sealColor') || '#C41E3A';
         var sealName = decodeURIComponent(getParam('sealName') || '阳明心学');
         var sealC = sealColor;
+        // 沿圆弧排列字符：每个字符旋转角度a，再向外偏移radius
+        function arc(r, startA, endA, text, fs) {
+          var ch = text.split(''), n = ch.length;
+          var range = endA - startA, step = n > 1 ? range / (n - 1) : 0;
+          var h = '';
+          for (var i = 0; i < n; i++) {
+            var a = startA + step * i;
+            h += '<span style="position:absolute;left:50%;top:50%;width:0;height:0;' +
+              'transform:rotate(' + a + 'deg) translateY(-' + r + 'px);' +
+              'font-size:' + fs + 'px;color:' + sealC + ';font-weight:700;' +
+              'font-family:\'Noto Serif SC\',serif;">' + ch[i] + '</span>';
+          }
+          return h;
+        }
         var sealHtml =
-          '<div style="width:88px;height:88px;border:3.2px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;text-align:center;opacity:0.82">' +
-          '<div style="width:76px;height:76px;border:0.8px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;margin:3px auto 0;text-align:center">' +
-          '<div style="font-family:\'Noto Serif SC\',serif;font-size:8px;color:' + sealC + ';font-weight:700;letter-spacing:1px;margin-top:8px;line-height:1.3">阳明心学督察</div>' +
-          '<div style="font-family:\'Noto Serif SC\',serif;font-size:8px;color:' + sealC + ';font-weight:700;letter-spacing:1px;line-height:1.3">管理系统</div>' +
-          '<div style="font-family:\'Noto Serif SC\',serif;font-size:20px;color:' + sealC + ';font-weight:900;line-height:1.2">★</div>' +
-          '<div style="width:36px;height:1px;background:' + sealC + ';opacity:0.7;margin:2px auto"></div>' +
-          '<div style="font-family:\'Noto Serif SC\',serif;font-size:8.5px;color:' + sealC + ';font-weight:700;letter-spacing:1.5px;line-height:1.3">' + sealName + '</div>' +
-          '</div></div>';
+          '<div style="position:relative;width:88px;height:88px;border:3.2px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;opacity:0.82">' +
+          '<div style="position:absolute;left:4px;top:4px;width:76px;height:76px;border:0.8px solid ' + sealC + ';border-radius:50%;box-sizing:border-box;opacity:0.5"></div>' +
+          arc(30, -78, 78, '阳明心学督察', 8) +
+          arc(22, -50, 50, '管理系统', 8) +
+          '<div style="position:absolute;left:50%;top:50%;transform:translate(-12px,-14px);font-size:22px;color:' + sealC + ';font-weight:900;font-family:\'Noto Serif SC\',serif;line-height:1">★</div>' +
+          '<div style="position:absolute;left:50%;top:50%;width:36px;height:1px;background:' + sealC + ';opacity:0.7;transform:translate(-18px,6px)"></div>' +
+          arc(28, 108, 252, sealName, 8.5) +
+          '</div>';
         document.getElementById('certSealSvg').innerHTML = sealHtml;
       })();
 
