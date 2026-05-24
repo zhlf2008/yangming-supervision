@@ -24,7 +24,7 @@ jobs:
         run: |
           cd scripts
           npm init -y > /dev/null 2>&1
-          npm install @supabase/supabase-js playwright
+          npm install playwright
 
       - name: Install Playwright browsers
         run: npx playwright install chromium

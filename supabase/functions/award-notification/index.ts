@@ -352,6 +352,7 @@ async function getWinners() {
   }
 
   const winners: Winner[] = [];
+  const weekdayLabel = computeWeekLabel(monday, semester);
 
   for (const bc of bigClasses) {
     const cfg = awardConfigMap.get(bc.id);
@@ -372,7 +373,6 @@ async function getWinners() {
     });
 
     const abbr = (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8);
-    const weekdayLabel = computeWeekLabel(monday, semester);
     for (let i = 0; i < Math.min(3, classRankings.length); i++) {
       const r = classRankings[i];
       const rank = i + 1;
@@ -399,6 +399,7 @@ async function getWinners() {
     semester: semester.semester_name,
     weekRange: { monday, sunday },
     sundayDate: formatDateCN(sundayDate),
+    weekdayLabel,
     winnerCount: winners.length,
     winners
   };
