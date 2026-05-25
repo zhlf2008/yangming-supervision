@@ -933,6 +933,9 @@
         var allGroups = orgsList.filter(function (o) {
           return o.level === '小组';
         });
+        // 每日小组完成时间: groupDayTime[groupId][dateStr] = completionTime (MAX of sections)
+        var groupDayTime = {};
+        allGroups.forEach(function (g) { groupDayTime[g.id] = {}; });
         allGroups.forEach(function (g) {
           var recs = recsByGroup[g.id] || [];
           var recMap = {};
@@ -990,6 +993,12 @@
               if (recCompletedAt && (!earliestCompletedAt || recCompletedAt < earliestCompletedAt)) {
                 earliestCompletedAt = recCompletedAt;
               }
+              // 记录每日完成时间（取当天所有考核项中最晚提交时间）
+              var dayKey = (s.schedule_date + '').substring(0, 10);
+              var prevDayTime = groupDayTime[g.id][dayKey];
+              if (!prevDayTime || recCompletedAt > prevDayTime) {
+                groupDayTime[g.id][dayKey] = recCompletedAt;
+              }
             }
 
             var fieldMap = {};
@@ -1032,6 +1041,126 @@
             earliestCompletedAt: earliestCompletedAt
           };
         });
+
+        // ===== 每日填报次序排名 =====
+        // class→groups map
+        var classGroupsMap = {};
+        orgsList.forEach(function (o) {
+          if (o.level === '小组') {
+            var cid = o.parent_id;
+            if (!classGroupsMap[cid]) classGroupsMap[cid] = [];
+            classGroupsMap[cid].push(o.id);
+          }
+        });
+
+        // 收集所有有效考核日期（<=今天）
+        var scheduleDates = [];
+        var dateSet = {};
+        weekSchedules.forEach(function (s) {
+          var d = (s.schedule_date + '').substring(0, 10);
+          if (d <= today && !dateSet[d]) {
+            dateSet[d] = true;
+            scheduleDates.push(d);
+          }
+        });
+        scheduleDates.sort();
+
+        var groupOrderScore = {}; // groupId → 周填报次序之和
+        var classOrderScore = {}; // classId → 周填报次序之和
+        var classDayTime = {};    // classId → { date: completionTime }
+
+        scheduleDates.forEach(function (date) {
+          // ---- 小组每日排名（班级内部） ----
+          orgsList.forEach(function (cls) {
+            if (cls.level !== '班级') return;
+            var gids = classGroupsMap[cls.id] || [];
+            if (gids.length === 0) return;
+
+            var ranked = [];
+            gids.forEach(function (gid) {
+              var gt = groupDayTime[gid] || {};
+              ranked.push({ id: gid, time: gt[date] || null });
+            });
+
+            // 按时间升序（早→晚），null 垫底
+            ranked.sort(function (a, b) {
+              if (a.time && b.time) return a.time < b.time ? -1 : a.time > b.time ? 1 : 0;
+              if (a.time) return -1;
+              if (b.time) return 1;
+              return 0;
+            });
+
+            // 分配名次，同时间并列
+            var prevTime = null, prevRank = 0;
+            ranked.forEach(function (item, idx) {
+              var rank;
+              if (item.time === null) {
+                rank = gids.length; // 未提交 = 最末
+              } else if (item.time === prevTime) {
+                rank = prevRank;
+              } else {
+                rank = idx + 1;
+              }
+              prevTime = item.time;
+              prevRank = rank;
+
+              if (!groupOrderScore[item.id]) groupOrderScore[item.id] = 0;
+              groupOrderScore[item.id] += rank;
+            });
+          });
+
+          // ---- 班级每日排名（全年级） ----
+          var classTimes = [];
+          orgsList.forEach(function (cls) {
+            if (cls.level !== '班级') return;
+            var gids = classGroupsMap[cls.id] || [];
+            if (gids.length === 0) return;
+
+            var maxTime = null;
+            gids.forEach(function (gid) {
+              var gt = groupDayTime[gid] || {};
+              var t = gt[date] || null;
+              if (t && (!maxTime || t > maxTime)) maxTime = t;
+            });
+
+            if (!classDayTime[cls.id]) classDayTime[cls.id] = {};
+            classDayTime[cls.id][date] = maxTime;
+
+            classTimes.push({ id: cls.id, time: maxTime });
+          });
+
+          // 按时间升序，null 垫底
+          classTimes.sort(function (a, b) {
+            if (a.time && b.time) return a.time < b.time ? -1 : a.time > b.time ? 1 : 0;
+            if (a.time) return -1;
+            if (b.time) return 1;
+            return 0;
+          });
+
+          var prevCt = null, prevCr = 0;
+          classTimes.forEach(function (item, idx) {
+            var rank;
+            if (item.time === null) {
+              rank = classTimes.length;
+            } else if (item.time === prevCt) {
+              rank = prevCr;
+            } else {
+              rank = idx + 1;
+            }
+            prevCt = item.time;
+            prevCr = rank;
+
+            if (!classOrderScore[item.id]) classOrderScore[item.id] = 0;
+            classOrderScore[item.id] += rank;
+          });
+        });
+
+        // 将周次序分写入 groupStatsCache
+        Object.keys(groupOrderScore).forEach(function (gid) {
+          if (groupStatsCache[gid]) {
+            groupStatsCache[gid].orderScore = groupOrderScore[gid];
+          }
+        });
       }
 
       function computeClassStats(classId) {
@@ -1043,8 +1172,6 @@
           filledSum = 0,
           groupCnt = 0,
           totalDays = 0;
-        // 班级完成时间 = 最后一个小组提交完成的时间（取 max）
-        var latestCompletedAt = null;
 
         groupIds.forEach(function (gid) {
           var gs = groupStatsCache[gid];
@@ -1054,9 +1181,6 @@
           filledSum += gs.filledDays;
           groupCnt++;
           if (gs.totalDays > totalDays) totalDays = gs.totalDays;
-          if (gs.earliestCompletedAt && (!latestCompletedAt || gs.earliestCompletedAt > latestCompletedAt)) {
-            latestCompletedAt = gs.earliestCompletedAt;
-          }
         });
 
         if (attCnt === 0) return null;
@@ -1064,16 +1188,21 @@
           attendanceAvg: attSum / attCnt,
           filledDays: Math.round(filledSum / (groupCnt || 1)),
           totalDays: totalDays,
-          latestCompletedAt: latestCompletedAt,
-          groupCount: groupCnt
+          orderScore: classOrderScore[classId] || null
         };
       }
 
       function rankSorter(a, b) {
+        // 1) 周出勤率（高→低）
         if (a.attendanceAvg !== b.attendanceAvg) return b.attendanceAvg - a.attendanceAvg;
-        var ca = a.latestCompletedAt || a.earliestCompletedAt || 'z';
-        var cb = b.latestCompletedAt || b.earliestCompletedAt || 'z';
-        if (ca !== cb) return ca < cb ? -1 : 1;
+        // 2) 周填报次序之和（低→好）
+        var sa = a.orderScore || 9999;
+        var sb = b.orderScore || 9999;
+        if (sa !== sb) return sa - sb;
+        // 3) 填报天数（多→好）
+        var fa = a.filledDays || 0;
+        var fb = b.filledDays || 0;
+        if (fa !== fb) return fb - fa;
         return (a.name || '').localeCompare(b.name || '', 'zh-CN');
       }
 
@@ -1135,7 +1264,7 @@
                 attendanceAvg: stats.attendanceAvg,
                 filledDays: stats.filledDays,
                 totalDays: stats.totalDays,
-                latestCompletedAt: stats.latestCompletedAt,
+                orderScore: stats.orderScore,
                 bigClassName: bc.name
               });
             }
@@ -1268,7 +1397,7 @@
               attendanceAvg: gs.attendanceAvg,
               filledDays: gs.filledDays,
               totalDays: gs.totalDays,
-              earliestCompletedAt: gs.earliestCompletedAt,
+              orderScore: gs.orderScore,
               bigClassName: bigClassName,
               className: cls.name
             });

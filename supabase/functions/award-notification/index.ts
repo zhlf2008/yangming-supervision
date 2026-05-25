@@ -248,9 +248,13 @@ async function getWinners() {
   const groupStats: Record<number, {
     attendanceAvg: number | null; filledDays: number; totalDays: number;
     earliestCompletedAt: string | null;
+    orderScore?: number;
   }> = {};
 
   const allGroups = orgs.filter(o => o.level === '小组');
+  // 每日小组完成时间: groupDayTime[groupId][dateStr] = completionTime
+  const groupDayTime: Record<number, Record<string, string>> = {};
+  for (const g of allGroups) { groupDayTime[g.id] = {}; }
   for (const g of allGroups) {
     const recs = recsByGroup[g.id] || [];
     const recMap = new Map(recs.map(r => [r.schedule_id, r]));
@@ -295,6 +299,14 @@ async function getWinners() {
         if (completedAt && (!earliestCompletedAt || completedAt < earliestCompletedAt)) {
           earliestCompletedAt = completedAt;
         }
+        // 记录每日完成时间（取当天所有考核项中最晚提交时间）
+        if (completedAt) {
+          const dayKey = String(s.schedule_date).substring(0, 10);
+          const prevDayTime = groupDayTime[g.id][dayKey];
+          if (!prevDayTime || completedAt > prevDayTime) {
+            groupDayTime[g.id][dayKey] = completedAt;
+          }
+        }
       }
 
       const rates = calcRates(fd, formulas);
@@ -310,12 +322,125 @@ async function getWinners() {
     };
   }
 
-  // 10. Compute class stats
+  // 10. Daily ranking → weekly order score
+  // class→groups map
+  const classGroupsMap: Record<number, number[]> = {};
+  for (const o of orgs) {
+    if (o.level === '小组') {
+      const cid = o.parent_id;
+      if (!classGroupsMap[cid]) classGroupsMap[cid] = [];
+      classGroupsMap[cid].push(o.id);
+    }
+  }
+
+  // Collect all valid schedule dates (<= today)
+  const scheduleDates: string[] = [];
+  const dateSet = new Set<string>();
+  for (const s of weekSchedules) {
+    const d = String(s.schedule_date).substring(0, 10);
+    if (d <= today && !dateSet.has(d)) {
+      dateSet.add(d);
+      scheduleDates.push(d);
+    }
+  }
+  scheduleDates.sort();
+
+  const groupOrderScore: Record<number, number> = {};
+  const classOrderScore: Record<number, number> = {};
+
+  for (const date of scheduleDates) {
+    // ---- 小组每日排名（班级内部） ----
+    for (const cls of orgs) {
+      if (cls.level !== '班级') continue;
+      const gids = classGroupsMap[cls.id] || [];
+      if (gids.length === 0) continue;
+
+      const ranked: { id: number; time: string | null }[] = [];
+      for (const gid of gids) {
+        const gt = groupDayTime[gid] || {};
+        ranked.push({ id: gid, time: gt[date] || null });
+      }
+
+      ranked.sort((a, b) => {
+        if (a.time && b.time) return a.time < b.time ? -1 : a.time > b.time ? 1 : 0;
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return 0;
+      });
+
+      let prevTime: string | null = null, prevRank = 0;
+      for (let idx = 0; idx < ranked.length; idx++) {
+        const item = ranked[idx];
+        let rank: number;
+        if (item.time === null) {
+          rank = gids.length;
+        } else if (item.time === prevTime) {
+          rank = prevRank;
+        } else {
+          rank = idx + 1;
+        }
+        prevTime = item.time;
+        prevRank = rank;
+
+        if (!groupOrderScore[item.id]) groupOrderScore[item.id] = 0;
+        groupOrderScore[item.id] += rank;
+      }
+    }
+
+    // ---- 班级每日排名（全年级） ----
+    const classTimes: { id: number; time: string | null }[] = [];
+    for (const cls of orgs) {
+      if (cls.level !== '班级') continue;
+      const gids = classGroupsMap[cls.id] || [];
+      if (gids.length === 0) continue;
+
+      let maxTime: string | null = null;
+      for (const gid of gids) {
+        const gt = groupDayTime[gid] || {};
+        const t = gt[date] || null;
+        if (t && (!maxTime || t > maxTime)) maxTime = t;
+      }
+      classTimes.push({ id: cls.id, time: maxTime });
+    }
+
+    classTimes.sort((a, b) => {
+      if (a.time && b.time) return a.time < b.time ? -1 : a.time > b.time ? 1 : 0;
+      if (a.time) return -1;
+      if (b.time) return 1;
+      return 0;
+    });
+
+    let prevCt: string | null = null, prevCr = 0;
+    for (let idx = 0; idx < classTimes.length; idx++) {
+      const item = classTimes[idx];
+      let rank: number;
+      if (item.time === null) {
+        rank = classTimes.length;
+      } else if (item.time === prevCt) {
+        rank = prevCr;
+      } else {
+        rank = idx + 1;
+      }
+      prevCt = item.time;
+      prevCr = rank;
+
+      if (!classOrderScore[item.id]) classOrderScore[item.id] = 0;
+      classOrderScore[item.id] += rank;
+    }
+  }
+
+  // Write orderScore into groupStats
+  for (const gid of Object.keys(groupOrderScore)) {
+    const id = parseInt(gid);
+    if (groupStats[id]) {
+      groupStats[id].orderScore = groupOrderScore[id];
+    }
+  }
+
+  // 11. Compute class stats
   function getClassStats(classId: number) {
     const groups = getGroupsOfClass(classId, orgs!);
     let attSum = 0, attCnt = 0, filledSum = 0, groupCnt = 0, totalDays = 0;
-    // 班级完成时间 = 最后一个小组提交完成的时间（取 max）
-    let latestCompletedAt: string | null = null;
     for (const g of groups) {
       const gs = groupStats[g.id];
       if (!gs || gs.attendanceAvg === null) continue;
@@ -324,17 +449,13 @@ async function getWinners() {
       filledSum += gs.filledDays;
       groupCnt++;
       if (gs.totalDays > totalDays) totalDays = gs.totalDays;
-      if (gs.earliestCompletedAt && (!latestCompletedAt || gs.earliestCompletedAt > latestCompletedAt)) {
-        latestCompletedAt = gs.earliestCompletedAt;
-      }
     }
     if (attCnt === 0) return null;
     return {
       attendanceAvg: attSum / attCnt,
       filledDays: Math.round(filledSum / (groupCnt || 1)),
       totalDays,
-      latestCompletedAt,
-      groupCount: groupCnt
+      orderScore: classOrderScore[classId] || null
     };
   }
 
@@ -369,9 +490,13 @@ async function getWinners() {
     }
     classRankings.sort((a, b) => {
       if (a.stats!.attendanceAvg !== b.stats!.attendanceAvg) return b.stats!.attendanceAvg - a.stats!.attendanceAvg;
-      const ca = a.stats!.latestCompletedAt || 'z';
-      const cb = b.stats!.latestCompletedAt || 'z';
-      return ca < cb ? -1 : 1;
+      const sa = a.stats!.orderScore || 9999;
+      const sb = b.stats!.orderScore || 9999;
+      if (sa !== sb) return sa - sb;
+      const fa = a.stats!.filledDays || 0;
+      const fb = b.stats!.filledDays || 0;
+      if (fa !== fb) return fb - fa;
+      return 0;
     });
 
     const abbr = pinyin(bc.name || '', { pattern: 'first', toneType: 'none' })
