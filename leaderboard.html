@@ -780,6 +780,7 @@
       var assessmentTypes = [];
       var assessmentCategoryMap = {};
       var groupStatsCache = {};
+      var classOrderScore = {};
       var visibleDabanIds = new Set();
 
       var certEntityName = '';
@@ -902,6 +903,7 @@
 
       function buildLeaderboardStatsCache() {
         groupStatsCache = {};
+        classOrderScore = {};
         var today = getToday();
 
         // Build group→daban map
@@ -1066,7 +1068,7 @@
         scheduleDates.sort();
 
         var groupOrderScore = {}; // groupId → 周填报次序之和
-        var classOrderScore = {}; // classId → 周填报次序之和
+        classOrderScore = {}; // classId → 周填报次序之和 (outer scope)
         var classDayTime = {};    // classId → { date: completionTime }
 
         scheduleDates.forEach(function (date) {
