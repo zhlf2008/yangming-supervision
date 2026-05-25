@@ -6,6 +6,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import md5 from 'https://esm.sh/md5';
+import { pinyin } from 'https://esm.sh/pinyin-pro';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE_ROLE_KEY = Deno.env.get('SB_SERVICE_ROLE_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -313,7 +314,8 @@ async function getWinners() {
   function getClassStats(classId: number) {
     const groups = getGroupsOfClass(classId, orgs!);
     let attSum = 0, attCnt = 0, filledSum = 0, groupCnt = 0, totalDays = 0;
-    let earliestCompletedAt: string | null = null;
+    // 班级完成时间 = 最后一个小组提交完成的时间（取 max）
+    let latestCompletedAt: string | null = null;
     for (const g of groups) {
       const gs = groupStats[g.id];
       if (!gs || gs.attendanceAvg === null) continue;
@@ -322,8 +324,8 @@ async function getWinners() {
       filledSum += gs.filledDays;
       groupCnt++;
       if (gs.totalDays > totalDays) totalDays = gs.totalDays;
-      if (gs.earliestCompletedAt && (!earliestCompletedAt || gs.earliestCompletedAt < earliestCompletedAt)) {
-        earliestCompletedAt = gs.earliestCompletedAt;
+      if (gs.earliestCompletedAt && (!latestCompletedAt || gs.earliestCompletedAt > latestCompletedAt)) {
+        latestCompletedAt = gs.earliestCompletedAt;
       }
     }
     if (attCnt === 0) return null;
@@ -331,7 +333,7 @@ async function getWinners() {
       attendanceAvg: attSum / attCnt,
       filledDays: Math.round(filledSum / (groupCnt || 1)),
       totalDays,
-      earliestCompletedAt,
+      latestCompletedAt,
       groupCount: groupCnt
     };
   }
@@ -367,12 +369,13 @@ async function getWinners() {
     }
     classRankings.sort((a, b) => {
       if (a.stats!.attendanceAvg !== b.stats!.attendanceAvg) return b.stats!.attendanceAvg - a.stats!.attendanceAvg;
-      const ca = a.stats!.earliestCompletedAt || 'z';
-      const cb = b.stats!.earliestCompletedAt || 'z';
+      const ca = a.stats!.latestCompletedAt || 'z';
+      const cb = b.stats!.latestCompletedAt || 'z';
       return ca < cb ? -1 : 1;
     });
 
-    const abbr = (bc.name || '').replace(/[^A-Za-z0-9一-鿿]/g, '').substring(0, 8);
+    const abbr = pinyin(bc.name || '', { pattern: 'first', toneType: 'none' })
+      .replace(/\s+/g, '').toUpperCase().substring(0, 8);
     for (let i = 0; i < Math.min(3, classRankings.length); i++) {
       const r = classRankings[i];
       const rank = i + 1;

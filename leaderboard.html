@@ -1043,7 +1043,8 @@
           filledSum = 0,
           groupCnt = 0,
           totalDays = 0;
-        var earliestCompletedAt = null;
+        // 班级完成时间 = 最后一个小组提交完成的时间（取 max）
+        var latestCompletedAt = null;
 
         groupIds.forEach(function (gid) {
           var gs = groupStatsCache[gid];
@@ -1053,8 +1054,8 @@
           filledSum += gs.filledDays;
           groupCnt++;
           if (gs.totalDays > totalDays) totalDays = gs.totalDays;
-          if (gs.earliestCompletedAt && (!earliestCompletedAt || gs.earliestCompletedAt < earliestCompletedAt)) {
-            earliestCompletedAt = gs.earliestCompletedAt;
+          if (gs.earliestCompletedAt && (!latestCompletedAt || gs.earliestCompletedAt > latestCompletedAt)) {
+            latestCompletedAt = gs.earliestCompletedAt;
           }
         });
 
@@ -1063,15 +1064,15 @@
           attendanceAvg: attSum / attCnt,
           filledDays: Math.round(filledSum / (groupCnt || 1)),
           totalDays: totalDays,
-          earliestCompletedAt: earliestCompletedAt,
+          latestCompletedAt: latestCompletedAt,
           groupCount: groupCnt
         };
       }
 
       function rankSorter(a, b) {
         if (a.attendanceAvg !== b.attendanceAvg) return b.attendanceAvg - a.attendanceAvg;
-        var ca = a.earliestCompletedAt || 'z';
-        var cb = b.earliestCompletedAt || 'z';
+        var ca = a.latestCompletedAt || a.earliestCompletedAt || 'z';
+        var cb = b.latestCompletedAt || b.earliestCompletedAt || 'z';
         if (ca !== cb) return ca < cb ? -1 : 1;
         return (a.name || '').localeCompare(b.name || '', 'zh-CN');
       }
@@ -1134,7 +1135,7 @@
                 attendanceAvg: stats.attendanceAvg,
                 filledDays: stats.filledDays,
                 totalDays: stats.totalDays,
-                earliestCompletedAt: stats.earliestCompletedAt,
+                latestCompletedAt: stats.latestCompletedAt,
                 bigClassName: bc.name
               });
             }
