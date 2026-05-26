@@ -141,6 +141,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: '无法加载组织数据' }), { headers, status: 500 });
     }
 
+    // 一次性加载所有考核类型（用于校验填报完整性）
+    const { data: allAssessmentTypes } = await adminClient
+      .from('assessment_types')
+      .select('id, fields');
+
     let remindersSent = 0;
     const results: Record<string, any>[] = [];
 
@@ -164,7 +169,7 @@ Deno.serve(async (req) => {
       // 查询该大班今天是否有有效考核日程
       const { data: dabanSchedules } = await adminClient
         .from('schedules')
-        .select('id')
+        .select('id, item_ids')
         .eq('schedule_date', today)
         .eq('is_valid', 1)
         .eq('org_id', cfg.org_id);
@@ -172,17 +177,52 @@ Deno.serve(async (req) => {
       if (!dabanSchedules?.length) continue;
       const todayScheduleIds = dabanSchedules.map((s: { id: number }) => s.id);
 
+      // 从日程的考核项目中提取所有必填字段
+      const requiredFields = new Set<string>();
+      const scheduleItemIds = new Set<number>();
+      for (const s of dabanSchedules) {
+        const ids = String((s as any).item_ids || '').split(',').map(Number).filter(Boolean);
+        ids.forEach((id: number) => scheduleItemIds.add(id));
+      }
+      if (allAssessmentTypes && scheduleItemIds.size > 0) {
+        for (const at of allAssessmentTypes) {
+          if (!scheduleItemIds.has(at.id)) continue;
+          const fields = (at.fields || {}) as Record<string, string>;
+          for (const [fieldName, meta] of Object.entries(fields)) {
+            if (String(meta).includes('必填')) {
+              requiredFields.add(fieldName);
+            }
+          }
+        }
+      }
+
       const groupIds = groups.map(g => g.id);
       const groupMap = new Map(groups.map(g => [g.id, g]));
 
-      // 查询已提交的小组
+      // 查询已提交的小组（含填报数据，用于完整性校验）
       const { data: submitted } = await adminClient
         .from('attendance_records')
-        .select('organization_id')
+        .select('organization_id, fill_data')
         .in('schedule_id', todayScheduleIds)
         .in('organization_id', groupIds);
 
-      const submittedIds = new Set((submitted || []).map((r: { organization_id: number }) => r.organization_id));
+      // 校验提交完整性：必填字段必须全部有值才算已提交
+      const submittedIds = new Set<number>();
+      if (requiredFields.size > 0) {
+        for (const r of (submitted || [])) {
+          const fd = (r.fill_data || {}) as Record<string, any>;
+          const isComplete = [...requiredFields].every(field => {
+            const val = fd[field];
+            return val !== null && val !== undefined && val !== '';
+          });
+          if (isComplete) {
+            submittedIds.add(r.organization_id);
+          }
+        }
+      } else {
+        // 没有必填字段定义时，退回旧逻辑：只要有记录就算已提交
+        (submitted || []).forEach((r: any) => submittedIds.add(r.organization_id));
+      }
       const unsubmitted = groups.filter(g => !submittedIds.has(g.id));
 
       if (unsubmitted.length === 0) {

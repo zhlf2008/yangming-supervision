@@ -309,15 +309,19 @@
       /* Submit Button */
       .submit-btn {
         width: 100%;
-        padding: 16px;
-        font-size: 16px;
+        padding: 18px;
+        font-size: 17px;
         font-weight: 600;
         color: white;
         background: var(--vermillion);
         border: none;
         border-radius: 12px;
         cursor: pointer;
-        margin-top: 20px;
+        margin-top: 16px;
+        transition: background 0.3s, transform 0.15s;
+      }
+      .submit-btn.submitted {
+        background: #22c55e !important;
       }
 
       .submit-btn:active {
@@ -1155,9 +1159,9 @@
           });
           html += '</div>';
           html +=
-            '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:100%;"' +
+            '<button class="submit-btn" style="margin-top:12px;"' +
             ' onclick="submitSection(\'att\')" id="attSubmitBtn"' + disabledAttr(attLocked) + '>' +
-            (attLocked ? '🔒 已截止' : '提交晨读数据') + '</button>' +
+            (attLocked ? '🔒 已截止' : '📋 提交晨读数据') + '</button>' +
             '</div>';
         }
 
@@ -1225,10 +1229,10 @@
               '</div>';
 
             html +=
-              '<button class="submit-btn" style="margin-top:12px; padding:8px 20px; font-size:13px; width:100%;"' +
+              '<button class="submit-btn" style="margin-top:12px;"' +
               ' onclick="submitSection(\'hw\',' + type.id + ')" id="hwSubmitBtn_' + type.id + '"' +
               disabledAttr(typeLocked) + '>' +
-              (typeLocked ? '🔒 已截止' : '提交作业数据') + '</button>';
+              (typeLocked ? '🔒 已截止' : '📝 提交作业数据') + '</button>';
 
             html += '</div>';
           });
@@ -1485,7 +1489,7 @@
         // 加载已有记录，合并 fill_data
         var { data: existing } = await window.db
           .from('attendance_records')
-          .select('fill_data, first_submitted_at, first_submitted_by')
+          .select('fill_data, first_submitted_at, first_submitted_by, att_submitted_at, hw_submitted_at')
           .eq('schedule_id', currentSchedule.id)
           .eq('organization_id', parseInt(selectedOrgId))
           .limit(1);
@@ -1493,6 +1497,8 @@
         var existingFd = (existing && existing[0] && existing[0].fill_data) || {};
         var existingFirstAt = (existing && existing[0]) ? existing[0].first_submitted_at : null;
         var existingFirstBy = (existing && existing[0]) ? existing[0].first_submitted_by : null;
+        var existingAttAt = (existing && existing[0]) ? existing[0].att_submitted_at : null;
+        var existingHwAt = (existing && existing[0]) ? existing[0].hw_submitted_at : null;
 
         var mergedFd = {};
         // 先复制已有数据
@@ -1539,6 +1545,26 @@
             Object.keys(fieldValues).map(function(k){return k+':'+fieldValues[k];}).join(', '));
           // 更新 section 提交状态显示
           updateSectionStatus(sectionKey, now);
+          // 检测漏填：另一个 section 表单有数据但未提交，弹提示
+          var otherHasData = false, otherSubmitted = false, otherLabel = '';
+          if (sectionKey === 'att') {
+            var yingzuo = parseInt(document.getElementById('应做作业人数')?.value) || 0;
+            var zuowan = parseInt(document.getElementById('作业完成人数')?.value) || 0;
+            otherHasData = yingzuo > 0 || zuowan > 0;
+            otherSubmitted = !!existingHwAt;
+            otherLabel = '作业数据';
+          } else {
+            var yingdao = parseInt(document.getElementById('应到人数')?.value) || 0;
+            var shidao = parseInt(document.getElementById('实到人数')?.value) || 0;
+            otherHasData = yingdao > 0 || shidao > 0;
+            otherSubmitted = !!existingAttAt;
+            otherLabel = '考勤数据';
+          }
+          if (otherHasData && !otherSubmitted) {
+            setTimeout(function () {
+              showToast('⚠️ 你已填写了' + otherLabel + '，请点击对应按钮完成提交');
+            }, 600);
+          }
         }
       }
 
@@ -1556,11 +1582,23 @@
             attTitle.querySelector('.section-status') && attTitle.querySelector('.section-status').remove();
             attTitle.insertAdjacentHTML('beforeend', badge);
           }
+          var attBtn = document.getElementById('attSubmitBtn');
+          if (attBtn && !attBtn.disabled) {
+            attBtn.textContent = '✅ 已提交 ' + displayTime;
+            attBtn.classList.add('submitted');
+          }
         } else {
           var hwTitles = document.querySelectorAll('.hw-section-title');
           hwTitles.forEach(function (el) {
             el.querySelector('.section-status') && el.querySelector('.section-status').remove();
             el.insertAdjacentHTML('beforeend', badge);
+          });
+          var hwBtns = document.querySelectorAll('[id^="hwSubmitBtn_"]');
+          hwBtns.forEach(function (btn) {
+            if (!btn.disabled) {
+              btn.textContent = '✅ 已提交 ' + displayTime;
+              btn.classList.add('submitted');
+            }
           });
         }
       }
