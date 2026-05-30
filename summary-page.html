@@ -1700,6 +1700,17 @@
         // Average the group-level averages (not re-compute from raw data)
         if (groupIds.length === 0) return null;
 
+        // 多组聚合时跳过已归档小组，避免归档组拉低均值
+        // 单组查询（小组自身卡片）不受影响
+        var workingIds = groupIds;
+        if (groupIds.length > 1) {
+          workingIds = groupIds.filter(function(gid) {
+            var g = orgsMap[gid];
+            return !g || !g.archived_at;
+          });
+          if (workingIds.length === 0) workingIds = groupIds; // 全部归档则保留
+        }
+
         var onlineSum = 0,
           onlineCnt = 0;
         var hwSum = 0,
@@ -1712,7 +1723,7 @@
           groupCnt = 0;
         var maxTotalDays = 0;
 
-        groupIds.forEach(function (gid) {
+        workingIds.forEach(function (gid) {
           var gs = groupStatsCache[gid];
           if (!gs) return;
 
