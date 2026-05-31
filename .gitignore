@@ -34,5 +34,11 @@ build/
 # Claude Code
 .claude/
 
+# Dependencies
+node_modules/
+
 # Supabase
 supabase/.temp/
+
+# Codegraph
+.codegraph/
