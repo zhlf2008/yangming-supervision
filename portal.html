@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阳明心学班级管理平台</title>
+    <link rel="stylesheet" href="css/common.css?v=3" />
+    <style>
+      body {
+        background:
+          radial-gradient(circle at top left, rgba(230,57,70,0.06), transparent 35%),
+          radial-gradient(circle at top right, rgba(212,165,116,0.12), transparent 30%),
+          var(--bg-primary);
+      }
+
+      .portal-header {
+        padding: 34px 6px 28px;
+        text-align: center;
+      }
+
+      .portal-logo {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 18px;
+        background: linear-gradient(135deg, var(--vermillion-light), var(--gold-light));
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        box-shadow: 0 6px 20px rgba(230,57,70,0.15);
+      }
+
+      .portal-title {
+        font-family: 'STSong','SimSun','Noto Serif SC',serif;
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--ink-dark);
+        letter-spacing: 1px;
+      }
+
+      .portal-subtitle {
+        margin-top: 8px;
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+
+      .profile-strip {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: rgba(255,255,255,0.82);
+        box-shadow: 0 2px 14px var(--shadow);
+      }
+
+      .profile-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--vermillion-light), var(--gold-light));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--vermillion);
+        font-weight: 700;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .profile-meta {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .profile-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink-dark);
+      }
+
+      .profile-role {
+        margin-top: 2px;
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
+
+      .section-title {
+        margin-bottom: 14px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--ink-dark);
+      }
+
+      .module-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .module-card {
+        position: relative;
+        display: block;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: rgba(255,255,255,0.9);
+        box-shadow: 0 8px 28px rgba(45,45,45,0.06);
+        text-decoration: none;
+        color: inherit;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+      }
+
+      .module-card:active:not(.disabled) {
+        transform: scale(0.98);
+      }
+
+      .module-card.disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
+      .module-card::after {
+        content: '';
+        position: absolute;
+        right: -28px;
+        top: -28px;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: var(--gold-light);
+        opacity: 0.7;
+      }
+
+      .module-card.supervision::after {
+        background: var(--vermillion-light);
+      }
+
+      .module-icon {
+        position: relative;
+        z-index: 1;
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+        background: var(--gold-light);
+        font-size: 24px;
+      }
+
+      .module-card.supervision .module-icon {
+        background: var(--vermillion-light);
+      }
+
+      .module-name {
+        position: relative;
+        z-index: 1;
+        font-family: 'STSong','SimSun','Noto Serif SC',serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--ink-dark);
+      }
+
+      .module-desc {
+        position: relative;
+        z-index: 1;
+        margin-top: 6px;
+        color: var(--ink-light);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .module-tags {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 14px;
+      }
+
+      .module-tag {
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: var(--bg-primary);
+        color: var(--ink-muted);
+        font-size: 11px;
+      }
+
+      .badge-coming {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--gold-light);
+        color: var(--gold);
+        font-size: 11px;
+        font-weight: 400;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="portal-header">
+        <div class="portal-logo">📚</div>
+        <h1 class="portal-title">阳明心学班级管理平台</h1>
+        <p class="portal-subtitle">请选择要进入的工作模块</p>
+      </header>
+
+      <div class="profile-strip">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <div class="profile-meta">
+          <div class="profile-name" id="profileName">加载中...</div>
+          <div class="profile-role" id="profileRole">管理员</div>
+        </div>
+      </div>
+
+      <div class="section-title">模块入口</div>
+      <div class="module-grid">
+        <a class="module-card supervision" href="index.html">
+          <div class="module-icon">📋</div>
+          <div class="module-name">督察管理</div>
+          <div class="module-desc">考勤填报、数据汇总、榜单证书、填报提醒与组织管理。</div>
+          <div class="module-tags">
+            <span class="module-tag">考勤</span>
+            <span class="module-tag">汇总</span>
+            <span class="module-tag">榜单</span>
+          </div>
+        </a>
+
+        <div class="module-card disabled">
+          <div class="module-icon">📖</div>
+          <div class="module-name">学委管理 <span class="badge-coming">即将开放</span></div>
+          <div class="module-desc">课程内容、学习日程、人员排班与企业微信群通知。</div>
+          <div class="module-tags">
+            <span class="module-tag">课程</span>
+            <span class="module-tag">排班</span>
+            <span class="module-tag">通知</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/supabase-config.js?v=3"></script>
+    <script src="js/utils.js?v=3"></script>
+    <script>
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+
+        var profile = checkLogin();
+        if (!profile) return;
+
+        var userName = profile.name || '未知';
+        document.getElementById('profileName').textContent = userName;
+        document.getElementById('profileAvatar').textContent = userName.charAt(0);
+
+        var roleText = profile.role || '';
+        if (profile.organizations && profile.organizations.name) {
+          roleText += ' · ' + profile.organizations.name;
+        }
+        document.getElementById('profileRole').textContent = roleText;
+      }
+
+      init();
+    </script>
+  </body>
+</html>

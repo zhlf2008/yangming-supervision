@@ -165,9 +165,9 @@
   <body>
     <div class="login-container">
       <div class="login-header">
-        <div class="login-logo">📋</div>
-        <h1 class="login-title">阳明心学督察管理系统</h1>
-        <p class="login-subtitle">考勤数据管理系统</p>
+        <div class="login-logo">📚</div>
+        <h1 class="login-title">阳明心学班级管理平台</h1>
+        <p class="login-subtitle">督察 · 学委协同管理</p>
       </div>
 
       <div class="login-card">
@@ -242,8 +242,12 @@
           localStorage.setItem('supabase_user', JSON.stringify(profile));
           localStorage.setItem('currentUser', profile.name);
 
-          // 4. 跳转到首页
-          window.location.href = 'index.html';
+          // 4. 跳转：管理员进模块入口，普通督察进首页
+          if (profile.role === '超级管理员' || profile.role === '管理员') {
+            window.location.href = 'portal.html';
+          } else {
+            window.location.href = 'index.html';
+          }
         } catch (error) {
           console.error('Login error:', error);
           if (error.message.includes('Invalid login credentials')) {
@@ -277,6 +281,14 @@
         try {
           var result = await db.auth.getSession();
           if (result.data && result.data.session) {
+            var userData = localStorage.getItem('supabase_user');
+            if (userData) {
+              var profile = JSON.parse(userData);
+              if (profile.role === '超级管理员' || profile.role === '管理员') {
+                window.location.href = 'portal.html';
+                return;
+              }
+            }
             window.location.href = 'index.html';
           }
         } catch (e) {

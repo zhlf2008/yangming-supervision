@@ -376,6 +376,9 @@
       <header class="header">
         <h1 class="header-title">阳明心学督察管理系统</h1>
         <p class="header-subtitle">加载中...</p>
+        <div id="moduleSwitch" style="display:none; margin-top:12px;">
+          <a href="portal.html" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,0.78);color:var(--ink-light);font-size:12px;text-decoration:none;">← 切换模块</a>
+        </div>
       </header>
 
       <!-- User Card -->
@@ -574,6 +577,11 @@
           小组副督察: '小组副督察'
         };
         document.querySelector('.user-role').textContent = roleMap[userRole] || userRole;
+
+        // 管理员显示切换模块入口
+        if (userRole === '超级管理员' || userRole === '管理员') {
+          document.getElementById('moduleSwitch').style.display = 'block';
+        }
 
         // Load organization info
         if (profile.organization_id) {
