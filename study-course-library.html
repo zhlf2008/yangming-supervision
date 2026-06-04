@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学委 - 课程内容库</title>
+    <link rel="stylesheet" href="css/common.css?v=3" />
+    <style>
+      .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
+      .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink-dark); text-decoration: none; }
+      .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
+
+      .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
+      .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+      .section-title { font-size: 16px; font-weight: 700; }
+
+      .form-item { margin-bottom: 12px; }
+      .form-label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 13px; }
+      .form-input, .form-textarea, .form-select { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
+      .form-textarea { min-height: 80px; resize: vertical; }
+      .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+      .btn { border: none; border-radius: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer; }
+      .btn-primary { background: var(--vermillion); color: #fff; }
+      .btn-secondary { background: var(--gold-light); color: var(--ink-dark); }
+      .btn-danger { background: var(--vermillion-light); color: var(--vermillion); }
+
+      .content-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; background: var(--bg-card); }
+      .content-header { display: flex; align-items: center; gap: 10px; }
+      .content-title { font-weight: 700; color: var(--ink-dark); flex: 1; }
+      .content-meta { margin-top: 4px; color: var(--ink-muted); font-size: 12px; line-height: 1.6; }
+      .content-actions { display: flex; gap: 8px; margin-top: 10px; }
+      .empty-state { text-align: center; color: var(--ink-muted); padding: 24px 8px; }
+
+      .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; color: var(--ink-muted); font-size: 13px; }
+      .pagination button { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--ink-dark); }
+      .pagination button:disabled { opacity: 0.4; cursor: default; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="page-header">
+        <a class="back-btn" href="study-dashboard.html">←</a>
+        <h1 class="page-title">课程内容库</h1>
+      </header>
+
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title" id="formTitle">新增课程</div>
+          <button class="btn btn-secondary" onclick="resetForm()">清空</button>
+        </div>
+
+        <input type="hidden" id="contentId" />
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">章节编号</label>
+            <input class="form-input" id="chapterNo" placeholder="如：1.2" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">章节标题</label>
+            <input class="form-input" id="chapterTitle" placeholder="如：传习录上" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">主题</label>
+            <input class="form-input" id="theme" placeholder="如：知行合一" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">排序</label>
+            <input class="form-input" id="sortOrder" type="number" value="0" />
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">课程标题 *</label>
+          <input class="form-input" id="title" placeholder="请输入课程标题" />
+        </div>
+        <div class="form-item">
+          <label class="form-label">学习内容</label>
+          <textarea class="form-textarea" id="studyContent" placeholder="请输入学习内容"></textarea>
+        </div>
+        <div class="form-item">
+          <label class="form-label">思考题</label>
+          <textarea class="form-textarea" id="thinkingQuestions" placeholder="请输入思考题"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">纸质书页码</label>
+            <input class="form-input" id="paperPages" placeholder="如：P12-P18" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">电子书链接</label>
+            <input class="form-input" id="ebookUrl" placeholder="https://..." />
+          </div>
+        </div>
+        <button class="btn btn-primary" id="saveBtn" onclick="saveContent()">保存</button>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title">课程列表</div>
+          <span id="totalCount" style="font-size:13px;color:var(--ink-muted);"></span>
+          <button class="btn btn-secondary" onclick="loadContents()">刷新</button>
+        </div>
+        <div id="contentList" class="empty-state">正在加载...</div>
+      </section>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=3"></script>
+    <script src="js/utils.js?v=3"></script>
+    <script>
+      var contents = [];
+      var PAGE_SIZE = 50;
+      var currentPage = 0;
+      var totalCount = 0;
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        if (!checkLogin()) return;
+        await loadContents();
+      }
+
+      async function loadContents() {
+        var { data, count, error } = await window.db
+          .from('study_course_library')
+          .select('*', { count: 'exact' })
+          .order('sort_order', { ascending: true })
+          .order('id', { ascending: true });
+
+        if (error) { showToast('加载课程失败', 'error'); return; }
+        contents = data || [];
+        totalCount = count || 0;
+        renderContents();
+      }
+
+      function renderContents() {
+        var container = document.getElementById('contentList');
+        document.getElementById('totalCount').textContent = '共 ' + totalCount + ' 条';
+
+        if (!contents.length) { container.innerHTML = '<div class="empty-state">暂无课程内容</div>'; return; }
+
+        container.innerHTML = contents.map(function (item) {
+          var meta = [item.chapter_no, item.chapter_title, item.theme, item.paper_pages].filter(Boolean).join(' · ');
+          return (
+            '<div class="content-card">' +
+            '<div class="content-header">' +
+            '<div class="content-title">' +
+            escapeHtml(item.title) +
+            (item.is_active ? '' : ' <span style="color:var(--ink-muted);font-weight:400;">（停用）</span>') +
+            '</div>' +
+            '</div>' +
+            '<div class="content-meta">' + escapeHtml(meta || '未设置章节/主题') + '</div>' +
+            item.study_content ? '<div class="content-meta">' + escapeHtml(item.study_content.substring(0, 60)) + (item.study_content.length > 60 ? '...' : '') + '</div>' : '' +
+            '<div class="content-actions">' +
+            '<button class="btn btn-secondary" onclick="editContent(' + item.id + ')">编辑</button>' +
+            '<button class="btn btn-danger" onclick="toggleContent(' + item.id + ')">' + (item.is_active ? '停用' : '启用') + '</button>' +
+            '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+
+      function collectForm() {
+        return {
+          chapter_no: document.getElementById('chapterNo').value.trim() || null,
+          chapter_title: document.getElementById('chapterTitle').value.trim(),
+          theme: document.getElementById('theme').value.trim(),
+          title: document.getElementById('title').value.trim(),
+          study_content: document.getElementById('studyContent').value.trim(),
+          thinking_questions: document.getElementById('thinkingQuestions').value.trim(),
+          paper_pages: document.getElementById('paperPages').value.trim(),
+          ebook_url: document.getElementById('ebookUrl').value.trim(),
+          sort_order: Number(document.getElementById('sortOrder').value || 0),
+          is_active: true
+        };
+      }
+
+      async function saveContent() {
+        var id = document.getElementById('contentId').value;
+        var payload = collectForm();
+        if (!payload.title) { showToast('请填写课程标题', 'error'); return; }
+
+        document.getElementById('saveBtn').disabled = true;
+        try {
+          var result = id
+            ? await window.db.from('study_course_library').update(payload).eq('id', id)
+            : await window.db.from('study_course_library').insert(payload);
+          if (result.error) throw result.error;
+          logAction(id ? '编辑课程' : '新增课程', 'study_course_library', payload.title);
+          showToast('保存成功', 'success');
+          resetForm();
+          await loadContents();
+        } catch (error) {
+          showToast('保存失败', 'error');
+        } finally {
+          document.getElementById('saveBtn').disabled = false;
+        }
+      }
+
+      function editContent(id) {
+        var item = contents.find(function (c) { return Number(c.id) === Number(id); });
+        if (!item) return;
+        document.getElementById('formTitle').textContent = '编辑课程';
+        document.getElementById('contentId').value = item.id;
+        document.getElementById('chapterNo').value = item.chapter_no || '';
+        document.getElementById('chapterTitle').value = item.chapter_title || '';
+        document.getElementById('theme').value = item.theme || '';
+        document.getElementById('title').value = item.title || '';
+        document.getElementById('studyContent').value = item.study_content || '';
+        document.getElementById('thinkingQuestions').value = item.thinking_questions || '';
+        document.getElementById('paperPages').value = item.paper_pages || '';
+        document.getElementById('ebookUrl').value = item.ebook_url || '';
+        document.getElementById('sortOrder').value = item.sort_order || 0;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      async function toggleContent(id) {
+        var item = contents.find(function (c) { return Number(c.id) === Number(id); });
+        if (!item) return;
+        try {
+          await window.db.from('study_course_library').update({ is_active: !item.is_active }).eq('id', id);
+          showToast(item.is_active ? '已停用' : '已启用', 'success');
+          await loadContents();
+        } catch (error) {
+          showToast('操作失败', 'error');
+        }
+      }
+
+      function resetForm() {
+        document.getElementById('formTitle').textContent = '新增课程';
+        document.getElementById('contentId').value = '';
+        document.getElementById('chapterNo').value = '';
+        document.getElementById('chapterTitle').value = '';
+        document.getElementById('theme').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('studyContent').value = '';
+        document.getElementById('thinkingQuestions').value = '';
+        document.getElementById('paperPages').value = '';
+        document.getElementById('ebookUrl').value = '';
+        document.getElementById('sortOrder').value = '0';
+      }
+
+      init();
+    </script>
+  </body>
+</html>

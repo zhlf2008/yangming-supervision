@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学委 - 日程规则</title>
+    <link rel="stylesheet" href="css/common.css?v=3" />
+    <style>
+      .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
+      .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink-dark); text-decoration: none; }
+      .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
+
+      .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
+      .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+      .section-title { font-size: 16px; font-weight: 700; }
+
+      .form-item { margin-bottom: 12px; }
+      .form-label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 13px; }
+      .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
+      .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+      .btn { border: none; border-radius: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer; }
+      .btn-primary { background: var(--vermillion); color: #fff; }
+      .btn-secondary { background: var(--gold-light); color: var(--ink-dark); }
+      .btn-danger { background: var(--vermillion-light); color: var(--vermillion); }
+      .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+      .rule-card { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; background: var(--bg-primary); }
+      .rule-weekday { font-weight: 700; width: 48px; flex-shrink: 0; }
+      .rule-level { padding: 4px 10px; border-radius: 999px; font-size: 12px; background: var(--gold-light); flex-shrink: 0; }
+      .rule-title { flex: 1; color: var(--ink-light); font-size: 13px; }
+      .rule-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+      .empty-state { text-align: center; color: var(--ink-muted); padding: 24px 8px; }
+
+      .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
+      .month-nav .month-label { font-weight: 700; font-size: 16px; }
+      .month-nav button { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+      .day-grid { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+      .day-row { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); gap: 10px; }
+      .day-row:last-child { border-bottom: none; }
+      .day-row.weekend { background: #fafaf8; }
+      .day-row.future { opacity: 0.55; }
+      .day-date { width: 42px; flex-shrink: 0; font-weight: 600; font-size: 13px; text-align: center; }
+      .day-weekday { font-size: 11px; color: var(--ink-muted); text-align: center; }
+      .day-content { flex: 1; font-size: 13px; }
+      .day-content .empty { color: var(--ink-muted); }
+      .day-action { flex-shrink: 0; }
+
+      .scope-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; margin-right: 6px; }
+      .scope-tag.大班 { background: #fce4ec; color: #c62828; }
+      .scope-tag.班级 { background: #e8f5e9; color: #2e7d32; }
+      .scope-tag.小组 { background: #e3f2fd; color: #1565c0; }
+
+      .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+      .modal-overlay.show { display: flex; }
+      .modal { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; }
+      .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+      .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+      .modal-actions .btn { flex: 1; }
+      .btn-cancel { background: var(--bg-primary); color: var(--ink-dark); border: 1px solid var(--border); }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="page-header">
+        <a class="back-btn" href="study-dashboard.html">←</a>
+        <h1 class="page-title">日程规则</h1>
+      </header>
+
+      <section class="section">
+        <div class="form-item">
+          <label class="form-label">学期</label>
+          <select class="form-select" id="semesterSelect" onchange="onSemesterChange()"></select>
+        </div>
+      </section>
+
+      <!-- 每周规则 -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title">每周共读规则</div>
+          <button class="btn btn-primary btn-sm" onclick="showAddRuleModal()">+ 设置</button>
+        </div>
+        <div id="ruleList" class="empty-state">请先选择学期</div>
+      </section>
+
+      <!-- 按月份查看日程 -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title">学期日程</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-secondary btn-sm" id="generateBtn" onclick="generateSchedules()">生成日程</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadMonthSchedules()">刷新</button>
+          </div>
+        </div>
+        <div class="month-nav" id="monthNav">
+          <button onclick="changeMonth(-1)">← 上月</button>
+          <span class="month-label" id="monthLabel">--</span>
+          <button onclick="changeMonth(1)">下月 →</button>
+        </div>
+        <div id="dayGrid" class="empty-state">请先选择学期</div>
+      </section>
+    </div>
+
+    <!-- 设置规则 Modal -->
+    <div class="modal-overlay" id="ruleModal">
+      <div class="modal">
+        <div class="modal-title" id="ruleModalTitle">设置共读规则</div>
+        <input type="hidden" id="ruleId" />
+        <div class="form-item">
+          <label class="form-label">星期</label>
+          <select class="form-select" id="ruleWeekday">
+            <option value="1">周一</option>
+            <option value="2">周二</option>
+            <option value="3">周三</option>
+            <option value="4">周四</option>
+            <option value="5">周五</option>
+            <option value="6">周六</option>
+            <option value="7">周日</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="form-label">共读层级</label>
+          <select class="form-select" id="ruleScope">
+            <option value="大班">大班共读</option>
+            <option value="班级">班级共读</option>
+            <option value="小组">小组共读</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="form-label">标题（选填）</label>
+          <input class="form-input" id="ruleTitle" placeholder="如：周一班级共读" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-cancel" onclick="closeRuleModal()">取消</button>
+          <button class="btn btn-primary" id="saveRuleBtn" onclick="saveRule()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置日程内容 Modal -->
+    <div class="modal-overlay" id="editScheduleModal">
+      <div class="modal">
+        <div class="modal-title" id="editScheduleTitle">设置课程内容</div>
+        <input type="hidden" id="editScheduleId" />
+        <div class="form-item">
+          <label class="form-label">引用课程</label>
+          <select class="form-select" id="editCourseSelect" onchange="onCourseSelectChange()">
+            <option value="">不引用（手动填写）</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="form-label">自定义标题</label>
+          <input class="form-input" id="editCustomTitle" placeholder="如未引用课程，请填写标题" />
+        </div>
+        <div class="form-item">
+          <label class="form-label">自定义学习内容</label>
+          <textarea class="form-textarea" id="editCustomContent" style="min-height:60px;"></textarea>
+        </div>
+        <div class="form-item">
+          <label class="form-label">自定义思考题</label>
+          <textarea class="form-textarea" id="editCustomQuestion" style="min-height:60px;"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-cancel" onclick="closeEditScheduleModal()">取消</button>
+          <button class="btn btn-primary" id="saveScheduleBtn" onclick="saveScheduleContent()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=3"></script>
+    <script src="js/utils.js?v=3"></script>
+    <script>
+      var WEEKDAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      var semesters = [];
+      var currentSemesterId = null;
+      var rules = [];
+      var monthOffset = 0;
+      var schedules = [];
+      var courses = [];
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        if (!checkLogin()) return;
+        await loadSemesters();
+        await loadCourses();
+      }
+
+      async function loadSemesters() {
+        var { data, error } = await window.db.from('semesters').select('*').order('start_date', { ascending: false });
+        if (error) { showToast('加载学期失败', 'error'); return; }
+        semesters = data || [];
+        var select = document.getElementById('semesterSelect');
+        select.innerHTML = semesters.length
+          ? semesters.map(function (s) {
+              var selected = s.is_current === 1 ? ' selected' : '';
+              return '<option value="' + s.id + '"' + selected + '>' + escapeHtml(s.semester_name) + '</option>';
+            }).join('')
+          : '<option value="">暂未学期</option>';
+        if (semesters.length) await onSemesterChange();
+      }
+
+      async function loadCourses() {
+        var { data, error } = await window.db.from('study_course_library').select('id,title,chapter_title,theme').eq('is_active', true).order('sort_order');
+        if (!error) courses = data || [];
+      }
+
+      async function onSemesterChange() {
+        currentSemesterId = Number(document.getElementById('semesterSelect').value);
+        monthOffset = 0;
+        await Promise.all([loadRules(), loadMonthSchedules()]);
+      }
+
+      // ---- 规则管理 ----
+      async function loadRules() {
+        if (!currentSemesterId) { document.getElementById('ruleList').innerHTML = '<div class="empty-state">请先选择学期</div>'; return; }
+        var { data, error } = await window.db.from('study_schedule_rules').select('*').eq('semester_id', currentSemesterId).order('weekday');
+        if (error) { showToast('加载规则失败', 'error'); return; }
+        rules = data || [];
+        renderRules();
+      }
+
+      function renderRules() {
+        var container = document.getElementById('ruleList');
+        if (!rules.length) { container.innerHTML = '<div class="empty-state">暂未设置规则，点击上方「设置」按钮</div>'; return; }
+        container.innerHTML = rules.map(function (r) {
+          var scopeLabel = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' }[r.scope_level] || r.scope_level;
+          return (
+            '<div class="rule-card">' +
+            '<div class="rule-weekday">' + WEEKDAY_NAMES[r.weekday] + '</div>' +
+            '<span class="rule-level">' + scopeLabel + '</span>' +
+            '<div class="rule-title">' + escapeHtml(r.title || '') + '</div>' +
+            '<div class="rule-actions">' +
+            '<button class="btn btn-sm btn-secondary" onclick="editRule(' + r.id + ')">编辑</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="deleteRule(' + r.id + ')">删除</button>' +
+            '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+
+      function showAddRuleModal() {
+        if (!currentSemesterId) { showToast('请先选择学期', 'error'); return; }
+        document.getElementById('ruleModalTitle').textContent = '新增共读规则';
+        document.getElementById('ruleId').value = '';
+        document.getElementById('ruleWeekday').value = '1';
+        document.getElementById('ruleScope').value = '班级';
+        document.getElementById('ruleTitle').value = '';
+        document.getElementById('ruleModal').classList.add('show');
+      }
+
+      function closeRuleModal() { document.getElementById('ruleModal').classList.remove('show'); }
+
+      async function saveRule() {
+        var id = document.getElementById('ruleId').value;
+        var weekday = Number(document.getElementById('ruleWeekday').value);
+        var scopeLevel = document.getElementById('ruleScope').value;
+        var title = document.getElementById('ruleTitle').value.trim();
+
+        document.getElementById('saveRuleBtn').disabled = true;
+        try {
+          var payload = { semester_id: currentSemesterId, weekday: weekday, scope_level: scopeLevel, title: title };
+          var result = id
+            ? await window.db.from('study_schedule_rules').update(payload).eq('id', id)
+            : await window.db.from('study_schedule_rules').insert(payload);
+          if (result.error) throw result.error;
+          showToast('保存成功', 'success');
+          closeRuleModal();
+          await loadRules();
+        } catch (error) {
+          showToast('保存失败，可能该星期已设置', 'error');
+        } finally {
+          document.getElementById('saveRuleBtn').disabled = false;
+        }
+      }
+
+      function editRule(id) {
+        var rule = rules.find(function (r) { return Number(r.id) === Number(id); });
+        if (!rule) return;
+        document.getElementById('ruleModalTitle').textContent = '编辑共读规则';
+        document.getElementById('ruleId').value = rule.id;
+        document.getElementById('ruleWeekday').value = rule.weekday;
+        document.getElementById('ruleScope').value = rule.scope_level;
+        document.getElementById('ruleTitle').value = rule.title || '';
+        document.getElementById('ruleModal').classList.add('show');
+      }
+
+      async function deleteRule(id) {
+        var rule = rules.find(function (r) { return Number(r.id) === Number(id); });
+        var confirmed = await showConfirm('确定删除' + WEEKDAY_NAMES[rule.weekday] + '的共读规则吗？');
+        if (!confirmed) return;
+        try {
+          await window.db.from('study_schedule_rules').delete().eq('id', id);
+          showToast('已删除', 'success');
+          await loadRules();
+        } catch (error) {
+          showToast('删除失败', 'error');
+        }
+      }
+
+      // ---- 学期日程 ----
+      function changeMonth(delta) {
+        monthOffset += delta;
+        loadMonthSchedules();
+      }
+
+      function getMonthDateRange() {
+        var now = new Date();
+        now.setMonth(now.getMonth() + monthOffset);
+        var year = now.getFullYear();
+        var month = now.getMonth();
+        var firstDay = new Date(year, month, 1);
+        var lastDay = new Date(year, month + 1, 0);
+        return {
+          year: year,
+          month: month + 1,
+          startDate: toDateStr(firstDay),
+          endDate: toDateStr(lastDay),
+          label: year + '年' + (month + 1) + '月'
+        };
+      }
+
+      function toDateStr(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var dt = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dt;
+      }
+
+      async function loadMonthSchedules() {
+        if (!currentSemesterId) { document.getElementById('dayGrid').innerHTML = '<div class="empty-state">请先选择学期</div>'; return; }
+        var range = getMonthDateRange();
+        document.getElementById('monthLabel').textContent = range.label;
+
+        var { data, error } = await window.db
+          .from('study_schedule_instances')
+          .select('*')
+          .eq('semester_id', currentSemesterId)
+          .gte('schedule_date', range.startDate)
+          .lte('schedule_date', range.endDate)
+          .order('schedule_date');
+
+        if (error) { showToast('加载日程失败', 'error'); return; }
+        schedules = data || [];
+        renderDayGrid(range);
+      }
+
+      function renderDayGrid(range) {
+        var container = document.getElementById('dayGrid');
+        var today = getToday();
+        var start = new Date(range.startDate);
+        var end = new Date(range.endDate);
+        var semester = semesters.find(function (s) { return Number(s.id) === currentSemesterId; });
+        var semesterStart = semester ? semester.start_date : null;
+        var semesterEnd = semester ? semester.end_date : null;
+
+        var rows = [];
+        var d = new Date(start);
+        while (d <= end) {
+          var dateStr = toDateStr(d);
+          var weekday = d.getDay() || 7;
+
+          // 只在学期范围内显示
+          if ((!semesterStart || dateStr >= semesterStart) && (!semesterEnd || dateStr <= semesterEnd)) {
+            var schedule = schedules.find(function (s) { return s.schedule_date === dateStr; });
+            var isWeekend = weekday > 5;
+            var isFuture = dateStr > today;
+
+            var contentHtml = '';
+            if (schedule) {
+              var scopeLabel = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' }[schedule.scope_level] || '';
+              var course = courses.find(function (c) { return Number(c.id) === Number(schedule.course_id); });
+              var title = schedule.custom_title || (course ? course.title : '');
+              contentHtml =
+                '<span class="scope-tag ' + schedule.scope_level + '">' + scopeLabel + '</span>' +
+                escapeHtml(title || '未设置课程');
+            } else {
+              contentHtml = '<span class="empty">—</span>';
+            }
+
+            rows.push(
+              '<div class="day-row' + (isWeekend ? ' weekend' : '') + (isFuture ? ' future' : '') + '">' +
+              '<div><div class="day-date">' + d.getDate() + '</div><div class="day-weekday">' + WEEKDAY_NAMES[weekday] + '</div></div>' +
+              '<div class="day-content">' + contentHtml + '</div>' +
+              '<div class="day-action">' +
+              '<button class="btn btn-sm btn-secondary" onclick="editSchedule(\'' + dateStr + '\')">' +
+              (schedule ? '编辑' : '设置') +
+              '</button>' +
+              '</div>' +
+              '</div>'
+            );
+          }
+          d.setDate(d.getDate() + 1);
+        }
+
+        container.innerHTML = rows.length
+          ? '<div class="day-grid">' + rows.join('') + '</div>'
+          : '<div class="empty-state">该学期在此月无日程</div>';
+      }
+
+      async function generateSchedules() {
+        if (!currentSemesterId) { showToast('请先选择学期', 'error'); return; }
+        if (!rules.length) { showToast('请先设置每周共读规则', 'error'); return; }
+
+        var semester = semesters.find(function (s) { return Number(s.id) === currentSemesterId; });
+        if (!semester || !semester.start_date || !semester.end_date) { showToast('学期缺少起止日期', 'error'); return; }
+
+        document.getElementById('generateBtn').disabled = true;
+        try {
+          // 加载学期下所有组织
+          var { data: orgs } = await window.db.from('organizations').select('id,level,name').eq('semester_id', currentSemesterId);
+          var allOrgs = orgs || [];
+
+          var start = new Date(semester.start_date);
+          var end = new Date(semester.end_date);
+          var inserts = [];
+
+          while (start <= end) {
+            var dateStr = toDateStr(start);
+            var weekday = start.getDay() || 7;
+            var rule = rules.find(function (r) { return r.weekday === weekday; });
+            if (rule) {
+              // 根据规则层级找到对应组织
+              var targetOrgs = allOrgs.filter(function (o) { return o.level === rule.scope_level; });
+              targetOrgs.forEach(function (org) {
+                inserts.push({
+                  semester_id: currentSemesterId,
+                  schedule_date: dateStr,
+                  scope_level: rule.scope_level,
+                  org_id: org.id,
+                  note: rule.title || ''
+                });
+              });
+            }
+            start.setDate(start.getDate() + 1);
+          }
+
+          if (!inserts.length) { showToast('规则未匹配到任何日期', 'error'); return; }
+
+          showToast('正在生成 ' + inserts.length + ' 条日程...', 'success');
+          // Batch upsert, skip existing
+          for (var i = 0; i < inserts.length; i += 30) {
+            var batch = inserts.slice(i, i + 30);
+            var result = await window.db.from('study_schedule_instances').upsert(batch, {
+              onConflict: 'semester_id,schedule_date,scope_level,org_id',
+              ignoreDuplicates: true
+            });
+            if (result.error) throw result.error;
+          }
+
+          logAction('生成学委日程', 'study_schedule_instances', semester.semester_name + ' 共 ' + inserts.length + ' 条');
+          showToast('生成完成', 'success');
+          await loadMonthSchedules();
+        } catch (error) {
+          showToast('生成失败：' + (error.message || '未知错误'), 'error');
+        } finally {
+          document.getElementById('generateBtn').disabled = false;
+        }
+      }
+
+      // ---- 编辑单日日程 ----
+      function editSchedule(dateStr) {
+        var schedule = schedules.find(function (s) { return s.schedule_date === dateStr; });
+        var d = new Date(dateStr);
+        var weekday = d.getDay() || 7;
+        document.getElementById('editScheduleTitle').textContent = dateStr + ' ' + WEEKDAY_NAMES[weekday];
+
+        // Populate course select
+        var select = document.getElementById('editCourseSelect');
+        select.innerHTML = '<option value="">不引用（手动填写）</option>' +
+          courses.map(function (c) {
+            var selected = schedule && Number(schedule.course_id) === Number(c.id) ? ' selected' : '';
+            var label = c.title + (c.chapter_title ? ' (' + c.chapter_title + ')' : '');
+            return '<option value="' + c.id + '"' + selected + '>' + escapeHtml(label) + '</option>';
+          }).join('');
+
+        document.getElementById('editScheduleId').value = schedule ? schedule.id : '';
+        document.getElementById('editCustomTitle').value = schedule ? (schedule.custom_title || '') : '';
+        document.getElementById('editCustomContent').value = schedule ? (schedule.custom_content || '') : '';
+        document.getElementById('editCustomQuestion').value = schedule ? (schedule.custom_question || '') : '';
+        document.getElementById('editScheduleModal').classList.add('show');
+      }
+
+      function closeEditScheduleModal() { document.getElementById('editScheduleModal').classList.remove('show'); }
+
+      function onCourseSelectChange() {
+        var courseId = Number(document.getElementById('editCourseSelect').value);
+        if (courseId) {
+          var course = courses.find(function (c) { return Number(c.id) === courseId; });
+          if (course && !document.getElementById('editCustomTitle').value) {
+            document.getElementById('editCustomTitle').value = course.title || '';
+          }
+        }
+      }
+
+      async function saveScheduleContent() {
+        var id = document.getElementById('editScheduleId').value;
+        var schedule = schedules.find(function (s) { return s.schedule_date === document.querySelector('.modal-title').textContent.split(' ')[0]; });
+        if (!schedule) { showToast('请先生成日程', 'error'); return; }
+
+        var courseId = document.getElementById('editCourseSelect').value;
+        var customTitle = document.getElementById('editCustomTitle').value.trim();
+        var customContent = document.getElementById('editCustomContent').value.trim();
+        var customQuestion = document.getElementById('editCustomQuestion').value.trim();
+
+        document.getElementById('saveScheduleBtn').disabled = true;
+        try {
+          var payload = {
+            course_id: courseId ? Number(courseId) : null,
+            custom_title: customTitle || null,
+            custom_content: customContent || null,
+            custom_question: customQuestion || null
+          };
+          var result = await window.db.from('study_schedule_instances').update(payload).eq('id', schedule.id);
+          if (result.error) throw result.error;
+          showToast('保存成功', 'success');
+          closeEditScheduleModal();
+          await loadMonthSchedules();
+        } catch (error) {
+          showToast('保存失败', 'error');
+        } finally {
+          document.getElementById('saveScheduleBtn').disabled = false;
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>
