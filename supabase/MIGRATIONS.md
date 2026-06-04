@@ -25,6 +25,7 @@
 | 017 | `20260604_001_module_memberships.sql` | 平台模块身份表 + 老账号迁移为 supervision 身份 | 2026-06-04 |
 | 018 | `20260604_002_people_foundation.sql` | 秘书处基础：people、person_org_assignments、person_positions | 2026-06-04 |
 | 019 | `20260604_003_study_foundation.sql` | 学委基础：study_course_library、study_schedule_rules、study_schedule_instances | 2026-06-04 |
+| 020 | `20260604_004_study_assignment.sql` | 学委摊派：study_assignment_demands、study_assignment_people | 2026-06-04 |
 
 ## 开发诊断
 

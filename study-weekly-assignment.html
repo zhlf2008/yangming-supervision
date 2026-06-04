@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学委 - 每周安排</title>
+    <link rel="stylesheet" href="css/common.css?v=3" />
+    <style>
+      .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
+      .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink-dark); text-decoration: none; }
+      .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
+
+      .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
+      .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+      .section-title { font-size: 16px; font-weight: 700; }
+
+      .form-item { margin-bottom: 12px; }
+      .form-label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 13px; }
+      .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
+      .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+      .btn { border: none; border-radius: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer; }
+      .btn-primary { background: var(--vermillion); color: #fff; }
+      .btn-secondary { background: var(--gold-light); color: var(--ink-dark); }
+      .btn-danger { background: var(--vermillion-light); color: var(--vermillion); }
+      .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+      .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
+      .week-nav .week-label { font-weight: 700; font-size: 15px; }
+      .week-nav button { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+      .week-nav button:disabled { opacity: 0.4; cursor: default; }
+
+      .day-card { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+      .day-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px; background: var(--bg-primary); border-bottom: 1px solid var(--border); font-weight: 600; }
+      .day-date { font-size: 15px; }
+      .day-weekday { font-size: 12px; color: var(--ink-muted); }
+      .day-scope { font-size: 12px; padding: 3px 8px; border-radius: 999px; }
+      .day-scope.大班 { background: #fce4ec; color: #c62828; }
+      .day-scope.班级 { background: #e8f5e9; color: #2e7d32; }
+      .day-scope.小组 { background: #e3f2fd; color: #1565c0; }
+      .day-body { padding: 14px; }
+      .day-course { margin-bottom: 10px; color: var(--ink-light); font-size: 13px; }
+      .day-empty { color: var(--ink-muted); font-size: 13px; padding: 8px 0; }
+
+      .demand-item { padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; background: var(--bg-primary); }
+      .demand-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+      .demand-role { font-weight: 600; font-size: 14px; }
+      .demand-meta { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+      .demand-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+      .demand-type-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
+      .demand-type-tag.organizer { background: var(--gold-light); color: var(--gold); }
+      .demand-type-tag.participant { background: #e8eaf6; color: #283593; }
+
+      .people-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .person-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); font-size: 12px; }
+      .person-tag .remove { cursor: pointer; color: var(--vermillion); font-size: 14px; line-height: 1; }
+
+      .empty-state { text-align: center; color: var(--ink-muted); padding: 24px 8px; font-size: 13px; }
+
+      .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+      .modal-overlay.show { display: flex; }
+      .modal { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; }
+      .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+      .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+      .modal-actions .btn { flex: 1; }
+      .btn-cancel { background: var(--bg-primary); color: var(--ink-dark); border: 1px solid var(--border); }
+
+      .roster-output { white-space: pre-wrap; font-size: 13px; line-height: 1.8; color: var(--ink-dark); background: var(--bg-primary); padding: 14px; border-radius: 10px; border: 1px solid var(--border); margin-top: 10px; max-height: 400px; overflow-y: auto; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="page-header">
+        <a class="back-btn" href="study-dashboard.html">←</a>
+        <h1 class="page-title">每周安排</h1>
+      </header>
+
+      <!-- Week navigation -->
+      <section class="section">
+        <div class="week-nav" id="weekNav">
+          <button onclick="changeWeek(-1)">← 上一周</button>
+          <span class="week-label" id="weekLabel">--</span>
+          <button onclick="changeWeek(1)">下一周 →</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="generateRoster()" style="width:100%">📋 生成一周排班表</button>
+      </section>
+
+      <!-- Roster output -->
+      <section class="section" id="rosterSection" style="display:none;">
+        <div class="section-header">
+          <div class="section-title">小组一周排班表</div>
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('rosterSection').style.display='none'">关闭</button>
+        </div>
+        <pre class="roster-output" id="rosterOutput"></pre>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" onclick="copyRoster()">📋 复制到剪贴板</button>
+      </section>
+
+      <!-- Schedule list -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title" id="scheduleTitle">日程安排</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadWeekSchedules()">刷新</button>
+        </div>
+        <div id="scheduleList" class="empty-state">正在加载...</div>
+      </section>
+    </div>
+
+    <!-- Add demand modal -->
+    <div class="modal-overlay" id="demandModal">
+      <div class="modal">
+        <div class="modal-title" id="demandModalTitle">新增岗位需求</div>
+        <input type="hidden" id="demandScheduleId" />
+        <input type="hidden" id="demandId" />
+        <input type="hidden" id="demandScopeLevel" />
+        <div class="form-item">
+          <label class="form-label">摊派对象</label>
+          <select class="form-select" id="demandTargetOrg"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">类型</label>
+            <select class="form-select" id="demandType">
+              <option value="organizer">承办</option>
+              <option value="participant">参与</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <label class="form-label">岗位</label>
+            <select class="form-select" id="demandRole">
+              <option value="主持人">主持人</option>
+              <option value="聆听者">聆听者</option>
+              <option value="分享人">分享人</option>
+              <option value="回应砥砺">回应砥砺</option>
+              <option value="总结赋能">总结赋能</option>
+              <option value="播控">播控</option>
+              <option value="拍照">拍照</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">需要人数</label>
+          <input class="form-input" id="demandCount" type="number" value="1" min="1" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-cancel" onclick="closeDemandModal()">取消</button>
+          <button class="btn btn-primary" id="saveDemandBtn" onclick="saveDemand()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assign people modal -->
+    <div class="modal-overlay" id="peopleModal">
+      <div class="modal">
+        <div class="modal-title" id="peopleModalTitle">分配人员</div>
+        <input type="hidden" id="peopleDemandId" />
+        <input type="hidden" id="peopleTargetOrg" />
+        <div class="form-item">
+          <label class="form-label">从名单选择</label>
+          <select class="form-select" id="peoplePersonSelect">
+            <option value="">先加载人员名单...</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="form-label">或手动填写姓名</label>
+          <input class="form-input" id="peopleManualName" placeholder="直接输入姓名" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-cancel" onclick="closePeopleModal()">取消</button>
+          <button class="btn btn-primary" id="savePeopleBtn" onclick="savePeople()">添加</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=3"></script>
+    <script src="js/utils.js?v=3"></script>
+    <script>
+      var WEEKDAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      var ROLES = ['主持人', '聆听者', '分享人', '回应砥砺', '总结赋能', '播控', '拍照'];
+
+      var weekOffset = 0;
+      var currentSemesterId = null;
+      var orgs = [];
+      var schedules = [];
+      var demands = {};
+      var membersByOrg = {};
+      var allPeople = [];
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        if (!checkLogin()) return;
+
+        currentSemesterId = await getCurrentSemesterId();
+        if (!currentSemesterId) { showToast('请先设置当前学期', 'error'); return; }
+
+        await loadOrgs();
+        await loadPeople();
+        await loadWeekSchedules();
+      }
+
+      function getWeekRange() {
+        var now = new Date();
+        now.setDate(now.getDate() + weekOffset * 7);
+        var day = now.getDay() || 7;
+        var monday = new Date(now);
+        monday.setDate(now.getDate() - (day - 1) + 7); // next Monday
+
+        if (weekOffset === 0) {
+          // Already at next week
+        }
+
+        var sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+
+        return {
+          start: toDateStr(monday),
+          end: toDateStr(sunday),
+          monday: monday,
+          label: toDateStr(monday) + ' ~ ' + toDateStr(sunday),
+          weekNum: weekOffset + 1
+        };
+      }
+
+      function toDateStr(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var dt = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dt;
+      }
+
+      function formatDateDisplay(dateStr) {
+        var parts = dateStr.split('-');
+        return parts[1] + '月' + parts[2] + '日';
+      }
+
+      async function loadOrgs() {
+        var { data, error } = await window.db.from('organizations').select('id,name,level,parent_id').eq('semester_id', currentSemesterId).order('sort_order');
+        if (!error) orgs = data || [];
+      }
+
+      function getOrgName(id) { var o = orgs.find(function (x) { return Number(x.id) === Number(id); }); return o ? o.name : ''; }
+
+      async function loadPeople() {
+        var { data, error } = await window.db.from('people').select('id,name,phone').eq('status', 'active').order('name');
+        if (!error) allPeople = data || [];
+      }
+
+      async function loadMembersForOrg(orgId) {
+        if (membersByOrg[orgId]) return membersByOrg[orgId];
+        var { data } = await window.db
+          .from('person_org_assignments')
+          .select('*, people!inner(*)')
+          .eq('semester_id', currentSemesterId)
+          .eq('org_id', orgId)
+          .eq('status', 'active');
+        var members = (data || []).filter(function (item) { return item.people; });
+        membersByOrg[orgId] = members;
+        return members;
+      }
+
+      function changeWeek(delta) { weekOffset += delta; loadWeekSchedules(); }
+
+      async function loadWeekSchedules() {
+        var week = getWeekRange();
+        document.getElementById('weekLabel').textContent = week.label;
+
+        var { data, error } = await window.db
+          .from('study_schedule_instances')
+          .select('*')
+          .eq('semester_id', currentSemesterId)
+          .gte('schedule_date', week.start)
+          .lte('schedule_date', week.end)
+          .order('schedule_date');
+
+        if (error) { showToast('加载日程失败', 'error'); return; }
+        schedules = data || [];
+
+        // Load courses
+        var courseIds = schedules.filter(function (s) { return s.course_id; }).map(function (s) { return s.course_id; });
+        var courses = [];
+        if (courseIds.length) {
+          var { data: courseData } = await window.db.from('study_course_library').select('id,title,chapter_title,theme').in('id', courseIds);
+          courses = courseData || [];
+        }
+
+        // Load all demands for this week
+        var scheduleIds = schedules.map(function (s) { return s.id; });
+        var demandsData = [];
+        if (scheduleIds.length) {
+          var { data: d } = await window.db.from('study_assignment_demands').select('*').in('schedule_instance_id', scheduleIds).order('role_name');
+          demandsData = d || [];
+        }
+
+        // Build demands map
+        demands = {};
+        demandsData.forEach(function (d) {
+          if (!demands[d.schedule_instance_id]) demands[d.schedule_instance_id] = [];
+          demands[d.schedule_instance_id].push(d);
+        });
+
+        // Load people for all demands
+        var demandIds = demandsData.map(function (d) { return d.id; });
+        var allPeople = {};
+        if (demandIds.length) {
+          var { data: p } = await window.db.from('study_assignment_people').select('*').in('demand_id', demandIds);
+          (p || []).forEach(function (item) {
+            if (!allPeople[item.demand_id]) allPeople[item.demand_id] = [];
+            allPeople[item.demand_id].push(item);
+          });
+        }
+
+        renderWeekSchedules(courses, allPeople);
+      }
+
+      function renderWeekSchedules(courses, peopleMap) {
+        var container = document.getElementById('scheduleList');
+        var week = getWeekRange();
+
+        if (!schedules.length) {
+          container.innerHTML = '<div class="empty-state">本周暂无日程，请先在「日程规则」中生成日程</div>';
+          return;
+        }
+
+        var html = '';
+        var weekStart = new Date(week.start);
+        var weekEnd = new Date(week.end);
+        var d = new Date(weekStart);
+        while (d <= weekEnd) {
+          var dateStr = toDateStr(d);
+          var weekday = d.getDay() || 7;
+          var daySchedules = schedules.filter(function (s) { return s.schedule_date === dateStr; });
+
+          html += '<div class="day-card">';
+          html += '<div class="day-header">';
+          html += '<div><div class="day-date">' + formatDateDisplay(dateStr) + '</div><div class="day-weekday">' + WEEKDAY_NAMES[weekday] + '</div></div>';
+          html += '<div style="display:flex;gap:6px;align-items:center;">';
+
+          if (daySchedules.length === 0) {
+            html += '<span style="font-size:13px;color:var(--ink-muted);">无安排</span>';
+          }
+
+          daySchedules.forEach(function (s) {
+            var scopeLabel = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' }[s.scope_level] || '';
+            html += '<span class="day-scope ' + s.scope_level + '">' + scopeLabel + '</span>';
+          });
+
+          html += '</div></div>';
+          html += '<div class="day-body">';
+
+          daySchedules.forEach(function (s) {
+            var course = courses.find(function (c) { return Number(c.id) === Number(s.course_id); });
+            var courseTitle = s.custom_title || (course ? course.title : '未设置课程');
+
+            html += '<div class="day-course">📖 ' + escapeHtml(courseTitle) + ' · ' + escapeHtml(getOrgName(s.org_id)) + '</div>';
+
+            // Demands section
+            var dayDemands = demands[s.id] || [];
+            if (dayDemands.length) {
+              dayDemands.forEach(function (dm) {
+                var assignedPeople = peopleMap[dm.id] || [];
+                var typeLabel = dm.demand_type === 'organizer' ? '承办' : '参与';
+                html += '<div class="demand-item">';
+                html += '<div class="demand-header">';
+                html += '<div><span class="demand-role">' + escapeHtml(dm.role_name) + '</span> <span class="demand-type-tag ' + dm.demand_type + '">' + typeLabel + '</span></div>';
+                html += '<span style="font-size:12px;color:var(--ink-muted);">' + escapeHtml(getOrgName(dm.target_org_id)) + ' · 需' + dm.required_count + '人</span>';
+                html += '</div>';
+                html += '<div class="demand-meta">已安排 ' + assignedPeople.length + '/' + dm.required_count + ' 人</div>';
+
+                // Assigned people
+                if (assignedPeople.length) {
+                  html += '<div class="people-list">';
+                  assignedPeople.forEach(function (person) {
+                    html += '<span class="person-tag">' + escapeHtml(person.person_name_snapshot) +
+                      ' <span class="remove" onclick="removePerson(' + person.id + ')">×</span></span>';
+                  });
+                  html += '</div>';
+                }
+
+                html += '<div class="demand-actions">';
+                html += '<button class="btn btn-sm btn-secondary" onclick="showAddPeopleModal(' + dm.id + ',' + dm.target_org_id + ')">+ 安排人员</button>';
+                html += '<button class="btn btn-sm btn-danger" onclick="deleteDemand(' + dm.id + ')">删除</button>';
+                html += '</div></div>';
+              });
+            }
+
+            html += '<div class="demand-actions" style="margin-top:4px;">';
+            html += '<button class="btn btn-sm btn-secondary" onclick="showAddDemandModal(' + s.id + ',\'' + s.scope_level + '\')">+ 新增岗位需求</button>';
+            html += '</div>';
+          });
+
+          if (daySchedules.length === 0) {
+            html += '<div class="day-empty">该天无需安排</div>';
+          }
+
+          html += '</div></div>';
+          d.setDate(d.getDate() + 1);
+        }
+
+        container.innerHTML = html;
+        document.getElementById('scheduleTitle').textContent = '日程安排（' + schedules.length + ' 天有安排）';
+      }
+
+      // ---- Demand CRUD ----
+      function showAddDemandModal(scheduleId, scopeLevel) {
+        document.getElementById('demandModalTitle').textContent = '新增岗位需求';
+        document.getElementById('demandScheduleId').value = scheduleId;
+        document.getElementById('demandId').value = '';
+        document.getElementById('demandScopeLevel').value = scopeLevel;
+        document.getElementById('demandType').value = 'participant';
+
+        var schedule = schedules.find(function (s) { return Number(s.id) === Number(scheduleId); });
+        if (!schedule) return;
+
+        // Find target orgs
+        var targetLevel = scopeLevel === '大班' ? '班级' : '小组';
+        var targetOrgs = orgs.filter(function (o) {
+          if (o.level !== targetLevel) return false;
+          if (scopeLevel === '大班') {
+            return Number(o.parent_id) === Number(schedule.org_id);
+          }
+          if (scopeLevel === '班级') {
+            var parent = orgs.find(function (x) { return Number(x.id) === Number(o.parent_id); });
+            return parent && Number(parent.parent_id) === Number(schedule.org_id);
+          }
+          return Number(o.parent_id) === Number(schedule.org_id);
+        });
+
+        var select = document.getElementById('demandTargetOrg');
+        select.innerHTML = targetOrgs.length
+          ? targetOrgs.map(function (o) { return '<option value="' + o.id + '">' + escapeHtml(o.name) + '</option>'; }).join('')
+          : '<option value="">无下级组织可选</option>';
+
+        document.getElementById('demandModal').classList.add('show');
+      }
+
+      function closeDemandModal() { document.getElementById('demandModal').classList.remove('show'); }
+
+      async function saveDemand() {
+        var scheduleId = Number(document.getElementById('demandScheduleId').value);
+        var demandId = document.getElementById('demandId').value;
+        var targetOrgId = Number(document.getElementById('demandTargetOrg').value);
+        var demandType = document.getElementById('demandType').value;
+        var roleName = document.getElementById('demandRole').value;
+        var count = Number(document.getElementById('demandCount').value);
+
+        if (!targetOrgId) { showToast('请选择摊派对象', 'error'); return; }
+
+        var schedule = schedules.find(function (s) { return Number(s.id) === scheduleId; });
+        if (!schedule) return;
+
+        document.getElementById('saveDemandBtn').disabled = true;
+        try {
+          var payload = {
+            schedule_instance_id: scheduleId,
+            from_org_id: schedule.org_id,
+            target_org_id: targetOrgId,
+            target_level: document.getElementById('demandScopeLevel').value === '大班' ? '班级' : '小组',
+            demand_type: demandType,
+            role_name: roleName,
+            required_count: count
+          };
+
+          var result = demandId
+            ? await window.db.from('study_assignment_demands').update(payload).eq('id', demandId)
+            : await window.db.from('study_assignment_demands').insert(payload);
+
+          if (result.error) throw result.error;
+          showToast('保存成功', 'success');
+          closeDemandModal();
+          await loadWeekSchedules();
+        } catch (error) {
+          showToast('保存失败', 'error');
+        } finally {
+          document.getElementById('saveDemandBtn').disabled = false;
+        }
+      }
+
+      async function deleteDemand(id) {
+        var confirmed = await showConfirm('确定删除该岗位需求吗？');
+        if (!confirmed) return;
+        try {
+          await window.db.from('study_assignment_demands').delete().eq('id', id);
+          showToast('已删除', 'success');
+          await loadWeekSchedules();
+        } catch (error) { showToast('删除失败', 'error'); }
+      }
+
+      // ---- People assignment ----
+      async function showAddPeopleModal(demandId, targetOrgId) {
+        document.getElementById('peopleDemandId').value = demandId;
+        document.getElementById('peopleTargetOrg').value = targetOrgId;
+        document.getElementById('peopleManualName').value = '';
+        document.getElementById('peopleModalTitle').textContent = '分配人员 · ' + getOrgName(targetOrgId);
+        document.getElementById('peopleModal').classList.add('show');
+
+        var members = await loadMembersForOrg(targetOrgId);
+        var select = document.getElementById('peoplePersonSelect');
+        select.innerHTML = members.length
+          ? members.map(function (item) {
+              return '<option value="' + item.person_id + '">' + escapeHtml(item.people.name) + (item.people.phone ? ' (' + item.people.phone + ')' : '') + '</option>';
+            }).join('')
+          : '<option value="">暂无成员，可手动填写</option>';
+      }
+
+      function closePeopleModal() { document.getElementById('peopleModal').classList.remove('show'); }
+
+      async function savePeople() {
+        var demandId = Number(document.getElementById('peopleDemandId').value);
+        var personId = document.getElementById('peoplePersonSelect').value;
+        var manualName = document.getElementById('peopleManualName').value.trim();
+
+        var name = '';
+        if (manualName) {
+          name = manualName;
+        } else if (personId) {
+          var p = allPeople.find(function (x) { return Number(x.id) === Number(personId); });
+          name = p ? p.name : '';
+        }
+
+        if (!name) { showToast('请选择人员或输入姓名', 'error'); return; }
+
+        document.getElementById('savePeopleBtn').disabled = true;
+        try {
+          var payload = {
+            demand_id: demandId,
+            person_id: personId ? Number(personId) : null,
+            person_name_snapshot: name,
+            source_type: personId ? 'person' : 'manual'
+          };
+          var result = await window.db.from('study_assignment_people').insert(payload);
+          if (result.error) throw result.error;
+          showToast('已添加', 'success');
+          closePeopleModal();
+          await loadWeekSchedules();
+        } catch (error) {
+          showToast('添加失败', 'error');
+        } finally {
+          document.getElementById('savePeopleBtn').disabled = false;
+        }
+      }
+
+      async function removePerson(id) {
+        try {
+          await window.db.from('study_assignment_people').delete().eq('id', id);
+          await loadWeekSchedules();
+        } catch (error) { showToast('操作失败', 'error'); }
+      }
+
+      // ---- Roster generation ----
+      async function generateRoster() {
+        var week = getWeekRange();
+
+        // Collect all schedule + demands + people into a text roster
+        var lines = ['【下周学习排班表】', '时间：' + week.label, ''];
+        var d = new Date(week.monday);
+        var end = new Date(week.end);
+
+        while (d <= end) {
+          var dateStr = toDateStr(d);
+          var weekday = d.getDay() || 7;
+          var daySchedules = schedules.filter(function (s) { return s.schedule_date === dateStr; });
+
+          if (daySchedules.length) {
+            daySchedules.forEach(function (s) {
+              var scopeLabel = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' }[s.scope_level] || '';
+              lines.push('【' + WEEKDAY_NAMES[weekday] + ' · ' + scopeLabel + '】');
+              lines.push('组织：' + getOrgName(s.org_id));
+              lines.push('');
+
+              var dayDemands = demands[s.id] || [];
+              if (dayDemands.length) {
+                dayDemands.forEach(function (dm) {
+                  var membersPromises = loadMembersForOrg(dm.target_org_id).then(function (members) {
+                    // Fetch people for this demand
+                    return window.db.from('study_assignment_people').select('*').eq('demand_id', dm.id).then(function (res) {
+                      var people = (res.data || []).map(function (p) { return p.person_name_snapshot; }).join('、');
+                      var orgName = getOrgName(dm.target_org_id);
+                      var typeLabel = dm.demand_type === 'organizer' ? '承办' : '参与';
+                      lines.push(dm.role_name + '（' + orgName + ' · ' + typeLabel + '）：' + (people || '待定'));
+                    });
+                  });
+                });
+              } else {
+                lines.push('暂未安排');
+              }
+              lines.push('');
+            });
+          } else {
+            lines.push('【' + WEEKDAY_NAMES[weekday] + '】');
+            lines.push('无安排');
+            lines.push('');
+          }
+
+          d.setDate(d.getDate() + 1);
+        }
+
+        // Resolve all promises and show
+        try {
+          var allDemandPromises = [];
+          schedules.forEach(function (s) {
+            var dayDemands = demands[s.id] || [];
+            dayDemands.forEach(function (dm) {
+              allDemandPromises.push(
+                window.db.from('study_assignment_people').select('*').eq('demand_id', dm.id).then(function (res) {
+                  var people = (res.data || []).map(function (p) { return p.person_name_snapshot; });
+                  var orgName = getOrgName(dm.target_org_id);
+                  var typeLabel = dm.demand_type === 'organizer' ? '承办' : '参与';
+                  return { dm: dm, text: dm.role_name + '（' + orgName + ' · ' + typeLabel + '）：' + (people.join('、') || '待定') };
+                })
+              );
+            });
+          });
+
+          var results = await Promise.all(allDemandPromises);
+
+          // Rebuild clean roster
+          var cleanLines = ['【下周学习排班表】', '时间：' + week.label, ''];
+          var dd = new Date(week.monday);
+          while (dd <= end) {
+            var ds = toDateStr(dd);
+            var wd = dd.getDay() || 7;
+            var dayScheds = schedules.filter(function (s) { return s.schedule_date === ds; });
+
+            cleanLines.push('━━━ ' + WEEKDAY_NAMES[wd] + ' ' + formatDateDisplay(ds) + ' ━━━');
+
+            if (dayScheds.length) {
+              dayScheds.forEach(function (s) {
+                var scopeLabel = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' }[s.scope_level] || '';
+                cleanLines.push('【' + scopeLabel + '】' + getOrgName(s.org_id));
+
+                var dayDemands = demands[s.id] || [];
+                if (dayDemands.length) {
+                  dayDemands.forEach(function (dm) {
+                    var r = results.find(function (x) { return x.dm.id === dm.id; });
+                    cleanLines.push('  ' + (r ? r.text : dm.role_name + '：待定'));
+                  });
+                } else {
+                  cleanLines.push('  暂未安排');
+                }
+                cleanLines.push('');
+              });
+            } else {
+              cleanLines.push('  无安排');
+              cleanLines.push('');
+            }
+            dd.setDate(dd.getDate() + 1);
+          }
+
+          document.getElementById('rosterOutput').textContent = cleanLines.join('\n');
+          document.getElementById('rosterSection').style.display = 'block';
+          document.getElementById('rosterSection').scrollIntoView({ behavior: 'smooth' });
+        } catch (error) {
+          showToast('生成排班表失败', 'error');
+        }
+      }
+
+      function copyRoster() {
+        var text = document.getElementById('rosterOutput').textContent;
+        navigator.clipboard.writeText(text).then(function () {
+          showToast('已复制到剪贴板', 'success');
+        }).catch(function () {
+          showToast('复制失败，请手动复制', 'error');
+        });
+      }
+
+      init();
+    </script>
+  </body>
+</html>
