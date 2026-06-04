@@ -943,39 +943,44 @@
 
         if (role === '小组督察' || role === '小组副督察') {
           // ===== 小组督察：个人填报统计 =====
-          document.getElementById('statLabel1').textContent = '本周累计填报';
-          document.getElementById('statLabel2').textContent = '本周漏填报';
-          document.getElementById('statLabel3').textContent = '今日是否已填报';
+          document.getElementById('statLabel1').textContent = '本周本组已填报';
+          document.getElementById('statLabel2').textContent = '本周本组漏填报';
+          document.getElementById('statLabel3').textContent = '本组今日是否已填报';
 
           var dabanId = getDabanId(userOrgId);
 
-          // 先取本周日程（填报次数和漏报都基于日程计算）
+          // 先取本周全部日程（统计所有日程天数）
           var weekQuery = window.db
             .from('schedules')
-            .select('id')
+            .select('id,schedule_date')
             .gte('schedule_date', mondayStr)
             .lte('schedule_date', sundayStr)
             .eq('is_valid', 1);
           if (dabanId) weekQuery = weekQuery.eq('org_id', dabanId);
           var { data: weekSchedules } = await weekQuery;
-          var weekScheduleIds = (weekSchedules || []).map(function (s) {
-            return s.id;
-          });
-          var totalWeekSchedules = weekScheduleIds.length;
+          var allSchedules = weekSchedules || [];
+          var totalWeekSchedules = allSchedules.length;
 
-          if (totalWeekSchedules > 0) {
+          // 只统计截止到今天（含）的日程，未来日期的日程不纳入漏填计算
+          var pastSchedules = allSchedules.filter(function (s) {
+            return s.schedule_date <= today;
+          });
+          var pastScheduleIds = pastSchedules.map(function (s) { return s.id; });
+          var pastCount = pastScheduleIds.length;
+
+          if (pastCount > 0) {
             var { count: filledThisWeek } = await window.db
               .from('attendance_records')
               .select('*', { count: 'exact', head: true })
-              .eq('fill_user_id', profile.id)
-              .in('schedule_id', weekScheduleIds);
+              .eq('organization_id', userOrgId)
+              .in('schedule_id', pastScheduleIds);
             var filled = filledThisWeek || 0;
-            var missed = totalWeekSchedules - filled;
-            document.getElementById('statValue1').textContent = filled;
-            document.getElementById('statValue2').textContent = missed;
+            var missed = pastCount - filled;
+            document.getElementById('statValue1').textContent = filled + '/' + totalWeekSchedules;
+            document.getElementById('statValue2').textContent = missed > 0 ? missed : '--';
             document.getElementById('statValue2').style.color = missed > 0 ? 'var(--vermillion)' : '#2E7D32';
           } else {
-            document.getElementById('statValue1').textContent = '0';
+            document.getElementById('statValue1').textContent = totalWeekSchedules > 0 ? '0/' + totalWeekSchedules : '0';
             document.getElementById('statValue2').textContent = '--';
             document.getElementById('statValue2').style.color = 'var(--ink-dark)';
           }
@@ -994,7 +999,7 @@
             var { count: todayFilled } = await window.db
               .from('attendance_records')
               .select('*', { count: 'exact', head: true })
-              .eq('fill_user_id', profile.id)
+              .eq('organization_id', userOrgId)
               .in('schedule_id', todayIds);
             if (todayFilled > 0) {
               document.getElementById('statValue3').textContent = '是';
