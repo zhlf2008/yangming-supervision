@@ -30,12 +30,9 @@
 │  ├─ 多模块身份
 │  └─ 操作日志
 ├─ 秘书处模块
-│  ├─ 信息收集表
-│  ├─ 人员建档
-│  ├─ 分班分组
-│  ├─ 职务管理
-│  ├─ 系统账号开通
-│  └─ 模块权限分配
+│  ├─ 学期管理
+│  ├─ 组织架构管理
+│  └─ 人员管理（含信息建档、组织归属、职务管理、模块权限分配）
 ├─ 督察模块
 │  ├─ 考勤填报
 │  ├─ 考核项目管理
@@ -640,16 +637,13 @@ portal.html                     # 模块入口
 module-memberships.html         # 模块身份管理，后续
 ```
 
-### 秘书处模块
+### 秘书处模块（已实现）
 
 ```text
-secretariat-dashboard.html
-secretariat-intake-form.html
-secretariat-people.html
-secretariat-org-assignment.html
-secretariat-positions.html
-secretariat-accounts.html
-secretariat-permissions.html
+secretariat-dashboard.html         # 秘书处首页
+secretariat-semesters.html         # 学期管理
+secretariat-org-management.html    # 组织架构管理（含排序）
+secretariat-people.html            # 人员管理（含组织归属、职务、模块权限一站式编辑）
 ```
 
 ### 督察模块
@@ -670,67 +664,57 @@ data-management.html
 
 后续再考虑改名为 `supervision-*`。
 
-### 学委模块
+### 学委模块（已实现）
 
 ```text
-study-dashboard.html
-study-course-library.html
-study-schedule-rules.html
-study-weekly-plans.html
-study-assignment-demands.html
-study-assignment-people.html
-study-weekly-roster.html
-study-notice.html
-study-homework.html
-study-showcase.html
-study-settings.html
+study-dashboard.html               # 学委首页
+study-course-library.html          # 课程内容库 CRUD
+study-schedule-rules.html          # 每周共读规则 + 日程生成 + 每日设置课程
+study-weekly-assignment.html       # 每周安排（摊派 + 人员落位 + 一周排班表生成）
 ```
 
 ## 20. 分阶段实施路线
 
-### Phase 0：保存完整规划
+### Phase 0：保存完整规划 ✅
 
 - 保存本文档；
-- 不改业务代码；
-- 不改数据库；
-- 不改登录逻辑。
+- 不改业务代码、不改数据库、不改登录逻辑。
 
-### Phase 1：平台入口与登录分流
+### Phase 1：平台入口与登录分流 ✅
 
 - 新增 `portal.html`；
-- 管理员进入平台入口；
-- 普通督察账号仍直接进入现有督察首页；
-- 不移动现有督察页面。
+- 管理员进入平台入口，普通督察直接进入现有督察首页；
+- `login.html` 登录后分流：管理员 → portal.html，其他 → index.html；
+- `index.html` 管理员可见"切换模块"入口。
 
-### Phase 2：人员中心 / 秘书处基础
+### Phase 2：模块身份与人员基础 ✅
 
-- 设计/新增 `people`；
-- 设计/新增 `person_org_assignments`；
-- 设计/新增 `person_positions`；
-- 设计/新增 `module_memberships`；
-- 老督察账号迁移为 `supervision` 模块身份。
+- 新增 `module_memberships` 表，老督察账号迁移为 supervision 身份（114 人）；
+- 新增 `people` 人员档案表、`person_org_assignments` 学期组织归属、`person_positions` 职务表；
+- 从 profiles 同步 114 条人员档案。
 
-### Phase 3：学委课程库与日程规则
+### Phase 3：学委课程库与日程规则 ✅
 
-- 新增课程库；
-- 新增周几共读层级规则；
-- 支持按学期生成日程实例；
+- 新增课程库（CRUD）；
+- 新增周几共读层级规则设置；
+- 支持按学期、按组织层级生成日程实例；
 - 支持日程引用课程库或临时填写课程。
 
-### Phase 4：学委周计划与摊派
+### Phase 4：学委周计划与摊派 ✅
 
-- 支持本周一安排下周；
-- 大班摊派到班级；
-- 班级摊派到小组；
-- 小组最终落到具体人员。
+- 按周查看日程，大班→班级、班级→小组逐层摊派；
+- 设置岗位需求（承办/参与、角色、人数）；
+- 从成员名单选人或手动填写姓名；
+- 生成文本版小组一周排班表并支持复制到剪贴板。
 
-### Phase 5：小组一周排班表
+### Phase 4b：秘书处完善 ✅
 
-- 汇总小组共读、班级摊派、大班摊派；
-- 生成文本版小组周排班表；
-- 支持周三公示复制。
+- 秘书处学期管理（独立于督察学期管理）；
+- 秘书处组织架构管理（含上下排序）；
+- 人员管理整合组织架构树、组织归属、职务、模块权限一站式编辑；
+- 删除独立的职务管理、账号权限、分班分组页面（功能合并到人员管理）。
 
-### Phase 6：企业微信自动推送与卡片
+### Phase 5：企业微信自动推送与卡片（待开发）
 
 - 新增企业微信配置；
 - 新增通知日志；
@@ -738,7 +722,18 @@ study-settings.html
 - 生成排班表图片；
 - 生成优秀作业展示卡片并推送。
 
-## 21. 暂不做事项
+## 21. 数据库迁移状态
+
+已完成迁移（按执行顺序）：
+
+| 序号 | 文件名 | 说明 | 执行时间 |
+|------|--------|------|----------|
+| 017 | `20260604_001_module_memberships.sql` | 平台模块身份表 + 老账号迁移 | 2026-06-04 |
+| 018 | `20260604_002_people_foundation.sql` | 秘书处基础：people、person_org_assignments、person_positions | 2026-06-04 |
+| 019 | `20260604_003_study_foundation.sql` | 学委基础：study_course_library、study_schedule_rules、study_schedule_instances | 2026-06-04 |
+| 020 | `20260604_004_study_assignment.sql` | 学委摊派：study_assignment_demands、study_assignment_people | 2026-06-04 |
+
+## 22. 暂不做事项
 
 第一阶段暂不做：
 
@@ -750,27 +745,25 @@ study-settings.html
 - 不做优秀作业卡片；
 - 不强制所有普通成员开通系统账号。
 
-## 22. 风险点
+## 23. 风险点
 
-1. **人员主数据边界。** 如果学委先维护名单，未来秘书处上线后会重复。应尽早确定秘书处/人员中心为主数据源。
+1. ~~**人员主数据边界。**~~ ✅ 已解决。秘书处已作为人员主数据源，`people` 表已建立，学委通过 `person_org_assignments` 调用名单。
 2. **旧督察兼容。** 现有页面依赖 `profiles.role`，短期必须保留。
-3. **三层级摊派复杂度。** 大班 → 班级 → 小组 → 人员的链路要分阶段做，不能一次性堆完。
-4. **周计划状态管理。** 草稿、已分配、已公示、锁定状态需要清晰，否则容易反复改动造成混乱。
-5. **课程库与临时课程并存。** 需要明确日程展示时优先使用临时内容还是课程库内容。
-6. **自动推送幂等。** 后续企业微信定时推送必须避免重复发送。
+3. **三层级摊派复杂度。** 大班 → 班级 → 小组 → 人员的链路已完成基础实现，需进一步验证实际使用。
+4. **课程库与临时课程并存。** 已支持两种模式，日程展示时临时内容覆盖课程库引用。
+5. **自动推送幂等。** 后续企业微信定时推送必须避免重复发送。
 
-## 23. 验证原则
+## 24. 验证原则
 
 每个阶段都应能独立验证：
 
-- Phase 1：登录分流不影响普通督察使用；
-- Phase 2：老账号能映射出督察模块身份；
-- Phase 3：课程库和日程规则能生成正确日程；
-- Phase 4：摊派链路能从大班/班级最终落到小组；
-- Phase 5：小组一周排班表能完整汇总所有来源；
-- Phase 6：通知和卡片推送不重复、不漏发。
+- ✅ Phase 1：登录分流不影响普通督察使用；
+- ✅ Phase 2：老账号能映射出督察模块身份；
+- ✅ Phase 3：课程库和日程规则能生成正确日程；
+- ✅ Phase 4：摊派链路能从大班/班级最终落到小组，排班表能汇总所有来源；
+- ⬜ Phase 5：通知和卡片推送不重复、不漏发。
 
-## 24. 当前确认的产品决策
+## 25. 当前确认的产品决策
 
 - 平台入口文件名使用 `portal.html`。
 - 学委模块文件前缀使用 `study-*`。
