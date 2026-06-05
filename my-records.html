@@ -279,14 +279,22 @@
             if (rh != null) calcHw = rh * (hasMult100(formulas.hw) ? 1 : 100);
           }
 
-          var online = calcOnline != null ? calcOnline.toFixed(1) : '0.0';
-          var hw = calcHw != null ? calcHw.toFixed(1) : '0.0';
-          var video = calcVideo != null ? calcVideo.toFixed(1) : '0.0';
           var dateStr = dateMap[r.schedule_id] || (r.created_at || '').slice(0, 10);
           var timeStr = r.created_at
             ? new Date(r.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
             : '';
           var orgName = orgMap[r.organization_id] || '';
+
+          var statsHtml = '';
+          if (calcOnline != null) {
+            statsHtml += '<div class="record-stat">上线率<span class="up"> ' + calcOnline.toFixed(1) + '%</span></div>';
+          }
+          if (calcHw != null) {
+            statsHtml += '<div class="record-stat">作业率<span class="mid"> ' + calcHw.toFixed(1) + '%</span></div>';
+          }
+          if (calcVideo != null) {
+            statsHtml += '<div class="record-stat">视频率<span class="up"> ' + calcVideo.toFixed(1) + '%</span></div>';
+          }
 
           html +=
             '<div class="record-item">' +
@@ -303,17 +311,9 @@
             ' · ' +
             escapeHtml(orgName) +
             '</div>' +
-            '<div class="record-stats">' +
-            '<div class="record-stat">上线率<span class="up"> ' +
-            online +
-            '%</span></div>' +
-            '<div class="record-stat">作业率<span class="mid"> ' +
-            hw +
-            '%</span></div>' +
-            '<div class="record-stat">视频率<span class="up"> ' +
-            video +
-            '%</span></div>' +
-            '</div>' +
+            (statsHtml
+              ? '<div class="record-stats">' + statsHtml + '</div>'
+              : '<div class="record-stats" style="font-size:13px;color:var(--ink-muted)">无需考核</div>') +
             '</div>';
         });
         document.getElementById('recordList').innerHTML = html;
