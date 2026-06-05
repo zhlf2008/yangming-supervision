@@ -177,6 +177,35 @@ Deno.serve(async (req) => {
       if (!dabanSchedules?.length) continue;
       const todayScheduleIds = dabanSchedules.map((s: { id: number }) => s.id);
 
+      // 查询截止配置：若所有考核项均已截止，则跳过提醒
+      const beijingDate = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      const todayWeekDay = beijingDate.getUTCDay();
+      const { data: deadlineConfigs } = await adminClient
+        .from('assessment_deadline_configs')
+        .select('assessment_type_id, days_of_week, cutoff_time')
+        .eq('org_id', cfg.org_id)
+        .eq('is_enabled', true);
+      if (deadlineConfigs?.length) {
+        const allLocked = dabanSchedules.every(s => {
+          const ids = String((s as any).item_ids || '').split(',').map(Number).filter(Boolean);
+          return ids.length > 0 && ids.every(id => {
+            const rule = deadlineConfigs.find(d => d.assessment_type_id === id);
+            if (!rule) return false;
+            const days = String(rule.days_of_week || '').split(',').map(Number);
+            return days.includes(todayWeekDay) && currentTime >= rule.cutoff_time;
+          });
+        });
+        if (allLocked) {
+          results.push({
+            org_id: cfg.org_id,
+            org_name: allOrgs.find(o => o.id === cfg.org_id)?.name || '',
+            unsubmitted_count: 0,
+            message: '所有考核项已截止，跳过提醒'
+          });
+          continue;
+        }
+      }
+
       // 从日程的考核项目中提取所有必填字段
       const requiredFields = new Set<string>();
       const scheduleItemIds = new Set<number>();
