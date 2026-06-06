@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学委 - 课程章节</title>
+    <link rel="stylesheet" href="css/common.css?v=4" />
+    <style>
+      .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
+      .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink-dark); text-decoration: none; font-size: 18px; }
+      .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
+
+      .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
+      .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+      .section-title { font-size: 16px; font-weight: 700; }
+
+      .form-item { margin-bottom: 10px; }
+      .form-label { display: block; margin-bottom: 4px; color: var(--ink-light); font-size: 13px; }
+      .form-input, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 10px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; box-sizing: border-box; }
+      .form-textarea { min-height: 70px; resize: vertical; }
+      .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+      .btn { border: none; border-radius: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+      .btn-primary { background: var(--vermillion); color: #fff; }
+      .btn-secondary { background: var(--gold-light); color: var(--ink-dark); }
+      .btn-danger { background: var(--vermillion-light); color: var(--vermillion); }
+
+      /* 模态弹窗 */
+      .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 999; align-items: center; justify-content: center; }
+      .modal-overlay.open { display: flex; }
+      .modal-box { background: var(--bg-card); border-radius: var(--radius); padding: 20px; width: 520px; max-width: 92vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+      .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+
+      /* 确认弹窗 */
+      .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 1000; align-items: center; justify-content: center; }
+      .confirm-overlay.open { display: flex; }
+      .confirm-box { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 360px; max-width: 85vw; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+      .confirm-box p { margin: 0 0 18px; font-size: 15px; line-height: 1.6; color: var(--ink-dark); }
+      .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+      .empty-state { text-align: center; color: var(--ink-muted); padding: 32px 8px; }
+
+      /* 章节卡片 - 可拖动 */
+      .chapter-card {
+        border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px;
+        background: var(--bg-card); cursor: grab; transition: box-shadow 0.15s, opacity 0.15s;
+        overflow: hidden;
+      }
+      .chapter-card:active { cursor: grabbing; }
+      .chapter-card.dragging { opacity: 0.4; }
+      .chapter-card.drag-over { border-color: var(--vermillion); box-shadow: 0 0 0 2px var(--vermillion-light); }
+      /* 顶部主题栏 */
+      .chapter-head {
+        display: flex; align-items: center; justify-content: center;
+        padding: 12px 14px 8px; border-bottom: 1px solid var(--border);
+        position: relative;
+      }
+      .chapter-head-left { position: absolute; left: 14px; display: flex; align-items: center; }
+      .drag-handle { color: var(--ink-muted); font-size: 16px; cursor: grab; user-select: none; flex-shrink: 0; padding: 0 8px 0 2px; border-right: 2px solid var(--vermillion); }
+      .chapter-card:active .drag-handle { cursor: grabbing; }
+      .chapter-index { flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--ink-muted); padding: 0 10px; min-width: 64px; text-align: center; }
+      .chapter-theme-bar {
+        font-weight: 700; font-size: 15px; color: var(--ink-dark);
+        text-align: center;
+      }
+      /* 内容区 */
+      .chapter-body { padding: 10px 14px 8px; }
+      .chapter-meta-line {
+        display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+        color: var(--ink-muted); font-size: 12px; line-height: 1.6; margin-bottom: 6px;
+      }
+      .chapter-meta-left { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+      .chapter-meta-right { margin-left: auto; display: flex; gap: 12px; white-space: nowrap; }
+      .chapter-body-content { color: var(--ink-light); font-size: 13px; line-height: 1.7; white-space: pre-wrap; margin-bottom: 8px; }
+      .chapter-think-inner {
+        padding: 10px 12px; background: var(--gold-light);
+        border-radius: 8px; color: var(--ink-dark); font-size: 13px; line-height: 1.7; white-space: pre-wrap;
+      }
+      .chapter-think-inner strong { color: var(--ink-light); }
+      /* 底部操作栏 */
+      .chapter-foot {
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        padding: 8px 14px 10px; border-top: 1px solid var(--border);
+      }
+      .chapter-foot .btn { font-size: 12px; padding: 5px 10px; }
+      .chapter-foot .btn-move { font-size: 14px; padding: 5px 0; min-width: 30px; text-align: center; }
+      .chapter-foot-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+
+      /* 药丸开关 */
+      .toggle-switch { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
+      .toggle-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+      .toggle-track {
+        width: 36px; height: 20px; background: var(--ink-muted); border-radius: 10px;
+        transition: background 0.2s; position: relative; flex-shrink: 0;
+      }
+      .toggle-track::after {
+        content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+        background: #fff; border-radius: 50%; transition: transform 0.2s;
+      }
+      .toggle-switch input:checked + .toggle-track { background: var(--green); }
+      .toggle-switch input:checked + .toggle-track::after { transform: translateX(16px); }
+      .toggle-label { color: var(--ink-muted); }
+      .toggle-switch input:checked ~ .toggle-label { color: var(--green); }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="page-header">
+        <a class="back-btn" href="study-course-library.html">←</a>
+        <h1 class="page-title" id="courseTitle">课程章节</h1>
+      </header>
+
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title">章节列表</div>
+          <span id="totalCount" style="font-size:13px;color:var(--ink-muted);"></span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="showAddChapter()">新增章节</button>
+          </div>
+        </div>
+        <div id="chapterList" class="empty-state">正在加载...</div>
+      </section>
+    </div>
+
+    <!-- 新增/编辑章节弹窗 -->
+    <div class="modal-overlay" id="chapterModal" onclick="if(event.target===this)closeChapterModal()">
+      <div class="modal-box">
+        <div class="modal-title" id="formTitle">新增章节</div>
+        <input type="hidden" id="chapterId" />
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">主题 *</label>
+            <input class="form-input" id="theme" placeholder="如：龙场悟道" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">读书内容</label>
+            <input class="form-input" id="chapterTitle" placeholder="如：年谱（1506-1508年，35-37岁）" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">纸质书页码</label>
+            <input class="form-input" id="paperPages" placeholder="如：P006-P008" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">电子书链接</label>
+            <input class="form-input" id="ebookUrl" type="url" placeholder="https://..." />
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">学习内容</label>
+          <textarea class="form-textarea" id="studyContent" placeholder="请输入学习内容"></textarea>
+        </div>
+        <div class="form-item">
+          <label class="form-label">思考题</label>
+          <textarea class="form-textarea" id="thinkingQuestions" placeholder="请输入思考题"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+          <button class="btn btn-secondary" onclick="closeChapterModal()">取消</button>
+          <button class="btn btn-primary" id="saveBtn" onclick="saveChapter()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 确认删除弹窗 -->
+    <div class="confirm-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirm()">
+      <div class="confirm-box">
+        <p id="confirmMsg">确定要删除此章节吗？</p>
+        <div class="confirm-actions">
+          <button class="btn btn-secondary" onclick="closeConfirm()">取消</button>
+          <button class="btn btn-danger" id="confirmBtn" onclick="confirmDelete()">删除</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=4"></script>
+    <script src="js/utils.js?v=4"></script>
+    <script>
+      var chapters = [];
+      var courseId = null;
+      var deleteTargetId = null;
+      var dragIndex = null;
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        if (!checkLogin()) return;
+
+        var params = new URLSearchParams(location.search);
+        courseId = params.get('course_id');
+        if (!courseId) {
+          document.getElementById('chapterList').innerHTML = '<div class="empty-state">缺少课程ID，请从课程列表进入</div>';
+          return;
+        }
+
+        var { data: course, error: ce } = await window.db.from('study_courses').select('*').eq('id', courseId).single();
+        if (!ce && course) {
+          document.getElementById('courseTitle').textContent = course.title;
+        }
+
+        await loadChapters();
+      }
+
+      async function loadChapters() {
+        var { data, error } = await window.db
+          .from('study_course_library')
+          .select('*')
+          .eq('course_id', courseId)
+          .order('sort_order', { ascending: true })
+          .order('id', { ascending: true });
+
+        if (error) { showToast('加载章节失败', 'error'); return; }
+        chapters = data || [];
+        renderChapters();
+      }
+
+      function renderChapters() {
+        var container = document.getElementById('chapterList');
+        document.getElementById('totalCount').textContent = '共 ' + chapters.length + ' 章';
+
+        if (!chapters.length) {
+          container.innerHTML = '<div class="empty-state">暂无章节，请点击右上角新增</div>';
+          return;
+        }
+
+        container.innerHTML = chapters.map(function (item, idx) {
+          var metaParts = [];
+          if (item.chapter_title) metaParts.push(escapeHtml(item.chapter_title));
+          if (item.paper_pages) metaParts.push('<span style="white-space:nowrap;">' + escapeHtml(item.paper_pages) + '</span>');
+          var linkHtml = '';
+          if (item.ebook_url) {
+            var url = item.ebook_url.trim();
+            if (/^https?:\/\//i.test(url)) {
+              linkHtml = ' · <a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" style="color:var(--vermillion);">电子书</a>';
+            } else {
+              linkHtml = ' · ' + escapeHtml(url);
+            }
+          }
+
+          return (
+            '<div class="chapter-card" draggable="true" data-index="' + idx + '" data-id="' + item.id + '"' +
+            ' ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)" ondragleave="onDragLeave(event)">' +
+
+            /* 顶部：拖动把手 + 编号 + 主题（居中） */
+            '<div class="chapter-head">' +
+            '<div class="chapter-head-left"><span class="drag-handle">⠿</span><span class="chapter-index">第' + String(idx + 1).padStart(2, '0') + '章</span></div>' +
+            '<div class="chapter-theme-bar">' + escapeHtml(item.theme || '(未设置主题)') + '</div>' +
+            '</div>' +
+
+            /* 内容区 */
+            '<div class="chapter-body">' +
+
+            /* 元数据行：读书内容 左 · 页码 电子书 右 */
+            '<div class="chapter-meta-line">' +
+            '<span class="chapter-meta-left">' + escapeHtml(item.chapter_title || '') + '</span>' +
+            '<span class="chapter-meta-right">' +
+            (item.paper_pages ? '<span>页码：' + escapeHtml(item.paper_pages) + '</span>' : '') +
+            (function(){var u=item.ebook_url&&item.ebook_url.trim();return u&&/^https?:\/\//i.test(u)?'<a href="'+escapeHtml(u)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:8px;background:var(--vermillion);color:#fff;font-size:12px;text-decoration:none;">电子书</a>':u?'<span>'+escapeHtml(u)+'</span>':''})() +
+            '</span>' +
+            '</div>' +
+
+            /* 学习内容 */
+            (item.study_content ? '<div class="chapter-body-content">' + escapeHtml(item.study_content) + '</div>' : '') +
+
+            /* 思考题（直接显示） */
+            (item.thinking_questions ? '<div class="chapter-think-inner"><strong>思考题：</strong>' + escapeHtml(item.thinking_questions) + '</div>' : '') +
+
+            '</div>' +
+
+            /* 底部操作栏 */
+            '<div class="chapter-foot">' +
+            '<button class="btn btn-secondary btn-move" onclick="moveChapter(' + item.id + ', -1)" title="上移">↑</button>' +
+            '<button class="btn btn-secondary btn-move" onclick="moveChapter(' + item.id + ', 1)" title="下移">↓</button>' +
+            '<button class="btn btn-secondary" onclick="editChapter(' + item.id + ')">编辑</button>' +
+            '<button class="btn btn-danger" onclick="showDeleteConfirm(' + item.id + ')">删除</button>' +
+            '<div class="chapter-foot-actions">' +
+            '<label class="toggle-switch">' +
+            '<input type="checkbox"' + (item.is_active ? ' checked' : '') + ' onchange="toggleChapter(' + item.id + ', this.checked)" />' +
+            '<span class="toggle-track"></span>' +
+            '<span class="toggle-label">' + (item.is_active ? '启用' : '停用') + '</span>' +
+            '</label>' +
+            '</div>' +
+            '</div>' +
+
+            '</div>'
+          );
+        }).join('');
+      }
+
+      /* ---- 思考题 ---- */
+      // 直接显示，无需折叠
+
+      /* ---- 拖动排序 ---- */
+      function onDragStart(e) {
+        var card = e.target.closest('.chapter-card');
+        if (!card) return;
+        dragIndex = parseInt(card.dataset.index);
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      }
+
+      function onDragOver(e) {
+        e.preventDefault();
+        var card = e.target.closest('.chapter-card');
+        if (!card) return;
+        card.classList.add('drag-over');
+      }
+
+      function onDragLeave(e) {
+        var card = e.target.closest('.chapter-card');
+        if (!card) return;
+        card.classList.remove('drag-over');
+      }
+
+      function onDrop(e) {
+        e.preventDefault();
+        var targetCard = e.target.closest('.chapter-card');
+        if (!targetCard) return;
+        targetCard.classList.remove('drag-over');
+        var toIndex = parseInt(targetCard.dataset.index);
+        if (dragIndex === null || dragIndex === toIndex) return;
+
+        // 移动数组元素
+        var item = chapters.splice(dragIndex, 1)[0];
+        chapters.splice(toIndex, 0, item);
+        dragIndex = null;
+
+        renderChapters();
+        saveSortOrder();
+      }
+
+      function onDragEnd(e) {
+        var card = e.target.closest('.chapter-card');
+        if (card) card.classList.remove('dragging');
+        document.querySelectorAll('.chapter-card.drag-over').forEach(function (el) { el.classList.remove('drag-over'); });
+      }
+
+      async function saveSortOrder() {
+        // 分批更新，每批最多 10 个，避免 Supabase 速率限制
+        var updates = chapters.map(function (item, idx) {
+          return window.db.from('study_course_library').update({ sort_order: idx + 1 }).eq('id', item.id);
+        });
+        try {
+          for (var i = 0; i < updates.length; i += 10) {
+            await Promise.all(updates.slice(i, i + 10));
+          }
+          logAction('排序章节', 'study_course_library', 'course_id=' + courseId);
+        } catch (e) {
+          console.error('排序保存失败', e);
+          showToast('排序保存失败', 'error');
+        }
+      }
+
+      function moveChapter(id, direction) {
+        var idx = chapters.findIndex(function (c) { return Number(c.id) === Number(id); });
+        if (idx === -1) return;
+        var target = idx + direction;
+        if (target < 0 || target >= chapters.length) return;
+        // 交换相邻两项
+        var tmp = chapters[idx];
+        chapters[idx] = chapters[target];
+        chapters[target] = tmp;
+        renderChapters();
+        saveSortOrder();
+      }
+
+      /* ---- 新增/编辑 ---- */
+      function showAddChapter() {
+        document.getElementById('formTitle').textContent = '新增章节';
+        document.getElementById('chapterId').value = '';
+        document.getElementById('theme').value = '';
+        document.getElementById('chapterTitle').value = '';
+        document.getElementById('studyContent').value = '';
+        document.getElementById('thinkingQuestions').value = '';
+        document.getElementById('paperPages').value = '';
+        document.getElementById('ebookUrl').value = '';
+        document.getElementById('chapterModal').classList.add('open');
+      }
+
+      function closeChapterModal() {
+        document.getElementById('chapterModal').classList.remove('open');
+      }
+
+      function collectForm() {
+        return {
+          course_id: Number(courseId),
+          theme: document.getElementById('theme').value.trim(),
+          chapter_title: document.getElementById('chapterTitle').value.trim(),
+          study_content: document.getElementById('studyContent').value.trim(),
+          thinking_questions: document.getElementById('thinkingQuestions').value.trim(),
+          paper_pages: document.getElementById('paperPages').value.trim(),
+          ebook_url: document.getElementById('ebookUrl').value.trim(),
+          sort_order: chapters.length + 1,
+          is_active: true
+        };
+      }
+
+      async function saveChapter() {
+        var id = document.getElementById('chapterId').value;
+        var theme = document.getElementById('theme').value.trim();
+        if (!theme) { showToast('请填写主题', 'error'); return; }
+
+        document.getElementById('saveBtn').disabled = true;
+        try {
+          var payload = collectForm();
+          var result;
+          if (id) {
+            delete payload.sort_order;
+            delete payload.is_active;
+            result = await window.db.from('study_course_library').update(payload).eq('id', id);
+          } else {
+            result = await window.db.from('study_course_library').insert(payload);
+          }
+          if (result.error) throw result.error;
+          logAction(id ? '编辑章节' : '新增章节', 'study_course_library', theme);
+          showToast('保存成功', 'success');
+          closeChapterModal();
+          await loadChapters();
+        } catch (e) {
+          console.error('保存章节失败', e);
+          showToast('保存失败', 'error');
+        } finally {
+          document.getElementById('saveBtn').disabled = false;
+        }
+      }
+
+      function editChapter(id) {
+        var item = chapters.find(function (c) { return Number(c.id) === Number(id); });
+        if (!item) return;
+        document.getElementById('formTitle').textContent = '编辑章节';
+        document.getElementById('chapterId').value = item.id;
+        document.getElementById('theme').value = item.theme || '';
+        document.getElementById('chapterTitle').value = item.chapter_title || '';
+        document.getElementById('studyContent').value = item.study_content || '';
+        document.getElementById('thinkingQuestions').value = item.thinking_questions || '';
+        document.getElementById('paperPages').value = item.paper_pages || '';
+        document.getElementById('ebookUrl').value = item.ebook_url || '';
+        document.getElementById('chapterModal').classList.add('open');
+      }
+
+      /* ---- 药丸开关（乐观更新） ---- */
+      async function toggleChapter(id, checked) {
+        var item = chapters.find(function (c) { return Number(c.id) === Number(id); });
+        if (!item) return;
+        // 乐观更新：立即翻转本地状态
+        var prev = item.is_active;
+        item.is_active = checked;
+        renderChapters();
+        try {
+          await window.db.from('study_course_library').update({ is_active: checked }).eq('id', id);
+          showToast(checked ? '已启用' : '已停用', 'success');
+        } catch (e) {
+          console.error('切换章节状态失败', e);
+          // 回滚
+          item.is_active = prev;
+          renderChapters();
+          showToast('操作失败', 'error');
+        }
+      }
+
+      /* ---- 删除确认弹窗 ---- */
+      function showDeleteConfirm(id) {
+        var item = chapters.find(function (c) { return Number(c.id) === Number(id); });
+        deleteTargetId = id;
+        document.getElementById('confirmMsg').textContent = '确定要删除"' + escapeHtml(item ? item.theme || item.title : '') + '"吗？删除后不可恢复。';
+        document.getElementById('confirmModal').classList.add('open');
+      }
+
+      function closeConfirm() {
+        document.getElementById('confirmModal').classList.remove('open');
+        deleteTargetId = null;
+      }
+
+      async function confirmDelete() {
+        if (!deleteTargetId) return;
+        document.getElementById('confirmBtn').disabled = true;
+        try {
+          await window.db.from('study_course_library').delete().eq('id', deleteTargetId);
+          logAction('删除章节', 'study_course_library', 'id=' + deleteTargetId);
+          showToast('已删除', 'success');
+          closeConfirm();
+          await loadChapters();
+        } catch (e) {
+          console.error('删除章节失败', e);
+          showToast('删除失败', 'error');
+        } finally {
+          document.getElementById('confirmBtn').disabled = false;
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>
