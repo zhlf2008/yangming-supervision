@@ -335,6 +335,17 @@
           var token = (await window.db.auth.getSession()).data.session?.access_token;
           if (!token) { showToast('未登录', 'error'); return; }
 
+          // 如果编辑已有封面，先删除旧封面文件，避免残留孤儿文件
+          if (editingCoverUrl) {
+            var oldKey = editingCoverUrl.split('/study-covers/').pop();
+            if (oldKey) {
+              fetch(window.supabaseConfig.url + '/storage/v1/object/study-covers/' + oldKey, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token, 'apikey': window.supabaseConfig.anonKey }
+              }).catch(function(){});
+            }
+          }
+
           var uploadUrl = window.supabaseConfig.url + '/storage/v1/object/study-covers/' + fileName;
           var uploadRes = await fetch(uploadUrl, {
             method: 'PUT',

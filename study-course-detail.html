@@ -83,7 +83,7 @@
         padding: 8px 14px 10px; border-top: 1px solid var(--border);
       }
       .chapter-foot .btn { font-size: 12px; padding: 5px 10px; }
-      .chapter-foot .btn-move { font-size: 14px; padding: 5px 0; min-width: 30px; text-align: center; }
+      .chapter-foot .btn-move { font-size: 16px; padding: 4px 0; min-width: 32px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
       .chapter-foot-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; }
 
       /* 药丸开关 */
@@ -384,8 +384,11 @@
       }
 
       function collectForm() {
+        var cid = Number(courseId);
+        if (!cid) { showToast('缺少课程ID，请从课程列表进入', 'error'); return null; }
         return {
-          course_id: Number(courseId),
+          title: document.getElementById('courseTitle').textContent,
+          course_id: cid,
           theme: document.getElementById('theme').value.trim(),
           chapter_title: document.getElementById('chapterTitle').value.trim(),
           study_content: document.getElementById('studyContent').value.trim(),
@@ -405,6 +408,7 @@
         document.getElementById('saveBtn').disabled = true;
         try {
           var payload = collectForm();
+          if (!payload) { document.getElementById('saveBtn').disabled = false; return; }
           var result;
           if (id) {
             delete payload.sort_order;
