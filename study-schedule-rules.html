@@ -4,18 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>学委 - 日程规则</title>
-    <link rel="stylesheet" href="css/common.css?v=3" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
-      .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
-      .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink-dark); text-decoration: none; }
-      .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
-
-      .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
-      .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-      .section-title { font-size: 16px; font-weight: 700; }
-
-      .form-item { margin-bottom: 12px; }
-      .form-label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 13px; }
+      .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-dark); text-decoration: none; font-size: 18px; }
+      .back-btn:active { background: var(--border); }
+      
+      
       .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
       .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
@@ -40,7 +34,7 @@
       .day-grid { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
       .day-row { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); gap: 10px; }
       .day-row:last-child { border-bottom: none; }
-      .day-row.weekend { background: #fafaf8; }
+      .day-row.weekend { background: rgba(250, 250, 248, 0.9); }
       .day-row.future { opacity: 0.55; }
       .day-date { width: 42px; flex-shrink: 0; font-weight: 600; font-size: 13px; text-align: center; }
       .day-weekday { font-size: 11px; color: var(--ink-muted); text-align: center; }
@@ -49,9 +43,9 @@
       .day-action { flex-shrink: 0; }
 
       .scope-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; margin-right: 6px; }
-      .scope-tag.大班 { background: #fce4ec; color: #c62828; }
-      .scope-tag.班级 { background: #e8f5e9; color: #2e7d32; }
-      .scope-tag.小组 { background: #e3f2fd; color: #1565c0; }
+      .scope-tag.大班 { background: var(--vermillion-light); color: var(--vermillion); }
+      .scope-tag.班级 { background: var(--green-light); color: var(--green); }
+      .scope-tag.小组 { background: rgba(250, 250, 248, 0.9); color: var(--ink-dark); }
 
       .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
       .modal-overlay.show { display: flex; }
@@ -65,7 +59,7 @@
   <body>
     <div class="container">
       <header class="page-header">
-        <a class="back-btn" href="study-dashboard.html">←</a>
+        <a class="back-btn" href="study-dashboard.html">&lt;</a>
         <h1 class="page-title">日程规则</h1>
       </header>
 
@@ -95,7 +89,7 @@
           </div>
         </div>
         <div class="month-nav" id="monthNav">
-          <button onclick="changeMonth(-1)">← 上月</button>
+        <button onclick="changeMonth(-1)">&lt; 上月</button>
           <span class="month-label" id="monthLabel">--</span>
           <button onclick="changeMonth(1)">下月 →</button>
         </div>
@@ -173,6 +167,8 @@
 
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
+    <script src="js/components.js?v=3"></script>
+    <script>renderModuleBottomNav('study', 'rules');</script>
     <script>
       var WEEKDAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
       var semesters = [];
@@ -186,6 +182,8 @@
         await waitForDb();
         await refreshCurrentUser();
         if (!checkLogin()) return;
+        var ok = await guardModuleAccess('study');
+        if (!ok) return;
         await loadSemesters();
         await loadCourses();
       }
@@ -452,7 +450,7 @@
             if (result.error) throw result.error;
           }
 
-          logAction('生成学委日程', 'study_schedule_instances', semester.semester_name + ' 共 ' + inserts.length + ' 条');
+          logAction('生成学委日程', 'study_schedule_instances', semester.semester_name + ' 共 ' + inserts.length + ' 条', 'study');
           showToast('生成完成', 'success');
           await loadMonthSchedules();
         } catch (error) {

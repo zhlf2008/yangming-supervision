@@ -4,10 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>学委 - 课程章节</title>
-    <link rel="stylesheet" href="css/common.css?v=4" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
-      .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink-dark); text-decoration: none; font-size: 18px; }
+      .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-dark); text-decoration: none; font-size: 18px; }
+      .back-btn:active { background: var(--border); }
       .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
 
       .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
@@ -106,7 +107,7 @@
   <body>
     <div class="container">
       <header class="page-header">
-        <a class="back-btn" href="study-course-library.html">←</a>
+        <a class="back-btn" href="study-course-library.html">&lt;</a>
         <h1 class="page-title" id="courseTitle">课程章节</h1>
       </header>
 
@@ -177,16 +178,29 @@
 
     <script src="js/supabase-config.js?v=4"></script>
     <script src="js/utils.js?v=4"></script>
+    <script src="js/components.js?v=3"></script>
+    <script>renderModuleBottomNav('study', 'library');</script>
     <script>
       var chapters = [];
       var courseId = null;
       var deleteTargetId = null;
       var dragIndex = null;
+      var _isAdmin = false;
 
       async function init() {
         await waitForDb();
         await refreshCurrentUser();
         if (!checkLogin()) return;
+        var ok = await guardModuleAccess('study');
+        if (!ok) return;
+
+        var profile = checkLogin();
+        _isAdmin = (profile.role === '超级管理员' || profile.role === '管理员');
+        if (!_isAdmin) {
+          // 非管理员：隐藏新增按钮
+          var addBtn = document.querySelector('#chapterList').previousElementSibling.querySelector('.btn-primary');
+          if (addBtn) addBtn.style.display = 'none';
+        }
 
         var params = new URLSearchParams(location.search);
         courseId = params.get('course_id');
@@ -218,6 +232,7 @@
 
       function renderChapters() {
         var container = document.getElementById('chapterList');
+        var isAdmin = _isAdmin;
         document.getElementById('totalCount').textContent = '共 ' + chapters.length + ' 章';
 
         if (!chapters.length) {
@@ -240,12 +255,14 @@
           }
 
           return (
-            '<div class="chapter-card" draggable="true" data-index="' + idx + '" data-id="' + item.id + '"' +
-            ' ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)" ondragleave="onDragLeave(event)">' +
+            '<div class="chapter-card' + (isAdmin ? '' : '') + '"' + (isAdmin ? ' draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)" ondragleave="onDragLeave(event)"' : '') +
+            ' data-index="' + idx + '" data-id="' + item.id + '">' +
 
-            /* 顶部：拖动把手 + 编号 + 主题（居中） */
+            /* 顶部：编号 + 主题（居中） */
             '<div class="chapter-head">' +
-            '<div class="chapter-head-left"><span class="drag-handle">⠿</span><span class="chapter-index">第' + String(idx + 1).padStart(2, '0') + '章</span></div>' +
+            (isAdmin
+              ? '<div class="chapter-head-left"><span class="drag-handle">⠿</span><span class="chapter-index">第' + String(idx + 1).padStart(2, '0') + '章</span></div>'
+              : '<div class="chapter-head-left"><span class="chapter-index">第' + String(idx + 1).padStart(2, '0') + '章</span></div>') +
             '<div class="chapter-theme-bar">' + escapeHtml(item.theme || '(未设置主题)') + '</div>' +
             '</div>' +
 
@@ -270,7 +287,7 @@
             '</div>' +
 
             /* 底部操作栏 */
-            '<div class="chapter-foot">' +
+            (isAdmin ? '<div class="chapter-foot">' +
             '<button class="btn btn-secondary btn-move" onclick="moveChapter(' + item.id + ', -1)" title="上移">↑</button>' +
             '<button class="btn btn-secondary btn-move" onclick="moveChapter(' + item.id + ', 1)" title="下移">↓</button>' +
             '<button class="btn btn-secondary" onclick="editChapter(' + item.id + ')">编辑</button>' +
@@ -282,7 +299,7 @@
             '<span class="toggle-label">' + (item.is_active ? '启用' : '停用') + '</span>' +
             '</label>' +
             '</div>' +
-            '</div>' +
+            '</div>' : '') +
 
             '</div>'
           );
@@ -346,7 +363,7 @@
           for (var i = 0; i < updates.length; i += 10) {
             await Promise.all(updates.slice(i, i + 10));
           }
-          logAction('排序章节', 'study_course_library', 'course_id=' + courseId);
+          logAction('排序章节', 'study_course_library', 'course_id=' + courseId, 'study');
         } catch (e) {
           console.error('排序保存失败', e);
           showToast('排序保存失败', 'error');
@@ -418,7 +435,7 @@
             result = await window.db.from('study_course_library').insert(payload);
           }
           if (result.error) throw result.error;
-          logAction(id ? '编辑章节' : '新增章节', 'study_course_library', theme);
+          logAction(id ? '编辑章节' : '新增章节', 'study_course_library', theme, 'study');
           showToast('保存成功', 'success');
           closeChapterModal();
           await loadChapters();
@@ -482,7 +499,7 @@
         document.getElementById('confirmBtn').disabled = true;
         try {
           await window.db.from('study_course_library').delete().eq('id', deleteTargetId);
-          logAction('删除章节', 'study_course_library', 'id=' + deleteTargetId);
+          logAction('删除章节', 'study_course_library', 'id=' + deleteTargetId, 'study');
           showToast('已删除', 'success');
           closeConfirm();
           await loadChapters();
