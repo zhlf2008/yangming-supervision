@@ -26,6 +26,15 @@
 | 018 | `20260604_002_people_foundation.sql` | 秘书处基础：people、person_org_assignments、person_positions | 2026-06-04 |
 | 019 | `20260604_003_study_foundation.sql` | 学委基础：study_course_library、study_schedule_rules、study_schedule_instances | 2026-06-04 |
 | 020 | `20260604_004_study_assignment.sql` | 学委摊派：study_assignment_demands、study_assignment_people | 2026-06-04 |
+| 021 | `20260607_001_module_memberships_semester_id.sql` | module_memberships 加 semester_id，实现模块权限按学期隔离 | 2026-06-11 |
+| 022 | `20260608_001_semesters_effective_at.sql` | semesters 加 effective_at，支持未来学期自动切换为当前学期 | 2026-06-11 |
+| 023 | `20260609_001_audit_logs_platform.sql` | audit_logs 加 module_key 和 semester_id，支持平台化审计筛选 | 2026-06-11 |
+| 024 | `20260610_001_entry_forms.sql` | 进班表单表 entry_forms，记录学员入学信息 | 2026-06-11 |
+| 025 | `20260610_002_entry_forms_v2.sql` | entry_forms 字段优化：生日历法、省市县地址、职业分类、学员类型 | 2026-06-11 |
+| 026 | `20260610_003_entry_forms_phone.sql` | entry_forms 加手机号字段 phone | 2026-06-11 |
+| 027 | `20260611000002_anon_insert_entry_forms.sql` | 允许匿名用户提交进班表单（外部填写） | 2026-06-11 |
+| 028 | `20260611000003_grant_anon_insert.sql` | GRANT INSERT ON entry_forms TO anon | 2026-06-11 |
+| fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断
 

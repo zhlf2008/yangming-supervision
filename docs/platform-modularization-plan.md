@@ -1210,216 +1210,101 @@ data-management.html
 
 ## 15. 分阶段实施路线
 
-### Phase 0：修正文档和产品口径
+### Phase 0：修正文档和产品口径 ✅ 已完成
 
-目标：
+口径已明确：管理员管平台，秘书处管本学期组织人员，学委管排班，督察管业务，日志归审计，课程库归平台资产。
 
-- 把平台边界写清楚；
-- 把管理员、秘书处、业务模块职责写清楚；
-- 把学期化原则写清楚。
+### Phase 1：导航和页面归属修正 ✅ 已完成
 
-验收：
+> 实现文件：portal.html（重写为图标网格布局）、index.html、secretariat-dashboard.html（3列图标网格）、study-dashboard.html（2×2图标网格）
 
-- 文档明确“学期管理归平台管理员”。
-- 文档明确“课程内容库归平台管理员”。
-- 文档明确“操作日志归平台管理员”。
-- 文档明确“组织、人员、职务、模块权限归秘书处”。
-- 文档明确“当前学期是全系统唯一业务上下文”。
-- 文档明确“普通用户只能进入当前学期有权限的模块”。
+结论：
+- portal.html：平台管理区（上）+ 学期功能区（下大容器，内含学期横幅+3个模块卡片），按权限动态显示/隐藏
+- 秘书处和学委子页面全部图标化
+- 所有返回链接改为智能返回（?from=portal 追踪来源）
+- index.html 所有用户可见“切换模块”按钮
 
-### Phase 1：导航和页面归属修正
+### Phase 2：当前学期机制和模块权限学期化 ✅ 已完成
 
-目标：
+> 实现文件：supabase/schema/20260607_001_module_memberships_semester_id.sql、
+> supabase/schema/20260608_001_semesters_effective_at.sql、
+> js/utils.js（guardModuleAccess、autoSwitchSemester）、login.html、secretariat-people.html
 
-- 不大改页面文件名；
-- 先修正导航入口和页面标题。
-- 所有入口都要显示当前学期上下文。
+结论：
+- module_memberships 加 semester_id，唯一索引更新
+- semesters 加 effective_at，autoSwitchSemester() 在 getCurrentSemesterId 中自动触发切换
+- login.html 按当前学期 module_memberships 数量分流（0→无权限提示，1→直达，多→portal）
+- guardModuleAccess 通用拦截函数：管理员直接放行，普通用户查 module_memberships
 
-任务：
+### Phase 3：秘书处成为人员和组织中心 ✅ 已完成
 
-1. 从督察导航中移出 `audit-log.html`。
-2. 在平台管理员入口中加入“操作日志”。
-3. 在平台管理员入口中加入“学期管理”。
-4. 在平台管理员入口中加入“课程内容库”。
-5. 秘书处导航中保留组织架构和人员管理。
-6. 学委导航中保留日程规则和周计划。
-7. 学委导航中如果出现课程库入口，要明确只有管理员能编辑。
-8. `portal.html` 只显示当前学期有权限的模块入口。
-9. 页面顶部或入口处应能看出当前学期，例如 `当前学期：阳明心学第15期`。
+> 实现文件：js/utils.js（guardModuleAccess）、secretariat-dashboard.html、secretariat-org-management.html、secretariat-people.html
 
-验收：
+结论：
+- 秘书处所有页面加 guardModuleAccess('secretariat') 权限拦截
+- secretariat-people.html 增删权限时带 semester_id
+- 仪表板新增进班表单入口
 
-- 管理员能从平台入口进入学期管理、课程内容库、操作日志。
-- 普通学委不会被误导为课程库管理员。
-- 普通督察不会看到平台审计入口。
-- 第14期账号在当前学期为第15期时，不应看到第14期业务入口。
+### Phase 4：课程内容库管理员化 ✅ 已完成
 
-### Phase 2：当前学期机制和模块权限学期化
+> 实现文件：study-course-library.html、study-course-detail.html、
+> supabase/fix/20260608_001_fix_study_courses_rls.sql
 
-目标：
+结论：
+- RLS 修复：平台管理员直接管理 study_courses 表
+- 非管理员隐藏编辑/删除/开关按钮，只读查看（含课程列表和章节详情）
+- RLS 修复脚本已执行
 
-- 让系统能识别唯一当前学期。
-- 让模块权限支持每学期变化。
-- 让登录入口只按当前学期权限放行。
+### Phase 5：操作日志平台化 ✅ 已完成
 
-任务：
+> 实现文件：audit-log.html（全面重写）、supabase/schema/20260609_001_audit_logs_platform.sql、
+> js/utils.js（logAction 升级带 moduleKey+semester_id）
 
-1. 检查当前 `semesters` 表字段。
-2. 如果缺少，新增 `effective_at`。
-3. 如果缺少，新增 `is_current` 或可等价表达当前学期的字段。
-4. 实现“获取当前学期”的公共函数。
-5. 检查当前 `module_memberships`。
-6. 新增 `semester_id` 字段。
-7. 新增 `person_id` 字段，如果尚未存在。
-8. 保留旧数据兼容。
-9. 平台管理员权限可以特殊处理为全局权限。
-10. 秘书处、学委、督察、宣委权限建议绑定 `semester_id`。
-11. 登录后先判断当前学期权限，再显示入口。
-12. 没有当前学期权限的普通账号要被拦截。
+结论：
+- audit_logs 加 module_key 和 semester_id 字段
+- 平台审计页：模块/学期/操作人/操作类型四维筛选 + 分页 + 日志标签 + 操作人高亮
+- 降级兼容：列不存在时自动检测并跳过筛选
+- SQL 迁移已执行，模块/学期筛选完整可用
 
-验收：
+### Phase 6：学委模块按新边界整理 ✅ 已完成
 
-- 同一个人可以在不同学期有不同模块角色。
-- 同一个人可以在不同学期归属不同组织。
-- 当前学期从第14期切到第15期后，第14期普通账号不能进入业务入口。
-- 当前学期从第15期切回第14期后，第14期普通账号可以按第14期权限进入。
-- 老督察用户只有在当前学期拥有督察权限时才能进入督察模块。
+> 实现文件：study-dashboard.html、study-schedule-rules.html、study-weekly-assignment.html
 
-### Phase 3：秘书处成为人员和组织中心
+结论：
+- 学委所有页面加 guardModuleAccess('study') 权限拦截
+- 仪表板 2×2 图标网格
+- 日程规则/排班均已带 semester_id（建表时已有）
 
-目标：
+### Phase 7：督察旧系统逐步迁移 ⬜ 未开始
 
-- 秘书处统一维护当前学期组织、人员、职务、模块权限。
-- 管理员先创建当前学期顶层组织和核心管理人员，秘书处再向下运作。
+目标：保持旧督察可用，同时逐步接入新平台模型。先让平台入口和权限体系稳定后再迁移。
 
-任务：
+### Phase 8：进班表单（新增）✅ 已完成
 
-1. 平台管理员在当前学期创建顶层组织，例如大班。
-2. 平台管理员给顶层组织配置核心管理人员，例如班长、秘书长、大班学委。
-3. 这些核心管理人员获得对应职务和模块权限后，才能进入系统运作。
-4. `secretariat-org-management.html` 按当前学期管理组织架构。
-5. 秘书处或被授权的顶层管理人员可以创建下级班级、小组。
-6. `secretariat-people.html` 按当前学期管理人员归属。
-7. 在人员管理中整合职务设置。
-8. 在人员管理中整合模块权限设置。
-9. 学委和未来宣委不再自己维护人员名单。
+> 实现文件：secretariat-entry-form.html（完整表单页）、
+> entry_forms 表 + 3 个迁移（001基础/002v2优化/003手机号）
 
-验收：
-
-- 管理员可以在当前学期创建大班。
-- 管理员可以为大班设置班长、秘书长等核心管理人员。
-- 被授权人员可以继续创建下级组织和人员。
-- 可以在秘书处给某人设置本学期组织归属。
-- 可以在秘书处给某人设置本学期职务。
-- 可以在秘书处给某人设置本学期模块权限。
-- 学委排班能从秘书处人员数据读取成员。
-
-### Phase 4：课程内容库管理员化
-
-目标：
-
-- 课程内容库作为平台可复用内容资产。
-
-任务：
-
-1. 保留 `study_course_library` 表。
-2. 保留 `study-course-library.html` 文件名。
-3. 把课程库入口放入平台管理员导航。
-4. CRUD 权限限制为平台管理员。
-5. 学委日程中只引用课程，不默认编辑课程。
-
-验收：
-
-- 管理员可以维护课程内容库。
-- 学委可以在日程中选择课程。
-- 学委没有管理员权限时不能编辑课程库主数据。
-
-### Phase 5：操作日志平台化
-
-目标：
-
-- 操作日志成为平台审计能力。
-
-任务：
-
-1. 保留 `audit-log.html` 文件名。
-2. 页面归属改为平台管理员。
-3. 增加按模块筛选。
-4. 增加按学期筛选。
-5. 增加按操作人筛选。
-6. 后续所有模块统一写入 `audit_logs`。
-
-验收：
-
-- 管理员可以查看全平台日志。
-- 日志能区分来自督察、学委、秘书处、管理员后台。
-- 督察模块不再拥有日志管理入口。
-
-### Phase 6：学委模块按新边界整理
-
-目标：
-
-- 学委只做学习排班业务，不管理课程主数据和人员主数据。
-
-任务：
-
-1. 日程规则必须带 `semester_id`。
-2. 周计划必须带 `semester_id`。
-3. 排班读取 `person_org_assignments`。
-4. 职务读取 `person_positions`。
-5. 权限读取 `module_memberships`。
-6. 课程从 `study_course_library` 选择。
-
-验收：
-
-- 每个学期可以有不同学委日程。
-- 每个学期可以有不同人员。
-- 同一课程可以被多个学期复用。
-
-### Phase 7：督察旧系统逐步迁移
-
-目标：
-
-- 保持旧督察可用，同时逐步接入新平台模型。
-
-任务：
-
-1. 不立即删除旧字段。
-2. 不立即重命名旧页面。
-3. 先让平台入口和权限体系稳定。
-4. 再逐步让督察读取新学期组织和人员。
-5. 最后再考虑旧表和旧页面命名整理。
-
-验收：
-
-- 老督察用户能继续使用。
-- 管理员可以从平台入口进入督察。
-- 新学期数据不会污染旧学期数据。
-
+11 项字段 + 双历日期选择器（阳历+农历同显） + 34省365市2919区县拼音排序联动 + 表单/记录双视图。
 ## 16. 当前已知数据库迁移
 
-项目中已有以下迁移方向：
+> 更新于 2026-06-13。下列迁移已在当前 Supabase 项目中完成；后续新增迁移仍按本节规范维护。
 
-```text
-20260604_001_module_memberships.sql
-20260604_002_people_foundation.sql
-20260604_003_study_foundation.sql
-20260604_004_study_assignment.sql
-20260605_001_study_courses.sql
-20260606_001_study_courses_v2.sql
-```
+### 已在本轮实施中创建的迁移
 
-后续执行前要检查真实数据库是否已经执行过这些 SQL。
-
-不要重复创建冲突字段。
-
-如果要新增字段，建议写新的迁移文件，例如：
-
-```text
-20260607_001_platform_boundary_refinement.sql
-```
-
-不要直接修改已经执行过的历史迁移文件。
+| 序号 | 文件 | 说明 | 状态 |
+|------|------|------|------|
+| 017 | `20260604_001_module_memberships.sql` | 平台模块身份表 | 已执行 |
+| 018 | `20260604_002_people_foundation.sql` | 秘书处基础表（people、person_org_assignments、person_positions） | 已执行 |
+| 019 | `20260604_003_study_foundation.sql` | 学委基础表（course_library、schedule_rules、schedule_instances） | 已执行 |
+| 020 | `20260604_004_study_assignment.sql` | 学委摊派表（demands、people） | 已执行 |
+| 021 | `20260607_001_module_memberships_semester_id.sql` | module_memberships 加 semester_id | 已执行 |
+| 022 | `20260608_001_semesters_effective_at.sql` | semesters 加 effective_at | 已执行 |
+| 023 | `20260609_001_audit_logs_platform.sql` | audit_logs 加 module_key/semester_id | 已执行 |
+| 024 | `20260610_001_entry_forms.sql` | 进班表单表 entry_forms | 已执行 |
+| 025 | `20260610_002_entry_forms_v2.sql` | entry_forms 字段优化 v2 | 已执行 |
+| 026 | `20260610_003_entry_forms_phone.sql` | entry_forms 加 phone 字段 | 已执行 |
+| fix | `20260608_001_fix_study_courses_rls.sql` | 课程合集 RLS 修复 | 已执行 |
+| fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 已执行 |
 
 ## 17. 推荐给开发模型的执行顺序
 

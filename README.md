@@ -1,6 +1,6 @@
-# 阳明心学督察管理系统
+# 阳明心学班级管理平台
 
-面向阳明心学书院的督察管理系统，支持多学期、多层级组织（大班/班级/小组）的考勤填报、日程管理、考核率汇总与排名。
+面向阳明心学书院的班级运营平台，支持多学期、多层级组织（大班/班级/小组）的**督察管理、学委排班、秘书处运营**三大模块。
 
 ## 技术栈
 
@@ -10,91 +10,111 @@
 
 ## 本地运行
 
-直接用浏览器打开任意 HTML 文件即可（推荐使用 Live Server）。无需构建工具。
-
-```
-# 如果用 VS Code
-code .
-# 安装 Live Server 插件，右键 HTML → Open with Live Server
-```
-
-## 环境变量
-
-在 Supabase Dashboard → Settings → API 中获取以下值，配置到 `js/supabase-config.js`：
-
-```
-SUPABASE_URL=https://<your-project>.supabase.co
-SUPABASE_ANON_KEY=<your-anon-key>
+```bash
+# Python HTTP 服务器
+python -m http.server 3000 --bind 0.0.0.0
+# 访问 http://localhost:3000/login.html
 ```
 
 ## 项目结构
 
 ```
-├── index.html                    # 首页入口
-├── login.html                    # 登录页
-├── attendance-page.html          # 考勤填报
-├── schedule-management.html      # 日程管理
-├── assessment-management.html    # 考核项目管理
-├── summary-page.html             # 数据汇总
-├── leaderboard.html              # 考核率排名
-├── my-records.html               # 我的填报记录
-├── data-management.html          # 数据管理（管理员）
-├── org-management.html           # 组织管理（管理员）
-├── semester-settings.html        # 学期设置（管理员）
-├── profile.html                  # 个人中心
-├── reminder-settings.html        # 填报提醒设置（管理员）
-├── audit-log.html                # 操作日志（管理员）
+├── portal.html                     # 🏠 平台入口门户
+│
+├── 督察模块
+│   ├── index.html                  # 督察首页
+│   ├── attendance-page.html        # 考勤填报
+│   ├── summary-page.html           # 数据汇总
+│   ├── leaderboard.html            # 榜单证书
+│   ├── schedule-management.html    # 日程管理
+│   ├── assessment-management.html  # 考核项目管理
+│   ├── data-management.html        # 数据管理
+│   ├── org-management.html         # 组织管理（旧督察）
+│   ├── semester-settings.html      # 学期设置（旧督察）
+│   └── reminder-settings.html      # 填报提醒
+│
+├── 秘书处模块
+│   ├── secretariat-dashboard.html          # 秘书处首页
+│   ├── secretariat-org-management.html     # 组织架构
+│   ├── secretariat-people.html             # 人员管理（归属/职务/权限）
+│   ├── secretariat-semesters.html          # 学期管理
+│   └── secretariat-entry-form.html         # 进班表单
+│
+├── 学委模块
+│   ├── study-dashboard.html         # 学委首页
+│   ├── study-course-library.html    # 课程内容库
+│   ├── study-course-detail.html     # 课程章节详情
+│   ├── study-schedule-rules.html    # 日程规则
+│   └── study-weekly-assignment.html # 每周排班
+│
+├── 公共页面
+│   ├── login.html                   # 登录页
+│   ├── profile.html                 # 个人中心
+│   ├── audit-log.html               # 平台审计日志（管理员）
+│   └── my-records.html              # 我的填报记录
+│
 ├── js/
-│   ├── supabase-config.js        # Supabase 客户端初始化
-│   ├── utils.js                  # 公共工具函数
-│   └── components.js             # 共享 UI 组件
+│   ├── supabase-config.js           # Supabase 客户端初始化
+│   ├── utils.js                     # 公共工具函数（含权限拦截/学期切换/日志）
+│   └── components.js                # 共享 UI 组件
 ├── css/
-│   └── common.css                # 全局样式
+│   └── common.css                   # 全局样式
+├── docs/
+│   └── platform-modularization-plan.md  # 完整模块化规划文档
 └── supabase/
-    ├── MIGRATIONS.md             # 数据库迁移记录
-    ├── 20250427_001_init_tables.sql
-    ├── 20250427_002_reminder_and_audit.sql
-    ├── 20250508_001_rls_orgs_profiles.sql
-    ├── 20250508_002_role_rename.sql
-    ├── 20250508_003_semester_isolation.sql
-    ├── 20250508_004_schedules_per_daban.sql
-    ├── functions/
-    │   ├── admin-user/           # 管理员操作 Edge Function
-    │   └── clever-endpoint/      # 企业微信提醒 webhook
-    └── dev/                      # 开发诊断脚本
-        └── diagnose_reminder.sql
+    ├── MIGRATIONS.md                # 数据库迁移记录
+    ├── schema/                      # 建表迁移
+    ├── fix/                         # 修复脚本
+    ├── rls/                         # RLS 策略
+    └── functions/                   # Edge Functions
 ```
 
-## 页面与功能
+## 平台架构
 
-| 页面 | 功能 | 访问角色 |
-|------|------|----------|
-| 考勤填报 | 按小组填报当日考核数据，自动计算上线率/视频率/作业率 | 小组督察及以上 |
-| 日程管理 | 按大班配置每日考核项目、生成学期日程 | 大班总督及以上 |
-| 考核项目管理 | 配置考核字段、公式、模板 | 管理员 |
-| 数据汇总 | 按期查看各小组出勤率、考核率汇总 | 所有用户 |
-| 考核率排名 | 按班级/大班排名 | 所有用户 |
-| 我的填报记录 | 查看自己的历史填报 | 所有用户 |
-| 数据管理 | 查看/导出所有填报记录 | 管理员 |
-| 组织管理 | 管理大班/班级/小组层级结构 | 管理员 |
-| 学期设置 | 创建/切换学期，复制组织与考核模板 | 管理员 |
-| 提醒设置 | 配置企业微信填报提醒 | 管理员 |
-| 操作日志 | 查看系统操作记录 | 管理员 |
-| 个人中心 | 修改个人信息与密码 | 所有用户 |
+```
+portal.html（平台入口）
+├── ⚙️ 平台管理（仅管理员）
+│   ├── 学期管理 (secretariat-semesters.html)
+│   ├── 课程内容库 (study-course-library.html)
+│   └── 操作日志 (audit-log.html)
+└── 📋 学期功能（按权限显示）
+    ├── 督察管理 (index.html)
+    ├── 秘书处 (secretariat-dashboard.html)
+    └── 学委管理 (study-dashboard.html)
+```
 
-## 角色体系
+## 权限体系
 
-| 角色 | 权限范围 |
-|------|----------|
-| 超级管理员 | 全部功能、全部组织 |
-| 管理员 | 全部功能、全部组织 |
-| 大班总督/大班副督 | 本大班日程管理、本大班数据查看 |
-| 班级总督察/班级副总督察 | 本班级数据查看与填报 |
-| 小组督察/小组副督察 | 本小组考勤填报 |
+- **超级管理员/管理员**：全部功能、全部模块
+- **模块权限**：通过 `module_memberships` 表按学期分配（supervision / secretariat / study）
+- **页面级拦截**：`guardModuleAccess(moduleKey)` 统一拦截非授权访问
+- **登录分流**：按当前学期 module_memberships 数量自动决定入口
 
-## 部署
+## 核心数据模型
 
-1. 在 Supabase SQL Editor 中按顺序执行 `supabase/` 下的迁移文件
-2. 部署 Edge Functions：`supabase functions deploy admin-user && supabase functions deploy clever-endpoint`
-3. 将根目录静态文件部署到 Web 服务器（Nginx / Vercel / Netlify 等）
-4. 确保 `js/supabase-config.js` 中的 `SUPABASE_URL` 和 `SUPABASE_ANON_KEY` 正确
+```
+profiles             登录账号
+people               人员档案（跨学期）
+semesters            学期（含 effective_at 自动切换）
+module_memberships   模块权限（含 semester_id）
+organizations        组织树（含 semester_id）
+person_org_assignments  学期组织归属
+person_positions         职务
+entry_forms              进班表单
+study_course_library     课程内容库
+study_schedule_rules     日程规则
+study_schedule_instances 日程实例
+study_assignment_demands 岗位摊派
+study_assignment_people  人员落位
+audit_logs               操作日志（含 module_key/semester_id）
+```
+
+## 数据库迁移
+
+所有迁移文件在 `supabase/schema/` 下，按日期序号执行。详见 `supabase/MIGRATIONS.md`。
+
+当前最新迁移：
+- 021: module_memberships 加 semester_id
+- 022: semesters 加 effective_at
+- 023: audit_logs 加 module_key/semester_id
+- 024-026: 进班表单 entry_forms 表
