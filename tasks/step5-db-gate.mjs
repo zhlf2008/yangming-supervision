@@ -81,6 +81,33 @@ async function run() {
     .from('audit_logs')
     .select('id', { count: 'exact', head: true });
   report.audit_logs_count = alCount || 0;
+
+  // 10. 当前学期 module_memberships 按 module_key 分组(roadmap Cycle 1 复核)
+  if (currentSem) {
+    const { data: mmByKey } = await client
+      .from('module_memberships')
+      .select('module_key')
+      .eq('semester_id', currentSem.id)
+      .eq('enabled', true);
+    const buckets = {};
+    (mmByKey || []).forEach((r) => {
+      buckets[r.module_key] = (buckets[r.module_key] || 0) + 1;
+    });
+    report.module_memberships_by_key = buckets;
+  }
+
+  // 11. temp_regression_* 残留检测(roadmap 期望 temp_left = 0)
+  const { count: tempLeft } = await client
+    .from('module_memberships')
+    .select('id', { count: 'exact', head: true })
+    .in('role', ['temp_regression_secretariat', 'temp_regression_study']);
+  report.temp_regression_left = tempLeft || 0;
+
+  // 12. schedules 无学期(roadmap 期望 0) — 已在 item 6 统计,此处留 alias
+  report.schedules_no_semester_again = report.schedules_no_semester;
+
+  // 13. 孤儿考勤(roadmap 期望 0) — 已在 item 7 统计
+  report.orphan_attendance_again = report.orphan_attendance_count;
 }
 
 run()
