@@ -3,18 +3,52 @@
 // 所有页面通过 <script src="js/components.js"></script> 引入
 // ============================================================
 
+// ---- 当前系统来源 ----
+function setActiveSystem(systemKey) {
+  if (!systemKey) return;
+  try {
+    sessionStorage.setItem('activeSystem', systemKey);
+    localStorage.setItem('activeSystem', systemKey);
+  } catch (e) {}
+}
+
+function getActiveSystem() {
+  var allowed = ['portal', 'supervision', 'secretariat', 'study'];
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var fromQuery = params.get('system');
+    if (allowed.indexOf(fromQuery) !== -1) {
+      setActiveSystem(fromQuery);
+      return fromQuery;
+    }
+
+    var path = window.location.pathname || '';
+    if (path.indexOf('secretariat-') !== -1) return 'secretariat';
+    if (path.indexOf('study-') !== -1) return 'study';
+    if (path.indexOf('portal.html') !== -1) return 'portal';
+
+    var fromSession = sessionStorage.getItem('activeSystem');
+    if (allowed.indexOf(fromSession) !== -1) return fromSession;
+
+    var fromLocal = localStorage.getItem('activeSystem');
+    if (allowed.indexOf(fromLocal) !== -1) return fromLocal;
+  } catch (e) {}
+  return 'supervision';
+}
+
 // ---- 底部导航栏 ----
 // activePage: 'home' | 'attendance' | 'summary' | 'profile'
 function renderBottomNav(activePage) {
   var container = document.getElementById('bottomNavContainer');
   if (!container) return;
+  setActiveSystem('supervision');
 
   var pages = [
     { key: 'home', href: 'index.html', icon: '🏠', label: '首页' },
     { key: 'attendance', href: 'attendance-page.html', icon: '📋', label: '考勤' },
     { key: 'summary', href: 'summary-page.html', icon: '📊', label: '汇总' },
     { key: 'rank', href: 'leaderboard.html', icon: '🏆', label: '榜单' },
-    { key: 'profile', href: 'profile.html', icon: '👤', label: '我的' }
+    { key: 'profile', href: 'profile.html?system=supervision', icon: '👤', label: '我的' }
   ];
 
   var html = '<nav class="bottom-nav">';
@@ -28,6 +62,79 @@ function renderBottomNav(activePage) {
   container.innerHTML = html;
 
   // 稳定导航栏位置，防止切换页面时抖动
+  var navEl = container.querySelector('.bottom-nav');
+  if (navEl) {
+    navEl.style.transform = 'translateZ(0)';
+    navEl.style.willChange = 'transform';
+  }
+}
+
+// ---- 平台首页底部导航栏 ----
+function renderPortalBottomNav(activePage) {
+  var container = document.getElementById('bottomNavContainer');
+  if (!container) return;
+  setActiveSystem('portal');
+
+  var pages = [
+    { key: 'home', href: 'portal.html', icon: '🏠', label: '首页' },
+    { key: 'supervision', href: 'index.html', icon: '📋', label: '督察' },
+    { key: 'secretariat', href: 'secretariat-dashboard.html', icon: '🏛️', label: '秘书处' },
+    { key: 'study', href: 'study-dashboard.html', icon: '📖', label: '学委' },
+    { key: 'profile', href: 'profile.html?system=portal', icon: '👤', label: '我的' }
+  ];
+
+  var html = '<nav class="bottom-nav portal-bottom-nav">';
+  pages.forEach(function (p) {
+    html += '<a href="' + p.href + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
+    html += '<span class="nav-icon">' + p.icon + '</span>';
+    html += '<span class="nav-label">' + p.label + '</span>';
+    html += '</a>';
+  });
+  html += '</nav>';
+  container.innerHTML = html;
+
+  var navEl = container.querySelector('.bottom-nav');
+  if (navEl) {
+    navEl.style.transform = 'translateZ(0)';
+    navEl.style.willChange = 'transform';
+  }
+}
+
+// ---- 独立系统底部导航栏 ----
+// systemKey: 'secretariat' | 'study'
+function renderModuleBottomNav(systemKey, activePage) {
+  var container = document.getElementById('bottomNavContainer');
+  if (!container) return;
+  setActiveSystem(systemKey);
+
+  var navMap = {
+    secretariat: [
+      { key: 'home', href: 'secretariat-dashboard.html', icon: '🏠', label: '首页' },
+      { key: 'org', href: 'secretariat-org-management.html', icon: '🏛️', label: '组织' },
+      { key: 'people', href: 'secretariat-people.html', icon: '👥', label: '人员' },
+      { key: 'entry', href: 'secretariat-entry-form.html', icon: '📋', label: '进班' },
+      { key: 'profile', href: 'profile.html?system=secretariat', icon: '👤', label: '我的' }
+    ],
+    study: [
+      { key: 'home', href: 'study-dashboard.html', icon: '🏠', label: '首页' },
+      { key: 'library', href: 'study-course-library.html', icon: '📚', label: '课程' },
+      { key: 'rules', href: 'study-schedule-rules.html', icon: '🗓️', label: '规则' },
+      { key: 'weekly', href: 'study-weekly-assignment.html', icon: '👥', label: '安排' },
+      { key: 'profile', href: 'profile.html?system=study', icon: '👤', label: '我的' }
+    ]
+  };
+
+  var pages = navMap[systemKey] || [];
+  var html = '<nav class="bottom-nav module-bottom-nav">';
+  pages.forEach(function (p) {
+    html += '<a href="' + p.href + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
+    html += '<span class="nav-icon">' + p.icon + '</span>';
+    html += '<span class="nav-label">' + p.label + '</span>';
+    html += '</a>';
+  });
+  html += '</nav>';
+  container.innerHTML = html;
+
   var navEl = container.querySelector('.bottom-nav');
   if (navEl) {
     navEl.style.transform = 'translateZ(0)';
@@ -417,3 +524,143 @@ function _fireGroupChange(containerId, groupId) {
     state.onGroupChange(groupId);
   }
 }
+
+// ---- 统一日期选择器 ----
+var simpleDatePickers = {};
+
+function formatSimpleDate(date) {
+  if (!date || isNaN(date.getTime())) return '';
+  var y = date.getFullYear();
+  var m = String(date.getMonth() + 1).padStart(2, '0');
+  var d = String(date.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
+function parseSimpleDate(value) {
+  if (!value) return null;
+  var parts = String(value).split('-').map(function (p) { return parseInt(p, 10); });
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function sameSimpleDate(a, b) {
+  return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function initSimpleDatePicker(inputId, options) {
+  var input = document.getElementById(inputId);
+  if (!input || simpleDatePickers[inputId]) return;
+  var opts = options || {};
+  var wrap = document.getElementById(opts.wrapId || inputId + 'PickerWrap');
+  var trigger = document.getElementById(opts.triggerId || inputId + 'Trigger');
+  var popup = document.getElementById(opts.popupId || inputId + 'Popup');
+  var title = document.getElementById(opts.titleId || inputId + 'DpTitle');
+  var days = document.getElementById(opts.daysId || inputId + 'DpDays');
+  var display = document.getElementById(opts.displayId || inputId + 'Display');
+  if (!wrap || !trigger || !popup || !title || !days || !display) return;
+
+  var selected = parseSimpleDate(input.value);
+  var viewDate = selected ? new Date(selected) : new Date();
+
+  function close() {
+    popup.classList.remove('open');
+  }
+
+  function syncDisplay() {
+    selected = parseSimpleDate(input.value);
+    if (selected) {
+      display.textContent = formatSimpleDate(selected);
+      display.classList.remove('placeholder');
+      viewDate = new Date(selected);
+    } else {
+      display.textContent = opts.placeholder || '点击选择日期';
+      display.classList.add('placeholder');
+    }
+    render();
+  }
+
+  function commit(date) {
+    selected = new Date(date);
+    input.value = formatSimpleDate(selected);
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    syncDisplay();
+    close();
+  }
+
+  function render() {
+    var year = viewDate.getFullYear();
+    var month = viewDate.getMonth();
+    title.textContent = year + '年' + String(month + 1).padStart(2, '0') + '月';
+    var first = new Date(year, month, 1);
+    var start = new Date(first);
+    start.setDate(first.getDate() - first.getDay());
+    var today = new Date();
+    var html = '';
+    for (var i = 0; i < 42; i++) {
+      var date = new Date(start);
+      date.setDate(start.getDate() + i);
+      var classes = ['dp-day'];
+      if (date.getMonth() !== month) classes.push('other-month');
+      if (sameSimpleDate(date, today)) classes.push('today');
+      if (sameSimpleDate(date, selected)) classes.push('selected');
+      html += '<button type="button" class="' + classes.join(' ') + '" data-date="' + formatSimpleDate(date) + '"><span class="dp-solar">' + date.getDate() + '</span></button>';
+    }
+    days.innerHTML = html;
+  }
+
+  trigger.addEventListener('click', function () {
+    Object.keys(simpleDatePickers).forEach(function (key) {
+      if (key !== inputId) simpleDatePickers[key].close();
+    });
+    popup.classList.toggle('open');
+    render();
+  });
+  trigger.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      trigger.click();
+    }
+  });
+  days.addEventListener('click', function (event) {
+    var btn = event.target.closest('.dp-day');
+    if (!btn) return;
+    commit(parseSimpleDate(btn.getAttribute('data-date')));
+  });
+  wrap.querySelectorAll('[data-dp-action]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var action = button.getAttribute('data-dp-action');
+      if (action === 'prev') {
+        viewDate.setMonth(viewDate.getMonth() - 1);
+        render();
+      } else if (action === 'next') {
+        viewDate.setMonth(viewDate.getMonth() + 1);
+        render();
+      } else if (action === 'today') {
+        commit(new Date());
+      } else if (action === 'cancel') {
+        close();
+      } else if (action === 'confirm') {
+        commit(selected || viewDate || new Date());
+      }
+    });
+  });
+
+  simpleDatePickers[inputId] = { sync: syncDisplay, close: close };
+  syncDisplay();
+}
+
+function syncSimpleDatePickers() {
+  Object.keys(simpleDatePickers).forEach(function (key) {
+    simpleDatePickers[key].sync();
+  });
+}
+
+document.addEventListener('click', function (event) {
+  Object.keys(simpleDatePickers).forEach(function (key) {
+    var input = document.getElementById(key);
+    var wrap = input ? document.getElementById(key + 'PickerWrap') : null;
+    if (wrap && !wrap.contains(event.target)) {
+      simpleDatePickers[key].close();
+    }
+  });
+});
