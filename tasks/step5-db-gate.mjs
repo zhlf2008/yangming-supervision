@@ -58,14 +58,17 @@ async function run() {
   report.schedules_no_semester = orphanSchedules || 0;
 
   // 7. 孤儿考勤（对应 schedule 缺失）
-  const { data: orphanAttendance } = await client.rpc === undefined
-    ? await client
-        .from('attendance_records')
-        .select('id, schedule_id, schedules!inner(id)')
-        .is('schedules.id', null)
-        .limit(5)
-    : [];
-  report.orphan_attendance_sample = orphanAttendance || [];
+  const { data: attendanceRows } = await client.from('attendance_records').select('id, schedule_id');
+  const scheduleIds = [...new Set((attendanceRows || []).map((r) => r.schedule_id).filter(Boolean))];
+  let existingScheduleIds = new Set();
+  for (let i = 0; i < scheduleIds.length; i += 1000) {
+    const chunk = scheduleIds.slice(i, i + 1000);
+    const { data: existingRows } = await client.from('schedules').select('id').in('id', chunk);
+    existingRows.forEach((r) => existingScheduleIds.add(r.id));
+  }
+  const orphanAttendance = (attendanceRows || []).filter((r) => r.schedule_id && !existingScheduleIds.has(r.schedule_id));
+  report.orphan_attendance_count = orphanAttendance.length;
+  report.orphan_attendance_sample = orphanAttendance.slice(0, 5);
 
   // 8. entry_forms 记录数
   const { count: efCount } = await client

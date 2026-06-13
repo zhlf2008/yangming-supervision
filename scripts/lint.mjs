@@ -22,7 +22,15 @@ function warn(file, msg) {
 
 // ---- 1. HTML 文件检查 ----
 const htmlFiles = readdirSync(root, { recursive: true })
-  .filter((f) => f.endsWith('.html'))
+  .filter(
+    (f) =>
+      f.endsWith('.html') &&
+      !f.includes('node_modules') &&
+      !f.includes('.git') &&
+      !f.includes('.claude') &&
+      !f.includes('.codegraph') &&
+      !f.includes('.reasonix')
+  )
   .map((f) => resolve(root, f));
 
 for (const file of htmlFiles) {
@@ -47,7 +55,15 @@ for (const file of htmlFiles) {
 
 // ---- 2. JS 文件检查 ----
 const jsFiles = readdirSync(root, { recursive: true })
-  .filter((f) => f.endsWith('.js') && !f.includes('node_modules'))
+  .filter(
+    (f) =>
+      f.endsWith('.js') &&
+      !f.includes('node_modules') &&
+      !f.includes('.git') &&
+      !f.includes('.claude') &&
+      !f.includes('.codegraph') &&
+      !f.includes('.reasonix')
+  )
   .map((f) => resolve(root, f));
 
 // 收集所有 JS 文件中的全局函数/变量定义
