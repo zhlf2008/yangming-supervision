@@ -363,3 +363,46 @@ rg -n "organization_id|profiles\\.role|currentUser\\.role|currentUser\\.organiza
   - 跑 `git diff --check main..HEAD`。
   - 在 PR 留言记录验证结果。
   - 明确是否可以进入下一阶段。
+
+## 9. 2026-06-14 latest handoff update
+
+Use `tasks/release-next-steps-runbook.md` as the current source of truth for
+the next execution pass.
+
+New completed item:
+
+- `admin-user` Edge Function was found to be deployed without server-side caller
+  authorization. It has now been fixed, deployed, and verified.
+- Commit: `603a596 fix: require auth for admin user function`.
+- Supabase project: `whvjfurrkusdwujjodwc`.
+- Deployed function: `admin-user`, version `16`, `verify_jwt=true`.
+- Verification:
+  - no Authorization header returns 401.
+  - publishable/anon-key-only request returns 401.
+  - `npm.cmd run lint` passed.
+  - `node --check supabase/functions/admin-user/index.ts` passed.
+  - `git diff --check` passed.
+
+Current blocking items:
+
+1. Prepare or confirm long-term test accounts:
+   - current-semester `secretariat` account.
+   - current-semester `study` account.
+   - no-current-semester account.
+2. Do not use real business accounts for permission-removal testing.
+3. Complete manual Chrome Preview regression using
+   `tasks/manual-preview-regression-checklist.md`.
+4. Record the result in PR #1.
+5. Move PR #1 from Draft to Ready only if all gates pass.
+
+Known read-only inventory as of 2026-06-14:
+
+- current semester: `阳明心学第14期` (`id=4`).
+- current enabled memberships are `supervision` only, total `115`.
+- active Auth users without current-semester membership: `0`.
+- no long-term `secretariat` or `study` test membership exists yet.
+
+Decision:
+
+- Keep PR #1 as Draft until `tasks/release-next-steps-runbook.md` Steps 1-5
+  are complete.

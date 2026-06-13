@@ -3,6 +3,9 @@
 Use this checklist when Codex Chrome automation is unavailable but PR #1 still needs
 real browser validation before leaving Draft.
 
+For the full release handoff sequence, use
+`tasks/release-next-steps-runbook.md`.
+
 ## Context
 
 - PR: https://github.com/zhlf2008/yangming-supervision/pull/1
@@ -26,6 +29,12 @@ Prepare or confirm these long-term test accounts:
 If any of these accounts are missing, keep the PR as Draft.
 
 ## Browser Setup
+
+Before opening the Preview, confirm `admin-user` is still protected:
+
+- Supabase function `admin-user` has `verify_jwt=true`.
+- no-token request returns 401.
+- publishable/anon-key-only request returns 401.
 
 1. Open the Preview URL in Chrome.
 2. Open DevTools Console.
