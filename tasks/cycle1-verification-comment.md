@@ -1,5 +1,33 @@
 ## Cycle 1 复核报告(2026-06-13,后续 agent 接力)
 
+## 2026-06-14 复核修正
+
+上一版报告中 `people`、`person_org_assignments`、`module_memberships` 为 0 的结论，来自 `tasks/step5-db-gate.mjs` 使用 anon key 的只读查询。该脚本会受 RLS 影响，因此不适合作为生产数据是否已迁移的最终依据。
+
+使用 Supabase 管理 SQL 对项目 `whvjfurrkusdwujjodwc` 重新只读复核后，生产库实际状态如下：
+
+| 指标 | 实际 | 评估 |
+|------|------|------|
+| 当前学期唯一 | 1 | ✅ |
+| `profiles` | 115 | ✅ |
+| `profiles.organization_id is not null` | 107 | ✅ |
+| `people` | 116 | ✅ |
+| `person_org_assignments active` | 108 | ✅ |
+| `module_memberships enabled` | 115 | ✅ |
+| 当前学期 `supervision` 权限 | 115 | ✅ |
+| `temp_regression_*` 残留 | 0 | ✅ |
+| `schedules.semester_id is null` | 0 | ✅ |
+| 孤儿考勤 | 0 | ✅ |
+| `audit_logs` | 3326 | ✅ |
+
+结论：数据库迁移阻塞项已解除，或至少生产库当前数据已经满足 Release Cycle 1 的核心数据闸门。后续不要再仅凭 anon key 脚本输出判断生产迁移失败；应使用 Supabase 管理 SQL 或 service role 视角复核。
+
+仍未完成 / 仍建议保持 Draft 的事项：
+
+1. 创建或指定 3 类长期测试账号：普通秘书处、普通学委、无当前学期权限。
+2. 在能稳定访问本地或部署预览的真实浏览器环境中完成 17 页回归。
+3. 将本次修正结论同步到 PR 评论后，再决定是否从 Draft 转 Ready。
+
 ### 本地验证 ✅
 - `npm run lint` — 0 错误 0 警告
 - `git diff --check main..HEAD` — 无输出

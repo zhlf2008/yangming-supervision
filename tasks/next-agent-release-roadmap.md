@@ -8,6 +8,12 @@
 
 当前 PR 已经完成主要代码迁移、发布闸门修复和真实账号权限回归的一部分，但还不建议直接合并上线。
 
+2026-06-14 复核补充：
+
+- 已使用 Supabase 管理 SQL 重新复核生产库，确认 `people=116`、`person_org_assignments active=108`、`module_memberships enabled=115`、当前学期 `supervision=115`、`temp_regression_left=0`。
+- 旧报告中 `people/module_memberships=0` 来自 anon key + RLS 视角，不应作为生产数据迁移失败的最终判断。
+- 数据库核心闸门当前视角下已基本通过；剩余发布阻塞主要是长期测试账号和真实浏览器 17 页回归。
+
 原因：
 
 - 已完成真实 Supabase Auth 登录验证，但 Browser 环境禁止访问本地 `localhost/127.0.0.1/file://`，未完成真实浏览器视觉回归。
@@ -357,4 +363,3 @@ rg -n "organization_id|profiles\\.role|currentUser\\.role|currentUser\\.organiza
   - 跑 `git diff --check main..HEAD`。
   - 在 PR 留言记录验证结果。
   - 明确是否可以进入下一阶段。
-
