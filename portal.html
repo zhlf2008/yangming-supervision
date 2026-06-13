@@ -4,263 +4,423 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>阳明心学班级管理平台</title>
-    <link rel="stylesheet" href="css/common.css?v=3" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       body {
-        background:
-          radial-gradient(circle at top left, rgba(230,57,70,0.06), transparent 35%),
-          radial-gradient(circle at top right, rgba(212,165,116,0.12), transparent 30%),
-          var(--bg-primary);
+        background: var(--bg-primary);
       }
 
-      .portal-header {
-        padding: 34px 6px 28px;
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 16px 16px 100px;
+      }
+
+      .header {
+        position: relative;
+        padding: 32px 20px 22px;
         text-align: center;
       }
 
-      .portal-logo {
-        width: 72px;
-        height: 72px;
-        margin: 0 auto 18px;
-        background: linear-gradient(135deg, var(--vermillion-light), var(--gold-light));
-        border-radius: 22px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 32px;
-        box-shadow: 0 6px 20px rgba(230,57,70,0.15);
+      .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 60px;
+        height: 4px;
+        transform: translateX(-50%);
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--vermillion) 0%, var(--gold) 100%);
       }
 
-      .portal-title {
-        font-family: 'STSong','SimSun','Noto Serif SC',serif;
-        font-size: 26px;
-        font-weight: 700;
+      .header-title {
+        margin-bottom: 5px;
         color: var(--ink-dark);
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 25px;
+        font-weight: 600;
         letter-spacing: 1px;
       }
 
-      .portal-subtitle {
-        margin-top: 8px;
+      .header-subtitle {
         color: var(--ink-muted);
         font-size: 13px;
       }
 
-      .profile-strip {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 16px;
-        margin-bottom: 24px;
+      .user-card,
+      .semester-card,
+      .admin-section,
+      .noaccess-banner {
+        background: rgba(255, 255, 255, 0.92);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        background: rgba(255,255,255,0.82);
-        box-shadow: 0 2px 14px var(--shadow);
+        box-shadow: 0 2px 12px var(--shadow);
       }
 
-      .profile-avatar {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--vermillion-light), var(--gold-light));
+      .user-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px;
+        margin-bottom: 22px;
+      }
+
+      .user-avatar {
+        width: 54px;
+        height: 54px;
+        flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--vermillion);
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--vermillion) 0%, #c62828 100%);
+        color: white;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 22px;
         font-weight: 700;
-        font-size: 18px;
-        flex-shrink: 0;
+        box-shadow: 0 4px 16px rgba(230, 57, 70, 0.3);
       }
 
-      .profile-meta {
-        flex: 1;
+      .user-info {
         min-width: 0;
+        flex: 1;
       }
 
-      .profile-name {
-        font-size: 16px;
-        font-weight: 700;
+      .user-name {
+        margin-bottom: 4px;
         color: var(--ink-dark);
+        font-size: 17px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .profile-role {
-        margin-top: 2px;
-        font-size: 12px;
+      .user-role {
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+
+      .user-arrow {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
         color: var(--ink-muted);
       }
 
       .section-title {
-        margin-bottom: 14px;
-        font-size: 15px;
-        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        padding-left: 4px;
         color: var(--ink-dark);
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 16px;
+        font-weight: 600;
       }
 
-      .module-grid {
-        display: grid;
-        gap: 14px;
-      }
-
-      .module-card {
-        position: relative;
-        display: block;
-        padding: 20px;
-        border: 1px solid var(--border);
-        border-radius: 22px;
-        background: rgba(255,255,255,0.9);
-        box-shadow: 0 8px 28px rgba(45,45,45,0.06);
-        text-decoration: none;
-        color: inherit;
-        overflow: hidden;
-        transition: transform 0.2s, box-shadow 0.2s;
-        cursor: pointer;
-      }
-
-      .module-card:active:not(.disabled) {
-        transform: scale(0.98);
-      }
-
-      .module-card.disabled {
-        opacity: 0.6;
-        cursor: default;
-      }
-
-      .module-card::after {
+      .section-title::before {
         content: '';
-        position: absolute;
-        right: -28px;
-        top: -28px;
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background: var(--gold-light);
-        opacity: 0.7;
+        width: 3px;
+        height: 16px;
+        flex-shrink: 0;
+        border-radius: 2px;
+        background: linear-gradient(180deg, var(--vermillion) 0%, var(--gold) 100%);
       }
 
-      .module-card.supervision::after {
-        background: var(--vermillion-light);
+      .admin-section {
+        display: none;
+        padding: 16px;
+        margin-bottom: 22px;
       }
 
-      .module-icon {
-        position: relative;
-        z-index: 1;
-        width: 48px;
-        height: 48px;
-        border-radius: 16px;
+      .semester-card {
+        padding: 16px;
+      }
+
+      .semester-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px;
+        margin-bottom: 16px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(232, 228, 223, 0.72);
+        background:
+          radial-gradient(circle at top left, rgba(230, 57, 70, 0.04), transparent 45%),
+          rgba(250, 250, 248, 0.86);
+      }
+
+      .semester-icon {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 14px;
-        background: var(--gold-light);
-        font-size: 24px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.72);
+        font-size: 22px;
       }
 
-      .module-card.supervision .module-icon {
-        background: var(--vermillion-light);
+      .semester-meta {
+        min-width: 0;
+        flex: 1;
       }
 
-      .module-name {
-        position: relative;
-        z-index: 1;
-        font-family: 'STSong','SimSun','Noto Serif SC',serif;
-        font-size: 20px;
-        font-weight: 700;
+      .semester-banner .label {
+        color: var(--ink-muted);
+        font-size: 12px;
+      }
+
+      .semester-banner .name {
+        margin-top: 3px;
         color: var(--ink-dark);
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 19px;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .module-desc {
-        position: relative;
-        z-index: 1;
-        margin-top: 6px;
+      .action-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .action-card {
+        display: block;
+        min-height: 132px;
+        padding: 18px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+        color: inherit;
+        text-align: center;
+        text-decoration: none;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .action-card:active {
+        transform: scale(0.96);
+      }
+
+      .action-card:hover {
+        text-decoration: none;
+      }
+
+      .action-card .icon {
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 13px;
+        border-radius: 14px;
+        font-size: 25px;
+      }
+
+      .action-card.supervision .icon,
+      .action-card.semester .icon {
+        background: linear-gradient(135deg, var(--vermillion-light) 0%, #ffeced 100%);
+      }
+
+      .action-card.secretariat .icon,
+      .action-card.audit .icon {
+        background: linear-gradient(135deg, var(--green-light) 0%, #f3faf4 100%);
+      }
+
+      .action-card.study .icon,
+      .action-card.library .icon {
+        background: linear-gradient(135deg, var(--gold-light) 0%, rgba(255, 255, 255, 0.9) 100%);
+      }
+
+      .action-card .title {
+        margin-bottom: 6px;
+        color: var(--ink-dark);
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .action-card .desc {
+        color: var(--ink-muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .noaccess-banner {
+        display: none;
+        padding: 34px 20px;
+        margin-top: 22px;
+        text-align: center;
+      }
+
+      .noaccess-banner .icon {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 38px;
+      }
+
+      .noaccess-banner .title {
+        margin-bottom: 8px;
+        color: var(--ink-dark);
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .noaccess-banner .desc {
         color: var(--ink-light);
         font-size: 13px;
-        line-height: 1.6;
+        line-height: 1.7;
       }
 
-      .module-tags {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 14px;
+      .header {
+        animation: fadeInDown 0.5s ease-out;
       }
 
-      .module-tag {
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: var(--bg-primary);
-        color: var(--ink-muted);
-        font-size: 11px;
+      .user-card {
+        animation: fadeInUp 0.5s ease-out 0.1s backwards;
       }
 
-      .badge-coming {
-        display: inline-block;
-        margin-left: 8px;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: var(--gold-light);
-        color: var(--gold);
-        font-size: 11px;
-        font-weight: 400;
-        vertical-align: middle;
+      .admin-section {
+        animation: fadeInUp 0.5s ease-out 0.15s backwards;
+      }
+
+      .semester-card,
+      .noaccess-banner {
+        animation: fadeInUp 0.5s ease-out 0.2s backwards;
+      }
+
+      @media (max-width: 360px) {
+        .container {
+          padding-inline: 12px;
+        }
+
+        .action-grid {
+          gap: 12px;
+        }
+
+        .action-card {
+          min-height: 124px;
+          padding: 16px 8px;
+        }
+
+        .action-card .icon {
+          width: 46px;
+          height: 46px;
+          font-size: 22px;
+        }
+
+        .action-card .title {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <header class="portal-header">
-        <div class="portal-logo">📚</div>
-        <h1 class="portal-title">阳明心学班级管理平台</h1>
-        <p class="portal-subtitle">请选择要进入的工作模块</p>
+      <header class="header">
+        <h1 class="header-title">阳明心学班级管理平台</h1>
+        <p class="header-subtitle">请选择要进入的工作模块</p>
       </header>
 
-      <div class="profile-strip">
-        <div class="profile-avatar" id="profileAvatar">?</div>
-        <div class="profile-meta">
-          <div class="profile-name" id="profileName">加载中...</div>
-          <div class="profile-role" id="profileRole">管理员</div>
-        </div>
+      <div class="user-card">
+        <a
+          href="profile.html?system=portal"
+          style="display: flex; align-items: center; gap: 16px; width: 100%; text-decoration: none; color: inherit"
+        >
+          <div class="user-avatar" id="profileAvatar">?</div>
+          <div class="user-info">
+            <div class="user-name" id="profileName">加载中...</div>
+            <div class="user-role" id="profileRole">加载中...</div>
+          </div>
+          <svg
+            class="user-arrow"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </a>
       </div>
 
-      <div class="section-title">模块入口</div>
-      <div class="module-grid">
-        <a class="module-card supervision" href="index.html">
-          <div class="module-icon">📋</div>
-          <div class="module-name">督察管理</div>
-          <div class="module-desc">考勤填报、数据汇总、榜单证书、填报提醒与组织管理。</div>
-          <div class="module-tags">
-            <span class="module-tag">考勤</span>
-            <span class="module-tag">汇总</span>
-            <span class="module-tag">榜单</span>
-          </div>
-        </a>
+      <section class="admin-section" id="adminSection">
+        <h2 class="section-title">平台管理</h2>
+        <div class="action-grid">
+          <a class="action-card semester" href="secretariat-semesters.html?from=portal">
+            <div class="icon">📅</div>
+            <div class="title">学期管理</div>
+            <div class="desc">新增、编辑、切换当前学期</div>
+          </a>
+          <a class="action-card library" href="study-course-library.html?from=portal">
+            <div class="icon">📚</div>
+            <div class="title">课程内容库</div>
+            <div class="desc">维护跨学期复用的课程资产</div>
+          </a>
+          <a class="action-card audit" href="audit-log.html">
+            <div class="icon">🧾</div>
+            <div class="title">操作日志</div>
+            <div class="desc">查看全平台关键审计记录</div>
+          </a>
+        </div>
+      </section>
 
-        <a class="module-card" href="secretariat-dashboard.html">
-          <div class="module-icon">🏛️</div>
-          <div class="module-name">秘书处</div>
-          <div class="module-desc">人员建档、分班分组、职务管理、系统账号与模块权限分配。</div>
-          <div class="module-tags">
-            <span class="module-tag">人员</span>
-            <span class="module-tag">分组</span>
-            <span class="module-tag">权限</span>
+      <section class="semester-card" id="semesterSection">
+        <h2 class="section-title">模块入口</h2>
+        <div class="semester-banner" id="semesterBanner">
+          <div class="semester-icon">📆</div>
+          <div class="semester-meta">
+            <div class="label">当前学期</div>
+            <div class="name" id="currentSemesterName">加载中...</div>
           </div>
-        </a>
+        </div>
+        <div class="action-grid" id="moduleGrid">
+          <a class="action-card supervision" href="index.html" id="cardSupervision" onclick="setActiveSystem('supervision')">
+            <div class="icon">📋</div>
+            <div class="title">督察管理</div>
+            <div class="desc">考勤、汇总、榜单与日常督察</div>
+          </a>
+          <a class="action-card secretariat" href="secretariat-dashboard.html" id="cardSecretariat" onclick="setActiveSystem('secretariat')">
+            <div class="icon">🏛️</div>
+            <div class="title">秘书处</div>
+            <div class="desc">人员、组织、职务与权限维护</div>
+          </a>
+          <a class="action-card study" href="study-dashboard.html" id="cardStudy" onclick="setActiveSystem('study')">
+            <div class="icon">📖</div>
+            <div class="title">学委管理</div>
+            <div class="desc">课程、排班、周课与学习通知</div>
+          </a>
+        </div>
+      </section>
 
-        <a class="module-card" href="study-dashboard.html">
-          <div class="module-icon">📖</div>
-          <div class="module-name">学委管理</div>
-          <div class="module-desc">课程内容、学习日程、人员排班与企业微信群通知。</div>
-          <div class="module-tags">
-            <span class="module-tag">课程</span>
-            <span class="module-tag">排班</span>
-            <span class="module-tag">通知</span>
-          </div>
-        </a>
+      <div class="noaccess-banner" id="noaccessBanner">
+        <div class="icon">🔒</div>
+        <div class="title">当前学期暂无权限</div>
+        <div class="desc">您在当前学期没有任何可进入的模块。<br>请联系管理员或秘书处为您分配模块权限。</div>
       </div>
     </div>
 
+    <div id="bottomNavContainer"></div>
+
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
+    <script src="js/components.js?v=3"></script>
+    <script>
+      renderPortalBottomNav('home');
+    </script>
     <script>
       async function init() {
         await waitForDb();
@@ -274,10 +434,68 @@
         document.getElementById('profileAvatar').textContent = userName.charAt(0);
 
         var roleText = profile.role || '';
-        if (profile.organizations && profile.organizations.name) {
-          roleText += ' · ' + profile.organizations.name;
+        document.getElementById('profileRole').textContent = roleText || '普通成员';
+
+        // Load current semester
+        var currentSemesterId = null;
+        try {
+          currentSemesterId = await getCurrentSemesterId();
+          var semResult = currentSemesterId
+            ? await window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single()
+            : { data: null };
+          if (semResult.data) {
+            document.getElementById('currentSemesterName').textContent = semResult.data.semester_name;
+          } else {
+            document.getElementById('currentSemesterName').textContent = '未设置';
+          }
+        } catch (e) {
+          document.getElementById('currentSemesterName').textContent = '加载失败';
         }
-        document.getElementById('profileRole').textContent = roleText;
+
+        var userRole = profile.role || '';
+        var cards = {
+          supervision: { el: document.getElementById('cardSupervision'), key: 'supervision' },
+          secretariat: { el: document.getElementById('cardSecretariat'), key: 'secretariat' },
+          study: { el: document.getElementById('cardStudy'), key: 'study' }
+        };
+        var hasAnyCard = false;
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var noaccess = urlParams.get('noaccess') === '1';
+
+        if (userRole === '超级管理员' || userRole === '管理员') {
+          hasAnyCard = true;
+          document.getElementById('adminSection').style.display = 'block';
+        } else {
+          try {
+            if (currentSemesterId) {
+              var permRes = await window.db.from('module_memberships')
+                .select('module_key')
+                .eq('user_id', profile.id)
+                .eq('semester_id', currentSemesterId)
+                .eq('enabled', true);
+              var allowedModules = new Set((permRes.data || []).map(function(m) { return m.module_key; }));
+              Object.keys(cards).forEach(function(k) {
+                if (allowedModules.has(cards[k].key)) {
+                  cards[k].el.style.display = '';
+                  hasAnyCard = true;
+                } else {
+                  cards[k].el.style.display = 'none';
+                }
+              });
+            }
+          } catch (e) {
+            console.warn('portal permission check error:', e);
+          }
+          if (!hasAnyCard || noaccess) {
+            hasAnyCard = false;
+          }
+        }
+
+        if (!hasAnyCard) {
+          document.getElementById('noaccessBanner').style.display = 'block';
+          document.getElementById('semesterSection').style.display = 'none';
+        }
       }
 
       init();

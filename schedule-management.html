@@ -20,7 +20,7 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .container {
         max-width: 480px;
@@ -45,6 +45,9 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
       }
       .page-title {
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
@@ -207,7 +210,7 @@
       .switch-slider {
         position: absolute;
         inset: 0;
-        background: #ccc;
+        background: var(--border);
         border-radius: 20px;
         transition:
           background 0.2s,
@@ -309,14 +312,14 @@
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">日程管理</h1>
       </div>
       <div class="semester-info" id="semesterInfo"><div class="empty-state" style="padding: 8px">加载中...</div></div>
       <div id="dabanListView"><div class="empty-state">加载中...</div></div>
       <div id="scheduleView" style="display: none">
-        <div class="back-to-list" onclick="backToDabanList()">← 返回大班列表</div>
+        <div class="back-to-list" onclick="backToDabanList()">&lt; 返回大班列表</div>
         <div
           style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--ink-dark)"
           id="scheduleViewTitle"
@@ -338,31 +341,45 @@
       let dabanNameMap = {};
 
       async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        var currentUser = checkLogin();
+        if (!currentUser) return;
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
+
         const params = new URLSearchParams(window.location.search);
-        semesterId = parseInt(params.get('semester_id'));
+        var currentSemId = await getCurrentSemesterId();
+        var requestedSemesterId = parseInt(params.get('semester_id'));
+        var isAdmin = currentUser.role === '超级管理员' || currentUser.role === '管理员';
+        semesterId = isAdmin && requestedSemesterId ? requestedSemesterId : currentSemId;
         if (!semesterId) {
-          document.getElementById('dabanListView').innerHTML = '<div class="empty-state">无效的学期ID</div>';
+          document.getElementById('dabanListView').innerHTML = '<div class="empty-state">暂无当前学期</div>';
           return;
         }
         await loadSemester(semesterId);
         await loadAssessmentTypes();
 
         // 大班总督/大班副督：只看到自己的大班，直接进入日程视图
-        var currentUser = checkLogin();
         if (currentUser && (currentUser.role === '大班总督' || currentUser.role === '大班副督')) {
-          var myDabanId = currentUser.organization_id;
+          var myDabanId = await resolveCurrentUserOrgId(currentUser);
           if (myDabanId) {
-            dabanNameMap[myDabanId] = ''; // 占位，后面 loadSemester 区域的名称暂时未知
-            // 直接加载该大班的日程，跳过卡片列表
-            selectedDabanId = myDabanId;
-            document.getElementById('dabanListView').style.display = 'none';
-            document.getElementById('scheduleView').style.display = '';
-            document.getElementById('scheduleViewTitle').textContent = '本大班日程';
-            // 隐藏返回按钮（不能切换到其他大班）
-            document.querySelector('.back-to-list').style.display = 'none';
-            loadSchedules();
-            return;
+            var myDaban = await loadCurrentDaban(myDabanId);
+            if (myDaban) {
+              dabanNameMap[myDaban.id] = myDaban.name || '';
+              // 直接加载该大班的日程，跳过卡片列表
+              selectedDabanId = myDaban.id;
+              document.getElementById('dabanListView').style.display = 'none';
+              document.getElementById('scheduleView').style.display = '';
+              document.getElementById('scheduleViewTitle').textContent = myDaban.name || '本大班日程';
+              // 隐藏返回按钮（不能切换到其他大班）
+              document.querySelector('.back-to-list').style.display = 'none';
+              loadSchedules();
+              return;
+            }
           }
+          document.getElementById('dabanListView').innerHTML = '<div class="empty-state">当前学期未归属大班</div>';
+          return;
         }
 
         await loadDabanList();
@@ -371,6 +388,41 @@
         if (urlOrgId && dabanNameMap[urlOrgId]) {
           enterDaban(urlOrgId);
         }
+      }
+
+      async function resolveCurrentUserOrgId(currentUser) {
+        var legacyOrgId = currentUser && currentUser.organization_id ? Number(currentUser.organization_id) : null;
+        if (!semesterId || !currentUser || !currentUser.phone) return legacyOrgId;
+
+        var { data: person } = await window.db
+          .from('people')
+          .select('id')
+          .eq('phone', currentUser.phone)
+          .limit(1)
+          .maybeSingle();
+        if (!person) return legacyOrgId;
+
+        var { data: assignment } = await window.db
+          .from('person_org_assignments')
+          .select('org_id')
+          .eq('semester_id', semesterId)
+          .eq('person_id', person.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+
+        return assignment && assignment.org_id ? Number(assignment.org_id) : legacyOrgId;
+      }
+
+      async function loadCurrentDaban(orgId) {
+        var { data } = await window.db
+          .from('organizations')
+          .select('id,name,level')
+          .eq('id', orgId)
+          .eq('semester_id', semesterId)
+          .eq('is_active', true)
+          .maybeSingle();
+        return data && data.level === '大班' ? data : null;
       }
 
       async function loadSemester(id) {
@@ -667,14 +719,32 @@
           if (!expectedDates.has(d)) toDelete.push(d);
         });
 
-        if (toAdd.length === 0 && toDelete.length === 0) {
+        const deleteIds = toDelete.map((d) => existingMap[d]?.id).filter(Boolean);
+        const protectedDeleteIds = await getScheduleIdsWithRecords(deleteIds);
+        if (!protectedDeleteIds) return;
+        const protectedDates = toDelete.filter(function (d) {
+          var id = existingMap[d]?.id;
+          return id && protectedDeleteIds.has(Number(id));
+        });
+        const safeDeleteDates = toDelete.filter(function (d) {
+          var id = existingMap[d]?.id;
+          return id && !protectedDeleteIds.has(Number(id));
+        });
+        const safeDeleteIds = safeDeleteDates.map((d) => existingMap[d]?.id).filter(Boolean);
+
+        if (toAdd.length === 0 && safeDeleteIds.length === 0) {
+          if (protectedDates.length > 0) {
+            showToast('超出范围的日程已有填报记录，已保留');
+            return;
+          }
           showToast('日程已是最新，无需更新');
           return;
         }
 
         const msg = [];
         if (toAdd.length > 0) msg.push('新增 ' + toAdd.length + ' 天');
-        if (toDelete.length > 0) msg.push('删除 ' + toDelete.length + ' 天');
+        if (safeDeleteIds.length > 0) msg.push('删除 ' + safeDeleteIds.length + ' 天');
+        if (protectedDates.length > 0) msg.push('保留 ' + protectedDates.length + ' 天已有填报日程');
         msg.push('已有配置保持不变');
         if (!(await showConfirm(msg.join('，') + '，确定继续？'))) return;
 
@@ -699,19 +769,40 @@
               is_valid: 1
             };
           });
-          await window.db.from('schedules').insert(toInsert);
-        }
-
-        // 删除超出范围的日期
-        if (toDelete.length > 0) {
-          const deleteIds = toDelete.map((d) => existingMap[d]?.id).filter(Boolean);
-          for (const id of deleteIds) {
-            await window.db.from('schedules').delete().eq('id', id);
+          const { error: insertError } = await window.db.from('schedules').insert(toInsert);
+          if (insertError) {
+            showToast('新增日程失败: ' + insertError.message);
+            return;
           }
         }
 
-        showToast('日程已更新（新增 ' + toAdd.length + '，删除 ' + toDelete.length + '）');
+        // 删除超出范围且没有填报记录的日期；已有填报记录的日程必须保留。
+        if (safeDeleteIds.length > 0) {
+          const { error: deleteError } = await window.db.from('schedules').delete().in('id', safeDeleteIds);
+          if (deleteError) {
+            showToast('删除日程失败: ' + deleteError.message);
+            return;
+          }
+        }
+
+        var resultMsg = '日程已更新（新增 ' + toAdd.length + '，删除 ' + safeDeleteIds.length;
+        if (protectedDates.length > 0) resultMsg += '，保留已有填报 ' + protectedDates.length;
+        resultMsg += '）';
+        showToast(resultMsg);
         await loadSchedules();
+      }
+
+      async function getScheduleIdsWithRecords(scheduleIds) {
+        if (!scheduleIds || scheduleIds.length === 0) return new Set();
+        const { data, error } = await window.db
+          .from('attendance_records')
+          .select('schedule_id')
+          .in('schedule_id', scheduleIds);
+        if (error) {
+          showToast('无法校验填报记录，已取消删除');
+          return null;
+        }
+        return new Set((data || []).map(function (r) { return Number(r.schedule_id); }));
       }
 
       function startInit() {

@@ -6,13 +6,14 @@
     <title>登录 - 阳明心学督察管理系统</title>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       body {
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 20px;
+        background: var(--bg-primary);
       }
 
       .login-container {
@@ -119,7 +120,7 @@
       }
 
       .login-btn:disabled {
-        background: #ccc;
+        background: var(--border);
         box-shadow: none;
         cursor: not-allowed;
       }
@@ -167,7 +168,7 @@
       <div class="login-header">
         <div class="login-logo">📚</div>
         <h1 class="login-title">阳明心学班级管理平台</h1>
-        <p class="login-subtitle">督察 · 学委协同管理</p>
+        <p class="login-subtitle">督察 · 秘书处 · 学委协同管理</p>
       </div>
 
       <div class="login-card">
@@ -181,6 +182,7 @@
         </div>
         <button class="login-btn" id="loginBtn" onclick="handleLogin()">登 录</button>
         <p class="error-msg" id="errorMsg"></p>
+        <p class="error-msg" id="initError" style="display:none;border-color:#E63946;background:#fff0f0;"></p>
       </div>
 
       <p class="version">v1.0.0</p>
@@ -190,8 +192,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js?v=3"></script>
     <script>
-      const { createClient } = supabase;
-      const db = createClient(supabaseConfig.url, supabaseConfig.anonKey);
+      // 页面级错误捕获（捕捉所有 JS 错误并显示在页面上）
+      window.onerror = function(msg, url, line) {
+        var errEl = document.getElementById('initError');
+        if (errEl) { errEl.textContent = '错误: ' + msg + ' (行 ' + line + ')'; errEl.style.display = 'block'; }
+        return true;
+      };
+
+      var supabaseCdn = typeof supabase !== 'undefined' ? supabase : null;
+      if (!supabaseCdn || !supabaseCdn.createClient) {
+        document.getElementById('initError').textContent = 'Supabase SDK 未正确加载，请刷新页面重试。如果问题持续，请检查网络连接。';
+        document.getElementById('initError').style.display = 'block';
+        var db = null;
+      } else {
+        var db = supabaseCdn.createClient(supabaseConfig.url, supabaseConfig.anonKey);
+      }
 
       const phoneInput = document.getElementById('phone');
       const passwordInput = document.getElementById('password');
@@ -242,12 +257,8 @@
           localStorage.setItem('supabase_user', JSON.stringify(profile));
           localStorage.setItem('currentUser', profile.name);
 
-          // 4. 跳转：管理员进模块入口，普通督察进首页
-          if (profile.role === '超级管理员' || profile.role === '管理员') {
-            window.location.href = 'portal.html';
-          } else {
-            window.location.href = 'index.html';
-          }
+          // 4. 按当前学期权限分流
+          await redirectByProfile(profile);
         } catch (error) {
           console.error('Login error:', error);
           if (error.message.includes('Invalid login credentials')) {
@@ -276,6 +287,71 @@
         loginBtn.innerHTML = loading ? '<span class="loading"></span>登录中...' : '登 录';
       }
 
+      async function getLoginCurrentSemesterId() {
+        try {
+          var now = new Date().toISOString();
+          var pending = await db
+            .from('semesters')
+            .select('id')
+            .lte('effective_at', now)
+            .eq('is_current', 0)
+            .limit(1);
+          if (!pending.data || pending.data.length === 0) {
+            pending = await db
+              .from('semesters')
+              .select('id')
+              .lte('effective_at', now)
+              .is('is_current', null)
+              .limit(1);
+          }
+          if (pending.data && pending.data.length) {
+            var targetId = pending.data[0].id;
+            await db.from('semesters').update({ is_current: 0 }).eq('is_current', 1);
+            await db.from('semesters').update({ is_current: 1 }).eq('id', targetId);
+          }
+        } catch (e) {
+          /* effective_at may not exist before migration */
+        }
+
+        try {
+          var semRes = await db.from('semesters').select('id').eq('is_current', 1).maybeSingle();
+          return semRes.data ? semRes.data.id : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      async function redirectByProfile(profile) {
+        if (profile.role === '超级管理员' || profile.role === '管理员') {
+          window.location.href = 'portal.html';
+          return;
+        }
+
+        try {
+          var semId = await getLoginCurrentSemesterId();
+          if (semId) {
+            var permRes = await db.from('module_memberships')
+              .select('module_key')
+              .eq('user_id', profile.id)
+              .eq('semester_id', semId)
+              .eq('enabled', true);
+            var modules = permRes.data || [];
+            var uniqueKeys = [...new Set(modules.map(function(m) { return m.module_key; }))];
+            if (uniqueKeys.length === 0) {
+              window.location.href = 'portal.html?noaccess=1';
+              return;
+            } else if (uniqueKeys.length === 1) {
+              var pageMap = { supervision: 'index.html', secretariat: 'secretariat-dashboard.html', study: 'study-dashboard.html' };
+              window.location.href = pageMap[uniqueKeys[0]] || 'portal.html';
+              return;
+            }
+          }
+        } catch(e) {
+          console.warn('login permission check skipped:', e);
+        }
+        window.location.href = 'portal.html';
+      }
+
       // 检查是否已登录（用 SDK 原生 getSession）
       async function checkLogin() {
         try {
@@ -284,10 +360,8 @@
             var userData = localStorage.getItem('supabase_user');
             if (userData) {
               var profile = JSON.parse(userData);
-              if (profile.role === '超级管理员' || profile.role === '管理员') {
-                window.location.href = 'portal.html';
-                return;
-              }
+              await redirectByProfile(profile);
+              return;
             }
             window.location.href = 'index.html';
           }

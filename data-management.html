@@ -20,7 +20,7 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .page-header {
         display: flex;
@@ -40,6 +40,9 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
       }
       .page-title {
         font-size: 18px;
@@ -151,7 +154,7 @@
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">数据管理</h1>
       </div>
@@ -234,6 +237,8 @@
         await refreshCurrentUser();
         var user = checkLogin();
         if (!user) { document.querySelector('.container').innerHTML = '<div class="empty-state">未登录</div>'; return; }
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
         if (user.role !== '超级管理员' && user.role !== '管理员') {
           document.querySelector('.container').innerHTML = '<div class="empty-state">无权访问</div>';
           return;

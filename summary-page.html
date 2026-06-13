@@ -20,19 +20,10 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       body::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        opacity: 0.03;
-        pointer-events: none;
-        z-index: 0;
+        display: none;
       }
       .container {
         position: relative;
@@ -177,7 +168,7 @@
         margin-bottom: 4px;
       }
       .summary-stat-value.high {
-        color: #2e7d32;
+        color: var(--green);
       }
       .summary-stat-value.medium {
         color: var(--ink-dark);
@@ -275,7 +266,7 @@
         transition: width 0.3s;
       }
       .progress-fill.high {
-        background: #2e7d32;
+        background: var(--green);
       }
       .progress-fill.medium {
         background: var(--gold);
@@ -329,7 +320,7 @@
         font-weight: 600;
       }
       .detail-table .rate-high {
-        color: #2e7d32;
+        color: var(--green);
       }
       .detail-table .rate-medium {
         color: var(--ink-dark);
@@ -514,7 +505,7 @@
         color: var(--vermillion);
       }
       .raw-rate-value.high {
-        color: #2e7d32;
+        color: var(--green);
       }
       .raw-rate-value.low {
         color: var(--vermillion);
@@ -568,11 +559,7 @@
             event.preventDefault();
             window.history.back();
           "
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </a>
+        >&lt;</a>
         <h1 class="header-title">数据汇总</h1>
       </header>
 
@@ -619,6 +606,8 @@
     <script>
       var currentUser = null;
       var currentSemester = null;
+      var currentSemesterId = null;
+      var currentUserOrgId = null;
       var orgsMap = {};
       var orgsList = [];
       var weekOffset = 0;
@@ -643,18 +632,25 @@
 
         currentUser = checkLogin();
         if (!currentUser) return;
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
 
         // 先加载学期，再按学期加载组织和考核类型
-        var semRes = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single();
-        currentSemester = semRes.data || null;
-        var semId = currentSemester ? currentSemester.id : null;
+        currentSemesterId = await getCurrentSemesterId();
+        if (currentSemesterId) {
+          var semRes = await window.db.from('semesters').select('*').eq('id', currentSemesterId).single();
+          currentSemester = semRes.data || null;
+        } else {
+          currentSemester = null;
+        }
+        currentUserOrgId = await resolveCurrentUserOrgId();
 
         var [orgRes, atRes] = await Promise.all([
-          semId
-            ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true })
+          currentSemesterId
+            ? window.db.from('organizations').select('*').eq('semester_id', currentSemesterId).order('level', { ascending: true })
             : Promise.resolve({ data: [] }),
-          semId
-            ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id')
+          currentSemesterId
+            ? window.db.from('assessment_types').select('*').eq('semester_id', currentSemesterId).order('id')
             : Promise.resolve({ data: [] })
         ]);
         orgsList = orgRes.data || [];
@@ -677,9 +673,30 @@
         await loadAndRender();
       }
 
+      async function resolveCurrentUserOrgId() {
+        var legacyOrgId = currentUser && currentUser.organization_id ? Number(currentUser.organization_id) : null;
+        if (!currentSemesterId || !currentUser || !currentUser.phone) return legacyOrgId;
+
+        var { data: person } = await window.db
+          .from('people')
+          .select('id')
+          .eq('phone', currentUser.phone)
+          .maybeSingle();
+        if (!person) return legacyOrgId;
+
+        var { data: assignment } = await window.db
+          .from('person_org_assignments')
+          .select('org_id')
+          .eq('semester_id', currentSemesterId)
+          .eq('person_id', person.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        return assignment && assignment.org_id ? Number(assignment.org_id) : legacyOrgId;
+      }
+
       function initDrillLevel() {
         var role = currentUser.role;
-        var userOrgId = currentUser.organization_id;
+        var userOrgId = currentUserOrgId;
         drillGroupId = null;
 
         if (role === '小组督察' || role === '小组副督察') {
@@ -718,6 +735,11 @@
       }
 
       async function loadAndRender() {
+        if (!currentSemesterId) {
+          showEmpty('暂无当前学期');
+          return;
+        }
+
         var range = getWeekRange(weekOffset);
         var weekStart = formatDate(range.monday);
         var weekEnd = formatDate(range.sunday);
@@ -739,6 +761,7 @@
         var schedRes = await window.db
           .from('schedules')
           .select('id,schedule_date,item_ids,org_id')
+          .eq('semester_id', currentSemesterId)
           .gte('schedule_date', weekStart)
           .lte('schedule_date', weekEnd)
           .eq('is_valid', 1)
@@ -789,7 +812,7 @@
 
       function getVisibleGroupIds() {
         var role = currentUser.role;
-        var userOrgId = currentUser.organization_id;
+        var userOrgId = currentUserOrgId;
         var ids = [];
         if (role === '小组督察' || role === '小组副督察') {
           if (userOrgId && orgsMap[userOrgId] && orgsMap[userOrgId].level === '小组') ids = [userOrgId];
@@ -1424,7 +1447,7 @@
           '<span class="raw-total-value" style="color:' +
           (attR
             ? parseFloat(attR) >= 90
-              ? '#2E7D32'
+              ? 'var(--green)'
               : parseFloat(attR) >= 70
                 ? 'var(--ink-dark)'
                 : 'var(--vermillion)'

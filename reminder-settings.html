@@ -20,7 +20,7 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .container {
         max-width: 480px;
@@ -47,6 +47,9 @@
         text-decoration: none;
         color: var(--ink-dark);
         flex-shrink: 0;
+      }
+      .back-btn:active {
+        background: var(--border);
       }
       .page-title {
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
@@ -111,7 +114,7 @@
       .toggle-slider {
         position: absolute;
         inset: 0;
-        background: #ccc;
+        background: var(--border);
         border-radius: 13px;
         transition: background 0.2s;
       }
@@ -204,10 +207,10 @@
         justify-content: center;
       }
       .btn-save:active {
-        background: #c62828;
+        background: var(--vermillion);
       }
       .btn-save:disabled {
-        background: #ccc;
+        background: var(--border);
         cursor: not-allowed;
       }
       .btn-test {
@@ -234,8 +237,8 @@
         color: var(--green);
       }
       .status-tag.unsaved {
-        background: #fff3e0;
-        color: #ef6c00;
+        background: var(--gold-light);
+        color: var(--ink-light);
       }
 
       .push-info {
@@ -280,14 +283,14 @@
     <div class="container">
       <div class="page-header">
         <a
-          href="profile.html"
+          href="profile.html?system=supervision"
           class="back-btn"
           aria-label="返回"
           onclick="
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">填报提醒设置</h1>
       </div>
@@ -314,22 +317,42 @@
       (async function () {
         await waitForDb();
         await refreshCurrentUser();
-        var currentUser = getCurrentUser();
+        var currentUser = checkLogin();
+        if (!currentUser) return;
+
+        var hasSupervisionAccess = await guardSupervisionAccess();
+        if (!hasSupervisionAccess) return;
 
         // 仅超级管理员/管理员可访问
-        if (!currentUser || (currentUser.role !== '超级管理员' && currentUser.role !== '管理员')) {
+        if (currentUser.role !== '超级管理员' && currentUser.role !== '管理员') {
           showToast('仅管理员可访问此页面', 'error');
           setTimeout(function () {
-            window.location.href = 'profile.html';
+            var system = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+            window.location.href = 'profile.html?system=' + encodeURIComponent(system);
           }, 1500);
           return;
         }
 
-        renderBottomNav('profile');
+        var activeSystem = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+        var backLink = document.querySelector('.back-btn');
+        if (backLink) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
+        if (activeSystem === 'secretariat' || activeSystem === 'study') {
+          renderModuleBottomNav(activeSystem, 'profile');
+        } else if (activeSystem === 'portal') {
+          renderPortalBottomNav('profile');
+        } else {
+          renderBottomNav('profile');
+        }
 
         var configsMap = {}; // org_id → config
         var bigClasses = []; // 大班列表
         var currentSemesterId = await getCurrentSemesterId();
+        if (!currentSemesterId) {
+          document.getElementById('loadingArea').style.display = 'none';
+          document.getElementById('cardsContainer').innerHTML =
+            '<div class="empty-state">暂无当前学期，请先设置当前学期</div>';
+          return;
+        }
 
         await loadData();
 
