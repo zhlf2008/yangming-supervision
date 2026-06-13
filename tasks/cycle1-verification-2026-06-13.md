@@ -72,3 +72,34 @@
 | `.gitignore` | 改 | 新增 `test-accounts.local.md` 忽略规则 |
 
 `tasks/release-next-steps-runbook.md` 的 Step 1-4 已实质完成。下一步是真实 Chrome Preview 回归。
+
+## 2026-06-13 风险新增（Kun 第二轮执行发现）
+
+合并 PR #1 **之前**必须先处理 `origin/main` 上未走 PR 流程的 commit：
+
+| Commit | 作者 | 时间 | 性质 |
+|---|---|---|---|
+| `7398a77 feat: admin-user 新增人员同步与权限授权 action` | `zhlf2008` via GitHub Web UI | 2026-06-14 00:27:44 +0800 | **直接 push 到 main，绕过 PR review** |
+
+该 commit 改动 `supabase/functions/admin-user/index.ts` +106/-1，新增以下高权限 action（用 service_role 写生产数据）：
+
+- `syncModuleMemberships` — 从 profiles 全量同步到 module_memberships（会覆盖生产）
+- `syncPeople` — 从 profiles 同步到 people
+- `setPersonPosition` / `setPersonOrg` — 按姓名 upsert 职务/组织
+- `upsertByPersonId` — 通用 helper
+- 修复中文 body 解码（`req.json()` → `TextDecoder('utf-8')`）
+
+**违背了 `tasks/release-next-steps-runbook.md` 的硬性要求**：
+
+> Do not publish credentials, code, or schema changes to `main` without going through the PR + review flow.
+
+**建议**（不在本轮自动执行）：
+
+1. 在 GitHub 上查看 `7398a77` 是否已部署到生产 `admin-user`（应该是 v17）
+2. 决定是保留 / revert / 走 backport PR：
+   - **保留**：把 `7398a77` 拉回到 `codex/platform-migration-audit` 的一个新 commit 里（squash 或 cherry-pick），使 PR #1 包含这个改动 → 走正常 review
+   - **revert**：先 `git revert 7398a77` 在 main 上撤销，再让 PR #1 重新走流程
+   - **不动**：明确该 commit 故意走 fast-path，文档化
+3. 处理完后再合并 PR #1
+
+本轮 Kun 没有执行 `git merge` / `gh pr merge` / 在 GitHub 点 Merge。所有 git 状态变化仅限 3 个 commit（`f6dea6c` / `a04b4e2` / `512db75`）已推到 `origin/codex/platform-migration-audit`。
