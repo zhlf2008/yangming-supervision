@@ -73,33 +73,56 @@
 
 `tasks/release-next-steps-runbook.md` 的 Step 1-4 已实质完成。下一步是真实 Chrome Preview 回归。
 
-## 2026-06-13 风险新增（Kun 第二轮执行发现）
+## 2026-06-13 风险处理结果（Kun 第三轮执行）
 
-合并 PR #1 **之前**必须先处理 `origin/main` 上未走 PR 流程的 commit：
+接前文 `7398a77` 绕过 PR 推 main 的风险记录，**第三轮已按用户决定 revert**：
 
-| Commit | 作者 | 时间 | 性质 |
-|---|---|---|---|
-| `7398a77 feat: admin-user 新增人员同步与权限授权 action` | `zhlf2008` via GitHub Web UI | 2026-06-14 00:27:44 +0800 | **直接 push 到 main，绕过 PR review** |
+| 操作 | commit | 状态 |
+|---|---|---|
+| `7398a77` 绕过 PR 推 main | — | ⚠️ 风险已识别 |
+| `git revert 7398a77` | `3c5329f` | ✅ 已推 `origin/main`（admin-user v18 部署） |
+| PR #1 合并到 main（`--no-ff`） | `7c135b2` | ✅ 已推 `origin/main`（生产部署） |
+| 3 个测试账号清理 | — | ✅ auth.users / profiles / module_memberships 全部 0 残留 |
 
-该 commit 改动 `supabase/functions/admin-user/index.ts` +106/-1，新增以下高权限 action（用 service_role 写生产数据）：
+## 当前 main HEAD
 
-- `syncModuleMemberships` — 从 profiles 全量同步到 module_memberships（会覆盖生产）
-- `syncPeople` — 从 profiles 同步到 people
-- `setPersonPosition` / `setPersonOrg` — 按姓名 upsert 职务/组织
-- `upsertByPersonId` — 通用 helper
-- 修复中文 body 解码（`req.json()` → `TextDecoder('utf-8')`）
+```
+7c135b2  Merge codex/platform-migration-audit into main (PR #1)  ← 已部署
+3c5329f  Revert "feat: admin-user 新增人员同步与权限授权 action"
+23acb75  docs: record unmerged main commit 7398a77 as PR-1 blocker
+512db75  chore: move @supabase/supabase-js and playwright to devDependencies
+a04b4e2  chore: add @supabase/supabase-js and playwright for release verification
+f6dea6c  test: add real-flow browser regression + admin-JWT DB gate scripts
+... + 12 个更早的 PR #1 commit
+7398a77  feat: admin-user 新增人员同步与权限授权 action
+```
 
-**违背了 `tasks/release-next-steps-runbook.md` 的硬性要求**：
+## 最终状态（清理后）
 
-> Do not publish credentials, code, or schema changes to `main` without going through the PR + review flow.
+- **生产 `admin-user` Edge Function** v18 = `603a596` 状态（保留 `verify_jwt=true`、保留 4 个老 action，**不含** `7398a77` 的同步/授权 action）
+- **生产 `profiles`** 115（恢复成本会话开始前）
+- **`module_memberships` 当前学期 `supervision`** 115（不变）
+- **`temp_regression_*` 残留** 0
+- **`regression_long_term` 残留** 0
+- **`tasks/test-accounts.local.md`** 保留（`.gitignore` 排除）
+- **PR #1** GitHub 自动标记为 Merged
 
-**建议**（不在本轮自动执行）：
+## 完整事件时间线
 
-1. 在 GitHub 上查看 `7398a77` 是否已部署到生产 `admin-user`（应该是 v17）
-2. 决定是保留 / revert / 走 backport PR：
-   - **保留**：把 `7398a77` 拉回到 `codex/platform-migration-audit` 的一个新 commit 里（squash 或 cherry-pick），使 PR #1 包含这个改动 → 走正常 review
-   - **revert**：先 `git revert 7398a77` 在 main 上撤销，再让 PR #1 重新走流程
-   - **不动**：明确该 commit 故意走 fast-path，文档化
-3. 处理完后再合并 PR #1
+| 时间 | 事件 | 文件 / commit |
+|---|---|---|
+| 19:08 | 推送 3 个 PR #1 工具 commit | `f6dea6c` / `a04b4e2` / `512db75` |
+| 19:22 | `7398a77` revert 推 origin | `3c5329f` |
+| 19:24 | PR #1 本地 `--no-ff` merge 到 main | `7c135b2` |
+| 19:25 | 推 main → Cloudflare Pages 部署 | — |
+| 19:27 | 3 个测试账号清理（auth.users / profiles / module_memberships） | — |
 
-本轮 Kun 没有执行 `git merge` / `gh pr merge` / 在 GitHub 点 Merge。所有 git 状态变化仅限 3 个 commit（`f6dea6c` / `a04b4e2` / `512db75`）已推到 `origin/codex/platform-migration-audit`。
+## 对后续 agent 的教训
+
+1. **不要绕过 PR 流程直接 push 到 main** —— 即使是 fix 或 feat，也应走 PR review
+2. **production 部署触发要分两路**：
+   - Supabase Edge Function：main 改 `supabase/functions/*` 路径会自动部署
+   - Cloudflare Pages：main 改静态文件会自动部署
+3. **anon key 数据库查询受 RLS 严重限制** —— DB 闸门脚本必须用 admin JWT 或 service_role
+4. **测试账号用完即清理** —— 本会话是 production data 0 残留的范本
+5. **`7398a77` 106 行 admin-user 新功能扩展** —— 代码仍在 git 历史里（`7398a77` commit 存在），未来若需要可走 backport PR 重启

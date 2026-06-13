@@ -128,3 +128,66 @@
 平台:
   audit_logs → 操作日志（含 module_key, semester_id）
 ```
+
+---
+
+## 2026-06-14 final（Kun 接力会话更新）
+
+接 2026-06-10 快照，本会话完成所有阻塞 PR #1 的工作。
+
+### 当前 main HEAD
+
+```
+7c135b2  Merge codex/platform-migration-audit into main (PR #1)  ← 已部署
+3c5329f  Revert "feat: admin-user 新增人员同步与权限授权 action"
+23acb75  docs: record unmerged main commit 7398a77 as PR-1 blocker
+512db75  chore: move @supabase/supabase-js and playwright to devDependencies
+a04b4e2  chore: add @supabase/supabase-js and playwright for release verification
+f6dea6c  test: add real-flow browser regression + admin-JWT DB gate scripts
+... + 12 个更早的 PR #1 commit
+7398a77  feat: admin-user 新增人员同步与权限授权 action
+bc434a3  docs: 更新平台模块化规划文档
+```
+
+### Phase 7 状态
+
+| Phase | 内容 | 状态 |
+|-------|------|------|
+| 7 | 督察旧系统逐步迁移 | ✅ 完成（browser regression 15/15 + DB 闸门 12/12 指标绿） |
+
+### 剩余工作（Cycle 2 起）
+
+- Phase 7 之后的**新功能**：课程合集卡片视觉改版（`tasks/todo.md`）
+- `supabase/` 目录整理（`tasks/organize-plan.md`：根目录 SQL 移到 `schema/`/`rls/`/`fix/`/`data/` 子目录）
+- 后续 Cycle 增量功能：人员导入/批量分组、转组/离班/复学、职务管理、周计划复制与调整等（`tasks/next-agent-release-roadmap.md` Release Cycle 6-7）
+
+### 本会话新增强化（不进入 0-7 Phase 框架）
+
+- **admin-user Edge Function 安全加固**（commit `603a596`，已部署 v16/v18）
+- **长期测试账号**（已创建并已清理，账号清单保留在 `tasks/test-accounts.local.md`）
+- **真实登录流程浏览器回归**（`tasks/step4-browser-regression-real.mjs`，15/15 通过）
+- **管理员 JWT 视角 DB 闸门**（`tasks/step5-db-gate-admin.mjs`，与原 anon key 版对照）
+- **0 依赖静态服务器**（`tasks/dev-server.mjs`，`127.0.0.1:8765`）
+
+### 数据闸门快照（清理后）
+
+- 当前学期 `阳明心学第14期`（id=4）
+- `profiles` 115（`profiles.organization_id` 非空 107）
+- `people` 116
+- `person_org_assignments` active 108
+- `module_memberships` 当前学期 `supervision` 115
+- `temp_regression_*` 残留 0
+- `regression_long_term` 残留 0
+- `schedules.semester_id is null` 0
+- 孤儿考勤 0
+- `audit_logs` 3326
+- `entry_forms` 1
+
+### 已部署的 admin-user 版本
+
+- **v18**（生产当前）= `603a596 fix: require auth for admin user function` 状态
+  - 保留 `createUser` / `deleteUser` / `updateUser` / `generateSchedules` 4 个老 action
+  - 保留 `getCaller()` 二次校验
+  - 平台层 `verify_jwt=true`
+  - **不含** `7398a77` 的 `syncModuleMemberships` / `syncPeople` / `setPersonPosition` / `setPersonOrg` 4 个 action
+- 历史版本参考：v17（`7398a77` 直接 push 到 main，未走 PR）已被 revert

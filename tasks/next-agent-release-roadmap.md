@@ -406,3 +406,66 @@ Decision:
 
 - Keep PR #1 as Draft until `tasks/release-next-steps-runbook.md` Steps 1-5
   are complete.
+
+---
+
+## 10. 2026-06-14 final: PR #1 merged and deployed (Kun session)
+
+The decision above is now obsolete. PR #1 has been merged into `main` and
+deployed to production on 2026-06-14 by the Codex GUI agent (Kun).
+
+### Final state
+
+```
+7c135b2  Merge codex/platform-migration-audit into main (PR #1)  ← 已部署
+3c5329f  Revert "feat: admin-user 新增人员同步与权限授权 action"
+23acb75  docs: record unmerged main commit 7398a77 as PR-1 blocker
+512db75  chore: move @supabase/supabase-js and playwright to devDependencies
+a04b4e2  chore: add @supabase/supabase-js and playwright for release verification
+f6dea6c  test: add real-flow browser regression + admin-JWT DB gate scripts
+... + 12 个更早的 PR #1 commit
+7398a77  feat: admin-user 新增人员同步与权限授权 action
+bc434a3  docs: 更新平台模块化规划文档
+```
+
+- Merge strategy: `--no-ff`
+- Merge commit: `7c135b2`
+- Diff scale: 66 files, +7811 / -1464
+- Cloudflare Pages production: deployed
+- Production URL: https://yangming-supervision.pages.dev (now includes PR #1 changes)
+
+### Resolved blockers (from this session)
+
+- ✅ Long-term test accounts (4 categories, 3 + admin reference, cleaned up after)
+- ✅ Real-flow Playwright browser regression (`step4-browser-regression-real.mjs`): **15/15 pass**
+- ✅ Database release gate (admin JWT view: `step5-db-gate-admin.mjs`): all metrics green
+- ✅ `admin-user` Edge Function safety (v18 = `603a596` 状态, `verify_jwt=true`, no-token 401, anon-key 401)
+- ✅ `7398a77` admin-user sync actions reverted (avoid bypassing PR review)
+- ✅ Working tree clean, lint 0/0, diff --check clean
+
+### Production data state (post-cleanup)
+
+- `profiles` 115 (restored from 118 after test cleanup)
+- `module_memberships` enabled 115 (restored from 117)
+- `temp_regression_*` residual: 0
+- `regression_long_term` residual: 0
+- `people` 116
+- `person_org_assignments` active 108
+- `schedules.semester_id is null`: 0
+- 孤儿考勤: 0
+- `entry_forms` 1
+- `audit_logs` 3326
+
+### Roadmap status (this file)
+
+| Cycle | 内容 | 状态 |
+|---|---|---|
+| 1 | Release Cycle 1 (PR #1 合并) | ✅ Done |
+| 2 | 合并 PR + 生产验证 | ✅ Done |
+| 3 | 上线后稳定化 | ⬜ Future |
+| 4 | 数据库与迁移规范整理 | ⬜ Future |
+| 5 | 督察 Phase 7 深化 | ⬜ Future |
+| 6 | 秘书处与学委产品补齐 | ⬜ Future |
+
+This file's main job is now historical reference. For current execution
+plan, see `tasks/release-next-steps-runbook.md` and `tasks/session-snapshot.md`.
