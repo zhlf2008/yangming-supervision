@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>组织架构 - 阳明心学督察管理系统</title>
+    <script>
+      (function () {
+        window.location.replace('secretariat-org-management.html');
+      })();
+    </script>
     <!-- 快速session检查：新设备无session则直接跳转登录，避免闪现页面 -->
     <script>
       (function(){
@@ -20,7 +25,7 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .container {
         max-width: 480px;
@@ -45,6 +50,9 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
       }
       .page-title {
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
@@ -98,21 +106,21 @@
         flex-shrink: 0;
       }
       .tree-node-content:hover {
-        background: #f0efed;
+        background: var(--bg-primary);
       }
       .tree-node-content.level-0 {
-        background: #fff8e1;
-        border-left: 3px solid #ffb300;
+        background: rgba(245, 237, 228, 0.72);
+        border-left: 3px solid var(--gold);
         padding-left: 12px;
       }
       .tree-node-content.level-1 {
-        background: #e8f5e9;
-        border-left: 3px solid #4caf50;
+        background: rgba(232, 245, 233, 0.72);
+        border-left: 3px solid var(--green);
         padding-left: 12px;
       }
       .tree-node-content.level-2 {
-        background: #e3f2fd;
-        border-left: 3px solid #2196f3;
+        background: rgba(250, 250, 248, 0.88);
+        border-left: 3px solid var(--border);
         padding-left: 12px;
       }
       .tree-node-content.archived {
@@ -125,14 +133,14 @@
         font-size: 10px;
         padding: 1px 6px;
         border-radius: 3px;
-        background: #f5f5f5;
-        color: #999;
+        background: var(--bg-primary);
+        color: var(--ink-muted);
         margin-right: 6px;
         flex-shrink: 0;
       }
       .tree-btn-restore {
-        background: #e8f5e9;
-        color: #2e7d32;
+        background: var(--green-light);
+        color: var(--green);
       }
       .tree-expand-btn {
         width: 16px;
@@ -231,36 +239,36 @@
         font-size: 11px;
       }
       .user-role.超级管理员 {
-        background: #ffebee;
-        color: #c62828;
+        background: var(--vermillion-light);
+        color: var(--vermillion);
       }
       .user-role.管理员 {
-        background: #f3e5f5;
-        color: #7b1fa2;
+        background: var(--gold-light);
+        color: var(--ink-dark);
       }
       .user-role.大班总督 {
-        background: #e3f2fd;
-        color: #1565c0;
+        background: rgba(250, 250, 248, 0.9);
+        color: var(--ink-dark);
       }
       .user-role.班级总督察 {
-        background: #e8f5e9;
-        color: #2e7d32;
+        background: var(--green-light);
+        color: var(--green);
       }
       .user-role.小组督察 {
-        background: #fff3e0;
-        color: #ef6c00;
+        background: var(--gold-light);
+        color: var(--ink-light);
       }
       .user-role.小组副督察 {
-        background: #fff3e0;
-        color: #e65100;
+        background: var(--gold-light);
+        color: var(--ink-light);
       }
       .user-role.班级副总督察 {
-        background: #e8f5e9;
-        color: #558b2f;
+        background: var(--green-light);
+        color: var(--green);
       }
       .user-role.大班副督 {
-        background: #e3f2fd;
-        color: #1565c0;
+        background: rgba(250, 250, 248, 0.9);
+        color: var(--ink-dark);
       }
       .system-users-card {
         background: var(--bg-card);
@@ -456,7 +464,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: #ccc;
+        background: var(--border);
         border-radius: 24px;
         transition: 0.3s;
       }
@@ -515,7 +523,7 @@
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">组织架构</h1>
       </div>

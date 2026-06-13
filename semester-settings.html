@@ -20,7 +20,7 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .container {
         max-width: 480px;
@@ -47,6 +47,9 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
       }
 
       .page-title {
@@ -201,8 +204,8 @@
       }
 
       .type-btn {
-        background: #e3f2fd;
-        color: #1976d2;
+        background: rgba(250, 250, 248, 0.9);
+        color: var(--ink-dark);
       }
 
       .org-btn {
@@ -211,7 +214,7 @@
       }
 
       .delete-btn {
-        background: #ffebee;
+        background: var(--vermillion-light);
         color: var(--vermillion);
       }
 
@@ -438,7 +441,7 @@
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">设置</h1>
       </div>
@@ -472,15 +475,15 @@
           </div>
           <div id="trialStartGroup" class="form-item" style="display: none">
             <label class="form-label">试晨读开始日期</label>
-            <input type="date" id="trialStart" class="form-input" />
+<input type="date" class="form-input" id="trialStart" placeholder="点击选择日期" />
           </div>
           <div class="form-item">
             <label class="form-label">正式开始日期</label>
-            <input type="date" id="semesterStart" class="form-input" />
+<input type="date" class="form-input" id="semesterStart" placeholder="点击选择日期" />
           </div>
           <div class="form-item">
             <label class="form-label">结束日期</label>
-            <input type="date" id="semesterEnd" class="form-input" />
+<input type="date" class="form-input" id="semesterEnd" placeholder="点击选择日期" />
           </div>
           <div class="toggle-group">
             <span class="toggle-label">设为当前学期</span>
@@ -510,7 +513,7 @@
     </script>
 
     <script src="js/supabase-config.js?v=3"></script>
-    <script src="js/utils.js?v=3"></script>
+    <script src="js/utils.js?v=5"></script>
     <script>
       // 直接使用 window.db，在 waitForDb 后保证已初始化
 
@@ -519,6 +522,10 @@
       let isTrialEnabled = false;
       let isCurrentEnabled = true;
       let copyTemplateEnabled = true;
+      initSimpleDatePicker('trialStart', { placeholder: '点击选择日期' });
+      initSimpleDatePicker('semesterStart', { placeholder: '点击选择日期' });
+      initSimpleDatePicker('semesterEnd', { placeholder: '点击选择日期' });
+
 
       function showToast(msg) {
         const toast = document.getElementById('toast');
@@ -532,12 +539,8 @@
         await waitForDb();
         await refreshCurrentUser();
 
-        const userData = localStorage.getItem('supabase_user');
-        if (!userData) {
-          window.location.href = 'login.html';
-          return;
-        }
-        currentUser = JSON.parse(userData);
+        currentUser = checkLogin();
+        if (!currentUser) return;
         if (currentUser.role !== '超级管理员' && currentUser.role !== '管理员') {
           showToast('只有管理员可以访问此页面');
           setTimeout(() => (window.location.href = 'index.html'), 1500);
@@ -582,7 +585,7 @@
             <button class="edit-btn" onclick="editSemester('${sem.id}')">编辑</button>
             <button class="schedule-btn" onclick="window.location.href='schedule-management.html?semester_id=${sem.id}'">日程</button>
             <button class="type-btn" onclick="window.location.href='assessment-management.html?semester_id=${sem.id}'">考核</button>
-            <button class="org-btn" onclick="window.location.href='org-management.html?semester_id=${sem.id}'">组织</button>
+            <button class="org-btn" onclick="window.location.href='secretariat-org-management.html'">组织</button>
             <button class="edit-btn" onclick="window.location.href='reminder-settings.html?semester_id=${sem.id}'">提醒</button>
             <button class="delete-btn" onclick="deleteSemester('${sem.id}')">删除</button>
           </div>
@@ -606,6 +609,7 @@
         document.getElementById('currentToggle').classList.toggle('active', isCurrentEnabled);
         document.getElementById('copyTemplateToggle').classList.toggle('active', copyTemplateEnabled);
         document.getElementById('trialStartGroup').style.display = isTrialEnabled ? 'block' : 'none';
+        syncSimpleDatePickers();
         document.getElementById('semesterModalTitle').textContent = sem ? '编辑学期' : '新增学期';
         document.getElementById('semesterModal').classList.add('show');
 
@@ -650,8 +654,24 @@
           return;
         }
 
+        if (start_date > end_date) {
+          showToast('开始日期不能晚于结束日期');
+          return;
+        }
+
+        if (trial_start_date && trial_start_date > start_date) {
+          showToast('试晨读开始日期不能晚于正式开始日期');
+          return;
+        }
+
+        var templateSourceId = !id && copyTemplateEnabled ? await getCurrentSemesterId() : null;
+
         if (isCurrentEnabled) {
-          await window.db.from('semesters').update({ is_current: 0 }).eq('is_current', 1);
+          var { error: clearError } = await window.db.from('semesters').update({ is_current: 0 }).eq('is_current', 1);
+          if (clearError) {
+            showToast('切换当前学期失败: ' + clearError.message);
+            return;
+          }
         }
 
         const data = { semester_name, start_date, end_date, trial_start_date, is_current: isCurrentEnabled ? 1 : 0 };
@@ -671,13 +691,8 @@
         }
 
         // 新建学期后复制考核模板
-        if (newSemesterId) {
-          if (copyTemplateEnabled) {
-            var templateSourceId = await getCurrentSemesterId();
-            if (templateSourceId) {
-              await copyTemplatesToSemester(templateSourceId, newSemesterId);
-            }
-          }
+        if (newSemesterId && templateSourceId && Number(templateSourceId) !== Number(newSemesterId)) {
+          await copyTemplatesToSemester(templateSourceId, newSemesterId);
         }
 
         showToast('保存成功');
