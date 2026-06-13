@@ -15,6 +15,36 @@ const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
+const ADMIN_ROLES = new Set(['超级管理员', '管理员']);
+
+function jsonResponse(body, headers, status = 200) {
+  return new Response(JSON.stringify(body), { headers, status });
+}
+
+async function getCaller(req) {
+  const authHeader = req.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return { error: '未登录', status: 401 };
+
+  const { data: userResult, error: userError } = await adminClient.auth.getUser(token);
+  const user = userResult?.user;
+  if (userError || !user) return { error: '登录状态无效', status: 401 };
+
+  const { data: profile, error: profileError } = await adminClient
+    .from('profiles')
+    .select('id, role')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError || !profile) return { error: '账号档案不存在', status: 403 };
+
+  return {
+    user,
+    profile,
+    isAdmin: ADMIN_ROLES.has(profile.role)
+  };
+}
+
 Deno.serve(async (req) => {
   // CORS
   if (req.method === 'OPTIONS') {
@@ -35,6 +65,19 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const { action, userId, email, name, password, phone } = body;
+    const caller = await getCaller(req);
+
+    if (caller.error) {
+      return jsonResponse({ error: caller.error }, headers, caller.status);
+    }
+
+    if (['createUser', 'deleteUser', 'generateSchedules'].includes(action) && !caller.isAdmin) {
+      return jsonResponse({ error: '无管理员权限' }, headers, 403);
+    }
+
+    if (action === 'updateUser' && !caller.isAdmin && userId !== caller.user.id) {
+      return jsonResponse({ error: '只能更新自己的登录信息' }, headers, 403);
+    }
 
     switch (action) {
 
@@ -90,7 +133,7 @@ Deno.serve(async (req) => {
         const toInsert = [];
         const start = new Date(start_date);
         const end = new Date(end_date);
-        const trialStart = trial_start_date ? new Date(trial_start_date) : null;
+        let trialStart = trial_start_date ? new Date(trial_start_date) : null;
         let current = trialStart ? new Date(trialStart) : new Date(start);
 
         while (current <= end) {

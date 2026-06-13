@@ -6,7 +6,7 @@
     <title>考核项目管理 - 阳明心学督察管理系统</title>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .container {
         max-width: 480px;
@@ -31,6 +31,9 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
       }
       .page-title {
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
@@ -456,7 +459,7 @@
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">考核项目管理</h1>
       </div>
@@ -512,7 +515,7 @@
           </div>
         </div>
         <div class="modal-header" id="dlHeaderForm" style="display:none;">
-          <button onclick="backToDeadlineList()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-dark); padding:0;">← 返回</button>
+          <button onclick="backToDeadlineList()" style="background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-dark); padding:0;">&lt; 返回</button>
           <span class="modal-title" id="dlFormTitle">添加规则</span>
           <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
             <div style="display:flex;align-items:center;gap:6px;">
@@ -588,7 +591,19 @@
       var allDeadlineConfigs = [];
 
       async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        var profile = checkLogin();
+        if (!profile) return;
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
+
         currentSemesterId = await getCurrentSemesterId();
+        if (!currentSemesterId) {
+          document.getElementById('semesterLabel').textContent = '当前学期：未设置';
+          document.getElementById('typeList').innerHTML = '<div class="empty-state">暂无当前学期，请先设置当前学期</div>';
+          return;
+        }
         var [{ data: sem }, { data: orgs }, { data: configs }] = await Promise.all([
           window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single(),
           window.db.from('organizations').select('id,name').eq('semester_id', currentSemesterId).eq('level', '大班').order('sort_order'),

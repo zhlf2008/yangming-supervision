@@ -20,20 +20,11 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Liu+Jian+Mao+Cao&display=swap');
       body::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        opacity: 0.03;
-        pointer-events: none;
-        z-index: 0;
+        display: none;
       }
       .container {
         position: relative;
@@ -221,13 +212,13 @@
         position: relative;
       }
       .rank-card.top-1 {
-        border-left: 4px solid #ffd700;
+        border-left: 4px solid var(--gold);
       }
       .rank-card.top-2 {
-        border-left: 4px solid #c0c0c0;
+        border-left: 4px solid var(--border);
       }
       .rank-card.top-3 {
-        border-left: 4px solid #cd7f32;
+        border-left: 4px solid rgba(212, 165, 116, 0.58);
       }
       .rank-medal {
         font-size: 30px;
@@ -280,7 +271,7 @@
         border-radius: 3px;
       }
       .progress-fill.high {
-        background: #2e7d32;
+        background: var(--green);
       }
       .progress-fill.medium {
         background: var(--gold);
@@ -305,7 +296,7 @@
         line-height: 1;
       }
       .rank-rate-value.high {
-        color: #2e7d32;
+        color: var(--green);
       }
       .rank-rate-value.medium {
         color: var(--ink-dark);
@@ -615,11 +606,7 @@
             event.preventDefault();
             window.history.back();
           "
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </a>
+        >&lt;</a>
         <h1 class="header-title">榜单</h1>
       </header>
 
@@ -770,6 +757,8 @@
     <script>
       var currentUser = null;
       var currentSemester = null;
+      var currentSemesterId = null;
+      var currentUserOrgId = null;
       var orgsMap = {};
       var orgsList = [];
       var weekOffset = 0;
@@ -806,18 +795,25 @@
         await refreshCurrentUser();
         currentUser = checkLogin();
         if (!currentUser) return;
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
 
         // 先加载学期，再按学期加载组织和考核类型
-        var semRes = await window.db.from('semesters').select('*').eq('is_current', 1).limit(1).single();
-        currentSemester = semRes.data || null;
-        var semId = currentSemester ? currentSemester.id : null;
+        currentSemesterId = await getCurrentSemesterId();
+        if (currentSemesterId) {
+          var semRes = await window.db.from('semesters').select('*').eq('id', currentSemesterId).single();
+          currentSemester = semRes.data || null;
+        } else {
+          currentSemester = null;
+        }
+        currentUserOrgId = await resolveCurrentUserOrgId();
 
         var results = await Promise.all([
-          semId
-            ? window.db.from('organizations').select('*').eq('semester_id', semId).order('level', { ascending: true })
+          currentSemesterId
+            ? window.db.from('organizations').select('*').eq('semester_id', currentSemesterId).order('level', { ascending: true })
             : Promise.resolve({ data: [] }),
-          semId
-            ? window.db.from('assessment_types').select('*').eq('semester_id', semId).order('id')
+          currentSemesterId
+            ? window.db.from('assessment_types').select('*').eq('semester_id', currentSemesterId).order('id')
             : Promise.resolve({ data: [] })
         ]);
         orgsList = results[0].data || [];
@@ -835,7 +831,7 @@
 
         // 计算当前用户可见的大班 ID 集合
         var role = currentUser.role;
-        var userOrg = currentUser.organizations;
+        var userOrg = currentUserOrgId ? orgsMap[currentUserOrgId] : null;
         var allDabanIds = new Set(
           orgsList.filter(function(o) { return o.level === '大班'; }).map(function(o) { return o.id; })
         );
@@ -849,7 +845,33 @@
         await loadAndRender();
       }
 
+      async function resolveCurrentUserOrgId() {
+        var legacyOrgId = currentUser && currentUser.organization_id ? Number(currentUser.organization_id) : null;
+        if (!currentSemesterId || !currentUser || !currentUser.phone) return legacyOrgId;
+
+        var { data: person } = await window.db
+          .from('people')
+          .select('id')
+          .eq('phone', currentUser.phone)
+          .maybeSingle();
+        if (!person) return legacyOrgId;
+
+        var { data: assignment } = await window.db
+          .from('person_org_assignments')
+          .select('org_id')
+          .eq('semester_id', currentSemesterId)
+          .eq('person_id', person.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        return assignment && assignment.org_id ? Number(assignment.org_id) : legacyOrgId;
+      }
+
       async function loadAndRender() {
+        if (!currentSemesterId) {
+          showEmptyInTab('暂无当前学期');
+          return;
+        }
+
         // 自动跳过试晨读周：如果当前选择落在试晨读范围，跳到第一个正式周
         if (currentSemester && currentSemester.trial_start_date) {
           var formalMonday = getMonday(new Date(currentSemester.start_date + 'T00:00:00'));
@@ -877,6 +899,7 @@
         var schedRes = await window.db
           .from('schedules')
           .select('id,schedule_date,item_ids,org_id')
+          .eq('semester_id', currentSemesterId)
           .gte('schedule_date', weekStart)
           .lte('schedule_date', weekEnd)
           .eq('is_valid', 1)

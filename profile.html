@@ -20,19 +20,10 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       body::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        opacity: 0.03;
-        pointer-events: none;
-        z-index: 0;
+        display: none;
       }
 
       .container {
@@ -98,8 +89,8 @@
         left: 0;
         right: 0;
         height: 80px;
-        background: linear-gradient(135deg, var(--vermillion-light) 0%, var(--gold-light) 100%);
-        opacity: 0.5;
+        background: rgba(250, 250, 248, 0.92);
+        opacity: 1;
       }
 
       .profile-avatar {
@@ -213,25 +204,25 @@
         background: var(--vermillion-light);
       }
       .menu-item-icon.org {
-        background: #e3f2fd;
+        background: rgba(250, 250, 248, 0.9);
       }
       .menu-item-icon.stats {
-        background: #fff3e0;
+        background: var(--gold-light);
       }
       .menu-item-icon.notify {
-        background: #f3e5f5;
+        background: rgba(245, 237, 228, 0.72);
       }
       .menu-item-icon.admin {
-        background: #e3f2fd;
+        background: rgba(250, 250, 248, 0.9);
       }
       .menu-item-icon.help {
-        background: #e8f5e9;
+        background: var(--green-light);
       }
       .menu-item-icon.about {
-        background: #fff8e1;
+        background: var(--gold-light);
       }
       .menu-item-icon.logout {
-        background: #ffebee;
+        background: var(--vermillion-light);
       }
 
       .menu-item-content {
@@ -472,7 +463,7 @@
       }
 
       .btn-primary:hover {
-        background: #c62828;
+        background: var(--vermillion);
       }
 
       .btn-primary:disabled {
@@ -506,7 +497,7 @@
       }
 
       .toast.success {
-        background: #2e7d32;
+        background: var(--green);
       }
 
       .toast.error {
@@ -560,16 +551,16 @@
         border-radius: 10px;
       }
       .feedback-item-status.unread {
-        background: #fff3e0;
-        color: #ef6c00;
+        background: var(--gold-light);
+        color: var(--ink-light);
       }
       .feedback-item-status.read {
-        background: #e8f5e9;
-        color: #2e7d32;
+        background: var(--green-light);
+        color: var(--green);
       }
       .feedback-item-status.replied {
-        background: #e3f2fd;
-        color: #1565c0;
+        background: rgba(250, 250, 248, 0.9);
+        color: var(--ink-dark);
       }
       .feedback-item-content {
         font-size: 14px;
@@ -579,13 +570,13 @@
       .feedback-item-reply {
         margin-top: 8px;
         padding: 8px 12px;
-        background: #e3f2fd;
+        background: rgba(250, 250, 248, 0.9);
         border-radius: var(--radius-sm);
-        border-left: 3px solid #1565c0;
+        border-left: 3px solid var(--border);
       }
       .feedback-item-reply-label {
         font-size: 11px;
-        color: #1565c0;
+        color: var(--ink-dark);
         font-weight: 600;
         margin-bottom: 4px;
       }
@@ -655,11 +646,7 @@
             event.preventDefault();
             window.history.back();
           "
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </a>
+        >&lt;</a>
         <h1 class="page-title">我的</h1>
       </header>
 
@@ -862,7 +849,14 @@
     <script src="js/utils.js?v=3"></script>
     <script src="js/components.js?v=3"></script>
     <script>
-      renderBottomNav('profile');
+      var activeSystem = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+      if (activeSystem === 'secretariat' || activeSystem === 'study') {
+        renderModuleBottomNav(activeSystem, 'profile');
+      } else if (activeSystem === 'portal') {
+        renderPortalBottomNav('profile');
+      } else {
+        renderBottomNav('profile');
+      }
     </script>
     <script>
       async function init() {
@@ -873,6 +867,8 @@
         if (!profile) return;
         const userName = profile.name || '未知';
         const userRole = profile.role || '';
+        var currentSemesterId = await getCurrentSemesterId();
+        var currentUserOrgId = await resolveCurrentUserOrgId(profile, currentSemesterId);
 
         // Update profile display
         document.getElementById('profileName').textContent = userName;
@@ -892,12 +888,33 @@
         }
 
         // Load profile stats
-        await loadProfileStats(profile);
+        await loadProfileStats(profile, currentSemesterId, currentUserOrgId);
       }
 
-      async function loadProfileStats(profile) {
+      async function resolveCurrentUserOrgId(profile, semesterId) {
+        var legacyOrgId = profile && profile.organization_id ? Number(profile.organization_id) : null;
+        if (!semesterId || !profile || !profile.phone) return legacyOrgId;
+
+        var { data: person } = await window.db
+          .from('people')
+          .select('id')
+          .eq('phone', profile.phone)
+          .maybeSingle();
+        if (!person) return legacyOrgId;
+
+        var { data: assignment } = await window.db
+          .from('person_org_assignments')
+          .select('org_id')
+          .eq('semester_id', semesterId)
+          .eq('person_id', person.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        return assignment && assignment.org_id ? Number(assignment.org_id) : legacyOrgId;
+      }
+
+      async function loadProfileStats(profile, currentSemesterId, currentUserOrgId) {
         var role = profile.role;
-        var userOrgId = profile.organization_id;
+        var userOrgId = currentUserOrgId;
         var today = getToday();
 
         // 计算本周一（用于本周统计）
@@ -921,7 +938,7 @@
           String(sunday.getDate()).padStart(2, '0');
 
         // 加载所有组织（用于 group→daban 追溯）
-        var semId = await getCurrentSemesterId();
+        var semId = currentSemesterId || await getCurrentSemesterId();
         var { data: allOrgs } = semId
           ? await window.db.from('organizations').select('*').eq('semester_id', semId).eq('is_active', true)
           : { data: [] };
@@ -947,12 +964,21 @@
           document.getElementById('statLabel2').textContent = '本周本组漏填报';
           document.getElementById('statLabel3').textContent = '本组今日是否已填报';
 
+          if (!userOrgId || !semId) {
+            document.getElementById('statValue1').textContent = '0';
+            document.getElementById('statValue2').textContent = '--';
+            document.getElementById('statValue3').textContent = '未归属';
+            document.getElementById('statValue3').style.color = 'var(--ink-muted)';
+            return;
+          }
+
           var dabanId = getDabanId(userOrgId);
 
           // 先取本周全部日程（统计所有日程天数）
           var weekQuery = window.db
             .from('schedules')
             .select('id,schedule_date')
+            .eq('semester_id', semId)
             .gte('schedule_date', mondayStr)
             .lte('schedule_date', sundayStr)
             .eq('is_valid', 1);
@@ -978,7 +1004,7 @@
             var missed = pastCount - filled;
             document.getElementById('statValue1').textContent = filled + '/' + totalWeekSchedules;
             document.getElementById('statValue2').textContent = missed > 0 ? missed : '--';
-            document.getElementById('statValue2').style.color = missed > 0 ? 'var(--vermillion)' : '#2E7D32';
+            document.getElementById('statValue2').style.color = missed > 0 ? 'var(--vermillion)' : 'var(--green)';
           } else {
             document.getElementById('statValue1').textContent = totalWeekSchedules > 0 ? '0/' + totalWeekSchedules : '0';
             document.getElementById('statValue2').textContent = '--';
@@ -986,7 +1012,12 @@
           }
 
           // 3. 今日是否已填报
-          var todayQuery = window.db.from('schedules').select('id').eq('schedule_date', today).eq('is_valid', 1);
+          var todayQuery = window.db
+            .from('schedules')
+            .select('id')
+            .eq('semester_id', semId)
+            .eq('schedule_date', today)
+            .eq('is_valid', 1);
           if (dabanId) todayQuery = todayQuery.eq('org_id', dabanId);
           var { data: todayScheds } = await todayQuery;
           if (!todayScheds || todayScheds.length === 0) {
@@ -1003,7 +1034,7 @@
               .in('schedule_id', todayIds);
             if (todayFilled > 0) {
               document.getElementById('statValue3').textContent = '是';
-              document.getElementById('statValue3').style.color = '#2E7D32';
+              document.getElementById('statValue3').style.color = 'var(--green)';
             } else {
               document.getElementById('statValue3').textContent = '否';
               document.getElementById('statValue3').style.color = 'var(--vermillion)';
@@ -1024,6 +1055,7 @@
           var { data: todayScheds } = await window.db
             .from('schedules')
             .select('id,org_id')
+            .eq('semester_id', semId)
             .eq('schedule_date', today)
             .eq('is_valid', 1);
 
@@ -1067,9 +1099,9 @@
             var unfilledCount = eligibleGroups.length - filledCount;
 
             document.getElementById('statValue2').textContent = filledCount;
-            document.getElementById('statValue2').style.color = '#2E7D32';
+            document.getElementById('statValue2').style.color = 'var(--green)';
             document.getElementById('statValue3').textContent = unfilledCount;
-            document.getElementById('statValue3').style.color = unfilledCount > 0 ? 'var(--vermillion)' : '#2E7D32';
+            document.getElementById('statValue3').style.color = unfilledCount > 0 ? 'var(--vermillion)' : 'var(--green)';
           }
         }
       }
@@ -1308,7 +1340,8 @@
       }
 
       function viewStats() {
-        window.location.href = 'my-records.html';
+        var system = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+        window.location.href = 'my-records.html?system=' + encodeURIComponent(system);
       }
 
       function showAbout() {

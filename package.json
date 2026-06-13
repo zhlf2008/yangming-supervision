@@ -11,6 +11,8 @@
     "deploy:award": "npx supabase functions deploy award-notification --no-verify-jwt"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.108.1",
+    "playwright": "^1.60.0",
     "prettier": "^3.8.3"
   }
 }

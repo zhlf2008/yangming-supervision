@@ -20,7 +20,7 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .container {
         max-width: 480px;
@@ -45,6 +45,9 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
       }
       .page-title {
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
@@ -116,14 +119,14 @@
     <div class="container">
       <div class="page-header">
         <a
-          href="profile.html"
+          href="profile.html?system=supervision"
           class="back-btn"
           aria-label="返回"
           onclick="
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">我的填报记录</h1>
       </div>
@@ -140,7 +143,16 @@
     <script src="js/utils.js?v=3"></script>
     <script src="js/components.js?v=3"></script>
     <script>
-      renderBottomNav('profile');
+      var activeSystem = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+      var backLink = document.querySelector('.back-btn');
+      if (backLink) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
+      if (activeSystem === 'secretariat' || activeSystem === 'study') {
+        renderModuleBottomNav(activeSystem, 'profile');
+      } else if (activeSystem === 'portal') {
+        renderPortalBottomNav('profile');
+      } else {
+        renderBottomNav('profile');
+      }
     </script>
     <script>
       var currentUser = null;
@@ -151,6 +163,8 @@
         await refreshCurrentUser();
         currentUser = checkLogin();
         if (!currentUser) return;
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
         currentSemesterId = await getCurrentSemesterId();
         document.getElementById('infoName').textContent = currentUser.name || '';
         await loadRecords();
@@ -171,7 +185,7 @@
           return;
         }
 
-        // 查日程日期和 item_ids（用于公式匹配）
+        // 查当前学期日程日期和 item_ids（用于公式匹配）
         var scheduleIds = [
           ...new Set(
             records.map(function (r) {
@@ -182,7 +196,15 @@
         var { data: schedules } = await window.db
           .from('schedules')
           .select('id,schedule_date,item_ids')
-          .in('id', scheduleIds);
+          .in('id', scheduleIds)
+          .eq('semester_id', currentSemesterId);
+        var currentScheduleIds = new Set((schedules || []).map(function(s) { return s.id; }));
+        records = records.filter(function(r) { return currentScheduleIds.has(r.schedule_id); });
+        if (!records.length) {
+          document.getElementById('recordList').innerHTML = '<div class="empty-state">当前学期暂无填报记录</div>';
+          document.getElementById('infoCount').textContent = '0条';
+          return;
+        }
         var dateMap = {};
         var schedMap = {};
         (schedules || []).forEach(function (s) {

@@ -14,7 +14,7 @@
   --gold: #d4a574;
   --gold-light: #f5ede4;
   --border: #e8e4df;
-  --shadow: rgba(45, 45, 45, 0.08);
+  --shadow: rgba(45, 45, 45, 0.055);
   --radius: 16px;
   --radius-sm: 10px;
   --green: #2e7d32;
@@ -42,7 +42,13 @@ body {
   scrollbar-gutter: stable;
 }
 
+body::before {
+  display: none;
+}
+
 .container {
+  position: relative;
+  z-index: 1;
   max-width: 480px;
   margin: 0 auto;
   padding: 16px 16px 120px;
@@ -171,4 +177,249 @@ body {
 
 #toast.error {
   background: rgba(230, 57, 70, 0.85);
+}
+
+/* ---- 空状态统一 ---- */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; display: block; }
+.empty-state .title { font-weight: 600; color: var(--ink-dark); font-size: 15px; margin-bottom: 4px; }
+.empty-state .desc { font-size: 13px; color: var(--ink-muted); }
+
+/* ---- 加载动画 ---- */
+.loading-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--vermillion);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-wrap { text-align: center; padding: 32px 8px; color: var(--ink-muted); font-size: 13px; }
+.loading-wrap .loading-spinner { margin-bottom: 8px; }
+
+/* ---- 页面标题与卡片统一 ---- */
+.page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
+.page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; color: var(--ink-dark); }
+.back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); font-size: 0; line-height: 1; flex-shrink: 0; }
+.back-btn::before { content: ''; width: 24px; height: 24px; display: block; background: center / 24px 24px no-repeat url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%232d2d2d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='15 18 9 12 15 6'/%3E%3C/svg%3E"); }
+.back-btn:active { background: var(--border); }
+.section { background: rgba(255, 255, 255, 0.92); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
+.section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.form-item { margin-bottom: 12px; }
+.form-label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 13px; }
+.form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; box-sizing: border-box; }
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding-right: 38px !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238c7b6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 18px 18px !important;
+}
+
+/* ---- 日期选择器：与进班表单“下次生日”统一 ---- */
+.datepicker-wrap { position: relative; width: 100%; }
+.datepicker-wrap > input[type="hidden"] { display: none; }
+.datepicker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  color: var(--ink-dark);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.datepicker-trigger:focus {
+  outline: none;
+  border-color: var(--vermillion);
+  box-shadow: 0 0 0 3px var(--vermillion-light);
+}
+.datepicker-trigger .placeholder { color: var(--ink-muted); }
+.datepicker-trigger::after {
+  content: '';
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  flex-shrink: 0;
+  background: center / 18px 18px no-repeat url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='3' y='4' width='18' height='18' rx='3'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E");
+}
+.datepicker-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 2100;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+.datepicker-popup.open { display: block; }
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 8px;
+}
+.dp-nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-primary);
+  color: var(--ink-dark);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dp-nav:active { background: var(--vermillion-light); }
+.dp-year-month {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-dark);
+  text-align: center;
+}
+.dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 4px 8px;
+}
+.dp-weekday {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-muted);
+  padding: 4px 0;
+}
+.dp-weekday.sun { color: var(--vermillion); }
+.dp-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 8px 8px;
+}
+.dp-day {
+  text-align: center;
+  padding: 4px 2px;
+  cursor: pointer;
+  border-radius: 8px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dp-day:hover { background: var(--vermillion-light); }
+.dp-day.other-month { opacity: 0.25; }
+.dp-day.today { border: 1px solid rgba(179, 45, 55, 0.42); }
+.dp-day.selected { background: var(--vermillion); }
+.dp-day.selected .dp-solar { color: #fff; font-weight: 700; }
+.dp-solar {
+  font-size: 14px;
+  color: var(--ink-dark);
+  line-height: 1.3;
+}
+.dp-footer {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--border);
+}
+.dp-footer button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dp-footer .dp-today-btn { background: var(--vermillion-light); color: var(--vermillion); }
+.dp-footer .dp-confirm-btn { background: var(--vermillion); color: #fff; }
+.dp-footer .dp-cancel-btn { background: var(--bg-primary); color: var(--ink-muted); }
+
+/* ---- 按钮统一 ---- */
+.btn { border: none; border-radius: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--vermillion); color: #fff; }
+.btn-secondary { background: var(--gold-light); color: var(--ink-dark); }
+.btn-danger { background: var(--vermillion-light); color: var(--vermillion); }
+.btn-sm { padding: 6px 10px; font-size: 12px; }
+.btn-cancel { background: var(--bg-primary); color: var(--ink-dark); border: 1px solid var(--border); }
+
+/* ---- 双历日期选择器 ---- */
+.datepicker-wrap { position: relative; }
+.datepicker-trigger { display:flex; align-items:center; gap:8px; width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:10px; background:var(--bg-primary); font-size:14px; color:var(--ink-dark); cursor:pointer; box-sizing:border-box; font-family:inherit; }
+.datepicker-trigger:focus { outline:none; border-color:var(--vermillion); box-shadow:0 0 0 3px var(--vermillion-light); }
+.datepicker-trigger .placeholder { color:var(--ink-muted); }
+.datepicker-trigger .lunar-show { color:var(--ink-muted); font-size:12px; margin-left:auto; }
+.datepicker-popup { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:100; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 8px 32px rgba(0,0,0,0.15); overflow:hidden; }
+.datepicker-popup.open { display:block; }
+.dp-header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px 8px; }
+.dp-nav { width:32px; height:32px; border-radius:50%; border:none; background:var(--bg-primary); cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; color:var(--ink-dark); }
+.dp-nav:active { background:var(--gold-light); }
+.dp-year-month { font-size:15px; font-weight:600; color:var(--ink-dark); text-align:center; }
+.dp-weekdays { display:grid; grid-template-columns:repeat(7,1fr); padding:4px 8px; }
+.dp-weekday { text-align:center; font-size:11px; color:var(--ink-muted); padding:4px 0; }
+.dp-weekday.sun { color:var(--vermillion); }
+.dp-days { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px 8px; }
+.dp-day { text-align:center; padding:4px 2px; cursor:pointer; border-radius:8px; min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.dp-day:hover { background:var(--gold-light); }
+.dp-day.other-month { opacity:0.25; }
+.dp-day.today { border:1px solid var(--gold); }
+.dp-day.selected { background:var(--vermillion); }
+.dp-day.selected .dp-solar { color:#fff; font-weight:700; }
+.dp-day.selected .dp-lunar { color:rgba(255,255,255,0.8); }
+.dp-day.past { opacity:0.35; cursor:default; }
+.dp-day.past:hover { background:transparent; }
+.dp-solar { font-size:14px; color:var(--ink-dark); line-height:1.3; }
+.dp-day.selected .dp-solar { color:#fff; }
+.dp-lunar { font-size:10px; color:var(--ink-muted); line-height:1.2; transform:scale(0.92); }
+.dp-footer { display:flex; gap:6px; padding:8px 14px 12px; border-top:1px solid var(--border); }
+.dp-footer button { flex:1; padding:8px; border:none; border-radius:8px; font-size:13px; cursor:pointer; }
+.dp-footer .dp-today-btn { background:var(--gold-light); color:var(--ink-dark); }
+.dp-footer .dp-confirm-btn { background:var(--vermillion); color:#fff; }
+.dp-footer .dp-cancel-btn { background:var(--bg-primary); color:var(--ink-muted); }
+
+/* ---- 轻量统一：避免旧页面局部色块过重 ---- */
+.user-card,
+.semester-card,
+.admin-section,
+.profile-card,
+.menu-section,
+.system-users-card,
+.filter-section,
+.log-item,
+.rank-card,
+.bigclass-header,
+.date-selector,
+.tab-selector {
+  background-color: rgba(255, 255, 255, 0.92);
+}
+
+.back-btn,
+.date-nav-btn,
+.modal-close,
+.load-more button {
+  box-shadow: 0 1px 6px rgba(45, 45, 45, 0.045);
+}
+
+a.back-btn {
+  font-size: 0;
+  line-height: 1;
 }

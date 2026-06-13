@@ -20,7 +20,7 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .page-header {
         display: flex;
@@ -41,6 +41,9 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--ink-dark);
+      }
+      .back-btn:active {
+        background: var(--border);
       }
 
       .page-title {
@@ -321,7 +324,7 @@
         transition: background 0.3s, transform 0.15s;
       }
       .submit-btn.submitted {
-        background: #22c55e !important;
+        background: var(--green) !important;
       }
 
       .submit-btn:active {
@@ -520,7 +523,7 @@
             event.preventDefault();
             window.history.back();
           "
-          >←</a
+          >&lt;</a
         >
         <h1 class="page-title">考勤</h1>
       </div>
@@ -658,6 +661,7 @@
       var todayTypes = [];
       var formData = {};
       var orgs = [];
+      var currentUserOrgId = null;
       var lockedTypeIds = new Set();  // 被截止规则锁定的考核项目 ID 集合
       var attendanceTypes = [];
       var homeworkTypes = [];
@@ -665,15 +669,20 @@
       async function init() {
         await waitForDb();
 
-        // 并行：刷新用户 + 加载学期（互不依赖）
-        const [_, semesters] = await Promise.all([
-          refreshCurrentUser(),
-          window.db.from('semesters').select('*').eq('is_current', 1).limit(1)
-        ]);
+        await refreshCurrentUser();
 
         currentUser = checkLogin();
         if (!currentUser) return;
-        currentSemester = semesters.data?.[0] || null;
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
+        var semId = await getCurrentSemesterId();
+        if (semId) {
+          var semRes = await window.db.from('semesters').select('*').eq('id', semId).single();
+          currentSemester = semRes.data || null;
+        } else {
+          currentSemester = null;
+        }
+        currentUserOrgId = await resolveCurrentUserOrgId();
 
         // Update header info
         const today = getToday();
@@ -682,8 +691,8 @@
         document.getElementById('reporterName').textContent = currentUser.name || '未知';
 
         const [orgNameResult, orgsResult] = await Promise.all([
-          currentUser.organization_id
-            ? window.db.from('organizations').select('name').eq('id', currentUser.organization_id).single()
+          currentUserOrgId
+            ? window.db.from('organizations').select('name').eq('id', currentUserOrgId).single()
             : Promise.resolve({ data: null }),
           currentSemester
             ? window.db
@@ -726,10 +735,31 @@
 
       // Build full path name for an organization: 大班-班级-小组 -- now in utils.js
 
+      async function resolveCurrentUserOrgId() {
+        var legacyOrgId = currentUser && currentUser.organization_id ? Number(currentUser.organization_id) : null;
+        if (!currentSemester || !currentUser || !currentUser.phone) return legacyOrgId;
+
+        var { data: person } = await window.db
+          .from('people')
+          .select('id')
+          .eq('phone', currentUser.phone)
+          .maybeSingle();
+        if (!person) return legacyOrgId;
+
+        var { data: assignment } = await window.db
+          .from('person_org_assignments')
+          .select('org_id')
+          .eq('semester_id', currentSemester.id)
+          .eq('person_id', person.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        return assignment && assignment.org_id ? Number(assignment.org_id) : legacyOrgId;
+      }
+
       // Load organization selector (three-level cascade)
       function loadOrgSelector(orgs) {
         const role = currentUser.role;
-        const userOrgId = currentUser.organization_id;
+        const userOrgId = currentUserOrgId;
 
         if (!orgs || orgs.length === 0) {
           return;
@@ -823,7 +853,7 @@
         const classSelect = document.getElementById('classSelect');
         const groupSelect = document.getElementById('groupSelect');
         const role = currentUser.role;
-        const userOrgId = currentUser.organization_id;
+        const userOrgId = currentUserOrgId;
 
         classSelect.innerHTML = '';
         groupSelect.innerHTML = '';
@@ -887,7 +917,7 @@
       function onClassChange(classId, preselectGroupId) {
         const groupSelect = document.getElementById('groupSelect');
         const role = currentUser.role;
-        const userOrgId = currentUser.organization_id;
+        const userOrgId = currentUserOrgId;
 
         groupSelect.innerHTML = '';
 
@@ -946,6 +976,15 @@
 
       // Get all child organizations recursively -- now in utils.js
 
+      function getDabanIdForGroup(groupId) {
+        var group = orgs.find(function (o) { return o.id === parseInt(groupId); });
+        if (!group || group.level !== '小组') return null;
+        var classOrg = orgs.find(function (o) { return o.id === group.parent_id; });
+        if (!classOrg) return null;
+        var daban = orgs.find(function (o) { return o.id === classOrg.parent_id; });
+        return daban && daban.level === '大班' ? Number(daban.id) : null;
+      }
+
       async function loadTodaySchedule(selectedGroupId) {
         if (!currentSemester) {
           document.getElementById('formsContainer').innerHTML = `
@@ -957,17 +996,7 @@
         }
 
         // 从小组追溯到大班
-        var dabanId = null;
-        if (selectedGroupId) {
-          var group = orgs.find(function (o) { return o.id === parseInt(selectedGroupId); });
-          if (group) {
-            var classOrg = orgs.find(function (o) { return o.id === group.parent_id; });
-            if (classOrg) {
-              var daban = orgs.find(function (o) { return o.id === classOrg.parent_id; });
-              if (daban && daban.level === '大班') dabanId = daban.id;
-            }
-          }
-        }
+        var dabanId = getDabanIdForGroup(selectedGroupId);
 
         const today = getToday();
 
@@ -1412,6 +1441,11 @@
         const selectedOrg = orgs.find((o) => o.id === parseInt(selectedOrgId));
         if (!selectedOrg || selectedOrg.level !== '小组') {
           showToast('必须选择到小组才能提交');
+          return;
+        }
+        var selectedDabanId = getDabanIdForGroup(selectedOrgId);
+        if (!selectedDabanId || Number(currentSchedule.org_id) !== Number(selectedDabanId)) {
+          showToast('所选小组与今日日程大班不匹配，请重新选择组织');
           return;
         }
 

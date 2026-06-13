@@ -4,18 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>学委 - 每周安排</title>
-    <link rel="stylesheet" href="css/common.css?v=3" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
-      .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
-      .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink-dark); text-decoration: none; }
-      .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
-
-      .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
-      .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-      .section-title { font-size: 16px; font-weight: 700; }
-
-      .form-item { margin-bottom: 12px; }
-      .form-label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 13px; }
+      .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-dark); text-decoration: none; font-size: 18px; }
+      .back-btn:active { background: var(--border); }
       .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
       .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
@@ -35,9 +27,9 @@
       .day-date { font-size: 15px; }
       .day-weekday { font-size: 12px; color: var(--ink-muted); }
       .day-scope { font-size: 12px; padding: 3px 8px; border-radius: 999px; }
-      .day-scope.大班 { background: #fce4ec; color: #c62828; }
-      .day-scope.班级 { background: #e8f5e9; color: #2e7d32; }
-      .day-scope.小组 { background: #e3f2fd; color: #1565c0; }
+      .day-scope.大班 { background: var(--vermillion-light); color: var(--vermillion); }
+      .day-scope.班级 { background: var(--green-light); color: var(--green); }
+      .day-scope.小组 { background: rgba(250, 250, 248, 0.9); color: var(--ink-dark); }
       .day-body { padding: 14px; }
       .day-course { margin-bottom: 10px; color: var(--ink-light); font-size: 13px; }
       .day-empty { color: var(--ink-muted); font-size: 13px; padding: 8px 0; }
@@ -49,7 +41,7 @@
       .demand-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
       .demand-type-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
       .demand-type-tag.organizer { background: var(--gold-light); color: var(--gold); }
-      .demand-type-tag.participant { background: #e8eaf6; color: #283593; }
+      .demand-type-tag.participant { background: rgba(250, 250, 248, 0.9); color: var(--ink-dark); }
 
       .people-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
       .person-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); font-size: 12px; }
@@ -66,23 +58,52 @@
       .btn-cancel { background: var(--bg-primary); color: var(--ink-dark); border: 1px solid var(--border); }
 
       .roster-output { white-space: pre-wrap; font-size: 13px; line-height: 1.8; color: var(--ink-dark); background: var(--bg-primary); padding: 14px; border-radius: 10px; border: 1px solid var(--border); margin-top: 10px; max-height: 400px; overflow-y: auto; }
+
+      /* ---- 日历视图 ---- */
+      .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+      @media (max-width: 400px) {
+        .calendar-grid { gap:2px; }
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <header class="page-header">
-        <a class="back-btn" href="study-dashboard.html">←</a>
+        <a class="back-btn" href="study-dashboard.html">&lt;</a>
         <h1 class="page-title">每周安排</h1>
       </header>
 
       <!-- Week navigation -->
       <section class="section">
         <div class="week-nav" id="weekNav">
-          <button onclick="changeWeek(-1)">← 上一周</button>
+        <button onclick="changeWeek(-1)">&lt; 上一周</button>
           <span class="week-label" id="weekLabel">--</span>
           <button onclick="changeWeek(1)">下一周 →</button>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="generateRoster()" style="width:100%">📋 生成一周排班表</button>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="toggleView()" id="viewToggleBtn" style="flex:1;">📅 日历视图</button>
+          <button class="btn btn-secondary btn-sm" onclick="generateRoster()" style="flex:1;">📋 生成排班表</button>
+          <button class="btn btn-secondary btn-sm" onclick="generateNotices()" style="flex:1;">📢 生成通知</button>
+        </div>
+      </section>
+
+      <!-- Calendar view (hidden by default) -->
+      <section class="section" id="calendarSection" style="display:none;">
+        <div class="section-header">
+          <div class="section-title">📅 日历视图</div>
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('calendarSection').style.display='none'">关闭</button>
+        </div>
+        <div id="calendarGrid" class="empty-state">加载中...</div>
+      </section>
+
+      <!-- Notification output -->
+      <section class="section" id="noticeSection" style="display:none;">
+        <div class="section-header">
+          <div class="section-title">📢 通知文案</div>
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('noticeSection').style.display='none'">关闭</button>
+        </div>
+        <pre class="roster-output" id="noticeOutput"></pre>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" onclick="copyNotice()">📋 复制通知文案</button>
       </section>
 
       <!-- Roster output -->
@@ -175,6 +196,8 @@
 
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
+    <script src="js/components.js?v=3"></script>
+    <script>renderModuleBottomNav('study', 'weekly');</script>
     <script>
       var WEEKDAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
       var ROLES = ['主持人', '聆听者', '分享人', '回应砥砺', '总结赋能', '播控', '拍照'];
@@ -191,6 +214,8 @@
         await waitForDb();
         await refreshCurrentUser();
         if (!checkLogin()) return;
+        var ok = await guardModuleAccess('study');
+        if (!ok) return;
 
         currentSemesterId = await getCurrentSemesterId();
         if (!currentSemesterId) { showToast('请先设置当前学期', 'error'); return; }
@@ -661,6 +686,127 @@
         navigator.clipboard.writeText(text).then(function () {
           showToast('已复制到剪贴板', 'success');
         }).catch(function () {
+          showToast('复制失败，请手动复制', 'error');
+        });
+      }
+
+      // ====== 日历视图 ======
+      var _viewMode = 'list';
+      function toggleView() {
+        var btn = document.getElementById('viewToggleBtn');
+        if (_viewMode === 'list') {
+          _viewMode = 'calendar';
+          btn.textContent = '📋 列表视图';
+          renderCalendarView();
+          document.getElementById('calendarSection').style.display = '';
+        } else {
+          _viewMode = 'list';
+          btn.textContent = '📅 日历视图';
+          document.getElementById('calendarSection').style.display = 'none';
+        }
+      }
+
+      function renderCalendarView() {
+        var container = document.getElementById('calendarGrid');
+        var week = getWeekRange();
+        var weekStart = new Date(week.start);
+        var weekEnd = new Date(week.end);
+
+        // Calendar header: Mon-Sun
+        var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px;text-align:center;">';
+        var dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        dayNames.forEach(function(n) { html += '<div style="font-size:12px;color:var(--ink-muted);padding:4px 0;font-weight:600;">' + n + '</div>'; });
+        html += '</div>';
+
+        html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
+        var d = new Date(weekStart);
+        while (d <= weekEnd) {
+          var dateStr = toDateStr(d);
+          var weekday = d.getDay();
+          var daySchedules = schedules.filter(function(s) { return s.schedule_date === dateStr; });
+          var isToday = dateStr === getToday();
+          var cardStyle = 'border:1px solid var(--border);border-radius:10px;padding:8px 4px;min-height:70px;background:var(--bg-card);';
+          if (isToday) cardStyle += 'border-color:var(--vermillion);box-shadow:0 0 0 1px var(--vermillion-light);';
+
+          html += '<div style="' + cardStyle + '">';
+          html += '<div style="font-size:12px;font-weight:600;text-align:center;margin-bottom:4px;color:' + (isToday ? 'var(--vermillion)' : 'var(--ink-dark)') + ';">' + d.getDate() + '</div>';
+
+          if (daySchedules.length) {
+            daySchedules.forEach(function(s) {
+              var scopeLabel = { 大班: '大班', 班级: '班级', 小组: '小组' }[s.scope_level] || '';
+              var colorMap = { 大班: '#e63946', 班级: '#2e7d32', 小组: '#d4a574' };
+              html += '<div style="font-size:10px;padding:2px 4px;margin-bottom:2px;border-radius:4px;background:' + colorMap[s.scope_level] + ';color:#fff;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + scopeLabel + '</div>';
+            });
+          } else {
+            html += '<div style="font-size:10px;color:var(--ink-muted);text-align:center;">—</div>';
+          }
+          html += '</div>';
+          d.setDate(d.getDate() + 1);
+        }
+        html += '</div>';
+        container.innerHTML = html;
+      }
+
+      // ====== 通知文案生成 ======
+      function generateNotices() {
+        document.getElementById('noticeSection').style.display = '';
+        var output = document.getElementById('noticeOutput');
+        var week = getWeekRange();
+        var weekdayLabels = {1:'周一',2:'周二',3:'周三',4:'周四',5:'周五',6:'周六',7:'周日'};
+
+        // Reload all assigned people for all demands this week
+        var allDemandIds = [];
+        for (var sid in demands) {
+          demands[sid].forEach(function(dm) { allDemandIds.push(dm.id); });
+        }
+
+        window.db.from('study_assignment_people').select('*').in('demand_id', allDemandIds).then(function(res) {
+          var peopleMap = {};
+          (res.data || []).forEach(function(p) {
+            if (!peopleMap[p.demand_id]) peopleMap[p.demand_id] = [];
+            peopleMap[p.demand_id].push(p);
+          });
+
+          var text = '📢   共读安排通知\n';
+          text += week.label + '\n\n';
+
+          var d = new Date(week.start);
+          while (d <= new Date(week.end)) {
+            var dateStr = toDateStr(d);
+            var weekday = d.getDay() || 7;
+            var daySchedules = schedules.filter(function(s) { return s.schedule_date === dateStr; });
+
+            if (daySchedules.length) {
+              text += '【' + weekdayLabels[weekday] + ' ' + formatDateDisplay(dateStr) + '】\n';
+              daySchedules.forEach(function(s) {
+                var scopeLabel = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' }[s.scope_level] || '';
+                text += '  📖 ' + scopeLabel + ' · ' + getOrgName(s.org_id) + '\n';
+                var dayDemands = demands[s.id] || [];
+                if (dayDemands.length) {
+                  dayDemands.forEach(function(dm) {
+                    var assigned = peopleMap[dm.id] || [];
+                    var names = assigned.map(function(p) { return p.person_name_snapshot; }).join('、');
+                    text += '    👤 ' + dm.role_name;
+                    if (names) text += '：' + names;
+                    text += '\n';
+                  });
+                }
+              });
+              text += '\n';
+            }
+            d.setDate(d.getDate() + 1);
+          }
+
+          text += '🙏 有言实行，四个100%！';
+          output.textContent = text;
+        });
+      }
+
+      function copyNotice() {
+        var text = document.getElementById('noticeOutput').textContent;
+        navigator.clipboard.writeText(text).then(function() {
+          showToast('通知文案已复制', 'success');
+        }).catch(function() {
           showToast('复制失败，请手动复制', 'error');
         });
       }

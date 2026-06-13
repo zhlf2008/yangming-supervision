@@ -269,14 +269,21 @@ async function logout() {
 // ---- adminApi（通过 Edge Function 代理管理员操作） ----
 
 var adminApi = {
-  _call: function (action, body) {
+  _call: async function (action, body) {
     var supabaseUrl = window.supabaseConfig ? window.supabaseConfig.url : '';
-    var anonKey = window.supabaseConfig ? window.supabaseConfig.anonKey : '';
+    if (!window.supabaseClient || !window.supabaseClient.auth) {
+      return { error: 'Supabase Auth 未初始化' };
+    }
+    var sessionResult = await window.supabaseClient.auth.getSession();
+    var token = sessionResult.data && sessionResult.data.session ? sessionResult.data.session.access_token : '';
+    if (!token) {
+      return { error: '请先登录后再执行该操作' };
+    }
     return fetch(supabaseUrl + '/functions/v1/admin-user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + anonKey
+        Authorization: 'Bearer ' + token
       },
       body: JSON.stringify(Object.assign({ action: action }, body))
     }).then(function (r) {
@@ -304,7 +311,7 @@ var adminApi = {
 var AUDITLOG_BACKLOG_KEY = '_auditlog_backlog';
 var AUDITLOG_FLUSHING = false;
 
-function logAction(action, target, detail) {
+function logAction(action, target, detail, moduleKey) {
   var user = getCurrentUser();
   if (!user || !window.db) return;
   var entry = {
@@ -312,19 +319,34 @@ function logAction(action, target, detail) {
     user_name: user.name || '',
     action: action,
     target: target || '',
-    detail: detail || ''
+    detail: detail || '',
+    module_key: moduleKey || null
   };
-  // 异步写入，不阻塞主流程
-  try {
-    window.db.from('audit_logs').insert(entry).then(function () {
-      // 写入成功后尝试补传积压日志
-      flushAuditBacklog();
-    }).catch(function () {
+  // 异步获取当前学期ID并补充
+  getCurrentSemesterId().then(function(semId) {
+    if (semId) entry.semester_id = semId;
+    // 异步写入，不阻塞主流程
+    try {
+      window.db.from('audit_logs').insert(entry).then(function () {
+        flushAuditBacklog();
+      }).catch(function () {
+        appendAuditBacklog(entry);
+      });
+    } catch (e) {
       appendAuditBacklog(entry);
-    });
-  } catch (e) {
-    appendAuditBacklog(entry);
-  }
+    }
+  }).catch(function() {
+    // 获取学期失败时仍然写入（不带 semester_id）
+    try {
+      window.db.from('audit_logs').insert(entry).then(function () {
+        flushAuditBacklog();
+      }).catch(function () {
+        appendAuditBacklog(entry);
+      });
+    } catch (e) {
+      appendAuditBacklog(entry);
+    }
+  });
 }
 
 function appendAuditBacklog(entry) {
@@ -370,6 +392,80 @@ function checkLogin() {
   }
 }
 
+// ---- 模块页面权限拦截 ----
+// 在页面 init 中调用：await guardModuleAccess('secretariat') 或 'study'
+// 管理员/超级管理员直接放行；普通用户检查当前学期 module_memberships
+async function guardModuleAccess(moduleKey) {
+  var profile = checkLogin();
+  if (!profile) return false;
+
+  // 平台管理员直接放行
+  if (profile.role === '超级管理员' || profile.role === '管理员') return true;
+
+  try {
+    var semId = await getCurrentSemesterId();
+    if (!semId) {
+      showToast('当前学期未设置，请联系管理员', 'error');
+      setTimeout(function () { window.location.href = 'portal.html'; }, 1500);
+      return false;
+    }
+    var result = await window.db
+      .from('module_memberships')
+      .select('id')
+      .eq('user_id', profile.id)
+      .eq('semester_id', semId)
+      .eq('module_key', moduleKey)
+      .eq('enabled', true)
+      .maybeSingle();
+    if (result.data) return true;
+  } catch (e) {
+    console.error('guardModuleAccess error:', e);
+  }
+
+  showToast('当前学期暂无"' + moduleKey + '"模块权限，请联系管理员或秘书处', 'error');
+  setTimeout(function () { window.location.href = 'portal.html'; }, 2000);
+  return false;
+}
+
+// 督察旧系统权限拦截：优先使用当前学期 module_memberships，保留旧角色兜底
+async function guardSupervisionAccess() {
+  var profile = checkLogin();
+  if (!profile) return false;
+
+  if (profile.role === '超级管理员' || profile.role === '管理员') return true;
+
+  try {
+    var semId = await getCurrentSemesterId();
+    if (semId) {
+      var result = await window.db
+        .from('module_memberships')
+        .select('id')
+        .eq('user_id', profile.id)
+        .eq('semester_id', semId)
+        .eq('module_key', 'supervision')
+        .eq('enabled', true)
+        .maybeSingle();
+      if (result.data) return true;
+    }
+  } catch (e) {
+    console.error('guardSupervisionAccess error:', e);
+  }
+
+  var legacyRoles = [
+    '大班总督',
+    '大班副督',
+    '班级总督察',
+    '班级副总督察',
+    '小组督察',
+    '小组副督察'
+  ];
+  if (legacyRoles.indexOf(profile.role) !== -1) return true;
+
+  showToast('当前学期暂无督察模块权限，请联系管理员或秘书处', 'error');
+  setTimeout(function () { window.location.href = 'portal.html'; }, 2000);
+  return false;
+}
+
 // ---- 刷新当前用户数据 ----
 // 从 SDK 原生 session 获取 userId，不再依赖自定义 localStorage key
 
@@ -397,7 +493,46 @@ async function refreshCurrentUser() {
 // ---- 当前学期 ----
 
 var _currentSemesterId = null;
+
+// 自动学期切换：检查是否有到达生效时间但未切换的学期
+async function autoSwitchSemester() {
+  // effective_at 列不存在时查询会抛异常，静默降级
+  try {
+    var now = new Date().toISOString();
+    // 分两次查代替 or()：Supabase 不支持 or() 内 is.null
+    var { data: pending } = await window.db
+      .from('semesters')
+      .select('id')
+      .lte('effective_at', now)
+      .eq('is_current', 0)
+      .limit(1);
+    if (!pending || pending.length === 0) {
+      var { data: pending2 } = await window.db
+        .from('semesters')
+        .select('id')
+        .lte('effective_at', now)
+        .is('is_current', null)
+        .limit(1);
+      if (!pending2 || pending2.length === 0) return false;
+      pending = pending2;
+    }
+    var targetId = pending[0].id;
+    // 取消当前学期标记
+    await window.db.from('semesters').update({ is_current: 0 }).eq('is_current', 1);
+    // 设置目标学期为当前
+    await window.db.from('semesters').update({ is_current: 1 }).eq('id', targetId);
+    // 清除缓存
+    _currentSemesterId = null;
+    return true;
+  } catch (e) {
+    console.error('autoSwitchSemester error:', e);
+    return false;
+  }
+}
+
 async function getCurrentSemesterId() {
+  // 先尝试自动切换
+  await autoSwitchSemester();
   if (_currentSemesterId !== null) return _currentSemesterId;
   try {
     var result = await window.db.from('semesters').select('id').eq('is_current', 1).single();

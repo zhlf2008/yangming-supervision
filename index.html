@@ -20,19 +20,10 @@
     </script>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       body::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        opacity: 0.03;
-        pointer-events: none;
-        z-index: 0;
+        display: none;
       }
 
       .container {
@@ -76,6 +67,11 @@
         color: var(--ink-muted);
       }
 
+      .module-switch-wrap {
+        margin-top: 12px;
+        margin-left: -20px;
+      }
+
       /* User Card */
       .user-card {
         background: var(--bg-card);
@@ -101,14 +97,15 @@
         width: 56px;
         height: 56px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--vermillion-light) 0%, var(--gold-light) 100%);
+        background: linear-gradient(135deg, var(--vermillion) 0%, #c62828 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 22px;
-        color: var(--vermillion);
+        color: white;
         flex-shrink: 0;
+        box-shadow: 0 4px 16px rgba(230, 57, 70, 0.3);
       }
 
       .user-info {
@@ -376,16 +373,16 @@
       <header class="header">
         <h1 class="header-title">阳明心学督察管理系统</h1>
         <p class="header-subtitle">加载中...</p>
-        <div id="moduleSwitch" style="display:none; margin-top:12px;">
-          <a href="portal.html" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,0.78);color:var(--ink-light);font-size:12px;text-decoration:none;">← 切换模块</a>
+        <div id="moduleSwitch" class="module-switch-wrap" style="display: none">
+          <a class="back-btn module-switch" href="portal.html" aria-label="切换模块"></a>
         </div>
       </header>
 
       <!-- User Card -->
       <div class="user-card">
         <a
-          href="profile.html"
-          style="display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit"
+          href="profile.html?system=supervision"
+          style="display: flex; align-items: center; gap: 16px; width: 100%; text-decoration: none; color: inherit"
         >
           <div class="user-avatar" id="userAvatar">?</div>
           <div class="user-info">
@@ -454,8 +451,12 @@
 
         var profile = checkLogin();
         if (!profile) return;
+        var ok = await guardSupervisionAccess();
+        if (!ok) return;
         const userName = profile.name || '未知';
         const userRole = profile.role || '';
+        var currentSemesterId = await getCurrentSemesterId();
+        var currentUserOrgId = await resolveCurrentUserOrgId(profile, currentSemesterId);
 
         // Update user card
         document.getElementById('userName').textContent = userName;
@@ -466,20 +467,15 @@
           document.getElementById('quickActions').insertAdjacentHTML(
             'beforeend',
             `
-          <a href="org-management.html" class="action-card">
+          <a href="secretariat-org-management.html" class="action-card">
             <div class="action-icon summary">🏢</div>
             <div class="action-title">组织架构</div>
-            <div class="action-desc">管理组织与人员</div>
+            <div class="action-desc">管理当前学期组织</div>
           </a>
           <a href="semester-settings.html" class="action-card">
             <div class="action-icon attendance">📆</div>
             <div class="action-title">学期设置</div>
             <div class="action-desc">管理学期与试晨读</div>
-          </a>
-          <a href="audit-log.html" class="action-card">
-            <div class="action-icon attendance">📜</div>
-            <div class="action-title">操作日志</div>
-            <div class="action-desc">查看用户操作记录</div>
           </a>
           <a href="reminder-settings.html" class="action-card">
             <div class="action-icon attendance">📢</div>
@@ -489,80 +485,39 @@
         `
           );
           // 学期相关的快捷入口（需要当前学期ID）
-          window.db
-            .from('semesters')
-            .select('id')
-            .eq('is_current', 1)
-            .single()
-            .then(function (res) {
-              if (res.data) {
-                var sid = res.data.id;
-                document.getElementById('quickActions').insertAdjacentHTML(
-                  'beforeend',
-                  `
-              <a href="schedule-management.html?semester_id=${sid}" class="action-card">
+          if (currentSemesterId) {
+            document.getElementById('quickActions').insertAdjacentHTML(
+              'beforeend',
+              `
+              <a href="schedule-management.html?semester_id=${currentSemesterId}" class="action-card">
                 <div class="action-icon summary">📅</div>
                 <div class="action-title">日程管理</div>
                 <div class="action-desc">管理每日考核日程</div>
               </a>
-              <a href="assessment-management.html?semester_id=${sid}" class="action-card">
+              <a href="assessment-management.html?semester_id=${currentSemesterId}" class="action-card">
                 <div class="action-icon summary">📝</div>
                 <div class="action-title">考核项目</div>
                 <div class="action-desc">配置考核模板</div>
               </a>
-              <a href="data-management.html?semester_id=${sid}" class="action-card">
+              <a href="data-management.html?semester_id=${currentSemesterId}" class="action-card">
                 <div class="action-icon summary">🗄️</div>
                 <div class="action-title">数据管理</div>
                 <div class="action-desc">管理所有填报记录</div>
               </a>
             `
-                );
-              }
-            })
-            .catch(function (err) {
-              console.error('加载当前学期失败:', err);
-            });
-        } else if (userRole === '大班总督' || userRole === '大班副督') {
+            );
+          }
+        } else if ((userRole === '大班总督' || userRole === '大班副督') && currentSemesterId && currentUserOrgId) {
+          // 日程管理入口（仅自己的大班）
           document.getElementById('quickActions').insertAdjacentHTML(
             'beforeend',
             `
-          <a href="org-management.html" class="action-card">
-            <div class="action-icon summary">🏢</div>
-            <div class="action-title">组织架构</div>
-            <div class="action-desc">管理组织与人员</div>
-          </a>
-        `
-          );
-          // 日程管理入口（仅自己的大班）
-          window.db
-            .from('semesters')
-            .select('id')
-            .eq('is_current', 1)
-            .single()
-            .then(function (res) {
-              if (res.data) {
-                document.getElementById('quickActions').insertAdjacentHTML(
-                  'beforeend',
-                  `
-              <a href="schedule-management.html?semester_id=${res.data.id}&org_id=${userOrgId}" class="action-card">
+              <a href="schedule-management.html?semester_id=${currentSemesterId}&org_id=${currentUserOrgId}" class="action-card">
                 <div class="action-icon summary">📅</div>
                 <div class="action-title">日程管理</div>
                 <div class="action-desc">管理本大班考核日程</div>
               </a>
             `
-                );
-              }
-            });
-        } else if (userRole === '班级总督察' || userRole === '班级副总督察') {
-          document.getElementById('quickActions').insertAdjacentHTML(
-            'beforeend',
-            `
-          <a href="org-management.html" class="action-card">
-            <div class="action-icon summary">🏢</div>
-            <div class="action-title">组织架构</div>
-            <div class="action-desc">管理组织与人员</div>
-          </a>
-        `
           );
         }
         // Update role display
@@ -578,39 +533,51 @@
         };
         document.querySelector('.user-role').textContent = roleMap[userRole] || userRole;
 
-        // 管理员显示切换模块入口
-        if (userRole === '超级管理员' || userRole === '管理员') {
-          document.getElementById('moduleSwitch').style.display = 'block';
-        }
+        // 所有用户显示切换模块入口
+        document.getElementById('moduleSwitch').style.display = 'block';
 
         // Load organization info
-        if (profile.organization_id) {
-          const orgData = localStorage.getItem('supabase_user');
-          const org = profile.organizations;
-          if (org) {
-            document.querySelector('.user-role').textContent += ' · ' + org.name;
-          }
+        if (currentUserOrgId) {
+          var { data: currentOrg } = await window.db.from('organizations').select('name').eq('id', currentUserOrgId).maybeSingle();
+          if (currentOrg) document.querySelector('.user-role').textContent += ' · ' + currentOrg.name;
         }
 
         // Load current semester and update subtitle
-        await loadCurrentSemester();
+        await loadCurrentSemester(currentSemesterId);
 
         // Load today's stats based on user's scope
-        await loadTodayStats(profile);
+        await loadTodayStats(profile, currentSemesterId, currentUserOrgId);
+      }
+
+      async function resolveCurrentUserOrgId(profile, semesterId) {
+        var legacyOrgId = profile && profile.organization_id ? Number(profile.organization_id) : null;
+        if (!semesterId || !profile || !profile.phone) return legacyOrgId;
+
+        var { data: person } = await window.db
+          .from('people')
+          .select('id')
+          .eq('phone', profile.phone)
+          .maybeSingle();
+        if (!person) return legacyOrgId;
+
+        var { data: assignment } = await window.db
+          .from('person_org_assignments')
+          .select('org_id')
+          .eq('semester_id', semesterId)
+          .eq('person_id', person.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        return assignment && assignment.org_id ? Number(assignment.org_id) : legacyOrgId;
       }
 
       // Load today's stats for the user's scope
-      async function loadCurrentSemester() {
-        const today = getToday();
-        const { data } = await window.db
-          .from('semesters')
-          .select('semester_name')
-          .lte('start_date', today)
-          .gte('end_date', today)
-          .single();
-        if (data) {
-          document.querySelector('.header-subtitle').textContent = data.semester_name;
+      async function loadCurrentSemester(semesterId) {
+        if (!semesterId) {
+          document.querySelector('.header-subtitle').textContent = '暂无当前学期';
+          return;
         }
+        const { data } = await window.db.from('semesters').select('semester_name').eq('id', semesterId).maybeSingle();
+        document.querySelector('.header-subtitle').textContent = data ? data.semester_name : '暂无当前学期';
       }
 
       // Helper: get formulas from assessment types for a schedule (matched by type_name)
@@ -659,12 +626,12 @@
       var carouselIndex = 0;
       var touchStartX = 0;
 
-      async function loadTodayStats(profile) {
+      async function loadTodayStats(profile, currentSemesterId, currentUserOrgId) {
         var today = getToday();
         var role = profile.role;
-        var userOrgId = profile.organization_id;
+        var userOrgId = currentUserOrgId;
 
-        var semId = await getCurrentSemesterId();
+        var semId = currentSemesterId || await getCurrentSemesterId();
         var { data: orgs } = semId
           ? await window.db.from('organizations').select('id,name,parent_id,level').eq('semester_id', semId).eq('is_active', true)
           : { data: [] };
@@ -713,6 +680,7 @@
         var { data: schedules } = await window.db
           .from('schedules')
           .select('id,schedule_date,item_ids,org_id')
+          .eq('semester_id', semId)
           .eq('schedule_date', today)
           .eq('is_valid', 1);
         if (!schedules || schedules.length === 0) {
