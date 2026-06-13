@@ -3,266 +3,312 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>操作日志 - 阳明心学督察管理系统</title>
-    <!-- 快速session检查：新设备无session则直接跳转登录，避免闪现页面 -->
-    <script>
-      (function(){
-        var supabaseKey = "sb-whvjfurrkusdwujjodwc-auth-token";
-        var raw = localStorage.getItem(supabaseKey);
-        if (!raw) { window.location.replace("login.html"); return; }
-        try {
-          var session = JSON.parse(raw);
-          if (!session || !session.access_token) { window.location.replace("login.html"); }
-        } catch(e) {
-          window.location.replace("login.html");
-        }
-      })();
-    </script>
+    <title>平台审计日志</title>
     <link rel="preconnect" href="https://whvjfurrkusdwujjodwc.supabase.co" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
-      .page-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-      .back-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        text-decoration: none;
-        color: var(--ink-dark);
-      }
-      .page-title {
-        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
-        font-size: 20px;
-        font-weight: 600;
-      }
-      .filter-bar {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-      .filter-btn {
-        padding: 6px 14px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: var(--bg-card);
-        font-size: 12px;
-        cursor: pointer;
-        color: var(--ink-muted);
-      }
-      .filter-btn.active {
-        background: var(--vermillion);
-        color: #fff;
-        border-color: var(--vermillion);
-      }
-      .log-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .log-item {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 12px;
-      }
-      .log-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4px;
-      }
-      .log-action {
-        font-size: 13px;
-        font-weight: 500;
-      }
-      .log-time {
-        font-size: 11px;
-        color: var(--ink-muted);
-      }
-      .log-user {
-        font-size: 12px;
-        color: var(--ink-light);
-      }
-      .log-detail {
-        font-size: 12px;
-        color: var(--ink-muted);
-        margin-top: 4px;
-      }
-      .log-action.考勤提交 {
-        color: #2e7d32;
-      }
-      .log-action.添加人员 {
-        color: #1565c0;
-      }
-      .log-action.编辑人员 {
-        color: #1565c0;
-      }
-      .log-action.删除人员 {
-        color: var(--vermillion);
-      }
-      .log-action.组织修改 {
-        color: #ef6c00;
-      }
-      .log-action.删除组织 {
-        color: var(--vermillion);
-      }
-      .log-action.推送提醒 {
-        color: #6a1b9a;
-      }
-      .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--ink-muted);
+      body { background: var(--bg-primary); }
+      body::before { display: none; }
+      .container { padding-bottom: 32px; }
+
+      .filter-section { background: rgba(255, 255, 255, 0.92); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; box-shadow: 0 2px 12px var(--shadow); }
+      .filter-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+      .filter-row:last-child { margin-bottom: 0; }
+      .filter-label { font-size: 12px; color: var(--ink-muted); min-width: 48px; align-self: center; }
+      .filter-select { flex: 1; min-width: 100px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); font-size: 13px; color: var(--ink-dark); }
+      .filter-input { flex: 1; min-width: 120px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); font-size: 13px; color: var(--ink-dark); }
+      .filter-btn { padding: 8px 16px; border: none; border-radius: 8px; background: var(--vermillion); color: #fff; font-size: 13px; cursor: pointer; }
+
+      .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+      .status-count { font-size: 13px; color: var(--ink-muted); }
+      .status-refresh { font-size: 12px; color: var(--vermillion); cursor: pointer; text-decoration: none; }
+
+      .log-list { display: flex; flex-direction: column; gap: 8px; }
+      .log-item { background: rgba(255, 255, 255, 0.92); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: 0 1px 6px var(--shadow); }
+      .log-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+      .log-action { font-size: 14px; font-weight: 600; }
+      .log-module { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; margin-left: 8px; }
+      .log-module.supervision { background: var(--vermillion-light); color: var(--vermillion); }
+      .log-module.study { background: rgba(250, 250, 248, 0.9); color: var(--ink-dark); }
+      .log-module.secretariat { background: var(--gold-light); color: var(--ink-light); }
+      .log-module.admin { background: rgba(245, 237, 228, 0.72); color: var(--ink-dark); }
+      .log-module.unknown { background: var(--bg-primary); color: var(--ink-muted); }
+      .log-time { font-size: 11px; color: var(--ink-muted); white-space: nowrap; }
+      .log-user { font-size: 12px; color: var(--ink-light); margin-bottom: 4px; }
+      .log-user .highlight { color: var(--vermillion); font-weight: 500; }
+      .log-detail { font-size: 12px; color: var(--ink-muted); line-height: 1.6; }
+
+      .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-muted); }
+
+      .load-more { text-align: center; padding: 16px; }
+      .load-more button { padding: 8px 24px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255, 255, 255, 0.92); color: var(--ink-light); font-size: 13px; cursor: pointer; }
+      .load-more button:disabled { opacity: 0.5; cursor: default; }
+
+      .log-action.考勤提交,
+      .log-action.作业率提交 { color: var(--green); }
+      .log-action.添加人员,
+      .log-action.编辑人员 { color: var(--ink-dark); }
+      .log-action.删除人员,
+      .log-action.删除章节,
+      .log-action.删除组织 { color: var(--vermillion); }
+      .log-action.组织修改,
+      .log-action.编辑组织,
+      .log-action.新增组织 { color: var(--gold); }
+      .log-action.推送提醒 { color: var(--ink-dark); }
+      .log-action.添加课程,
+      .log-action.编辑课程,
+      .log-action.新增章节,
+      .log-action.编辑章节,
+      .log-action.排序章节,
+      .log-action.生成学委日程 { color: var(--ink-dark); }
+      .log-action.新增学期,
+      .log-action.编辑学期 { color: var(--gold); }
+
+      @media (max-width: 480px) {
+        .filter-row { flex-direction: column; }
+        .filter-label { min-width: auto; }
+        .filter-select, .filter-input { width: 100%; }
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="page-header">
-        <a
-          href="index.html"
-          class="back-btn"
-          aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
-          >←</a
-        >
-        <h1 class="page-title">操作日志</h1>
+      <header class="page-header">
+        <a class="back-btn" href="portal.html">&lt;</a>
+        <h1 class="page-title">平台审计日志</h1>
+      </header>
+
+      <!-- 筛选栏 -->
+      <div class="filter-section">
+        <div class="filter-row">
+          <span class="filter-label">模块</span>
+          <select class="filter-select" id="filterModule">
+            <option value="">全部模块</option>
+            <option value="supervision">督察管理</option>
+            <option value="study">学委管理</option>
+            <option value="secretariat">秘书处</option>
+            <option value="admin">平台管理</option>
+          </select>
+          <span class="filter-label">学期</span>
+          <select class="filter-select" id="filterSemester">
+            <option value="">全部学期</option>
+          </select>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">操作人</span>
+          <input class="filter-input" id="filterUser" placeholder="输入姓名搜索..." />
+          <span class="filter-label">操作类型</span>
+          <select class="filter-select" id="filterAction">
+            <option value="">全部操作</option>
+            <option value="考勤">考勤</option>
+            <option value="人员">人员</option>
+            <option value="组织">组织</option>
+            <option value="课程">课程</option>
+            <option value="章节">章节</option>
+            <option value="学期">学期</option>
+            <option value="日程">日程</option>
+            <option value="推送">推送</option>
+          </select>
+          <button class="filter-btn" onclick="applyFilters()">查询</button>
+        </div>
       </div>
-      <div class="filter-bar">
-        <button class="filter-btn active" onclick="filterLogs('all', this)">全部</button>
-        <button class="filter-btn" onclick="filterLogs('考勤提交', this)">考勤</button>
-        <button class="filter-btn" onclick="filterLogs('添加人员', this)">人员</button>
-        <button class="filter-btn" onclick="filterLogs('组织修改', this)">组织</button>
-        <button class="filter-btn" onclick="filterLogs('推送提醒', this)">推送</button>
+
+      <div class="status-bar">
+        <span class="status-count" id="statusCount">加载中...</span>
+        <a class="status-refresh" onclick="applyFilters()">↻ 刷新</a>
       </div>
+
       <div id="logList" class="log-list">
-        <div class="empty-state">加载中...</div>
+        <div class="empty-state">正在加载...</div>
+      </div>
+
+      <div class="load-more" id="loadMoreArea" style="display:none;">
+        <button onclick="loadMore()" id="loadMoreBtn">加载更多</button>
       </div>
     </div>
-    <div id="bottomNavContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/utils.js?v=3"></script>
-    <script src="js/components.js?v=3"></script>
     <script>
-      renderBottomNav('');
-    </script>
-    <script>
-      var currentFilter = 'all';
       var allLogs = [];
+      var allSemesters = [];
+      var currentPage = 0;
+      var PAGE_SIZE = 100;
+      var hasMore = false;
+      var isLoading = false;
+
+      var hasPlatformColumns = null; // true/false，先探测一次
+
+      var MODULE_LABELS = {
+        supervision: '督察管理',
+        study: '学委管理',
+        secretariat: '秘书处',
+        admin: '平台管理'
+      };
 
       function showErr(msg) {
         document.getElementById('logList').innerHTML = '<div class="empty-state">' + msg + '</div>';
+        document.getElementById('statusCount').textContent = '加载失败';
       }
 
       async function init() {
-        var user = checkLogin();
-        if (!user) { showErr('未登录'); return; }
-        if (user.role !== '超级管理员' && user.role !== '管理员') { showErr('无权访问'); return; }
-        try { await waitForDb(); } catch (e) { showErr('SDK失败:' + (e.message||'')); return; }
-        try { await refreshCurrentUser(); } catch (e) {}
-        await loadLogs();
-      }
+        await waitForDb();
+        await refreshCurrentUser();
+        var profile = checkLogin();
+        if (!profile) return;
 
-      async function loadLogs() {
-        try {
-          // 直接用 supabaseClient，不用 window.db（避免手机端缓存的旧 dbWithRetry 版本）
-          var client = window.supabaseClient || window.db;
-          var logsResult = await client
-            .from('audit_logs')
-            .select('action,user_name,target,detail,created_at')
-            .order('created_at', { ascending: false })
-            .limit(200);
-
-          if (logsResult.error) {
-            showErr('查询失败: ' + (logsResult.error.message || ''));
-            return;
-          }
-          allLogs = logsResult.data || [];
-
-          try {
-            var currentSemesterId = await getCurrentSemesterId();
-            if (currentSemesterId) {
-              var semResult = await window.supabaseClient.from('semesters').select('start_date').eq('id', currentSemesterId).single();
-              if (semResult.data && semResult.data.start_date) {
-                var semesterStart = semResult.data.start_date;
-                allLogs = allLogs.filter(function (l) {
-                  return l.created_at >= semesterStart;
-                });
-              }
-            }
-          } catch (e) {}
-
-          renderLogs();
-        } catch (e) {
-          document.getElementById('logList').innerHTML = '<div class="empty-state">加载失败</div>';
-        }
-      }
-
-      function filterLogs(type, el) {
-        currentFilter = type;
-        document.querySelectorAll('.filter-btn').forEach(function (b) {
-          b.classList.remove('active');
-        });
-        el.classList.add('active');
-        renderLogs();
-      }
-
-      function renderLogs() {
-        var filtered =
-          currentFilter === 'all'
-            ? allLogs
-            : allLogs.filter(function (l) {
-                return l.action === currentFilter || l.action.includes(currentFilter);
-              });
-        var container = document.getElementById('logList');
-        if (filtered.length === 0) {
-          container.innerHTML = '<div class="empty-state">暂无日志</div>';
+        // 仅管理员可访问
+        if (profile.role !== '超级管理员' && profile.role !== '管理员') {
+          showErr('无权访问，仅平台管理员可查看审计日志');
           return;
         }
-        container.innerHTML = filtered
-          .map(function (l) {
-            var time = new Date(l.created_at).toLocaleString('zh-CN', {
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-            var detail = l.detail || '';
-            if (l.target) detail = l.target + (detail ? ' - ' + detail : '');
-            return (
-              '<div class="log-item">' +
-              '<div class="log-header">' +
-              '<span class="log-action ' +
-              l.action +
-              '">' +
-              escapeHtml(l.action) +
-              '</span>' +
-              '<span class="log-time">' +
-              time +
-              '</span>' +
-              '</div>' +
-              '<div class="log-user">' +
-              escapeHtml(l.user_name || '系统') +
-              '</div>' +
-              (detail ? '<div class="log-detail">' + escapeHtml(detail) + '</div>' : '') +
-              '</div>'
-            );
-          })
-          .join('');
+
+        // 探测 module_key 和 semester_id 列是否存在
+        await detectPlatformColumns();
+
+        // 加载学期列表
+        await loadSemesters();
+
+        // 加载日志
+        await applyFilters();
+      }
+
+      async function detectPlatformColumns() {
+        try {
+          var test = await window.db.from('audit_logs').select('module_key').limit(1);
+          hasPlatformColumns = !test.error;
+        } catch(e) {
+          hasPlatformColumns = false;
+        }
+        if (!hasPlatformColumns) {
+          // 在状态栏提示
+          console.warn('audit_logs 表缺少 module_key/semester_id 字段，模块/学期筛选不可用。请执行 SQL 迁移 20260609_001_audit_logs_platform.sql');
+        }
+      }
+
+      async function loadSemesters() {
+        try {
+          var r = await window.db.from('semesters').select('id,semester_name').order('start_date', { ascending: false });
+          allSemesters = r.data || [];
+          var sel = document.getElementById('filterSemester');
+          sel.innerHTML = '<option value="">全部学期</option>' +
+            allSemesters.map(function(s) {
+              return '<option value="' + s.id + '">' + escapeHtml(s.semester_name) + '</option>';
+            }).join('');
+        } catch(e) {
+          console.warn('加载学期列表失败', e);
+        }
+      }
+
+      async function applyFilters() {
+        currentPage = 0;
+        allLogs = [];
+        hasMore = false;
+        await loadMore(true);
+      }
+
+      async function loadMore(reset) {
+        if (isLoading) return;
+        isLoading = true;
+
+        var moduleVal = document.getElementById('filterModule').value;
+        var semVal = document.getElementById('filterSemester').value;
+        var userVal = document.getElementById('filterUser').value.trim();
+        var actionVal = document.getElementById('filterAction').value;
+
+        var container = document.getElementById('logList');
+        if (reset) container.innerHTML = '<div class="empty-state">正在加载...</div>';
+
+        try {
+          var query = window.db.from('audit_logs').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+
+          // 仅当列存在时才按 module_key / semester_id 筛选
+          if (moduleVal && hasPlatformColumns) query = query.eq('module_key', moduleVal);
+          if (semVal && hasPlatformColumns) query = query.eq('semester_id', Number(semVal));
+          if (userVal) query = query.ilike('user_name', '%' + userVal + '%');
+          if (actionVal) query = query.ilike('action', '%' + actionVal + '%');
+
+          var from = currentPage * PAGE_SIZE;
+          var to = from + PAGE_SIZE - 1;
+          query = query.range(from, to);
+
+          var result = await query;
+          if (result.error) { showErr('查询失败: ' + result.error.message); isLoading = false; return; }
+
+          var newLogs = result.data || [];
+          var totalCount = result.count || 0;
+
+          if (reset) {
+            allLogs = newLogs;
+          } else {
+            allLogs = allLogs.concat(newLogs);
+          }
+
+          hasMore = (from + newLogs.length) < totalCount;
+          currentPage++;
+
+          renderLogs(reset);
+          var statusText = '共 ' + totalCount + ' 条日志' + (moduleVal || semVal || userVal || actionVal ? '（已筛选）' : '');
+          if (!hasPlatformColumns && (moduleVal || semVal)) {
+            statusText += ' ⚠️ 模块/学期筛选暂不可用（需执行数据库迁移）';
+          }
+          document.getElementById('statusCount').textContent = statusText;
+
+          var loadMoreArea = document.getElementById('loadMoreArea');
+          var loadMoreBtn = document.getElementById('loadMoreBtn');
+          if (hasMore) {
+            loadMoreArea.style.display = 'block';
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = '加载更多（已显示 ' + allLogs.length + ' 条）';
+          } else {
+            loadMoreArea.style.display = 'none';
+          }
+        } catch(e) {
+          showErr('查询失败: ' + (e.message || JSON.stringify(e)));
+        }
+        isLoading = false;
+      }
+
+      function renderLogs(reset) {
+        var container = document.getElementById('logList');
+
+        if (!allLogs.length) {
+          container.innerHTML = '<div class="empty-state">暂无匹配的日志</div>';
+          return;
+        }
+
+        container.innerHTML = allLogs.map(function(l) {
+          var time = new Date(l.created_at).toLocaleString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+
+          var moduleKey = l.module_key || '';
+          var moduleLabel = MODULE_LABELS[moduleKey] || moduleKey || '未知';
+          var moduleClass = moduleKey || 'unknown';
+
+          var detailHtml = '';
+          if (l.target) detailHtml += '<div><span style="color:var(--ink-light)">对象：</span>' + escapeHtml(l.target) + '</div>';
+          if (l.detail) detailHtml += '<div><span style="color:var(--ink-light)">详情：</span>' + escapeHtml(l.detail) + '</div>';
+
+          return (
+            '<div class="log-item">' +
+            '<div class="log-head">' +
+            '<span class="log-action ' + l.action + '">' + escapeHtml(l.action) +
+            '<span class="log-module ' + moduleClass + '">' + escapeHtml(moduleLabel) + '</span>' +
+            '</span>' +
+            '<span class="log-time">' + time + '</span>' +
+            '</div>' +
+            '<div class="log-user">操作人：<span class="highlight">' + escapeHtml(l.user_name || '系统') + '</span></div>' +
+            (detailHtml ? '<div class="log-detail">' + detailHtml + '</div>' : '') +
+            '</div>'
+          );
+        }).join('');
       }
 
       init();
