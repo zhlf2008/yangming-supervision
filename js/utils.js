@@ -269,14 +269,21 @@ async function logout() {
 // ---- adminApi（通过 Edge Function 代理管理员操作） ----
 
 var adminApi = {
-  _call: function (action, body) {
+  _call: async function (action, body) {
     var supabaseUrl = window.supabaseConfig ? window.supabaseConfig.url : '';
-    var anonKey = window.supabaseConfig ? window.supabaseConfig.anonKey : '';
+    if (!window.supabaseClient || !window.supabaseClient.auth) {
+      return { error: 'Supabase Auth 未初始化' };
+    }
+    var sessionResult = await window.supabaseClient.auth.getSession();
+    var token = sessionResult.data && sessionResult.data.session ? sessionResult.data.session.access_token : '';
+    if (!token) {
+      return { error: '请先登录后再执行该操作' };
+    }
     return fetch(supabaseUrl + '/functions/v1/admin-user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + anonKey
+        Authorization: 'Bearer ' + token
       },
       body: JSON.stringify(Object.assign({ action: action }, body))
     }).then(function (r) {
