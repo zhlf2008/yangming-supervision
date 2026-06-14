@@ -828,6 +828,7 @@ secretariat-people.html
 - 人员档案；
 - 学期组织归属；
 - 职务；
+- 登录账号创建；
 - 模块权限；
 - 是否关联登录账号。
 
@@ -861,7 +862,6 @@ leaderboard.html
 schedule-management.html
 assessment-management.html
 reminder-settings.html
-org-management.html
 data-management.html
 my-records.html
 profile.html
@@ -871,7 +871,7 @@ certificate-render.html
 注意：
 
 - `audit-log.html` 从督察归属移到平台管理员归属。
-- `org-management.html` 后续应逐步迁移到秘书处组织架构。
+- `org-management.html` 仅保留旧链接兼容跳转，不再作为督察模块入口。
 - `semester-settings.html` 后续应逐步迁移到平台管理员学期管理。
 
 ## 10. 学委模块业务模型

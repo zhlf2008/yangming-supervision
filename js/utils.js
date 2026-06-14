@@ -301,6 +301,21 @@ var adminApi = {
     return adminApi._call('createUser', params);
   },
 
+  // 创建 Auth 用户并同步 profiles，可选分配模块权限
+  createProfileAccount: function (params) {
+    return adminApi._call('createProfileAccount', params);
+  },
+
+  // 给已有登录账号添加/恢复模块权限
+  grantModuleMembership: function (params) {
+    return adminApi._call('grantModuleMembership', params);
+  },
+
+  // 停用一条模块权限
+  disableModuleMembership: function (membershipId) {
+    return adminApi._call('disableModuleMembership', { membershipId: membershipId });
+  },
+
   // 更新 Auth 用户（邮箱、密码等）
   updateUser: function (userId, params) {
     return adminApi._call('updateUser', Object.assign({ userId: userId }, params));

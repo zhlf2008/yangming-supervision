@@ -29,14 +29,13 @@ python -m http.server 3000 --bind 0.0.0.0
 │   ├── schedule-management.html    # 日程管理
 │   ├── assessment-management.html  # 考核项目管理
 │   ├── data-management.html        # 数据管理
-│   ├── org-management.html         # 组织管理（旧督察）
 │   ├── semester-settings.html      # 学期设置（旧督察）
 │   └── reminder-settings.html      # 填报提醒
 │
 ├── 秘书处模块
 │   ├── secretariat-dashboard.html          # 秘书处首页
 │   ├── secretariat-org-management.html     # 组织架构
-│   ├── secretariat-people.html             # 人员管理（归属/职务/权限）
+│   ├── secretariat-people.html             # 人员管理（归属/职务/账号/权限）
 │   ├── secretariat-semesters.html          # 学期管理
 │   └── secretariat-entry-form.html         # 进班表单
 │
@@ -108,6 +107,8 @@ study_assignment_demands 岗位摊派
 study_assignment_people  人员落位
 audit_logs               操作日志（含 module_key/semester_id）
 ```
+
+说明：`org-management.html` 仅作为旧链接兼容跳转到 `secretariat-org-management.html`，督察模块不再提供组织架构和人员管理入口；新增登录账号、人员归属、职务和模块权限统一在 `secretariat-people.html` 处理。
 
 ## 数据库迁移
 
