@@ -324,23 +324,7 @@
         opacity: 0.7;
       }
 
-      /* Cascading Selector for Group Board */
-      .cascade-row {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
-      }
-      .cascade-select {
-        flex: 1;
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        background: var(--bg-card);
-        font-size: 14px;
-        color: var(--ink-dark);
-        appearance: auto;
-        font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-      }
+
 
       .empty-state {
         text-align: center;
@@ -541,7 +525,7 @@
         animation: fadeInUp 0.4s ease-out 0.08s backwards;
       }
       .bigclass-section,
-      .cascade-row {
+      .org-cascade {
         animation: fadeInUp 0.4s ease-out 0.1s backwards;
       }
       .rank-card {
@@ -602,10 +586,6 @@
           href="index.html"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
         >&lt;</a>
         <h1 class="header-title">榜单</h1>
       </header>
@@ -1334,15 +1314,15 @@
             return a.name.localeCompare(b.name, 'zh-CN');
           });
 
-        var html = '<div class="cascade-row">';
+        var html = '<div class="org-cascade">';
         html +=
-          '<select class="cascade-select" id="groupBcSelect" onchange="onGroupBcChange()"><option value="">选择大班</option>';
+          '<select class="org-select" id="groupBcSelect" onchange="onGroupBcChange()"><option value="">选择大班</option>';
         bigClasses.forEach(function (bc) {
           html += '<option value="' + bc.id + '">' + bc.name + '</option>';
         });
         html += '</select>';
         html +=
-          '<select class="cascade-select" id="groupClsSelect" onchange="onGroupClsChange()"><option value="">选择班级</option></select>';
+          '<select class="org-select" id="groupClsSelect" onchange="onGroupClsChange()"><option value="">选择班级</option></select>';
         html += '</div>';
         html +=
           '<div id="groupRankArea"><div class="empty-state"><div class="empty-state-icon">👆</div><div class="empty-state-text">请选择大班和班级查看排名</div></div></div>';

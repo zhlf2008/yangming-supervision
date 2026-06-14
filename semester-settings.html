@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>系统设置 - 阳明心学督察管理系统</title>
+    <title>学期管理 - 平台管理</title>
+    <script>
+      window.location.replace('secretariat-semesters.html?from=portal');
+    </script>
     <!-- 快速session检查：新设备无session则直接跳转登录，避免闪现页面 -->
     <script>
       (function(){
@@ -437,10 +440,6 @@
           href="index.html"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
           >&lt;</a
         >
         <h1 class="page-title">设置</h1>

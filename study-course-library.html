@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>学委 - 课程内容库</title>
+    <title>课程内容库</title>
     <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .form-input, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; box-sizing: border-box; }
@@ -220,7 +220,7 @@
     <script src="js/supabase-config.js?v=7"></script>
     <script src="js/utils.js?v=7"></script>
     <script src="js/components.js?v=7"></script>
-    <script>renderModuleBottomNav('study', 'library');</script>
+    <script>renderPortalBottomNav('home');</script>
     <script>
       var courses = [];
       var _isAdmin = false;
@@ -240,12 +240,8 @@
           if (addBtn) addBtn.style.display = 'none';
         }
 
-        // 智能返回：根据来源决定回哪里
-        var from = new URLSearchParams(location.search).get('from');
-        var backLink = document.querySelector('.back-btn');
-        if (from === 'portal') {
-          backLink.href = 'portal.html';
-        }
+        // 来源页由 utils.js 中的 auto-init 自动处理
+        //（依据 ?from= 参数设置 .back-btn 的 href）
 
         await loadCourses();
       }
@@ -301,7 +297,7 @@
       }
 
       function enterCourse(id) {
-        location.href = 'study-course-detail.html?course_id=' + id;
+        location.href = withFrom('study-course-detail.html?course_id=' + id);
       }
 
       function showAddCourse() {

@@ -360,11 +360,6 @@
       }
 
       /* New Form Layout */
-      .input-row {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
 
       .input-group {
         flex: 1;
@@ -519,10 +514,6 @@
           href="index.html"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
           >&lt;</a
         >
         <h1 class="page-title">考勤</h1>
@@ -530,7 +521,7 @@
 
       <!-- Header Info -->
       <div class="header-card">
-        <div class="header-title" id="semesterName">加载中...</div>
+        <div class="semester-wrap" id="semesterName"></div>
         <div class="header-body">
           <div class="header-col">
             <div class="header-row">
@@ -563,57 +554,33 @@
           <span class="section-icon">🏢</span>
           选择填报小组
         </div>
-        <div class="input-row">
-          <div class="input-group">
-            <label class="input-label">大班</label>
+        <div class="org-cascade">
+          <div class="org-group">
+            <label class="org-label">大班</label>
             <select
-              class="form-select"
+              class="org-select"
               id="bigClassSelect"
               onchange="onBigClassChange(this.value)"
-              style="
-                width: 100%;
-                padding: 6px 6px;
-                font-size: 12px;
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                background: var(--bg-primary);
-              "
             >
               <option value="">请选择</option>
             </select>
           </div>
-          <div class="input-group">
-            <label class="input-label">班级</label>
+          <div class="org-group">
+            <label class="org-label">班级</label>
             <select
-              class="form-select"
+              class="org-select"
               id="classSelect"
               onchange="onClassChange(this.value)"
-              style="
-                width: 100%;
-                padding: 6px 6px;
-                font-size: 12px;
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                background: var(--bg-primary);
-              "
             >
               <option value="">请选择</option>
             </select>
           </div>
-          <div class="input-group">
-            <label class="input-label">小组</label>
+          <div class="org-group">
+            <label class="org-label">小组</label>
             <select
-              class="form-select"
+              class="org-select"
               id="groupSelect"
               onchange="onGroupChange(this.value)"
-              style="
-                width: 100%;
-                padding: 6px 6px;
-                font-size: 12px;
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                background: var(--bg-primary);
-              "
             >
               <option value="">请选择</option>
             </select>
@@ -704,9 +671,9 @@
             : Promise.resolve({ data: [] })
         ]);
         if (currentSemester) {
-          document.getElementById('semesterName').textContent = currentSemester.semester_name;
+          setCurrentSemester('semesterName', currentSemester.semester_name, 'tag-lg');
         } else {
-          document.getElementById('semesterName').textContent = '暂无当前学期';
+          setCurrentSemester('semesterName', '暂无当前学期', 'tag-lg');
         }
 
         // Update org name (orgName element may not exist in all pages)

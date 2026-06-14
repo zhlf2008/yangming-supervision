@@ -144,8 +144,10 @@
     <script src="js/components.js?v=7"></script>
     <script>
       var activeSystem = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+      // utils.js 的 auto-init 已根据 ?from= 设置了返回按钮，
+      // 若无 from 参数则默认回到 profile
       var backLink = document.querySelector('.back-btn');
-      if (backLink) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
+      if (backLink && !getFromParam()) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
       if (activeSystem === 'secretariat' || activeSystem === 'study') {
         renderModuleBottomNav(activeSystem, 'profile');
       } else if (activeSystem === 'portal') {

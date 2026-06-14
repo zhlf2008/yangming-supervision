@@ -23,6 +23,52 @@
   }
 })();
 
+// ---- 来源页面追踪 (?from= 参数) ----
+// 所有页面间的导航自动携带 ?from=xxx 参数，
+// 返回按钮据此跳转回来源页，实现"从哪来回哪去"
+
+/** 获取当前 HTML 文件名（如 "study-course-library.html"） */
+function getCurrentPageName() {
+  var path = window.location.pathname;
+  return path.substring(path.lastIndexOf('/') + 1) || '';
+}
+
+/** 从 URL 查询参数中读取 from 值 */
+function getFromParam() {
+  return new URLSearchParams(window.location.search).get('from') || '';
+}
+
+/**
+ * 给目标 URL 追加上一页标记（来源为当前页面）
+ * 例：withFrom('study-dashboard.html')
+ *   → 'study-dashboard.html?from=study-course-library.html'
+ */
+function withFrom(url) {
+  var from = getCurrentPageName();
+  var sep = url.indexOf('?') === -1 ? '?' : '&';
+  return url + sep + 'from=' + encodeURIComponent(from);
+}
+
+// 自动初始化：当 URL 中含有 ?from= 参数时，
+// 将所有 .back-btn 的 href 覆盖为 from 值（实现动态返回）
+// 兼容两种格式：from=portal 和 from=portal.html
+(function() {
+  var from = getFromParam();
+  if (from) {
+    document.addEventListener('DOMContentLoaded', function() {
+      var target = from;
+      // 如果 from 值像文件名但没有扩展名，补上 .html
+      if (target.indexOf('.') === -1 && target.indexOf('/') === -1) {
+        target += '.html';
+      }
+      var btns = document.querySelectorAll('.back-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].href = target;
+      }
+    });
+  }
+})();
+
 // ---- Toast ----
 
 function showToast(msg, options) {
@@ -567,6 +613,29 @@ function guardAuth() {
     return false;
   }
   return true;
+}
+
+// ---- 当前学期显示 ----
+
+/**
+ * 设置当前学期的统一显示
+ * @param {string|Element} container - 容器 ID 或 DOM 元素
+ * @param {string} semesterName - 学期名称
+ * @param {string} [variant] - 样式变体：'subtitle'（副标题，默认）| 'tag'（标签）| 'tag-lg'（大标签）
+ */
+function setCurrentSemester(container, semesterName, variant) {
+  var el = typeof container === 'string' ? document.getElementById(container) : container;
+  if (!el) return;
+  var cls = 'semester-subtitle';
+  var showLabel = false;
+  if (variant === 'tag') { cls = 'semester-tag'; showLabel = true; }
+  else if (variant === 'tag-lg') { cls = 'semester-tag lg'; showLabel = true; }
+  el.innerHTML =
+    '<span class="' + cls + '">' +
+      '<span class="dot"></span>' +
+      (showLabel ? '<span class="label">当前学期</span>' : '') +
+      '<span class="name">' + escapeHtml(semesterName) + '</span>' +
+    '</span>';
 }
 
 // ---- 日期工具 ----

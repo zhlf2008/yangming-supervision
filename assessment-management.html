@@ -455,16 +455,12 @@
           href="index.html"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
           >&lt;</a
         >
         <h1 class="page-title">考核项目管理</h1>
       </div>
       <p class="section-desc">管理考勤填报的考核项目模板。设为"模板"的项目会在生成日程时自动添加。</p>
-      <div id="semesterLabel" style="font-size: 12px; color: var(--ink-muted); margin-bottom: 12px"></div>
+      <div class="semester-wrap" id="semesterLabel"></div>
       <button class="add-btn" onclick="showTypeModal()">+ 新增考核项目</button>
       <button class="add-btn" onclick="showDeadlineModal()" style="margin-left:8px; background:var(--ink-dark);">截止时间管理</button>
       <div id="typeList"><div class="empty-state">加载中...</div></div>
@@ -600,7 +596,7 @@
 
         currentSemesterId = await getCurrentSemesterId();
         if (!currentSemesterId) {
-          document.getElementById('semesterLabel').textContent = '当前学期：未设置';
+          setCurrentSemester('semesterLabel', '未设置', 'tag-lg');
           document.getElementById('typeList').innerHTML = '<div class="empty-state">暂无当前学期，请先设置当前学期</div>';
           return;
         }
@@ -609,7 +605,7 @@
           window.db.from('organizations').select('id,name').eq('semester_id', currentSemesterId).eq('level', '大班').order('sort_order'),
           window.db.from('assessment_deadline_configs').select('*').order('created_at')
         ]);
-        document.getElementById('semesterLabel').textContent = '当前学期：' + (sem ? sem.semester_name : '未知');
+        setCurrentSemester('semesterLabel', sem ? sem.semester_name : '未知', 'tag-lg');
         bigClasses = orgs || [];
         allDeadlineConfigs = configs || [];
         await loadAssessmentTypes();

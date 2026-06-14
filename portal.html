@@ -142,52 +142,6 @@
         padding: 16px;
       }
 
-      .semester-banner {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px;
-        margin-bottom: 16px;
-        border-radius: var(--radius-sm);
-        border: 1px solid rgba(232, 228, 223, 0.72);
-        background:
-          radial-gradient(circle at top left, rgba(230, 57, 70, 0.04), transparent 45%),
-          rgba(250, 250, 248, 0.86);
-      }
-
-      .semester-icon {
-        width: 42px;
-        height: 42px;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.72);
-        font-size: 22px;
-      }
-
-      .semester-meta {
-        min-width: 0;
-        flex: 1;
-      }
-
-      .semester-banner .label {
-        color: var(--ink-muted);
-        font-size: 12px;
-      }
-
-      .semester-banner .name {
-        margin-top: 3px;
-        color: var(--ink-dark);
-        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
-        font-size: 19px;
-        font-weight: 700;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
       .action-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -335,7 +289,7 @@
 
       <div class="user-card">
         <a
-          href="profile.html?system=portal"
+          href="profile.html?system=portal&from=portal"
           style="display: flex; align-items: center; gap: 16px; width: 100%; text-decoration: none; color: inherit"
         >
           <div class="user-avatar" id="profileAvatar">?</div>
@@ -370,7 +324,7 @@
             <div class="title">课程内容库</div>
             <div class="desc">维护跨学期复用的课程资产</div>
           </a>
-          <a class="action-card audit" href="audit-log.html">
+          <a class="action-card audit" href="audit-log.html?from=portal">
             <div class="icon">🧾</div>
             <div class="title">操作日志</div>
             <div class="desc">查看全平台关键审计记录</div>
@@ -380,25 +334,19 @@
 
       <section class="semester-card" id="semesterSection">
         <h2 class="section-title">模块入口</h2>
-        <div class="semester-banner" id="semesterBanner">
-          <div class="semester-icon">📆</div>
-          <div class="semester-meta">
-            <div class="label">当前学期</div>
-            <div class="name" id="currentSemesterName">加载中...</div>
-          </div>
-        </div>
+        <div class="semester-wrap" id="semesterBanner"></div>
         <div class="action-grid" id="moduleGrid">
-          <a class="action-card supervision" href="index.html" id="cardSupervision" onclick="setActiveSystem('supervision')">
+          <a class="action-card supervision" href="index.html?from=portal" id="cardSupervision" onclick="setActiveSystem('supervision')">
             <div class="icon">📋</div>
             <div class="title">督察管理</div>
             <div class="desc">考勤、汇总、榜单与日常督察</div>
           </a>
-          <a class="action-card secretariat" href="secretariat-dashboard.html" id="cardSecretariat" onclick="setActiveSystem('secretariat')">
+          <a class="action-card secretariat" href="secretariat-dashboard.html?from=portal" id="cardSecretariat" onclick="setActiveSystem('secretariat')">
             <div class="icon">🏛️</div>
             <div class="title">秘书处</div>
             <div class="desc">人员、组织、职务与权限维护</div>
           </a>
-          <a class="action-card study" href="study-dashboard.html" id="cardStudy" onclick="setActiveSystem('study')">
+          <a class="action-card study" href="study-dashboard.html?from=portal" id="cardStudy" onclick="setActiveSystem('study')">
             <div class="icon">📖</div>
             <div class="title">学委管理</div>
             <div class="desc">课程、排班、周课与学习通知</div>
@@ -444,12 +392,12 @@
             ? await window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single()
             : { data: null };
           if (semResult.data) {
-            document.getElementById('currentSemesterName').textContent = semResult.data.semester_name;
+            setCurrentSemester('semesterBanner', semResult.data.semester_name, 'tag-lg');
           } else {
-            document.getElementById('currentSemesterName').textContent = '未设置';
+            setCurrentSemester('semesterBanner', '未设置', 'tag-lg');
           }
         } catch (e) {
-          document.getElementById('currentSemesterName').textContent = '加载失败';
+          setCurrentSemester('semesterBanner', '加载失败', 'tag-lg');
         }
 
         var userRole = profile.role || '';

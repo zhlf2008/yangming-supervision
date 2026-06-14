@@ -286,10 +286,6 @@
           href="profile.html?system=supervision"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
           >&lt;</a
         >
         <h1 class="page-title">填报提醒设置</h1>
@@ -328,14 +324,16 @@
           showToast('仅管理员可访问此页面', 'error');
           setTimeout(function () {
             var system = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
-            window.location.href = 'profile.html?system=' + encodeURIComponent(system);
+            window.location.href = withFrom('profile.html?system=' + encodeURIComponent(system));
           }, 1500);
           return;
         }
 
         var activeSystem = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+        // utils.js 的 auto-init 已根据 ?from= 设置了返回按钮，
+        // 若无 from 参数则默认回到 profile
         var backLink = document.querySelector('.back-btn');
-        if (backLink) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
+        if (backLink && !getFromParam()) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
         if (activeSystem === 'secretariat' || activeSystem === 'study') {
           renderModuleBottomNav(activeSystem, 'profile');
         } else if (activeSystem === 'portal') {

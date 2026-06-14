@@ -150,10 +150,6 @@
           href="index.html"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
           >&lt;</a
         >
         <h1 class="page-title">数据管理</h1>
@@ -164,54 +160,33 @@
         <button class="period-tab" onclick="switchPeriod('lastWeek', this)">上周</button>
         <button class="period-tab" onclick="switchPeriod('month', this)">本月</button>
       </div>
-      <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">大班</label>
+      <div class="org-cascade">
+        <div class="org-group">
+          <label class="org-label">大班</label>
           <select
+            class="org-select"
             id="bigClassSelect"
             onchange="onOrgFilterChange()"
-            style="
-              width: 100%;
-              padding: 5px 4px;
-              font-size: 11px;
-              border: 1px solid var(--border);
-              border-radius: 6px;
-              background: var(--bg-card);
-            "
           >
             <option value="">全部</option>
           </select>
         </div>
-        <div class="input-group">
-          <label class="input-label">班级</label>
+        <div class="org-group">
+          <label class="org-label">班级</label>
           <select
+            class="org-select"
             id="classSelect"
             onchange="onOrgFilterChange()"
-            style="
-              width: 100%;
-              padding: 5px 4px;
-              font-size: 11px;
-              border: 1px solid var(--border);
-              border-radius: 6px;
-              background: var(--bg-card);
-            "
           >
             <option value="">全部</option>
           </select>
         </div>
-        <div class="input-group">
-          <label class="input-label">小组</label>
+        <div class="org-group">
+          <label class="org-label">小组</label>
           <select
+            class="org-select"
             id="groupSelect"
             onchange="onOrgFilterChange()"
-            style="
-              width: 100%;
-              padding: 5px 4px;
-              font-size: 11px;
-              border: 1px solid var(--border);
-              border-radius: 6px;
-              background: var(--bg-card);
-            "
           >
             <option value="">全部</option>
           </select>

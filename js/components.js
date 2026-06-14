@@ -53,7 +53,7 @@ function renderBottomNav(activePage) {
 
   var html = '<nav class="bottom-nav">';
   pages.forEach(function (p) {
-    html += '<a href="' + p.href + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
+    html += '<a href="' + withFrom(p.href) + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
     html += '<span class="nav-icon">' + p.icon + '</span>';
     html += '<span class="nav-label">' + p.label + '</span>';
     html += '</a>';
@@ -85,7 +85,7 @@ function renderPortalBottomNav(activePage) {
 
   var html = '<nav class="bottom-nav portal-bottom-nav">';
   pages.forEach(function (p) {
-    html += '<a href="' + p.href + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
+    html += '<a href="' + withFrom(p.href) + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
     html += '<span class="nav-icon">' + p.icon + '</span>';
     html += '<span class="nav-label">' + p.label + '</span>';
     html += '</a>';
@@ -117,7 +117,6 @@ function renderModuleBottomNav(systemKey, activePage) {
     ],
     study: [
       { key: 'home', href: 'study-dashboard.html', icon: '🏠', label: '首页' },
-      { key: 'library', href: 'study-course-library.html', icon: '📚', label: '课程' },
       { key: 'rules', href: 'study-schedule-rules.html', icon: '🗓️', label: '规则' },
       { key: 'weekly', href: 'study-weekly-assignment.html', icon: '👥', label: '安排' },
       { key: 'profile', href: 'profile.html?system=study', icon: '👤', label: '我的' }
@@ -127,7 +126,7 @@ function renderModuleBottomNav(systemKey, activePage) {
   var pages = navMap[systemKey] || [];
   var html = '<nav class="bottom-nav module-bottom-nav">';
   pages.forEach(function (p) {
-    html += '<a href="' + p.href + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
+    html += '<a href="' + withFrom(p.href) + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
     html += '<span class="nav-icon">' + p.icon + '</span>';
     html += '<span class="nav-label">' + p.label + '</span>';
     html += '</a>';
@@ -206,19 +205,16 @@ function renderOrgCascadingSelector(options) {
   container.innerHTML =
     '<div style="background:var(--bg-card);border-radius:var(--radius);padding:16px;' +
     'box-shadow:0 2px 12px var(--shadow);border:1px solid var(--border);">' +
-    '<div style="display:flex;gap:8px;align-items:center;">' +
+    '<div class="org-cascade">' +
     '<select id="' +
     containerId +
-    '_bigClassSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
-    '<option value="">选择大班</option></select>' +
+    '_bigClassSelect" class="org-select"><option value="">选择大班</option></select>' +
     '<select id="' +
     containerId +
-    '_classSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
-    '<option value="">选择班级</option></select>' +
+    '_classSelect" class="org-select"><option value="">选择班级</option></select>' +
     '<select id="' +
     containerId +
-    '_groupSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:14px;color:var(--ink-dark);appearance:auto;">' +
-    '<option value="">' +
+    '_groupSelect" class="org-select"><option value="">' +
     (showAllOption ? '全部小组' : '选择小组') +
     '</option></select>' +
     '</div>' +

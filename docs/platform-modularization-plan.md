@@ -32,7 +32,7 @@
 - 企业微信提醒；
 - 操作日志；
 - 组织管理；
-- 学期设置。
+- 学期设置（已迁入平台管理）。
 
 现在项目要扩展为“阳明心学班级管理平台”，新增或规划中的模块包括：
 
@@ -696,14 +696,15 @@ semesters
 当前页面：
 
 ```text
-secretariat-semesters.html
-semester-settings.html
+secretariat-semesters.html        # 平台学期管理，当前文件名保留
+semester-settings.html            # 旧督察链接兼容跳转
 ```
 
 建议：
 
 - 短期不急着改文件名；
-- 但导航和页面标题要统一为“平台管理员 / 学期管理”；
+- `secretariat-semesters.html` 的导航和页面标题统一为“平台管理 / 学期管理”；
+- `semester-settings.html` 只保留旧链接兼容跳转，不再承载督察设置页面；
 - 后续稳定后可以改名为 `admin-semesters.html`。
 
 ### 8.4 秘书处如何使用学期
@@ -872,7 +873,7 @@ certificate-render.html
 
 - `audit-log.html` 从督察归属移到平台管理员归属。
 - `org-management.html` 仅保留旧链接兼容跳转，不再作为督察模块入口。
-- `semester-settings.html` 后续应逐步迁移到平台管理员学期管理。
+- `semester-settings.html` 仅保留旧链接兼容跳转，不再作为督察模块入口。
 
 ## 10. 学委模块业务模型
 

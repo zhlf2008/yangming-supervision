@@ -234,12 +234,12 @@
     <div class="container">
       <header class="header">
         <h1 class="header-title">阳明心学学委管理系统</h1>
-        <p class="header-subtitle">加载中...</p>
-        <a class="back-btn module-switch" href="portal.html" aria-label="切换模块"></a>
+        <p class="header-subtitle" id="semesterSubtitle">加载中...</p>
+        <a class="back-btn module-switch" href="portal.html?from=study-dashboard" aria-label="切换模块"></a>
       </header>
 
       <div class="user-card">
-        <a href="profile.html?system=study">
+        <a href="profile.html?system=study&from=study-dashboard">
           <div class="user-avatar" id="profileAvatar">?</div>
           <div class="user-info">
             <div class="user-name" id="profileName">加载中...</div>
@@ -253,19 +253,14 @@
 
       <h2 class="section-title">学委工作台</h2>
       <div class="action-grid">
-        <a class="action-card" href="study-course-library.html">
-          <div class="icon">📖</div>
-          <div class="title">课程内容库 <span class="admin-hint">仅管理员可编辑</span></div>
-          <div class="desc">章节·主题·学习内容·思考题</div>
-        </a>
 
-        <a class="action-card" href="study-schedule-rules.html">
+        <a class="action-card" href="study-schedule-rules.html?from=study-dashboard">
           <div class="icon">🗓️</div>
           <div class="title">日程规则</div>
           <div class="desc">共读层级·学期日程·选课</div>
         </a>
 
-        <a class="action-card" href="study-weekly-assignment.html">
+        <a class="action-card" href="study-weekly-assignment.html?from=study-dashboard">
           <div class="icon">👥</div>
           <div class="title">每周安排</div>
           <div class="desc">岗位摊派·人员落位·排班表</div>
@@ -310,7 +305,7 @@
           .lte('start_date', today)
           .gte('end_date', today)
           .single();
-        document.querySelector('.header-subtitle').textContent = data ? data.semester_name : '当前学期';
+        setCurrentSemester('semesterSubtitle', data ? data.semester_name : '当前学期');
       }
       init();
     </script>

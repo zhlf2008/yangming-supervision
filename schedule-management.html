@@ -55,24 +55,9 @@
         font-weight: 600;
       }
       .semester-info {
-        background: var(--bg-card);
-        border-radius: var(--radius);
-        padding: 16px;
-        margin-bottom: 16px;
-        border: 1px solid var(--border);
-        display: flex;
-        align-items: center;
         gap: 12px;
+        flex-wrap: wrap;
       }
-      .semester-name {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--ink-dark);
-      }
-      .semester-dates {
-        font-size: 13px;
-        color: var(--ink-muted);
-        margin-top: 2px;
       }
       .add-btn {
         padding: 8px 16px;
@@ -308,15 +293,11 @@
           href="index.html"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
           >&lt;</a
         >
         <h1 class="page-title">日程管理</h1>
       </div>
-      <div class="semester-info" id="semesterInfo"><div class="empty-state" style="padding: 8px">加载中...</div></div>
+      <div class="semester-info semester-wrap" id="semesterInfo"></div>
       <div id="dabanListView"><div class="empty-state">加载中...</div></div>
       <div id="scheduleView" style="display: none">
         <div class="back-to-list" onclick="backToDabanList()">&lt; 返回大班列表</div>
@@ -433,15 +414,14 @@
           return;
         }
         currentSemester = data;
-        document.getElementById('semesterInfo').innerHTML = `
-        <div>
-          <div class="semester-name">${data.semester_name}</div>
-          <div class="semester-dates">${data.start_date} ~ ${data.end_date}</div>
-        </div>
-        <div style="margin-left:auto;font-size:12px;color:var(--ink-muted);">
-          ${data.trial_start_date ? '试晨读:' + data.trial_start_date : '无试晨读'}
-        </div>
-      `;
+        var infoEl = document.getElementById('semesterInfo');
+        setCurrentSemester(infoEl, data.semester_name, 'tag-lg');
+        infoEl.insertAdjacentHTML('beforeend',
+          '<div style="font-size:12px;color:var(--ink-muted);">' +
+          data.start_date + ' ~ ' + data.end_date +
+          (data.trial_start_date ? ' · 试晨读:' + data.trial_start_date : '') +
+          '</div>'
+        );
         document.title = `${data.semester_name} - 日程管理`;
       }
 

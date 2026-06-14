@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       .page-header { display: flex; align-items: center; gap: 12px; padding: 18px 0; }
-      .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-dark); text-decoration: none; font-size: 18px; }
-      .back-btn:active { background: var(--border); }
       .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; }
 
       .section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
@@ -107,7 +105,7 @@
   <body>
     <div class="container">
       <header class="page-header">
-        <a class="back-btn" href="study-course-library.html">&lt;</a>
+        <a class="back-btn" href="study-course-library.html"></a>
         <h1 class="page-title" id="courseTitle">课程章节</h1>
       </header>
 
@@ -179,7 +177,7 @@
     <script src="js/supabase-config.js?v=7"></script>
     <script src="js/utils.js?v=7"></script>
     <script src="js/components.js?v=7"></script>
-    <script>renderModuleBottomNav('study', 'library');</script>
+    <script>renderPortalBottomNav('home');</script>
     <script>
       var chapters = [];
       var courseId = null;

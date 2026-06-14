@@ -555,10 +555,6 @@
           href="index.html"
           class="back-btn"
           aria-label="返回"
-          onclick="
-            event.preventDefault();
-            window.history.back();
-          "
         >&lt;</a>
         <h1 class="header-title">数据汇总</h1>
       </header>
@@ -933,7 +929,7 @@
         var cards = bigClasses
           .map(function (bc) {
             var classChildren = orgsList.filter(function (o) {
-              return o.parent_id === bc.id && o.level === '班级';
+              return o.parent_id === bc.id && o.level === '班级' && o.is_active !== false;
             });
             var classIds = classChildren.map(function (c) {
               return c.id;
@@ -1879,7 +1875,7 @@
           var items = [];
           bigClasses.forEach(function (bc) {
             var classChildren = orgsList.filter(function (o) {
-              return o.parent_id === bc.id && o.level === '班级';
+              return o.parent_id === bc.id && o.level === '班级' && o.is_active !== false;
             });
             var cids = classChildren.map(function (c) {
               return c.id;

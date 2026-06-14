@@ -372,16 +372,16 @@
       <!-- Header -->
       <header class="header">
         <h1 class="header-title">阳明心学督察管理系统</h1>
-        <p class="header-subtitle">加载中...</p>
+        <p class="header-subtitle" id="semesterSubtitle">加载中...</p>
         <div id="moduleSwitch" class="module-switch-wrap" style="display: none">
-          <a class="back-btn module-switch" href="portal.html" aria-label="切换模块"></a>
+          <a class="back-btn module-switch" href="portal.html?from=index" aria-label="切换模块"></a>
         </div>
       </header>
 
       <!-- User Card -->
       <div class="user-card">
         <a
-          href="profile.html?system=supervision"
+          href="profile.html?system=supervision&from=index"
           style="display: flex; align-items: center; gap: 16px; width: 100%; text-decoration: none; color: inherit"
         >
           <div class="user-avatar" id="userAvatar">?</div>
@@ -398,17 +398,17 @@
       <!-- Quick Actions -->
       <h2 class="section-title">快捷入口</h2>
       <div class="quick-actions" id="quickActions">
-        <a href="attendance-page.html" class="action-card">
+        <a href="attendance-page.html?from=index" class="action-card">
           <div class="action-icon attendance">📋</div>
           <div class="action-title">考勤</div>
           <div class="action-desc">每日考勤数据录入</div>
         </a>
-        <a href="summary-page.html" class="action-card">
+        <a href="summary-page.html?from=index" class="action-card">
           <div class="action-icon summary">📊</div>
           <div class="action-title">汇总</div>
           <div class="action-desc">查看统计数据</div>
         </a>
-        <a href="leaderboard.html" class="action-card">
+        <a href="leaderboard.html?from=index" class="action-card">
           <div class="action-icon summary">🏆</div>
           <div class="action-title">榜单</div>
           <div class="action-desc">出勤率排名与证书</div>
@@ -467,12 +467,7 @@
           document.getElementById('quickActions').insertAdjacentHTML(
             'beforeend',
             `
-          <a href="semester-settings.html" class="action-card">
-            <div class="action-icon attendance">📆</div>
-            <div class="action-title">学期设置</div>
-            <div class="action-desc">管理学期与试晨读</div>
-          </a>
-          <a href="reminder-settings.html" class="action-card">
+          <a href="reminder-settings.html?from=index" class="action-card">
             <div class="action-icon attendance">📢</div>
             <div class="action-title">填报提醒</div>
             <div class="action-desc">企业微信自动提醒</div>
@@ -484,17 +479,17 @@
             document.getElementById('quickActions').insertAdjacentHTML(
               'beforeend',
               `
-              <a href="schedule-management.html?semester_id=${currentSemesterId}" class="action-card">
+              <a href="schedule-management.html?semester_id=${currentSemesterId}&from=index" class="action-card">
                 <div class="action-icon summary">📅</div>
                 <div class="action-title">日程管理</div>
                 <div class="action-desc">管理每日考核日程</div>
               </a>
-              <a href="assessment-management.html?semester_id=${currentSemesterId}" class="action-card">
+              <a href="assessment-management.html?semester_id=${currentSemesterId}&from=index" class="action-card">
                 <div class="action-icon summary">📝</div>
                 <div class="action-title">考核项目</div>
                 <div class="action-desc">配置考核模板</div>
               </a>
-              <a href="data-management.html?semester_id=${currentSemesterId}" class="action-card">
+              <a href="data-management.html?semester_id=${currentSemesterId}&from=index" class="action-card">
                 <div class="action-icon summary">🗄️</div>
                 <div class="action-title">数据管理</div>
                 <div class="action-desc">管理所有填报记录</div>
@@ -507,7 +502,7 @@
           document.getElementById('quickActions').insertAdjacentHTML(
             'beforeend',
             `
-              <a href="schedule-management.html?semester_id=${currentSemesterId}&org_id=${currentUserOrgId}" class="action-card">
+              <a href="schedule-management.html?semester_id=${currentSemesterId}&org_id=${currentUserOrgId}&from=index" class="action-card">
                 <div class="action-icon summary">📅</div>
                 <div class="action-title">日程管理</div>
                 <div class="action-desc">管理本大班考核日程</div>
@@ -568,11 +563,11 @@
       // Load today's stats for the user's scope
       async function loadCurrentSemester(semesterId) {
         if (!semesterId) {
-          document.querySelector('.header-subtitle').textContent = '暂无当前学期';
+          setCurrentSemester('semesterSubtitle', '暂无当前学期');
           return;
         }
         const { data } = await window.db.from('semesters').select('semester_name').eq('id', semesterId).maybeSingle();
-        document.querySelector('.header-subtitle').textContent = data ? data.semester_name : '暂无当前学期';
+        setCurrentSemester('semesterSubtitle', data ? data.semester_name : '暂无当前学期');
       }
 
       // Helper: get formulas from assessment types for a schedule (matched by type_name)
