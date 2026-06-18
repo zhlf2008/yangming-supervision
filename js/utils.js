@@ -49,15 +49,20 @@ function withFrom(url) {
   return url + sep + 'from=' + encodeURIComponent(from);
 }
 
-// 自动初始化：当 URL 中含有 ?from= 参数时，
-// 将所有 .back-btn 的 href 覆盖为 from 值（实现动态返回）
+// 返回按钮动态设定：读取 ?from= 参数设置 .back-btn 的 href
 // 兼容两种格式：from=portal 和 from=portal.html
 (function() {
   var from = getFromParam();
   if (from) {
+    // 子系统首页：始终返回平台首页，不受 ?from= 参数影响
+    var SUBSYSTEM_HOMES = ['attendance-page', 'assessment-management', 'audit-log',
+      'data-management', 'leaderboard', 'org-management',
+      'profile', 'schedule-management', 'semester-settings', 'summary-page'];
+    var currentPage = getCurrentPageName().replace('.html', '').replace('.htm', '');
+    var isSubHome = SUBSYSTEM_HOMES.indexOf(currentPage) !== -1;
+
     document.addEventListener('DOMContentLoaded', function() {
-      var target = from;
-      // 如果 from 值像文件名但没有扩展名，补上 .html
+      var target = isSubHome ? 'portal.html' : from;
       if (target.indexOf('.') === -1 && target.indexOf('/') === -1) {
         target += '.html';
       }
