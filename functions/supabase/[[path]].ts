@@ -10,7 +10,7 @@ export async function onRequest(context) {
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type, apikey, X-Client-Info',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type, apikey, X-Client-Info, x-supabase-api-version',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
       },
     });
@@ -29,7 +29,7 @@ export async function onRequest(context) {
   // 添加 CORS 头
   const resp = new Response(proxyResp.body, proxyResp);
   resp.headers.set('Access-Control-Allow-Origin', '*');
-  resp.headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, apikey, X-Client-Info');
+  resp.headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, apikey, X-Client-Info, x-supabase-api-version');
   resp.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
 
   return resp;
