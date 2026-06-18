@@ -70,7 +70,7 @@ async function waitForDb() {
   }
 
   var CDN_LIST = [
-    '/supabase-sdk/supabase.min.js'
+    '/supabase-sdk/supabase.min.js?v=2'
   ];
   var cdnIndex = 0;
 
