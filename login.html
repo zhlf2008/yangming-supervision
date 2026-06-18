@@ -198,14 +198,17 @@
         return true;
       };
 
-      var supabaseCdn = typeof supabase !== 'undefined' ? supabase : null;
-      if (!supabaseCdn || !supabaseCdn.createClient) {
-        document.getElementById('initError').textContent = 'Supabase SDK 未正确加载，请刷新页面重试。如果问题持续，请检查网络连接。';
-        document.getElementById('initError').style.display = 'block';
-        var db = null;
-      } else {
-        var db = supabaseCdn.createClient(supabaseConfig.url, supabaseConfig.anonKey);
+      // 等待 supabase-config.js 初始化完成
+      function waitForDb() {
+        return new Promise(function (resolve) {
+          if (window.db) return resolve(window.db);
+          var check = setInterval(function () {
+            if (window.db) { clearInterval(check); resolve(window.db); }
+          }, 50);
+          setTimeout(function () { clearInterval(check); resolve(null); }, 10000);
+        });
       }
+      var dbReady = waitForDb();
 
       const phoneInput = document.getElementById('phone');
       const passwordInput = document.getElementById('password');
@@ -236,6 +239,8 @@
         try {
           // 1. 使用邮箱登录
           const email = `p${phone}@supabase.io`;
+          var db = await dbReady;
+          if (!db) { showError('Supabase 未就绪，请刷新重试'); setLoading(false); return; }
           const { data: authData, error: authError } = await db.auth.signInWithPassword({
             email: email,
             password: password
