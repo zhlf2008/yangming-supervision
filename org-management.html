@@ -516,7 +516,7 @@
     <div class="container">
       <div class="page-header">
         <a
-          href="portal.html"
+          href="index.html"
           class="back-btn"
           aria-label="返回"
           >&lt;</a
@@ -699,7 +699,7 @@
         // 小组督察无权限，直接退回
         if (currentUser.role === '小组督察' || currentUser.role === '小组副督察') {
           document.body.innerHTML =
-            '<div class="empty-state" style="padding-top:40vh">无访问权限，<a href="portal.html">返回首页</a></div>';
+            '<div class="empty-state" style="padding-top:40vh">无访问权限，<a href="index.html">返回首页</a></div>';
           return;
         }
 

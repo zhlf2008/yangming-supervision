@@ -54,10 +54,9 @@ function withFrom(url) {
 (function() {
   var from = getFromParam();
   if (from) {
-    // 子系统首页：始终返回平台首页，不受 ?from= 参数影响
-    var SUBSYSTEM_HOMES = ['attendance-page', 'assessment-management', 'audit-log',
-      'data-management', 'leaderboard', 'org-management',
-      'profile', 'schedule-management', 'semester-settings', 'summary-page'];
+    // 子系统首页：始终返回平台首页（portal.html），不受 ?from= 参数影响
+    // 这三个页面是 portal.html 中三个子系统卡片的入口
+    var SUBSYSTEM_HOMES = ['index', 'secretariat-dashboard', 'study-dashboard'];
     var currentPage = getCurrentPageName().replace('.html', '').replace('.htm', '');
     var isSubHome = SUBSYSTEM_HOMES.indexOf(currentPage) !== -1;
 
