@@ -42,7 +42,7 @@ supabase/.temp/
 
 # Codegraph
 .codegraph/
-
 # Local secrets / test account credentials
 tasks/test-accounts.local.md
 **/test-accounts.local.md
+tmp/
