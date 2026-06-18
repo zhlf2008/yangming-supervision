@@ -6,7 +6,7 @@
 // 📌 版本号：修改此文件后递增此值（同时也会刷新 utils.js、components.js 的缓存）
 var APP_CACHE_VERSION = '7';
 
-const SUPABASE_URL = 'https://whvjfurrkusdwujjodwc.supabase.co';
+const SUPABASE_URL = 'https://tuoyue.space/supabase';
 const SUPABASE_ANON_KEY = 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_';
 
 // 导出配置供其他模块使用（使用 window 全局变量）
@@ -64,8 +64,7 @@ async function waitForDb() {
   window.supabaseLoading = true;
 
   var CDN_LIST = [
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-    'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js'
+    '/supabase-sdk/supabase.min.js'
   ];
   var cdnIndex = 0;
 
