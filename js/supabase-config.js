@@ -63,6 +63,12 @@ async function waitForDb() {
   if (window.db || window.supabaseLoading) return;
   window.supabaseLoading = true;
 
+  // 如果 SDK 已通过同步 script 标签加载（如 login.html），直接初始化
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
+    initSupabase();
+    return;
+  }
+
   var CDN_LIST = [
     '/supabase-sdk/supabase.min.js'
   ];
