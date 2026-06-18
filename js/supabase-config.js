@@ -70,7 +70,8 @@ async function waitForDb() {
   }
 
   var CDN_LIST = [
-    '/supabase-sdk/supabase.min.js?v=2'
+    'lib/supabase.min.js',                  // 本地静态文件（不依赖函数运行时）
+    '/supabase-sdk/supabase.min.js?v=2'     // Pages Function 备份
   ];
   var cdnIndex = 0;
 

@@ -9,3 +9,7 @@
 
 /css/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# SDK 文件（偶尔更新，缓存 1 天）
+/lib/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
