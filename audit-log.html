@@ -63,6 +63,10 @@
       .log-action.生成学委日程 { color: var(--ink-dark); }
       .log-action.新增学期,
       .log-action.编辑学期 { color: var(--gold); }
+      .log-action.action-success { color: var(--green); }
+      .log-action.action-danger { color: var(--vermillion); }
+      .log-action.action-warn { color: var(--gold); }
+      .log-action.action-info { color: var(--ink-dark); }
 
       @media (max-width: 480px) {
         .filter-row { flex-direction: column; }
@@ -100,14 +104,18 @@
           <span class="filter-label">操作类型</span>
           <select class="filter-select" id="filterAction">
             <option value="">全部操作</option>
-            <option value="考勤">考勤</option>
+            <option value="考勤">考勤提交</option>
+            <option value="作业">作业率提交</option>
+            <option value="填报">填报记录</option>
             <option value="人员">人员</option>
             <option value="组织">组织</option>
             <option value="课程">课程</option>
             <option value="章节">章节</option>
             <option value="学期">学期</option>
             <option value="日程">日程</option>
-            <option value="推送">推送</option>
+            <option value="进班">进班表单</option>
+            <option value="提醒">提醒/推送</option>
+            <option value="编辑开关">编辑开关</option>
           </select>
           <button class="filter-btn" onclick="applyFilters()">查询</button>
         </div>
@@ -143,8 +151,23 @@
         supervision: '督察管理',
         study: '学委管理',
         secretariat: '秘书处',
-        admin: '平台管理'
+        admin: '平台管理',
+        unknown: '未归类'
       };
+
+      function getDisplayModuleKey(log) {
+        var moduleKey = log && log.module_key ? String(log.module_key) : '';
+        if (!moduleKey) return 'supervision';
+        return MODULE_LABELS[moduleKey] ? moduleKey : 'unknown';
+      }
+
+      function getActionClass(action) {
+        var text = String(action || '');
+        if (/删除|归档/.test(text)) return 'action-danger';
+        if (/新增|编辑|修改|恢复|切换|学期/.test(text)) return 'action-warn';
+        if (/提交|生成|分配|推送|提醒/.test(text)) return 'action-success';
+        return 'action-info';
+      }
 
       function showErr(msg) {
         document.getElementById('logList').innerHTML = '<div class="empty-state">' + msg + '</div>';
@@ -175,7 +198,7 @@
 
       async function detectPlatformColumns() {
         try {
-          var test = await window.db.from('audit_logs').select('module_key').limit(1);
+          var test = await window.db.from('audit_logs').select('module_key,semester_id').limit(1);
           hasPlatformColumns = !test.error;
         } catch(e) {
           hasPlatformColumns = false;
@@ -223,10 +246,18 @@
           var query = window.db.from('audit_logs').select('*', { count: 'exact' }).order('created_at', { ascending: false });
 
           // 仅当列存在时才按 module_key / semester_id 筛选
-          if (moduleVal && hasPlatformColumns) query = query.eq('module_key', moduleVal);
+          if (moduleVal && hasPlatformColumns) {
+            query = moduleVal === 'supervision'
+              ? query.or('module_key.eq.supervision,module_key.is.null,module_key.eq.')
+              : query.eq('module_key', moduleVal);
+          }
           if (semVal && hasPlatformColumns) query = query.eq('semester_id', Number(semVal));
           if (userVal) query = query.ilike('user_name', '%' + userVal + '%');
-          if (actionVal) query = query.ilike('action', '%' + actionVal + '%');
+          if (actionVal === '提醒') {
+            query = query.or('action.ilike.%提醒%,action.ilike.%推送%');
+          } else if (actionVal) {
+            query = query.ilike('action', '%' + actionVal + '%');
+          }
 
           var from = currentPage * PAGE_SIZE;
           var to = from + PAGE_SIZE - 1;
@@ -286,9 +317,10 @@
             second: '2-digit'
           });
 
-          var moduleKey = l.module_key || '';
-          var moduleLabel = MODULE_LABELS[moduleKey] || moduleKey || '未知';
-          var moduleClass = moduleKey || 'unknown';
+          var moduleKey = getDisplayModuleKey(l);
+          var moduleLabel = MODULE_LABELS[moduleKey] || '未归类';
+          var moduleClass = moduleKey;
+          var actionClass = getActionClass(l.action);
 
           var detailHtml = '';
           if (l.target) detailHtml += '<div><span style="color:var(--ink-light)">对象：</span>' + escapeHtml(l.target) + '</div>';
@@ -297,7 +329,7 @@
           return (
             '<div class="log-item">' +
             '<div class="log-head">' +
-            '<span class="log-action ' + l.action + '">' + escapeHtml(l.action) +
+            '<span class="log-action ' + actionClass + '">' + escapeHtml(l.action) +
             '<span class="log-module ' + moduleClass + '">' + escapeHtml(moduleLabel) + '</span>' +
             '</span>' +
             '<span class="log-time">' + time + '</span>' +

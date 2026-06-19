@@ -518,7 +518,7 @@
           alert('删除失败: ' + error.message);
           return;
         }
-        logAction('删除填报记录', 'id:' + id);
+        logAction('删除填报记录', 'id:' + id, '', 'supervision');
         // 从本地列表移除，避免等待网络重载
         allRecords = allRecords.filter(function (r) {
           return r.id !== id;

@@ -1541,7 +1541,7 @@
         } else {
           showToast(sectionKey === 'att' ? '考勤已提交' : '作业率已提交');
           logAction(sectionKey === 'att' ? '考勤提交' : '作业率提交', selectedOrg.name,
-            Object.keys(fieldValues).map(function(k){return k+':'+fieldValues[k];}).join(', '));
+            Object.keys(fieldValues).map(function(k){return k+':'+fieldValues[k];}).join(', '), 'supervision');
           // 更新 section 提交状态显示
           updateSectionStatus(sectionKey, now);
           // 检测漏填：另一个 section 表单有数据但未提交，弹提示

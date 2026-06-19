@@ -1143,7 +1143,7 @@
         }
         orgEditable = newVal;
         showToast(newVal ? '已开启编辑' : '已关闭编辑');
-        logAction('切换编辑开关', newVal ? '开启' : '关闭');
+        logAction('切换编辑开关', newVal ? '开启' : '关闭', '', 'supervision');
         await loadOrganizations();
         renderOrgTree();
       }
@@ -1290,7 +1290,7 @@
         if (error) showToast('保存失败: ' + error.message);
         else {
           showToast('保存成功');
-          logAction('组织修改', name);
+          logAction('组织修改', name, '', 'supervision');
           closeOrgModal();
           await loadOrganizations();
         }
@@ -1335,7 +1335,7 @@
         if (error) showToast('归档失败: ' + error.message);
         else {
           showToast('已归档');
-          logAction('归档组织', orgPath);
+          logAction('归档组织', orgPath, '', 'supervision');
           await loadOrganizations();
         }
       }
@@ -1357,7 +1357,7 @@
         if (error) showToast('恢复失败: ' + error.message);
         else {
           showToast('已恢复');
-          logAction('恢复组织', orgPath);
+          logAction('恢复组织', orgPath, '', 'supervision');
           await loadOrganizations();
         }
       }
@@ -1534,7 +1534,7 @@
           if (error) showToast('保存失败: ' + error.message);
           else {
             showToast('保存成功');
-            logAction('编辑人员', phone + ' ' + name + ' ' + role);
+            logAction('编辑人员', phone + ' ' + name + ' ' + role, '', 'supervision');
             closeUserModal();
             await loadUsers();
             // 如果编辑的是当前登录用户，同步刷新 localStorage
@@ -1576,7 +1576,7 @@
               showToast('创建档案失败，但账户已创建');
             } else {
               showToast('添加成功！初始密码：' + password);
-              logAction('添加人员', phone + ' ' + name + ' ' + role);
+              logAction('添加人员', phone + ' ' + name + ' ' + role, '', 'supervision');
             }
           } catch (e) {
             showToast('添加失败: ' + e.message);
@@ -1622,7 +1622,7 @@
         if (error) showToast('删除失败');
         else {
           showToast('删除成功');
-          logAction('删除人员', userName);
+          logAction('删除人员', userName, '', 'supervision');
           await loadUsers();
         }
       }

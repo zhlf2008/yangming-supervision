@@ -376,6 +376,19 @@ var adminApi = {
 var AUDITLOG_BACKLOG_KEY = '_auditlog_backlog';
 var AUDITLOG_FLUSHING = false;
 
+function inferAuditModuleKey(moduleKey) {
+  if (moduleKey) return moduleKey;
+  try {
+    var path = (window.location.pathname || '').split('/').pop();
+    if (path.indexOf('secretariat-') === 0) return 'secretariat';
+    if (path.indexOf('study-') === 0) return 'study';
+    if (path === 'portal.html' || path === 'secretariat-semesters.html') return 'admin';
+    var activeSystem = sessionStorage.getItem('activeSystem') || localStorage.getItem('activeSystem');
+    if (activeSystem === 'secretariat' || activeSystem === 'study') return activeSystem;
+  } catch (e) {}
+  return 'supervision';
+}
+
 function logAction(action, target, detail, moduleKey) {
   var user = getCurrentUser();
   if (!user || !window.db) return;
@@ -385,7 +398,7 @@ function logAction(action, target, detail, moduleKey) {
     action: action,
     target: target || '',
     detail: detail || '',
-    module_key: moduleKey || null
+    module_key: inferAuditModuleKey(moduleKey)
   };
   // 异步获取当前学期ID并补充
   getCurrentSemesterId().then(function(semId) {
