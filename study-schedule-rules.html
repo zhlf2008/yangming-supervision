@@ -269,7 +269,8 @@
         semesters = data ? [data] : [];
         setCurrentSemester('semesterDisplay', data ? data.semester_name : '未设置', 'tag-lg');
         weekOffset = 0;
-        await Promise.all([loadRules(), loadWeekSchedules()]);
+        await loadRules();
+        await loadWeekSchedules();
       }
 
       async function loadCourses() {
@@ -538,6 +539,8 @@
             var r = await window.db.from('study_schedule_rules').upsert(inserts[j], { onConflict: 'semester_id,weekday', ignoreDuplicates: false });
             if (r.error) throw r.error;
           }
+          await loadRules();
+          await loadWeekSchedules();
         } catch(e) {
           console.error('自动保存规则失败', e);
         }
@@ -639,6 +642,7 @@
 
       function renderWeekGrid(range) {
         var container = document.getElementById('dayGrid');
+        var activeWeekdays = rules.map(function (r) { return Number(r.weekday); });
         var today = getToday();
         var start = new Date(range.startDate);
         var end = new Date(range.endDate);
@@ -651,6 +655,10 @@
         while (d <= end) {
           var dateStr = toDateStr(d);
           var weekday = d.getDay() || 7;
+          if (activeWeekdays.indexOf(weekday) === -1) {
+            d.setDate(d.getDate() + 1);
+            continue;
+          }
 
           // 只在学期范围内显示
           if ((!semesterStart || dateStr >= semesterStart) && (!semesterEnd || dateStr <= semesterEnd)) {
