@@ -655,6 +655,7 @@
       const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       var currentUser = null;
+      var currentSupervisionMembership = null;
       var currentSemester = null;
       var currentSchedule = null;
       var assessmentTypes = [];
@@ -682,6 +683,7 @@
         } else {
           currentSemester = null;
         }
+        await applyCurrentSupervisionMembership();
         currentUserOrgId = await resolveCurrentUserOrgId();
 
         // Update header info
@@ -735,7 +737,56 @@
 
       // Build full path name for an organization: 大班-班级-小组 -- now in utils.js
 
+      function getExpectedOrgLevelForRole(role) {
+        if (role === '小组督察' || role === '小组副督察') return '小组';
+        if (role === '班级总督察' || role === '班级副总督察') return '班级';
+        if (role === '大班总督' || role === '大班副督') return '大班';
+        return null;
+      }
+
+      async function applyCurrentSupervisionMembership() {
+        currentSupervisionMembership = null;
+        if (!currentSemester || !currentUser || !currentUser.id) return;
+        if (currentUser.role === '超级管理员' || currentUser.role === '管理员') return;
+
+        try {
+          var { data, error } = await window.db
+            .from('module_memberships')
+            .select('id,role,org_id')
+            .eq('user_id', currentUser.id)
+            .eq('semester_id', currentSemester.id)
+            .eq('module_key', 'supervision')
+            .eq('enabled', true);
+          if (error || !data || !data.length) return;
+
+          var roleRank = {
+            '超级管理员': 100,
+            '管理员': 90,
+            '大班总督': 80,
+            '大班副督': 70,
+            '班级总督察': 60,
+            '班级副总督察': 50,
+            '小组督察': 40,
+            '小组副督察': 30
+          };
+          data.sort(function(a, b) {
+            return (roleRank[b.role] || 0) - (roleRank[a.role] || 0) || Number(a.id || 0) - Number(b.id || 0);
+          });
+
+          currentSupervisionMembership = data[0];
+          if (currentSupervisionMembership.role) currentUser.role = currentSupervisionMembership.role;
+          if (currentSupervisionMembership.org_id) currentUser.organization_id = Number(currentSupervisionMembership.org_id);
+        } catch (e) {
+          console.warn('applyCurrentSupervisionMembership error:', e);
+        }
+      }
+
       async function resolveCurrentUserOrgId() {
+        var moduleOrgId = currentSupervisionMembership && currentSupervisionMembership.org_id
+          ? Number(currentSupervisionMembership.org_id)
+          : null;
+        if (moduleOrgId) return moduleOrgId;
+
         var legacyOrgId = currentUser && currentUser.organization_id ? Number(currentUser.organization_id) : null;
         if (!currentSemester || !currentUser || !currentUser.phone) return legacyOrgId;
 
@@ -748,12 +799,17 @@
 
         var { data: assignment } = await window.db
           .from('person_org_assignments')
-          .select('org_id')
+          .select('org_id,organizations(level)')
           .eq('semester_id', currentSemester.id)
           .eq('person_id', person.id)
           .eq('status', 'active')
           .maybeSingle();
-        return assignment && assignment.org_id ? Number(assignment.org_id) : legacyOrgId;
+        if (assignment && assignment.org_id) {
+          var expectedLevel = getExpectedOrgLevelForRole(currentUser.role);
+          var assignmentLevel = assignment.organizations && assignment.organizations.level;
+          if (!expectedLevel || assignmentLevel === expectedLevel) return Number(assignment.org_id);
+        }
+        return legacyOrgId;
       }
 
       // Load organization selector (three-level cascade)
