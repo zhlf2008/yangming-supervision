@@ -131,6 +131,9 @@ ALTER TABLE entry_forms ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "认证用户可查看进班表单" ON entry_forms;
 DROP POLICY IF EXISTS "秘书处可管理进班表单" ON entry_forms;
+DROP POLICY IF EXISTS "秘书处可查看进班表单" ON entry_forms;
+DROP POLICY IF EXISTS "秘书处可更新进班表单" ON entry_forms;
+DROP POLICY IF EXISTS "秘书处可删除进班表单" ON entry_forms;
 DROP POLICY IF EXISTS "外部可提交进班表单" ON entry_forms;
 
 CREATE POLICY "秘书处可查看进班表单" ON entry_forms FOR SELECT
@@ -242,6 +245,7 @@ ALTER TABLE study_assignment_demands ENABLE ROW LEVEL SECURITY;
 ALTER TABLE study_assignment_people ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "管理员可管理学委课程合集" ON study_courses;
+DROP POLICY IF EXISTS "学委可管理课程合集" ON study_courses;
 CREATE POLICY "学委可管理课程合集" ON study_courses FOR ALL
   USING (
     EXISTS (
@@ -259,6 +263,7 @@ CREATE POLICY "学委可管理课程合集" ON study_courses FOR ALL
   );
 
 DROP POLICY IF EXISTS "管理员可管理学委课程库" ON study_course_library;
+DROP POLICY IF EXISTS "学委可管理课程库" ON study_course_library;
 CREATE POLICY "学委可管理课程库" ON study_course_library FOR ALL
   USING (
     EXISTS (
@@ -276,16 +281,19 @@ CREATE POLICY "学委可管理课程库" ON study_course_library FOR ALL
   );
 
 DROP POLICY IF EXISTS "管理员可管理学委日程规则" ON study_schedule_rules;
+DROP POLICY IF EXISTS "学委可管理日程规则" ON study_schedule_rules;
 CREATE POLICY "学委可管理日程规则" ON study_schedule_rules FOR ALL
   USING (app_private.has_module_access(semester_id, 'study', ARRAY['学委', '副学委', '管理员', 'admin', 'manager']))
   WITH CHECK (app_private.has_module_access(semester_id, 'study', ARRAY['学委', '副学委', '管理员', 'admin', 'manager']));
 
 DROP POLICY IF EXISTS "管理员可管理学委日程实例" ON study_schedule_instances;
+DROP POLICY IF EXISTS "学委可管理日程实例" ON study_schedule_instances;
 CREATE POLICY "学委可管理日程实例" ON study_schedule_instances FOR ALL
   USING (app_private.has_module_access(semester_id, 'study', ARRAY['学委', '副学委', '管理员', 'admin', 'manager']))
   WITH CHECK (app_private.has_module_access(semester_id, 'study', ARRAY['学委', '副学委', '管理员', 'admin', 'manager']));
 
 DROP POLICY IF EXISTS "管理员可管理学委摊派" ON study_assignment_demands;
+DROP POLICY IF EXISTS "学委可管理摊派" ON study_assignment_demands;
 CREATE POLICY "学委可管理摊派" ON study_assignment_demands FOR ALL
   USING (
     EXISTS (
@@ -305,6 +313,7 @@ CREATE POLICY "学委可管理摊派" ON study_assignment_demands FOR ALL
   );
 
 DROP POLICY IF EXISTS "管理员可管理学委落位" ON study_assignment_people;
+DROP POLICY IF EXISTS "学委可管理落位" ON study_assignment_people;
 CREATE POLICY "学委可管理落位" ON study_assignment_people FOR ALL
   USING (
     EXISTS (
