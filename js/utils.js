@@ -470,6 +470,29 @@ function checkLogin() {
   }
 }
 
+// ---- 当前学期模块角色判断 ----
+async function hasCurrentModuleRole(moduleKey, roles) {
+  var profile = checkLogin();
+  if (!profile) return false;
+  if (profile.role === '超级管理员' || profile.role === '管理员') return true;
+  try {
+    var semId = await getCurrentSemesterId();
+    if (!semId) return false;
+    var query = window.db
+      .from('module_memberships')
+      .select('id')
+      .eq('user_id', profile.id)
+      .eq('semester_id', semId)
+      .eq('module_key', moduleKey)
+      .eq('enabled', true);
+    if (roles && roles.length) query = query.in('role', roles);
+    var result = await query.limit(1);
+    return !!(result.data && result.data.length);
+  } catch (e) {
+    console.error('hasCurrentModuleRole error:', e);
+    return false;
+  }
+}
 // ---- 模块页面权限拦截 ----
 // 在页面 init 中调用：await guardModuleAccess('secretariat') 或 'study'
 // 管理员/超级管理员直接放行；普通用户检查当前学期 module_memberships

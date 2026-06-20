@@ -29,7 +29,9 @@ const htmlFiles = readdirSync(root, { recursive: true })
       !f.includes('.git') &&
       !f.includes('.claude') &&
       !f.includes('.codegraph') &&
-      !f.includes('.reasonix')
+      !f.includes('.reasonix') &&
+      !f.startsWith('lib/') &&
+      !f.startsWith('lib\\')
   )
   .map((f) => resolve(root, f));
 
@@ -62,7 +64,9 @@ const jsFiles = readdirSync(root, { recursive: true })
       !f.includes('.git') &&
       !f.includes('.claude') &&
       !f.includes('.codegraph') &&
-      !f.includes('.reasonix')
+      !f.includes('.reasonix') &&
+      !f.startsWith('lib/') &&
+      !f.startsWith('lib\\')
   )
   .map((f) => resolve(root, f));
 

@@ -233,7 +233,8 @@
         if (!ok) return;
 
         var profile = checkLogin();
-        _isAdmin = (profile.role === '超级管理员' || profile.role === '管理员');
+        _isAdmin = (profile.role === '超级管理员' || profile.role === '管理员') ||
+          await hasCurrentModuleRole('study', ['学委', '副学委', '管理员', 'admin', 'manager']);
         if (!_isAdmin) {
           // 非管理员：隐藏添加按钮
           var addBtn = document.querySelector('#courseList').previousElementSibling.querySelector('.btn-primary');

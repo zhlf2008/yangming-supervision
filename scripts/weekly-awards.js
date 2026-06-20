@@ -11,10 +11,14 @@ const crypto = require('crypto');
 const path = require('path');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const AWARD_SECRET =
+  process.env.AWARD_NOTIFICATION_SECRET ||
+  process.env.REMINDER_CRON_SECRET ||
+  process.env.CRON_SECRET ||
+  '';
 
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error('缺少 SUPABASE_URL 或 SUPABASE_SERVICE_ROLE_KEY 环境变量');
+if (!SUPABASE_URL || !AWARD_SECRET) {
+  console.error('缺少 SUPABASE_URL 或 AWARD_NOTIFICATION_SECRET/REMINDER_CRON_SECRET/CRON_SECRET 环境变量');
   process.exit(1);
 }
 
@@ -29,7 +33,7 @@ async function getWinnersFromEdge() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'apikey': SERVICE_ROLE_KEY
+      'X-Award-Secret': AWARD_SECRET
     },
     body: JSON.stringify({ action: 'get_winners' })
   });

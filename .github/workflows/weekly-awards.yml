@@ -29,5 +29,7 @@ jobs:
       - name: Run weekly awards script
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AWARD_NOTIFICATION_SECRET: ${{ secrets.AWARD_NOTIFICATION_SECRET }}
+          REMINDER_CRON_SECRET: ${{ secrets.REMINDER_CRON_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: node scripts/weekly-awards.js

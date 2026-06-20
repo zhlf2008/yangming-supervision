@@ -40,16 +40,36 @@ async function getCurrentSemesterId() {
   return data?.id || null;
 }
 
-async function hasCurrentSemesterModule(userId, semesterId, moduleKey) {
+const SECRETARIAT_ACCOUNT_MANAGER_ROLES = ['管理员'];
+const NON_ADMIN_MANAGEABLE_MODULES = new Set(['supervision', 'study']);
+const SUPERVISION_ROLE_LEVEL = {
+  '大班总督': '大班',
+  '大班副督': '大班',
+  '班级总督察': '班级',
+  '班级副总督察': '班级',
+  '小组督察': '小组',
+  '小组副督察': '小组'
+};
+const SUPERVISION_ROLE_RANK = {
+  '大班总督': 80,
+  '大班副督': 70,
+  '班级总督察': 60,
+  '班级副总督察': 50,
+  '小组督察': 40,
+  '小组副督察': 30
+};
+
+async function hasCurrentSemesterModule(userId, semesterId, moduleKey, roles) {
   if (!semesterId) return false;
-  const { data, error } = await adminClient
+  let query = adminClient
     .from('module_memberships')
     .select('id')
     .eq('user_id', userId)
     .eq('semester_id', semesterId)
     .eq('module_key', moduleKey)
-    .eq('enabled', true)
-    .limit(1);
+    .eq('enabled', true);
+  if (roles && roles.length) query = query.in('role', roles);
+  const { data, error } = await query.limit(1);
   return !error && !!(data && data.length);
 }
 
@@ -72,19 +92,67 @@ async function getCaller(req) {
 
   const currentSemesterId = await getCurrentSemesterId();
   const isAdmin = ADMIN_ROLES.has(profile.role);
-  const hasSecretariat = await hasCurrentSemesterModule(user.id, currentSemesterId, 'secretariat');
+  const isSecretariatAccountManager = await hasCurrentSemesterModule(
+    user.id,
+    currentSemesterId,
+    'secretariat',
+    SECRETARIAT_ACCOUNT_MANAGER_ROLES
+  );
 
   return {
     user,
     profile,
     currentSemesterId,
     isAdmin,
-    canManageAccounts: isAdmin || hasSecretariat
+    isSecretariatAccountManager,
+    canManageAccounts: isAdmin || isSecretariatAccountManager
   };
 }
 
-function validateModuleMembershipInput(params, caller) {
-  const semesterId = Number(params.semesterId || params.semester_id || caller.currentSemesterId);
+async function getProfile(userId) {
+  const { data, error } = await adminClient
+    .from('profiles')
+    .select('id, role')
+    .eq('id', userId)
+    .single();
+  if (error || !data) return { error: error?.message || '账号档案不存在' };
+  return { profile: data };
+}
+
+async function getOrganization(orgId) {
+  const { data, error } = await adminClient
+    .from('organizations')
+    .select('id, level, semester_id')
+    .eq('id', orgId)
+    .single();
+  if (error || !data) return { error: error?.message || '组织不存在' };
+  return { organization: data };
+}
+
+async function validateProfileOrganization(organizationId, caller) {
+  if (organizationId === null) return null;
+  const orgResult = await getOrganization(organizationId);
+  if (orgResult.error) return orgResult.error;
+  const org = orgResult.organization;
+  if (caller.currentSemesterId && Number(org.semester_id) !== Number(caller.currentSemesterId)) {
+    return '登录账号归属组织必须属于当前学期';
+  }
+  if (org.level !== '小组') return '登录账号归属组织必须是小组';
+  return null;
+}
+
+async function validateAccountManagementTarget(userId, caller) {
+  const target = await getProfile(userId);
+  if (target.error) return { error: target.error };
+  if (!caller.isAdmin && ADMIN_ROLES.has(target.profile.role)) {
+    return { error: '不能修改平台管理员账号权限' };
+  }
+  return { profile: target.profile };
+}
+
+async function validateModuleMembershipInput(params, caller) {
+  const requestedSemesterId = params.semesterId || params.semester_id || caller.currentSemesterId;
+  const semesterId = Number(requestedSemesterId);
   const moduleKey = String(params.moduleKey || params.module_key || '').trim();
   const role = String(params.role || '').trim();
   const orgIdRaw = params.orgId ?? params.org_id ?? null;
@@ -95,14 +163,45 @@ function validateModuleMembershipInput(params, caller) {
   if (!semesterId || Number.isNaN(semesterId)) return { error: '缺少有效 semesterId' };
   if (!MODULE_KEYS.has(moduleKey)) return { error: '模块不合法' };
   if (!role) return { error: '缺少模块角色' };
-  if (ADMIN_ROLES.has(role) && !caller.isAdmin) return { error: '只有管理员可以分配管理员权限' };
   if (orgId !== null && Number.isNaN(orgId)) return { error: '组织 ID 不合法' };
+
+  if (!caller.isAdmin) {
+    if (!caller.currentSemesterId || Number(semesterId) !== Number(caller.currentSemesterId)) {
+      return { error: '只能管理当前学期的模块权限' };
+    }
+    if (!NON_ADMIN_MANAGEABLE_MODULES.has(moduleKey)) {
+      return { error: '只有平台管理员可以管理该模块权限' };
+    }
+    if (ADMIN_ROLES.has(role)) {
+      return { error: '只有平台管理员可以分配管理员权限' };
+    }
+  }
+
+  if (moduleKey === 'supervision') {
+    const expectedLevel = SUPERVISION_ROLE_LEVEL[role];
+    if (!expectedLevel && !ADMIN_ROLES.has(role)) return { error: '督察角色不合法' };
+    if (expectedLevel && orgId === null) return { error: '督察权限必须绑定组织' };
+  }
+
+  if (orgId !== null) {
+    const orgResult = await getOrganization(orgId);
+    if (orgResult.error) return { error: orgResult.error };
+    const org = orgResult.organization;
+    if (Number(org.semester_id) !== Number(semesterId)) return { error: '权限组织必须属于同一学期' };
+    const expectedLevel = moduleKey === 'supervision' ? SUPERVISION_ROLE_LEVEL[role] : null;
+    if (expectedLevel && org.level !== expectedLevel) {
+      return { error: role + ' 必须绑定' + expectedLevel + '组织' };
+    }
+  }
 
   return { semesterId, moduleKey, role, orgId };
 }
 
 async function upsertModuleMembership(userId, params, caller) {
-  const parsed = validateModuleMembershipInput(params, caller);
+  const target = await validateAccountManagementTarget(userId, caller);
+  if (target.error) return { error: target.error };
+
+  const parsed = await validateModuleMembershipInput(params, caller);
   if (parsed.error) return { error: parsed.error };
 
   let existingQuery = adminClient
@@ -153,17 +252,41 @@ async function upsertModuleMembership(userId, params, caller) {
 }
 
 async function syncLegacySupervisionProfile(userId, membership) {
-  if (membership.moduleKey !== 'supervision') return null;
-  const { error } = await adminClient
-    .from('profiles')
-    .update({
-      role: membership.role,
-      organization_id: membership.orgId
-    })
-    .eq('id', userId);
-  return error ? error.message : null;
-}
+  const moduleKey = membership.moduleKey || membership.module_key;
+  const semesterId = Number(membership.semesterId || membership.semester_id || 0);
+  if (moduleKey !== 'supervision') return null;
 
+  const currentSemesterId = await getCurrentSemesterId();
+  if (!currentSemesterId || Number(semesterId) !== Number(currentSemesterId)) return null;
+
+  const target = await getProfile(userId);
+  if (target.error) return target.error;
+  if (ADMIN_ROLES.has(target.profile.role)) return null;
+
+  const { data: memberships, error } = await adminClient
+    .from('module_memberships')
+    .select('role, org_id')
+    .eq('user_id', userId)
+    .eq('semester_id', currentSemesterId)
+    .eq('module_key', 'supervision')
+    .eq('enabled', true);
+  if (error) return error.message;
+
+  const active = (memberships || [])
+    .filter((item) => SUPERVISION_ROLE_RANK[item.role])
+    .sort((a, b) => (SUPERVISION_ROLE_RANK[b.role] || 0) - (SUPERVISION_ROLE_RANK[a.role] || 0));
+  const top = active[0] || null;
+
+  const updatePayload = top
+    ? { role: top.role, organization_id: top.org_id }
+    : { role: '普通成员', organization_id: null };
+
+  const { error: updateError } = await adminClient
+    .from('profiles')
+    .update(updatePayload)
+    .eq('id', userId);
+  return updateError ? updateError.message : null;
+}
 async function cleanupCreatedProfileAccount(userId) {
   if (!userId) return;
   await adminClient.from('profiles').delete().eq('id', userId);
@@ -247,12 +370,17 @@ Deno.serve(async (req) => {
         if (!accountPhone) return jsonResponse({ error: '缺少手机号' }, headers, 400);
         if (!accountEmail) return jsonResponse({ error: '缺少登录邮箱' }, headers, 400);
         if (accountPassword.length < 6) return jsonResponse({ error: '密码至少 6 位' }, headers, 400);
+        if (!caller.isAdmin && profileRole !== '普通成员') {
+          return jsonResponse({ error: '秘书处账号管理员只能创建普通成员账号' }, headers, 403);
+        }
         if (ADMIN_ROLES.has(profileRole) && !caller.isAdmin) {
           return jsonResponse({ error: '只有管理员可以创建管理员账号' }, headers, 403);
         }
         if (organizationId !== null && Number.isNaN(organizationId)) {
           return jsonResponse({ error: '组织 ID 不合法' }, headers, 400);
         }
+        const orgError = await validateProfileOrganization(organizationId, caller);
+        if (orgError) return jsonResponse({ error: orgError }, headers, 400);
 
         const { data: existingProfile, error: existingError } = await adminClient
           .from('profiles')
@@ -321,14 +449,28 @@ Deno.serve(async (req) => {
         if (membershipError || !membership) {
           return jsonResponse({ error: membershipError?.message || '权限记录不存在' }, headers, 404);
         }
-        if (ADMIN_ROLES.has(membership.role) && !caller.isAdmin) {
-          return jsonResponse({ error: '只有管理员可以移除管理员权限' }, headers, 403);
+        const target = await validateAccountManagementTarget(membership.user_id, caller);
+        if (target.error) return jsonResponse({ error: target.error }, headers, 403);
+        if (!caller.isAdmin) {
+          if (Number(membership.semester_id) !== Number(caller.currentSemesterId)) {
+            return jsonResponse({ error: '只能移除当前学期的模块权限' }, headers, 403);
+          }
+          if (!NON_ADMIN_MANAGEABLE_MODULES.has(membership.module_key)) {
+            return jsonResponse({ error: '只有平台管理员可以移除该模块权限' }, headers, 403);
+          }
+          if (ADMIN_ROLES.has(membership.role)) {
+            return jsonResponse({ error: '只有平台管理员可以移除管理员权限' }, headers, 403);
+          }
         }
         const { error } = await adminClient
           .from('module_memberships')
           .update({ enabled: false })
           .eq('id', membershipId);
         if (error) return jsonResponse({ error: error.message }, headers, 500);
+        if (membership.module_key === 'supervision') {
+          const legacyError = await syncLegacySupervisionProfile(membership.user_id, membership);
+          if (legacyError) return jsonResponse({ error: legacyError }, headers, 500);
+        }
         return jsonResponse({ success: true }, headers);
       }
 

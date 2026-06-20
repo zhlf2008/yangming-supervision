@@ -19,6 +19,53 @@ const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
+const ADMIN_ROLES = new Set(['超级管理员', '管理员']);
+const AWARD_SECRET =
+  Deno.env.get('AWARD_NOTIFICATION_SECRET') ||
+  Deno.env.get('REMINDER_CRON_SECRET') ||
+  Deno.env.get('CRON_SECRET') ||
+  '';
+
+function getBearerToken(req: Request): string {
+  const authHeader = req.headers.get('Authorization') || '';
+  return authHeader.replace(/^Bearer\s+/i, '').trim();
+}
+
+function getRequestSecret(req: Request, body: Record<string, unknown>): string {
+  return String(
+    req.headers.get('x-cron-secret') ||
+    req.headers.get('x-award-secret') ||
+    body.secret ||
+    ''
+  ).trim();
+}
+
+function hasValidAwardSecret(req: Request, body: Record<string, unknown>): boolean {
+  const supplied = getRequestSecret(req, body);
+  return !!AWARD_SECRET && !!supplied && supplied === AWARD_SECRET;
+}
+
+async function requireAdmin(req: Request) {
+  const token = getBearerToken(req);
+  if (!token) return { error: 'Unauthorized', status: 401 };
+
+  const { data: userResult, error: userError } = await adminClient.auth.getUser(token);
+  const user = userResult?.user;
+  if (userError || !user) return { error: 'Unauthorized', status: 401 };
+
+  const { data: profile, error: profileError } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError || !profile || !ADMIN_ROLES.has(profile.role)) {
+    return { error: 'Forbidden', status: 403 };
+  }
+
+  return { user };
+}
+
 // ---- helpers ----
 
 function getBeijingNow() {
@@ -559,7 +606,7 @@ Deno.serve(async (req) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Cron-Secret, X-Award-Secret'
       }
     });
   }
@@ -569,18 +616,16 @@ Deno.serve(async (req) => {
     'Content-Type': 'application/json'
   };
 
-  const EXPECTED_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SB_SERVICE_ROLE_SECRET') || '';
-  const reqKey = req.headers.get('apikey') || '';
-  if (!EXPECTED_KEY || reqKey !== EXPECTED_KEY) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-
   try {
-    const body = await req.json();
+    const body = await req.json() as any;
     const { action = 'get_winners' } = body;
+
+    if (!hasValidAwardSecret(req, body)) {
+      const auth = await requireAdmin(req);
+      if (auth.error) {
+        return new Response(JSON.stringify({ error: auth.error }), { headers, status: auth.status || 401 });
+      }
+    }
 
     if (action === 'get_winners') {
       const result = await getWinners();
