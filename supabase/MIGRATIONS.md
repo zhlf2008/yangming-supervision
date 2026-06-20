@@ -35,7 +35,7 @@
 | 027 | `20260611000002_anon_insert_entry_forms.sql` | 允许匿名用户提交进班表单（外部填写） | 2026-06-11 |
 | 028 | `20260611000003_grant_anon_insert.sql` | GRANT INSERT ON entry_forms TO anon | 2026-06-11 |
 | 029 | `20260619000001_backfill_audit_logs_supervision.sql` | 回填历史空 module_key 审计日志为督察管理 | 待执行 |
-| 030 | `20260620000001_harden_permissions_rls.sql` | 加固 Edge Function/RLS 权限边界，统一模块权限语义 | 待执行 |
+| 030 | `20260620090624_20260620000001_harden_permissions_rls.sql` | 加固 Edge Function/RLS 权限边界，统一模块权限语义 | 2026-06-20 |
 | fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断
