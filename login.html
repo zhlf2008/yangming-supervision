@@ -4,9 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>登录 - 阳明心学督察管理系统</title>
+    <script>
+      (function () {
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (!key || key.indexOf('sb-') !== 0 || key.indexOf('-auth-token') <= 0) continue;
+            var session = JSON.parse(localStorage.getItem(key) || 'null');
+            if (session && session.access_token) {
+              document.documentElement.classList.add('login-auth-probing');
+              return;
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://tuoyue.space" />
     <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
+      html.login-auth-probing body {
+        visibility: hidden;
+      }
+
       body {
         display: flex;
         align-items: center;
@@ -286,12 +305,18 @@
         errorMsg.classList.remove('show');
       }
 
+      function showLoginForm() {
+        document.documentElement.classList.remove('login-auth-probing');
+      }
+
       function setLoading(loading) {
         loginBtn.disabled = loading;
         loginBtn.innerHTML = loading ? '<span class="loading"></span>登录中...' : '登 录';
       }
 
       async function getLoginCurrentSemesterId() {
+        var db = await dbReady;
+        if (!db) return null;
         try {
           var now = new Date().toISOString();
           var pending = await db
@@ -326,11 +351,15 @@
       }
 
       async function redirectByProfile(profile) {
-        if (profile.role === '超级管理员' || profile.role === '管理员') {
-          window.location.href = 'portal.html';
+        var db = await dbReady;
+        if (!db) {
+          window.location.replace('portal.html');
           return;
         }
-
+        if (profile.role === '超级管理员' || profile.role === '管理员') {
+          window.location.replace('portal.html');
+          return;
+        }
         try {
           var semId = await getLoginCurrentSemesterId();
           if (semId) {
@@ -342,36 +371,59 @@
             var modules = permRes.data || [];
             var uniqueKeys = [...new Set(modules.map(function(m) { return m.module_key; }))];
             if (uniqueKeys.length === 0) {
-              window.location.href = 'portal.html?noaccess=1';
+              window.location.replace('portal.html?noaccess=1');
               return;
             } else if (uniqueKeys.length === 1) {
               var pageMap = { supervision: 'index.html', secretariat: 'secretariat-dashboard.html', study: 'study-dashboard.html' };
-              window.location.href = pageMap[uniqueKeys[0]] || 'portal.html';
+              window.location.replace(pageMap[uniqueKeys[0]] || 'portal.html');
               return;
             }
           }
         } catch(e) {
           console.warn('login permission check skipped:', e);
         }
-        window.location.href = 'portal.html';
+        window.location.replace('portal.html');
       }
 
       // 检查是否已登录（用 SDK 原生 getSession）
       async function checkLogin() {
         try {
+          var db = await dbReady;
+          if (!db) {
+            showLoginForm();
+            return;
+          }
           var result = await db.auth.getSession();
-          if (result.data && result.data.session) {
+          var session = result.data && result.data.session;
+          if (session) {
+            var profile = null;
             var userData = localStorage.getItem('supabase_user');
             if (userData) {
-              var profile = JSON.parse(userData);
+              profile = JSON.parse(userData);
+            }
+            if (!profile && session.user && session.user.id) {
+              var profileResult = await db
+                .from('profiles')
+                .select('*, organizations(*)')
+                .eq('id', session.user.id)
+                .single();
+              if (profileResult.data) {
+                profile = profileResult.data;
+                localStorage.setItem('supabase_user', JSON.stringify(profile));
+                localStorage.setItem('currentUser', profile.name || '');
+              }
+            }
+            if (profile) {
               await redirectByProfile(profile);
               return;
             }
-            window.location.href = 'index.html';
+            window.location.replace('index.html');
+            return;
           }
         } catch (e) {
           /* ignore */
         }
+        showLoginForm();
       }
       checkLogin();
     </script>
