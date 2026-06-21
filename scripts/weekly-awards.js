@@ -64,15 +64,15 @@ async function renderCertificate(page, certParams) {
   console.log('  加载证书页面...');
   await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
 
-  console.log('  等待字体和渲染库加载...');
+  console.log('  等待字体和证书内容加载...');
   await page.waitForFunction(() => document.fonts && document.fonts.ready, { timeout: 15000 });
-  await page.waitForFunction(() => typeof window.renderCertificatePng === 'function', { timeout: 15000 });
+  await page.waitForSelector('#certificate', { state: 'visible', timeout: 15000 });
 
   await page.waitForTimeout(2000);
 
   console.log('  渲染证书 PNG...');
-  const dataUrl = await page.evaluate(() => window.renderCertificatePng());
-  return dataUrl;
+  const buffer = await page.locator('#certificate').screenshot({ type: 'png' });
+  return 'data:image/png;base64,' + buffer.toString('base64');
 }
 
 // ---- push to WeChat Work ----
@@ -168,6 +168,10 @@ async function main() {
 
   await browser.close();
 
+  if (renderedImages.length === 0) {
+    throw new Error('所有证书图片渲染失败，已取消推送');
+  }
+
   // 3. Push to WeChat
   console.log('\n[3/3] 推送到企业微信...');
 
@@ -217,6 +221,10 @@ async function main() {
   console.log('\n=== 推送完成 ===');
   console.log('获奖总数:', winners.length);
   console.log('成功推送:', renderedImages.length);
+
+  if (renderedImages.length !== winners.length) {
+    throw new Error('部分证书渲染失败：成功 ' + renderedImages.length + ' / ' + winners.length);
+  }
 }
 
 main().catch(e => {
