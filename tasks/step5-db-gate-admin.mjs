@@ -6,9 +6,13 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://whvjfurrkusdwujjodwc.supabase.co';
 const ADMIN_EMAIL = 'p15888396623@supabase.io';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '19871125';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 async function main() {
+  if (!ADMIN_PASSWORD) {
+    console.error('ADMIN_PASSWORD is required');
+    process.exit(2);
+  }
   // 1. 登录拿 JWT
   const anon = createClient(SUPABASE_URL, 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_', {
     auth: { persistSession: false, autoRefreshToken: false }

@@ -34,8 +34,18 @@
 | 026 | `20260610_003_entry_forms_phone.sql` | entry_forms 加手机号字段 phone | 2026-06-11 |
 | 027 | `20260611000002_anon_insert_entry_forms.sql` | 允许匿名用户提交进班表单（外部填写） | 2026-06-11 |
 | 028 | `20260611000003_grant_anon_insert.sql` | GRANT INSERT ON entry_forms TO anon | 2026-06-11 |
-| 029 | `20260619000001_backfill_audit_logs_supervision.sql` | 回填历史空 module_key 审计日志为督察管理 | 待执行 |
+| 029 | `20260619000001_backfill_audit_logs_supervision.sql` | 回填历史空 module_key 审计日志为督察管理 | 2026-06-25 |
 | 030 | `20260620090624_20260620000001_harden_permissions_rls.sql` | 加固 Edge Function/RLS 权限边界，统一模块权限语义 | 2026-06-20 |
+| 031 | `20260625000001_optimize_entry_forms_pending.sql` | 优化人员管理待处理进班申请列表查询索引 | 2026-06-25 |
+| 032 | `20260625102913_study_workflow_v2.sql` | 学委工作流 v2：大班规则、组织节点日程、内容继承、岗位表与摊派增强 | 2026-06-25 |
+| 033 | `20260625121436_study_schedule_backfill_org_nodes.sql` | 回填旧全局学委规则到各大班，并补齐各组织节点日程实例 | 2026-06-25 |
+| 034 | `20260625124125_study_schedule_prune_stale_instances.sql` | 清理与当前大班规则不匹配且无内容/岗位绑定的历史日程实例 | 2026-06-25 |
+| 035 | `20260629065350_add_study_notification_templates.sql` | 新增各级组织通知排版模板及学委权限策略 | 2026-06-29 |
+| 036 | `20260629111652_study_workflow_v3.sql` | 学委工作流 v3：日程多课程、共读类型岗位人数与启停模板 | 2026-06-29 |
+| 037 | `20260629112035_study_workflow_v3_content_order_fix.sql` | 允许同一日程的多门课程使用相同排序值 | 2026-06-29 |
+| 038 | `20260629114523_study_workflow_v4.sql` | 学委工作流 v4：可维护共读类型、类型岗位与逐级名额槽位 | 2026-06-29 |
+| 039 | `20260630053455_restrict_person_position_scopes.sql` | 按秘书处所属组织级别限制人员职务写入范围 | 2026-06-30 |
+| 040 | `20260630060948_normalize_person_position_scopes.sql` | 归一化历史人员职务级别与所属组织级别 | 2026-06-30 |
 | fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断

@@ -18,6 +18,7 @@ const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 const ADMIN_ROLES = new Set(['超级管理员', '管理员']);
 const ACCOUNT_MANAGE_ACTIONS = new Set([
   'createProfileAccount',
+  'deleteUser',
   'grantModuleMembership',
   'disableModuleMembership'
 ]);
@@ -40,8 +41,10 @@ async function getCurrentSemesterId() {
   return data?.id || null;
 }
 
-const SECRETARIAT_ACCOUNT_MANAGER_ROLES = ['管理员'];
-const NON_ADMIN_MANAGEABLE_MODULES = new Set(['supervision', 'study']);
+const SECRETARIAT_ACCOUNT_MANAGER_ROLES = ['管理员', '秘书处'];
+const NON_ADMIN_MANAGEABLE_MODULES = new Set(['supervision', 'study', 'secretariat']);
+const STUDY_ROLES = new Set(['学委', '副学委']);
+const SECRETARIAT_ROLES = new Set(['秘书处']);
 const SUPERVISION_ROLE_LEVEL = {
   '大班总督': '大班',
   '大班副督': '大班',
@@ -112,7 +115,7 @@ async function getCaller(req) {
 async function getProfile(userId) {
   const { data, error } = await adminClient
     .from('profiles')
-    .select('id, role')
+    .select('id, role, organization_id')
     .eq('id', userId)
     .single();
   if (error || !data) return { error: error?.message || '账号档案不存在' };
@@ -122,11 +125,59 @@ async function getProfile(userId) {
 async function getOrganization(orgId) {
   const { data, error } = await adminClient
     .from('organizations')
-    .select('id, level, semester_id')
+    .select('id, level, semester_id, parent_id')
     .eq('id', orgId)
     .single();
   if (error || !data) return { error: error?.message || '组织不存在' };
   return { organization: data };
+}
+
+async function canCallerManageOrganization(caller, semesterId, targetOrgId) {
+  if (caller.isAdmin) return true;
+  if (!targetOrgId || !caller.currentSemesterId ||
+      Number(semesterId) !== Number(caller.currentSemesterId)) return false;
+
+  const targetResult = await getOrganization(targetOrgId);
+  if (targetResult.error) return false;
+  const target = targetResult.organization;
+  const targetParentResult = target.parent_id ? await getOrganization(target.parent_id) : null;
+  const targetParent = targetParentResult && !targetParentResult.error
+    ? targetParentResult.organization
+    : null;
+  const targetGrandparentResult = targetParent?.parent_id
+    ? await getOrganization(targetParent.parent_id)
+    : null;
+  const targetGrandparent = targetGrandparentResult && !targetGrandparentResult.error
+    ? targetGrandparentResult.organization
+    : null;
+
+  const { data: memberships, error } = await adminClient
+    .from('module_memberships')
+    .select('org_id')
+    .eq('user_id', caller.user.id)
+    .eq('semester_id', semesterId)
+    .eq('module_key', 'secretariat')
+    .eq('enabled', true)
+    .in('role', SECRETARIAT_ACCOUNT_MANAGER_ROLES);
+  if (error || !memberships?.length) return false;
+
+  for (const membership of memberships) {
+    if (!membership.org_id) continue;
+    const managerResult = await getOrganization(membership.org_id);
+    if (managerResult.error) continue;
+    const manager = managerResult.organization;
+    if (manager.level === '大班' && (
+      Number(target.id) === Number(manager.id) ||
+      Number(targetParent?.id) === Number(manager.id) ||
+      Number(targetGrandparent?.id) === Number(manager.id)
+    )) return true;
+    if (manager.level === '班级' && (
+      Number(target.id) === Number(manager.id) ||
+      Number(targetParent?.id) === Number(manager.id)
+    )) return true;
+    if (manager.level === '小组' && Number(target.id) === Number(manager.id)) return true;
+  }
+  return false;
 }
 
 async function validateProfileOrganization(organizationId, caller) {
@@ -138,6 +189,10 @@ async function validateProfileOrganization(organizationId, caller) {
     return '登录账号归属组织必须属于当前学期';
   }
   if (org.level !== '小组') return '登录账号归属组织必须是小组';
+  if (!caller.isAdmin &&
+      !(await canCallerManageOrganization(caller, caller.currentSemesterId, organizationId))) {
+    return '无权管理该小组的登录账号';
+  }
   return null;
 }
 
@@ -146,6 +201,16 @@ async function validateAccountManagementTarget(userId, caller) {
   if (target.error) return { error: target.error };
   if (!caller.isAdmin && ADMIN_ROLES.has(target.profile.role)) {
     return { error: '不能修改平台管理员账号权限' };
+  }
+  if (!caller.isAdmin && (
+    !target.profile.organization_id ||
+    !(await canCallerManageOrganization(
+      caller,
+      caller.currentSemesterId,
+      target.profile.organization_id
+    ))
+  )) {
+    return { error: '无权管理该组织的登录账号' };
   }
   return { profile: target.profile };
 }
@@ -182,6 +247,12 @@ async function validateModuleMembershipInput(params, caller) {
     if (!expectedLevel && !ADMIN_ROLES.has(role)) return { error: '督察角色不合法' };
     if (expectedLevel && orgId === null) return { error: '督察权限必须绑定组织' };
   }
+  if (moduleKey === 'study' && !STUDY_ROLES.has(role) && !ADMIN_ROLES.has(role)) {
+    return { error: '学委角色不合法' };
+  }
+  if (moduleKey === 'secretariat' && !SECRETARIAT_ROLES.has(role) && !ADMIN_ROLES.has(role)) {
+    return { error: '秘书处角色不合法' };
+  }
 
   if (orgId !== null) {
     const orgResult = await getOrganization(orgId);
@@ -192,6 +263,11 @@ async function validateModuleMembershipInput(params, caller) {
     if (expectedLevel && org.level !== expectedLevel) {
       return { error: role + ' 必须绑定' + expectedLevel + '组织' };
     }
+    if (!caller.isAdmin && !(await canCallerManageOrganization(caller, semesterId, orgId))) {
+      return { error: '无权管理该组织的模块权限' };
+    }
+  } else if (!caller.isAdmin) {
+    return { error: '非平台管理员分配模块权限时必须绑定组织' };
   }
 
   return { semesterId, moduleKey, role, orgId };
@@ -323,7 +399,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: '无秘书处账号管理权限' }, headers, 403);
     }
 
-    if (['createUser', 'deleteUser', 'generateSchedules'].includes(action) && !caller.isAdmin) {
+    if (['createUser', 'generateSchedules'].includes(action) && !caller.isAdmin) {
       return jsonResponse({ error: '无管理员权限' }, headers, 403);
     }
 
@@ -336,8 +412,14 @@ Deno.serve(async (req) => {
       // 删除用户（从 auth.users 中删除）
       case 'deleteUser': {
         if (!userId) return new Response(JSON.stringify({ error: '缺少 userId' }), { headers, status: 400 });
+        const target = await validateAccountManagementTarget(userId, caller);
+        if (target.error) return jsonResponse({ error: target.error }, headers, 403);
         const { error } = await adminClient.auth.admin.deleteUser(userId);
         if (error) return new Response(JSON.stringify({ error: error.message }), { headers, status: 500 });
+        const profileDelete = await adminClient.from('profiles').delete().eq('id', userId);
+        if (profileDelete.error) {
+          return new Response(JSON.stringify({ error: profileDelete.error.message }), { headers, status: 500 });
+        }
         return new Response(JSON.stringify({ success: true }), { headers });
       }
 
@@ -460,6 +542,10 @@ Deno.serve(async (req) => {
           }
           if (ADMIN_ROLES.has(membership.role)) {
             return jsonResponse({ error: '只有平台管理员可以移除管理员权限' }, headers, 403);
+          }
+          if (!membership.org_id ||
+              !(await canCallerManageOrganization(caller, membership.semester_id, membership.org_id))) {
+            return jsonResponse({ error: '无权移除该组织的模块权限' }, headers, 403);
           }
         }
         const { error } = await adminClient

@@ -76,6 +76,12 @@
       @media (max-width: 400px) {
         .calendar-grid { gap:2px; }
       }
+      body.embedded-page { min-height: 0; padding-bottom: 0; background: transparent; }
+      body.embedded-page > .container { max-width: none; padding: 0; }
+      body.embedded-page .page-header,
+      body.embedded-page #weeklyOrgCascade,
+      body.embedded-page #bottomNavContainer { display: none !important; }
+      body.embedded-page .section { margin-bottom: 12px; box-shadow: none; }
     </style>
   </head>
   <body>
@@ -103,7 +109,7 @@
           <button class="btn btn-secondary btn-sm" onclick="generateRoster()" style="flex:1;">📋 生成排班表</button>
           <button class="btn btn-secondary btn-sm" onclick="generateNotices()" style="flex:1;">📢 生成通知</button>
         </div>
-        <div class="org-cascade" style="margin-top:12px;">
+        <div class="org-cascade" id="weeklyOrgCascade" style="margin-top:12px;">
           <div class="org-group">
             <label class="org-label">&#22823;&#29677;</label>
             <select class="org-select" id="bigClassSelect" onchange="onWeeklyOrgFilterChange('big')">
@@ -231,10 +237,15 @@
 
     <div id="bottomNavContainer"></div>
 
-    <script src="js/supabase-config.js?v=7"></script>
-    <script src="js/utils.js?v=7"></script>
-    <script src="js/components.js?v=7"></script>
-    <script>renderModuleBottomNav('study', 'weekly');</script>
+    <script src="js/supabase-config.js?v=9"></script>
+    <script src="js/utils.js?v=9"></script>
+    <script src="js/components.js?v=9"></script>
+    <script>
+      var weeklyPageParams = new URLSearchParams(location.search);
+      var weeklyEmbedded = weeklyPageParams.get('embedded') === '1';
+      if (weeklyEmbedded) document.body.classList.add('embedded-page');
+      if (!weeklyEmbedded) renderModuleBottomNav('study', 'weekly');
+    </script>
     <script>
       var WEEKDAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
       var ROLES = ['主持人', '聆听者', '分享人', '回应砥砺', '总结赋能', '播控', '拍照'];
@@ -248,6 +259,7 @@
       var membersByOrg = {};
       var allPeople = [];
       var activeRuleWeekdays = [];
+      var requestedWeeklyOrgId = Number(weeklyPageParams.get('org_id')) || null;
 
       async function init() {
         await waitForDb();
@@ -262,8 +274,15 @@
         await loadCurrentSemester();
         await loadOrgs();
         initWeeklyOrgFilter();
+        applyRequestedWeeklyOrg();
         await loadPeople();
         await loadWeekSchedules();
+      }
+
+      function notifyEmbeddedReady() {
+        if (weeklyEmbedded && window.parent !== window) {
+          window.parent.postMessage({ type: 'study-embedded-ready' }, location.origin);
+        }
       }
 
       async function loadCurrentSemester() {
@@ -355,6 +374,26 @@
           }).join('');
         refreshClassOptions();
         refreshGroupOptions();
+      }
+
+      function applyRequestedWeeklyOrg() {
+        if (!requestedWeeklyOrgId) return;
+        var org = orgs.find(function (item) { return Number(item.id) === Number(requestedWeeklyOrgId); });
+        if (!org) return;
+        var chain = getOrgPathIds(org.id);
+        var big = orgs.find(function (item) { return item.level === ORG_LEVEL_BIG && chain.indexOf(Number(item.id)) !== -1; });
+        var cls = orgs.find(function (item) { return item.level === ORG_LEVEL_CLASS && chain.indexOf(Number(item.id)) !== -1; });
+        if (big) {
+          document.getElementById('bigClassSelect').value = String(big.id);
+          refreshClassOptions();
+        }
+        if (cls) {
+          document.getElementById('classSelect').value = String(cls.id);
+          refreshGroupOptions();
+        }
+        if (org.level === ORG_LEVEL_GROUP) {
+          document.getElementById('groupSelect').value = String(org.id);
+        }
       }
 
       function refreshClassOptions() {
@@ -1023,7 +1062,7 @@
         });
       }
 
-      init();
+      init().finally(notifyEmbeddedReady);
     </script>
   </body>
 </html>

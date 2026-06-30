@@ -117,8 +117,9 @@ function renderModuleBottomNav(systemKey, activePage) {
     ],
     study: [
       { key: 'home', href: 'study-dashboard.html', icon: '🏠', label: '首页' },
+      { key: 'management', href: 'study-committee-management.html', icon: '⚙️', label: '管理' },
       { key: 'rules', href: 'study-schedule-rules.html', icon: '🗓️', label: '规则' },
-      { key: 'weekly', href: 'study-weekly-assignment.html', icon: '👥', label: '安排' },
+      { key: 'weekly', href: 'study-org-schedule.html', icon: '👥', label: '日程' },
       { key: 'profile', href: 'profile.html?system=study', icon: '👤', label: '我的' }
     ]
   };

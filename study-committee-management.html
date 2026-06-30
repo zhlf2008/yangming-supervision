@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学委 - 学委管理</title>
+    <link rel="stylesheet" href="css/common.css?v=5" />
+    <style>
+      :root {
+        --manager-ink: #292824;
+        --manager-paper: #fffefb;
+        --manager-line: #ddd8ce;
+        --manager-red: #a6372d;
+        --manager-red-soft: #f6e8e4;
+        --manager-green: #315d50;
+        --manager-gold: #a27634;
+      }
+      body { color: var(--manager-ink); }
+      .manager-shell { max-width: 980px; }
+      .manager-header { padding-bottom: 12px; }
+      .manager-header .page-title { font-size: 24px; }
+      .semester-line { color: var(--ink-muted); font-size: 13px; text-align: center; margin-top: 5px; }
+      .level-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 2px 14px;
+        border-bottom: 1px solid var(--manager-line);
+        margin-bottom: 18px;
+      }
+      .level-title { font-size: 18px; font-weight: 700; }
+      .level-count { color: var(--ink-muted); font-size: 12px; }
+      .org-card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .org-card {
+        width: 100%;
+        min-height: 112px;
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) 28px;
+        align-items: center;
+        gap: 14px;
+        padding: 18px;
+        border: 1px solid var(--manager-line);
+        border-radius: 8px;
+        background: var(--manager-paper);
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 0 2px 9px rgba(49, 43, 34, 0.05);
+        transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .org-card:hover {
+        border-color: rgba(166, 55, 45, 0.48);
+        transform: translateY(-2px);
+        box-shadow: 0 7px 18px rgba(49, 43, 34, 0.09);
+      }
+      .org-mark {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--manager-red-soft);
+        color: var(--manager-red);
+        font-family: 'STSong', 'SimSun', serif;
+        font-size: 19px;
+        font-weight: 700;
+      }
+      .org-card.class-card .org-mark { background: #e7f0ec; color: var(--manager-green); }
+      .org-card.group-card .org-mark { background: #f3ede2; color: var(--manager-gold); }
+      .org-card-name {
+        font-family: 'STSong', 'SimSun', serif;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+      }
+      .org-card-meta { color: var(--ink-muted); font-size: 12px; margin-top: 5px; }
+      .org-card-arrow { width: 22px; height: 22px; color: var(--ink-muted); }
+      .empty-panel { padding: 52px 12px; text-align: center; color: var(--ink-muted); }
+
+      .detail-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--manager-line);
+        border-radius: 8px;
+        background: var(--manager-paper);
+        box-shadow: 0 5px 20px rgba(49, 43, 34, 0.08);
+      }
+      .detail-main {
+        min-height: 150px;
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr) 64px;
+        align-items: center;
+        gap: 18px;
+        padding: 24px;
+      }
+      .detail-main.no-forward { grid-template-columns: 64px minmax(0, 1fr) 64px; }
+      .detail-copy { min-width: 0; text-align: center; }
+      .detail-level {
+        display: inline-block;
+        margin-bottom: 8px;
+        color: var(--manager-red);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .detail-name {
+        margin: 0;
+        font-family: 'STSong', 'SimSun', serif;
+        font-size: clamp(24px, 4vw, 34px);
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+      .detail-path { margin-top: 8px; color: var(--ink-muted); font-size: 12px; }
+      .direction-btn {
+        width: 58px;
+        height: 70px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--manager-line);
+        border-radius: 8px;
+        background: var(--bg-primary);
+        color: var(--manager-ink);
+        cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+      }
+      .direction-btn:hover {
+        border-color: var(--manager-red);
+        background: var(--manager-red);
+        color: #fff;
+      }
+      .direction-btn svg { width: 31px; height: 31px; }
+      .direction-placeholder { width: 58px; height: 70px; }
+      .detail-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-top: 1px solid var(--manager-line);
+        background: #f8f6f1;
+      }
+      .detail-tab {
+        min-height: 52px;
+        border: 0;
+        border-right: 1px solid var(--manager-line);
+        background: transparent;
+        color: var(--ink-light);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        position: relative;
+      }
+      .detail-tab:last-child { border-right: 0; }
+      .detail-tab.active { background: var(--manager-paper); color: var(--manager-red); }
+      .detail-tab.active::after {
+        content: '';
+        position: absolute;
+        left: 24%;
+        right: 24%;
+        bottom: 0;
+        height: 3px;
+        background: var(--manager-red);
+      }
+      .feature-area { min-height: 440px; padding-top: 18px; }
+      .feature-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .feature-title { font-size: 16px; font-weight: 700; }
+      .feature-org { color: var(--ink-muted); font-size: 12px; }
+      .feature-frame {
+        display: block;
+        width: 100%;
+        height: 760px;
+        border: 0;
+        background: transparent;
+        opacity: 0.45;
+        pointer-events: none;
+        transition: opacity 0.18s ease;
+      }
+      .feature-frame.ready { opacity: 1; pointer-events: auto; }
+      .notice-editor {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 18px;
+      }
+      .notice-controls, .notice-preview {
+        min-width: 0;
+        padding: 18px;
+        border: 1px solid var(--manager-line);
+        border-radius: 8px;
+        background: var(--manager-paper);
+      }
+      .field { margin-bottom: 14px; }
+      .field:last-child { margin-bottom: 0; }
+      .field label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 12px; font-weight: 600; }
+      .field input, .field textarea {
+        width: 100%;
+        padding: 10px 11px;
+        border: 1px solid var(--manager-line);
+        border-radius: 6px;
+        background: var(--bg-primary);
+        color: var(--manager-ink);
+        font: inherit;
+        font-size: 13px;
+      }
+      .field textarea { min-height: 74px; resize: vertical; }
+      .notice-options { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 12px 0 16px; }
+      .notice-option { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-light); font-size: 13px; }
+      .notice-option input { accent-color: var(--manager-red); }
+      .save-notice-btn {
+        width: 100%;
+        min-height: 40px;
+        border: 0;
+        border-radius: 6px;
+        background: var(--manager-red);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .notice-preview-title { margin-bottom: 12px; font-size: 13px; font-weight: 700; color: var(--ink-light); }
+      .notice-paper {
+        min-height: 290px;
+        padding: 20px;
+        border-left: 3px solid var(--manager-red);
+        background: #faf8f3;
+        white-space: pre-wrap;
+        color: var(--manager-ink);
+        font-size: 13px;
+        line-height: 1.9;
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 720px) {
+        .org-card-grid { grid-template-columns: 1fr; }
+        .detail-main { grid-template-columns: 46px minmax(0, 1fr) 46px; gap: 8px; padding: 18px 10px; }
+        .direction-btn { width: 44px; height: 58px; }
+        .direction-btn svg { width: 26px; height: 26px; }
+        .direction-placeholder { width: 44px; height: 58px; }
+        .detail-name { font-size: 23px; }
+        .detail-tab { min-height: 48px; font-size: 13px; }
+        .notice-editor { grid-template-columns: 1fr; }
+        .feature-frame { height: 720px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container manager-shell">
+      <header class="page-header manager-header">
+        <a class="back-btn" href="study-dashboard.html?from=study-committee-management" aria-label="返回学委工作台"></a>
+        <h1 class="page-title">学委管理</h1>
+        <div class="semester-line" id="semesterLine">加载中...</div>
+      </header>
+
+      <main id="managerContent">
+        <div class="empty-panel">正在加载组织...</div>
+      </main>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=9"></script>
+    <script src="js/utils.js?v=9"></script>
+    <script src="js/components.js?v=9"></script>
+    <script src="js/study-workflow.js?v=9"></script>
+    <script>
+      renderModuleBottomNav('study', 'management');
+
+      var currentSemesterId = null;
+      var currentSemester = null;
+      var allOrgs = [];
+      var studyContext = null;
+      var currentOrg = null;
+      var currentTab = 'schedule';
+      var listLevel = '大班';
+      var listParentId = null;
+      var params = new URLSearchParams(location.search);
+      var FEATURE_BUILD = '20260630-3';
+
+      var TAB_CONFIG = {
+        '大班': [
+          { key: 'rules', label: '规则' },
+          { key: 'course', label: '课程' },
+          { key: 'schedule', label: '排班' },
+          { key: 'notice', label: '通知' }
+        ],
+        '班级': [
+          { key: 'push', label: '推送' },
+          { key: 'course', label: '课程' },
+          { key: 'schedule', label: '排班' },
+          { key: 'notice', label: '通知' }
+        ],
+        '小组': [
+          { key: 'week', label: '周表' },
+          { key: 'course', label: '课程' },
+          { key: 'schedule', label: '排班' },
+          { key: 'notice', label: '通知' }
+        ]
+      };
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        if (!checkLogin()) return;
+        var ok = await guardModuleAccess('study');
+        if (!ok) return;
+
+        currentSemesterId = await getCurrentSemesterId();
+        if (!currentSemesterId) {
+          document.getElementById('managerContent').innerHTML = '<div class="empty-panel">当前没有可用学期</div>';
+          return;
+        }
+
+        var semesterResult = await window.db.from('semesters').select('*').eq('id', currentSemesterId).maybeSingle();
+        currentSemester = semesterResult.data || null;
+        document.getElementById('semesterLine').textContent = currentSemester ? currentSemester.semester_name : '当前学期';
+
+        var orgResult = await window.db
+          .from('organizations')
+          .select('id,name,level,parent_id,is_active,sort_order')
+          .eq('semester_id', currentSemesterId)
+          .eq('is_active', true)
+          .order('sort_order');
+        allOrgs = orgResult.data || [];
+        studyContext = await StudyWorkflow.loadContext(currentSemesterId, allOrgs);
+
+        var requestedOrg = Number(params.get('org_id')) || null;
+        if (requestedOrg) {
+          var org = StudyWorkflow.getOrg(allOrgs, requestedOrg);
+          if (org && StudyWorkflow.canViewOrg(studyContext, org.id)) {
+            openOrg(org.id);
+            return;
+          }
+        }
+        renderOrgList('大班', null);
+      }
+
+      function getVisibleChildren(level, parentId) {
+        return StudyWorkflow.sortOrgs(allOrgs.filter(function (org) {
+          if (org.level !== level) return false;
+          if (level !== '大班' && Number(org.parent_id) !== Number(parentId)) return false;
+          if (level === '大班') {
+            return studyContext.fullStudyAccess || studyContext.isPlatformAdmin ||
+              Number(studyContext.bigClassId) === Number(org.id);
+          }
+          return StudyWorkflow.canViewOrg(studyContext, org.id);
+        }));
+      }
+
+      function getChildCount(org) {
+        var nextLevel = org.level === '大班' ? '班级' : (org.level === '班级' ? '小组' : '');
+        if (!nextLevel) return 0;
+        return allOrgs.filter(function (item) {
+          return item.level === nextLevel && Number(item.parent_id) === Number(org.id) && item.is_active !== false;
+        }).length;
+      }
+
+      function renderOrgList(level, parentId) {
+        currentOrg = null;
+        listLevel = level;
+        listParentId = parentId;
+        var orgs = getVisibleChildren(level, parentId);
+        var parent = parentId ? StudyWorkflow.getOrg(allOrgs, parentId) : null;
+        var backAction = parent
+          ? '<button class="direction-btn" type="button" onclick="openOrg(' + parent.id + ')" aria-label="返回' + escapeHtml(parent.name) + '">' + arrowSvg('left') + '</button>'
+          : '';
+        var cards = orgs.map(function (org) {
+          var count = getChildCount(org);
+          var cardClass = org.level === '班级' ? ' class-card' : (org.level === '小组' ? ' group-card' : '');
+          var meta = org.level === '小组' ? '进入小组设置' : count + ' 个' + (org.level === '大班' ? '班级' : '小组');
+          return '<button class="org-card' + cardClass + '" type="button" onclick="openOrg(' + org.id + ')">' +
+            '<span class="org-mark">' + escapeHtml(org.name.charAt(0)) + '</span>' +
+            '<span><span class="org-card-name">' + escapeHtml(org.name) + '</span><span class="org-card-meta">' + meta + '</span></span>' +
+            '<svg class="org-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>' +
+          '</button>';
+        }).join('');
+        document.getElementById('managerContent').innerHTML =
+          (parent ? '<div style="margin-bottom:12px;">' + backAction + '</div>' : '') +
+          '<div class="level-bar"><div class="level-title">' + level + '列表</div><div class="level-count">' + orgs.length + ' 个组织</div></div>' +
+          (cards ? '<div class="org-card-grid">' + cards + '</div>' : '<div class="empty-panel">暂无可管理的' + level + '</div>');
+      }
+
+      function openOrg(orgId) {
+        var org = StudyWorkflow.getOrg(allOrgs, orgId);
+        if (!org || !StudyWorkflow.canViewOrg(studyContext, org.id)) {
+          showToast('无权查看该组织', 'error');
+          return;
+        }
+        currentOrg = org;
+        currentTab = org.level === '小组' ? 'week' : 'schedule';
+        renderOrgDetail();
+      }
+
+      function getParentOrg(org) {
+        return org && org.parent_id ? StudyWorkflow.getOrg(allOrgs, org.parent_id) : null;
+      }
+
+      function goUp() {
+        if (!currentOrg) return;
+        var parent = getParentOrg(currentOrg);
+        if (parent) {
+          openOrg(parent.id);
+        } else {
+          renderOrgList('大班', null);
+        }
+      }
+
+      function openChildren() {
+        if (!currentOrg || currentOrg.level === '小组') return;
+        renderOrgList(currentOrg.level === '大班' ? '班级' : '小组', currentOrg.id);
+      }
+
+      function renderOrgDetail() {
+        var tabs = TAB_CONFIG[currentOrg.level] || [];
+        var hasParent = !!getParentOrg(currentOrg);
+        var canForward = currentOrg.level !== '小组';
+        var leftButton = hasParent
+          ? '<button class="direction-btn" type="button" onclick="goUp()" aria-label="返回上一级">' + arrowSvg('left') + '</button>'
+          : '<button class="direction-btn" type="button" onclick="renderOrgList(\'大班\',null)" aria-label="返回大班列表">' + arrowSvg('left') + '</button>';
+        var rightButton = canForward
+          ? '<button class="direction-btn" type="button" onclick="openChildren()" aria-label="进入下级组织">' + arrowSvg('right') + '</button>'
+          : '<span class="direction-placeholder" aria-hidden="true"></span>';
+        var tabHtml = tabs.map(function (tab) {
+          return '<button class="detail-tab' + (tab.key === currentTab ? ' active' : '') + '" type="button" onclick="selectTab(\'' + tab.key + '\')">' + tab.label + '</button>';
+        }).join('');
+
+        document.getElementById('managerContent').innerHTML =
+          '<section class="detail-card">' +
+            '<div class="detail-main' + (canForward ? '' : ' no-forward') + '">' +
+              leftButton +
+              '<div class="detail-copy"><span class="detail-level">' + currentOrg.level + '</span><h2 class="detail-name">' + escapeHtml(currentOrg.name) + '</h2><div class="detail-path">' + escapeHtml(StudyWorkflow.getOrgPath(currentOrg.id, allOrgs)) + '</div></div>' +
+              rightButton +
+            '</div>' +
+            '<div class="detail-tabs" role="tablist">' + tabHtml + '</div>' +
+          '</section>' +
+          '<section class="feature-area" id="featureArea"></section>';
+        renderFeature();
+      }
+
+      function selectTab(tabKey) {
+        currentTab = tabKey;
+        renderOrgDetail();
+      }
+
+      function renderFeature() {
+        var area = document.getElementById('featureArea');
+        if (!area || !currentOrg) return;
+        if (currentTab === 'notice' || currentTab === 'push') {
+          renderNoticeEditor();
+          return;
+        }
+
+        var src = '';
+        var title = '';
+        if (currentTab === 'rules') {
+          src = 'study-schedule-rules.html?embedded=1&org_id=' + currentOrg.id;
+          title = '大班规则设置';
+        } else if (currentTab === 'course') {
+          src = 'study-org-schedule.html?embedded=1&view=course&org_id=' + currentOrg.id;
+          title = '周切换课程设置';
+        } else if (currentTab === 'week') {
+          src = 'study-org-schedule.html?embedded=1&view=week&org_id=' + currentOrg.id;
+          title = '小组周表';
+        } else {
+          src = 'study-org-schedule.html?embedded=1&view=schedule&org_id=' + currentOrg.id;
+          title = '周切换排班设置';
+        }
+        src += '&build=' + FEATURE_BUILD;
+        area.innerHTML =
+          '<div class="feature-heading"><div class="feature-title">' + title + '</div><div class="feature-org">' + escapeHtml(currentOrg.name) + '</div></div>' +
+          '<iframe class="feature-frame" id="featureFrame" src="' + src + '" title="' + title + '"></iframe>';
+      }
+
+      async function renderNoticeEditor() {
+        var area = document.getElementById('featureArea');
+        area.innerHTML =
+          '<div class="feature-heading"><div class="feature-title">' + (currentTab === 'push' ? '通知推送排版' : '通知排版设置') + '</div><div class="feature-org">' + escapeHtml(currentOrg.name) + '</div></div>' +
+          '<div class="notice-editor">' +
+            '<div class="notice-controls">' +
+              '<div class="field"><label for="noticeTitleInput">通知标题</label><input id="noticeTitleInput" value="【{组织}】第{周次}周共读安排" oninput="updateNoticePreview()" /></div>' +
+              '<div class="field"><label for="noticeIntroInput">开场文案</label><textarea id="noticeIntroInput" oninput="updateNoticePreview()">请各位同学提前查看本周学习安排，按时参加共读。</textarea></div>' +
+              '<div class="notice-options">' +
+                '<label class="notice-option"><input type="checkbox" id="showCourseInput" checked onchange="updateNoticePreview()" />课程内容</label>' +
+                '<label class="notice-option"><input type="checkbox" id="showRosterInput" checked onchange="updateNoticePreview()" />岗位排班</label>' +
+                '<label class="notice-option"><input type="checkbox" id="showQuestionInput" checked onchange="updateNoticePreview()" />思考题</label>' +
+              '</div>' +
+              '<div class="field"><label for="noticeClosingInput">结尾文案</label><textarea id="noticeClosingInput" oninput="updateNoticePreview()">请相关岗位提前做好准备，如需调整请及时联系本级学委。</textarea></div>' +
+              '<button class="save-notice-btn" id="saveNoticeBtn" type="button" onclick="saveNoticeTemplate()">保存排版</button>' +
+            '</div>' +
+            '<div class="notice-preview"><div class="notice-preview-title">通知预览</div><div class="notice-paper" id="noticePreview"></div></div>' +
+          '</div>';
+        await loadNoticeTemplate();
+        updateNoticePreview();
+      }
+
+      function currentWeekText() {
+        if (!currentSemester || !currentSemester.start_date) return '本';
+        var start = new Date(currentSemester.start_date + 'T00:00:00');
+        var now = new Date();
+        var week = Math.max(1, Math.floor((now - start) / 604800000) + 1);
+        return String(week);
+      }
+
+      function updateNoticePreview() {
+        var preview = document.getElementById('noticePreview');
+        if (!preview || !currentOrg) return;
+        var title = document.getElementById('noticeTitleInput').value
+          .replace(/\{组织\}/g, currentOrg.name)
+          .replace(/\{周次\}/g, currentWeekText());
+        var text = title + '\n\n' + document.getElementById('noticeIntroInput').value.trim();
+        if (document.getElementById('showCourseInput').checked) text += '\n\n【课程内容】\n待课程设置完成后自动带入';
+        if (document.getElementById('showRosterInput').checked) text += '\n\n【岗位排班】\n待排班设置完成后自动带入';
+        if (document.getElementById('showQuestionInput').checked) text += '\n\n【本周思考】\n待课程思考题设置完成后自动带入';
+        var closing = document.getElementById('noticeClosingInput').value.trim();
+        if (closing) text += '\n\n' + closing;
+        preview.textContent = text;
+      }
+
+      async function loadNoticeTemplate() {
+        var result = await window.db
+          .from('study_notification_templates')
+          .select('*')
+          .eq('semester_id', currentSemesterId)
+          .eq('org_id', currentOrg.id)
+          .maybeSingle();
+        if (result.error) {
+          if (result.error.code !== '42P01' && result.error.code !== 'PGRST205') {
+            console.warn('加载通知模板失败', result.error);
+          }
+          return;
+        }
+        var row = result.data;
+        if (!row) return;
+        document.getElementById('noticeTitleInput').value = row.title_template || '';
+        document.getElementById('noticeIntroInput').value = row.intro_text || '';
+        document.getElementById('noticeClosingInput').value = row.closing_text || '';
+        document.getElementById('showCourseInput').checked = row.show_course !== false;
+        document.getElementById('showRosterInput').checked = row.show_roster !== false;
+        document.getElementById('showQuestionInput').checked = row.show_question !== false;
+      }
+
+      async function saveNoticeTemplate() {
+        var button = document.getElementById('saveNoticeBtn');
+        button.disabled = true;
+        button.textContent = '保存中...';
+        var result = await window.db.from('study_notification_templates').upsert({
+          semester_id: currentSemesterId,
+          org_id: currentOrg.id,
+          title_template: document.getElementById('noticeTitleInput').value.trim(),
+          intro_text: document.getElementById('noticeIntroInput').value.trim(),
+          closing_text: document.getElementById('noticeClosingInput').value.trim(),
+          show_course: document.getElementById('showCourseInput').checked,
+          show_roster: document.getElementById('showRosterInput').checked,
+          show_question: document.getElementById('showQuestionInput').checked,
+          updated_by: getCurrentUser().id,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'semester_id,org_id' });
+        button.disabled = false;
+        button.textContent = '保存排版';
+        if (result.error) {
+          showToast('保存通知排版失败：' + result.error.message, 'error');
+          return;
+        }
+        showToast('通知排版已保存', 'success');
+      }
+
+      function arrowSvg(direction) {
+        var path = direction === 'left' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6';
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + path + '"/></svg>';
+      }
+
+      window.addEventListener('message', function (event) {
+        if (event.origin !== location.origin || !event.data || event.data.type !== 'study-embedded-ready') return;
+        var frame = document.getElementById('featureFrame');
+        if (frame && event.source === frame.contentWindow) frame.classList.add('ready');
+      });
+
+      init();
+    </script>
+  </body>
+</html>

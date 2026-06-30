@@ -44,6 +44,25 @@
       .type-item:last-child { border-bottom: none; }
       .type-item .type-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--ink-dark); }
       .type-item .type-label-input { flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+      .type-settings-layout { display: grid; grid-template-columns: 156px minmax(0, 1fr); gap: 14px; min-height: 360px; }
+      .type-sidebar { padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
+      .type-sidebar-title { padding: 4px 6px 8px; color: var(--ink-muted); font-size: 12px; }
+      .reading-type-tabs { display: grid; gap: 5px; }
+      .reading-type-tab { width: 100%; min-height: 38px; padding: 7px 9px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-muted); cursor: pointer; font-weight: 600; text-align: left; }
+      .reading-type-tab.active { background: var(--bg-card); color: var(--vermillion); box-shadow: 0 1px 5px var(--shadow); }
+      .type-main { min-width: 0; }
+      .type-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+      .type-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .type-scope-note { font-size: 12px; color: var(--ink-muted); }
+      .role-setting-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+      .role-setting-row { display: grid; grid-template-columns: minmax(110px, 1fr) auto 46px 34px; align-items: center; gap: 8px; min-height: 56px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+      .role-setting-row:last-child { border-bottom: 0; }
+      .role-setting-name { min-width: 0; min-height: 34px; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; font-weight: 600; color: var(--ink-dark); background: transparent; }
+      .role-setting-name:focus { border-color: var(--border); background: var(--bg-card); outline: none; }
+      .count-stepper { display: grid; grid-template-columns: 30px 42px 30px; height: 32px; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--bg-card); }
+      .count-stepper button { border: 0; background: var(--bg-primary); color: var(--ink-dark); cursor: pointer; font-size: 18px; }
+      .count-stepper input { width: 42px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; background: var(--bg-card); color: var(--ink-dark); pointer-events: none; }
+      .icon-danger { width: 32px; height: 32px; border: 0; border-radius: 6px; background: var(--vermillion-light); color: var(--vermillion); cursor: pointer; font-size: 18px; }
 
       .date-selector {
         background: var(--bg-card);
@@ -68,7 +87,6 @@
       .day-row { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); gap: 10px; }
       .day-row:last-child { border-bottom: none; }
       .day-row.weekend { background: rgba(250, 250, 248, 0.9); }
-      .day-row.future { opacity: 0.55; }
       .day-date { width: 42px; flex-shrink: 0; font-weight: 600; font-size: 13px; text-align: center; }
       .day-weekday { font-size: 11px; color: var(--ink-muted); text-align: center; }
       .day-content { flex: 1; font-size: 13px; }
@@ -82,7 +100,7 @@
 
       .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
       .modal-overlay.show { display: flex; }
-      .modal { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; }
+      .modal { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 760px; max-height: 90vh; overflow-y: auto; }
       .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
       .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
       .modal-actions .btn { flex: 1; }
@@ -94,6 +112,18 @@
       .collapse-arrow { display: inline-block; transition: transform 0.2s ease; font-size: 12px; margin-right: 6px; color: var(--ink-muted); }
       .collapse-arrow.open { transform: rotate(90deg); }
       .section-title { display: inline-flex; align-items: center; }
+      body.embedded-page { min-height: 0; padding-bottom: 0; background: transparent; }
+      body.embedded-page > .container { max-width: none; padding: 0; }
+      body.embedded-page .page-header,
+      body.embedded-page #semesterSection,
+      body.embedded-page #orgFilterSection,
+      body.embedded-page #termScheduleSection,
+      body.embedded-page #bottomNavContainer { display: none !important; }
+      body.embedded-page .section { margin-bottom: 12px; box-shadow: none; }
+      @media (max-width: 560px) {
+        .type-settings-layout { grid-template-columns: 112px minmax(0, 1fr); gap: 8px; }
+        .role-setting-row { grid-template-columns: minmax(90px, 1fr) auto 42px 32px; gap: 5px; padding: 7px; }
+      }
     </style>
   </head>
   <body>
@@ -103,16 +133,16 @@
         <h1 class="page-title">日程规则</h1>
       </header>
 
-      <section class="section">
+      <section class="section" id="semesterSection">
         <div class="semester-wrap" id="semesterDisplay"></div>
       </section>
 
       <!-- 组织筛选 -->
-      <section class="section">
+      <section class="section" id="orgFilterSection">
         <div class="org-cascade">
           <div class="org-group">
             <label class="org-label">大班</label>
-            <select class="org-select" id="scheduleBcSelect" onchange="onScheduleBcChange()"><option value="">全部大班</option></select>
+            <select class="org-select" id="scheduleBcSelect" onchange="onScheduleBcChange()"><option value="">选择大班</option></select>
           </div>
           <div class="org-group">
             <label class="org-label">班级</label>
@@ -129,12 +159,13 @@
       <section class="section">
         <div class="section-header" onclick="toggleRuleSection()" style="cursor:pointer;">
           <div class="section-title">
-            <span class="collapse-arrow" id="ruleArrow">▶</span>
+            <span class="collapse-arrow open" id="ruleArrow">▶</span>
             每周共读规则
           </div>
-          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();showRuleModal()">+ 设置</button>
+          <button class="btn btn-primary btn-sm" id="typeManageBtn" onclick="event.stopPropagation();showRuleModal()">+ 设置</button>
         </div>
-        <div id="ruleSectionBody" class="collapse-body">
+        <div class="empty-state" id="ruleScopeHint" style="padding:0 0 12px;text-align:left;"></div>
+        <div id="ruleSectionBody" class="collapse-body open">
           <div class="rule-week-grid" id="ruleWeekGrid">
             <div class="rule-week-header">
               <span class="rule-col-day">星期</span>
@@ -142,17 +173,14 @@
               <span class="rule-col-toggle">开关</span>
             </div>
             <div id="ruleList"></div>
+          </div>
         </div>
       </section>
 
       <!-- 按周查看日程 -->
-      <section class="section">
+      <section class="section" id="termScheduleSection">
         <div class="section-header">
           <div class="section-title">学期日程</div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-secondary btn-sm" id="generateBtn" onclick="generateSchedules()">生成日程</button>
-            <button class="btn btn-secondary btn-sm" onclick="loadWeekSchedules()">刷新</button>
-          </div>
         </div>
         <div class="date-selector">
           <div class="date-nav">
@@ -172,29 +200,51 @@
     <!-- 设置共读类型 Modal -->
     <div class="modal-overlay" id="ruleModal">
       <div class="modal">
-        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <span style="font-size:18px;font-weight:700;">共读类型管理</span>
-          <button class="btn btn-primary btn-sm" onclick="showAddTypeForm()">+ 添加</button>
-        </div>
-        <div id="addTypeForm" style="display:none;margin-bottom:12px;padding:12px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border);">
-          <label style="font-size:12px;color:var(--ink-muted);display:block;margin-bottom:4px;">新增共读类型名称</label>
-          <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <input class="form-input" id="newTypeName" placeholder="如：全班共读" style="flex:1;" />
+        <div class="modal-title">共读类型岗位设置</div>
+        <div class="type-settings-layout">
+          <aside class="type-sidebar">
+            <div class="type-sidebar-title">共读类型</div>
+            <div class="reading-type-tabs" id="readingTypeTabs"></div>
+            <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;" onclick="showTypeEditor()">+ 新增类型</button>
+          </aside>
+          <div class="type-main">
+            <div class="type-toolbar">
+              <span class="type-scope-note" id="selectedTypeScope"></span>
+              <div class="type-toolbar-actions">
+                <button class="btn btn-secondary btn-sm" onclick="showTypeEditor(selectedReadingTypeId)">编辑类型</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteReadingType()">删除类型</button>
+              </div>
+            </div>
+            <div id="typeListContainer"></div>
+            <button class="btn btn-secondary" style="width:100%;margin-top:10px;" onclick="addTypePosition()">+ 添加岗位</button>
           </div>
-          <label style="font-size:12px;color:var(--ink-muted);display:block;margin-bottom:4px;">映射组织层级（用于生成日程）</label>
-          <div style="display:flex;gap:8px;">
-            <select class="form-select" id="newTypeBaseLevel" style="flex:1;">
-              <option value="大班">大班</option>
-              <option value="班级" selected>班级</option>
-              <option value="小组">小组</option>
-            </select>
-            <button class="btn btn-primary btn-sm" onclick="confirmAddType()">确定</button>
-            <button class="btn btn-secondary btn-sm" onclick="hideAddTypeForm()">取消</button>
-          </div>
         </div>
-        <div id="typeListContainer"></div>
         <div class="modal-actions" style="margin-top:16px;">
           <button class="btn btn-cancel" onclick="closeRuleModal()">关闭</button>
+          <button class="btn btn-primary" id="saveTypeRolesBtn" onclick="saveTypePositionSettings()">保存设置</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="typeEditorModal">
+      <div class="modal" style="max-width:420px;">
+        <div class="modal-title" id="typeEditorTitle">新增共读类型</div>
+        <input type="hidden" id="typeEditorId" />
+        <div class="form-item">
+          <label class="form-label">类型名称</label>
+          <input class="form-input" id="typeNameInput" placeholder="如：联合共读" />
+        </div>
+        <div class="form-item">
+          <label class="form-label">对应组织层级</label>
+          <select class="form-select" id="typeScopeInput">
+            <option value="大班">大班</option>
+            <option value="班级">班级</option>
+            <option value="小组">小组</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-cancel" onclick="closeTypeEditor()">取消</button>
+          <button class="btn btn-primary" id="saveTypeBtn" onclick="saveReadingType()">保存</button>
         </div>
       </div>
     </div>
@@ -230,10 +280,16 @@
 
     <div id="bottomNavContainer"></div>
 
-    <script src="js/supabase-config.js?v=7"></script>
-    <script src="js/utils.js?v=7"></script>
-    <script src="js/components.js?v=7"></script>
-    <script>renderModuleBottomNav('study', 'rules');</script>
+    <script src="js/supabase-config.js?v=9"></script>
+    <script src="js/utils.js?v=9"></script>
+    <script src="js/components.js?v=9"></script>
+    <script src="js/study-workflow.js?v=9"></script>
+    <script>
+      var rulePageParams = new URLSearchParams(location.search);
+      var ruleEmbedded = rulePageParams.get('embedded') === '1';
+      if (ruleEmbedded) document.body.classList.add('embedded-page');
+      if (!ruleEmbedded) renderModuleBottomNav('study', 'rules');
+    </script>
     <script>
       var WEEKDAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
       var semesters = [];
@@ -244,6 +300,10 @@
       var courses = [];
       var allOrgs = [];
       var selectedOrgId = null;
+      var selectedBigClassId = null;
+      var studyContext = null;
+      var rulesOrgScoped = true;
+      var requestedOrgId = Number(rulePageParams.get('org_id')) || null;
 
       async function init() {
         await waitForDb();
@@ -251,9 +311,17 @@
         if (!checkLogin()) return;
         var ok = await guardModuleAccess('study');
         if (!ok) return;
-        await loadSemesters();
         await loadCourses();
+        await loadSemesters();
         await loadOrgCascade();
+        await loadRules();
+        await loadWeekSchedules();
+      }
+
+      function notifyEmbeddedReady() {
+        if (ruleEmbedded && window.parent !== window) {
+          window.parent.postMessage({ type: 'study-embedded-ready' }, location.origin);
+        }
       }
 
       async function loadSemesters() {
@@ -269,8 +337,6 @@
         semesters = data ? [data] : [];
         setCurrentSemester('semesterDisplay', data ? data.semester_name : '未设置', 'tag-lg');
         weekOffset = 0;
-        await loadRules();
-        await loadWeekSchedules();
       }
 
       async function loadCourses() {
@@ -280,35 +346,52 @@
 
       async function loadOrgCascade() {
         if (!currentSemesterId) return;
-        var { data } = await window.db.from('organizations').select('id,name,level,parent_id,is_active').eq('semester_id', currentSemesterId);
+        var { data } = await window.db.from('organizations').select('id,name,level,parent_id,is_active,sort_order').eq('semester_id', currentSemesterId);
         allOrgs = data || [];
+        studyContext = await StudyWorkflow.loadContext(currentSemesterId, allOrgs);
         var bcSel = document.getElementById('scheduleBcSelect');
-        var bcs = allOrgs.filter(function(o) { return o.level === '大班'; });
-        bcSel.innerHTML = '<option value="">全部大班</option>' + bcs.map(function(o) {
+        var bcs = StudyWorkflow.sortOrgs(allOrgs.filter(function(o) {
+          if (o.level !== '大班') return false;
+          return studyContext.fullStudyAccess || studyContext.isPlatformAdmin || Number(studyContext.bigClassId) === Number(o.id);
+        }));
+        var prev = bcSel.value;
+        bcSel.innerHTML = '<option value="">选择大班</option>' + bcs.map(function(o) {
           return '<option value="' + o.id + '">' + escapeHtml(o.name) + '</option>';
         }).join('');
+        var requestedBigClassId = requestedOrgId ? StudyWorkflow.getBigClassId(requestedOrgId, allOrgs) : null;
+        if (requestedBigClassId && bcs.some(function(o) { return Number(o.id) === Number(requestedBigClassId); })) {
+          bcSel.value = String(requestedBigClassId);
+        } else if (prev && bcs.some(function(o) { return Number(o.id) === Number(prev); })) {
+          bcSel.value = prev;
+        } else if (bcs.length) {
+          bcSel.value = String(bcs[0].id);
+        }
         document.getElementById('scheduleClsSelect').innerHTML = '<option value="">全部班级</option>';
         document.getElementById('scheduleGrpSelect').innerHTML = '<option value="">全部小组</option>';
+        await onScheduleBcChange();
       }
 
-      function onScheduleBcChange() {
+      async function onScheduleBcChange() {
         var bcId = document.getElementById('scheduleBcSelect').value;
         var clsSel = document.getElementById('scheduleClsSelect');
         var grpSel = document.getElementById('scheduleGrpSelect');
+        selectedBigClassId = bcId ? Number(bcId) : null;
         grpSel.innerHTML = '<option value="">全部小组</option>';
-        if (!bcId) { clsSel.innerHTML = '<option value="">全部班级</option>'; filterByOrg(); return; }
-        var classes = allOrgs.filter(function(o) { return Number(o.parent_id) === Number(bcId) && o.level === '班级'; });
+        if (!bcId) { clsSel.innerHTML = '<option value="">全部班级</option>'; filterByOrg(); await loadReadingTypes(); await loadRules(); return; }
+        var classes = StudyWorkflow.sortOrgs(allOrgs.filter(function(o) { return Number(o.parent_id) === Number(bcId) && o.level === '班级'; }));
         clsSel.innerHTML = '<option value="">全部班级</option>' + classes.map(function(o) {
           return '<option value="' + o.id + '">' + escapeHtml(o.name) + '</option>';
         }).join('');
         filterByOrg();
+        await loadReadingTypes();
+        await loadRules();
       }
 
       function onScheduleClsChange() {
         var clsId = document.getElementById('scheduleClsSelect').value;
         var grpSel = document.getElementById('scheduleGrpSelect');
         if (!clsId) { grpSel.innerHTML = '<option value="">全部小组</option>'; filterByOrg(); return; }
-        var groups = allOrgs.filter(function(o) { return Number(o.parent_id) === Number(clsId) && o.level === '小组'; });
+        var groups = StudyWorkflow.sortOrgs(allOrgs.filter(function(o) { return Number(o.parent_id) === Number(clsId) && o.level === '小组'; }));
         grpSel.innerHTML = '<option value="">全部小组</option>' + groups.map(function(o) {
           return '<option value="' + o.id + '">' + escapeHtml(o.name) + '</option>';
         }).join('');
@@ -328,111 +411,318 @@
       }
 
       // ---- 共读类型管理 ----
-      var typeList = JSON.parse(localStorage.getItem('studyRuleTypes') || 'null') || [
-        { value: '大班', label: '大班共读', enabled: true },
-        { value: '班级', label: '班级共读', enabled: true },
-        { value: '小组', label: '小组共读', enabled: true }
-      ];
-
-      function saveTypeList() {
-        localStorage.setItem('studyRuleTypes', JSON.stringify(typeList));
-      }
+      var readingTypes = [];
+      var typePositions = [];
+      var deletedPositionIds = [];
+      var selectedReadingTypeId = null;
 
       function getActiveTypes() {
-        return typeList.filter(function(t) { return t.enabled; });
+        return readingTypes.filter(function(type) { return type.is_active !== false; });
       }
 
       function renderTypeList() {
-        var container = document.getElementById('typeListContainer');
-        container.innerHTML = typeList.map(function(t, i) {
-          var toggleCls = t.enabled ? 'pill-switch on' : 'pill-switch off';
-          return '<div class="type-item">' +
-            '<span class="type-label" id="typeLabel_' + i + '">' + escapeHtml(t.label) + '</span>' +
-            '<button class="pill-switch ' + toggleCls + '" onclick="toggleType(' + i + ')" title="' + (t.enabled ? '点击禁用' : '点击启用') + '"></button>' +
-            '<button class="btn btn-sm btn-secondary" onclick="editTypeLabel(' + i + ')">编辑</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="deleteType(' + i + ')">删除</button>' +
-            '</div>';
+        var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
+        document.getElementById('selectedTypeScope').textContent = selectedType
+          ? selectedType.type_name + ' · ' + selectedType.scope_level + '层级'
+          : '请先新增共读类型';
+        document.getElementById('readingTypeTabs').innerHTML = readingTypes.map(function(type) {
+          return '<button class="reading-type-tab' + (Number(type.id) === Number(selectedReadingTypeId) ? ' active' : '') +
+            '" onclick="selectReadingType(' + type.id + ')">' + escapeHtml(type.type_name) + '</button>';
         }).join('');
+        var container = document.getElementById('typeListContainer');
+        if (!selectedType) {
+          container.innerHTML = '<div class="empty-state">暂无共读类型。</div>';
+          return;
+        }
+        if (!typePositions.length) {
+          container.innerHTML = '<div class="empty-state">该类型暂无岗位，点击下方按钮添加。</div>';
+          return;
+        }
+        container.innerHTML = '<div class="role-setting-list">' + typePositions.map(function(position, index) {
+          return '<div class="role-setting-row">' +
+            '<input class="role-setting-name" value="' + escapeHtml(position.role_name || '') + '" placeholder="岗位名称" oninput="updateTypePosition(' + index + ',\'role_name\',this.value)" />' +
+            '<div class="count-stepper">' +
+            '<button onclick="stepPositionCount(' + index + ',-1)" aria-label="减少人数">−</button>' +
+            '<input type="text" inputmode="numeric" readonly value="' + position.required_count + '" aria-label="岗位人数" />' +
+            '<button onclick="stepPositionCount(' + index + ',1)" aria-label="增加人数">+</button>' +
+            '</div>' +
+            '<button class="pill-switch ' + (position.is_enabled ? 'on' : 'off') + '" onclick="toggleTypePosition(' + index + ')" aria-label="' +
+            (position.is_enabled ? '关闭岗位' : '启用岗位') + '"></button>' +
+            '<button class="icon-danger" onclick="removeTypePosition(' + index + ')" aria-label="删除岗位">×</button>' +
+            '</div>';
+        }).join('') + '</div>';
       }
 
-      function showRuleModal() {
+      async function showRuleModal() {
         if (!currentSemesterId) { showToast('请先选择学期', 'error'); return; }
+        if (!canEditSelectedRules()) { showToast('只有平台管理员或本大班学委可维护共读类型', 'error'); return; }
+        await loadReadingTypes();
+        await loadTypePositions();
         renderTypeList();
         document.getElementById('ruleModal').classList.add('show');
       }
 
       function closeRuleModal() { document.getElementById('ruleModal').classList.remove('show'); }
 
-      function showAddTypeForm() {
-        document.getElementById('newTypeName').value = '';
-        document.getElementById('addTypeForm').style.display = 'block';
-        document.getElementById('newTypeName').focus();
+      async function loadReadingTypes() {
+        readingTypes = [];
+        if (!currentSemesterId || !selectedBigClassId) {
+          selectedReadingTypeId = null;
+          return;
+        }
+        var result = await window.db
+          .from('study_reading_types')
+          .select('*')
+          .eq('semester_id', currentSemesterId)
+          .eq('org_id', selectedBigClassId)
+          .order('sort_order')
+          .order('id');
+        if (result.error) {
+          showToast('加载共读类型失败', 'error');
+          return;
+        }
+        readingTypes = result.data || [];
+        if (!readingTypes.some(function(type) { return Number(type.id) === Number(selectedReadingTypeId); })) {
+          selectedReadingTypeId = readingTypes.length ? Number(readingTypes[0].id) : null;
+        }
       }
 
-      function hideAddTypeForm() {
-        document.getElementById('addTypeForm').style.display = 'none';
+      async function loadTypePositions() {
+        typePositions = [];
+        deletedPositionIds = [];
+        if (!selectedReadingTypeId) return;
+        var result = await window.db
+          .from('study_reading_type_positions')
+          .select('*')
+          .eq('reading_type_id', selectedReadingTypeId)
+          .order('sort_order')
+          .order('id');
+        if (result.error) {
+          showToast('加载类型岗位失败', 'error');
+          return;
+        }
+        typePositions = result.data || [];
       }
 
-      function confirmAddType() {
-        var name = document.getElementById('newTypeName').value.trim();
-        if (!name) { showToast('请输入类型名称', 'error'); return; }
-        var exists = typeList.some(function(t) { return t.label === name; });
-        if (exists) { showToast('已存在同名类型', 'error'); return; }
-        var baseLevel = document.getElementById('newTypeBaseLevel').value;
-        var value = 'custom_' + Date.now();
-        typeList.push({ value: value, label: name, baseLevel: baseLevel, enabled: true });
-        saveTypeList();
+      async function selectReadingType(typeId) {
+        selectedReadingTypeId = Number(typeId);
+        await loadTypePositions();
         renderTypeList();
-        renderRuleGrid();
-        hideAddTypeForm();
-        showToast('已添加「' + name + '」', 'success');
       }
 
-      function toggleType(idx) {
-        typeList[idx].enabled = !typeList[idx].enabled;
-        saveTypeList();
+      function addTypePosition() {
+        if (!selectedReadingTypeId) { showToast('请先新增共读类型', 'error'); return; }
+        typePositions.push({
+          id: null,
+          reading_type_id: selectedReadingTypeId,
+          role_name: '',
+          required_count: 1,
+          is_enabled: true,
+          sort_order: (typePositions.length + 1) * 10
+        });
         renderTypeList();
-        renderRuleGrid();
       }
 
-      function editTypeLabel(idx) {
-        var span = document.getElementById('typeLabel_' + idx);
-        var oldLabel = typeList[idx].label;
-        var input = document.createElement('input');
-        input.className = 'type-label-input';
-        input.value = oldLabel;
-        input.onblur = function() {
-          var val = input.value.trim();
-          if (val) { typeList[idx].label = val; saveTypeList(); renderTypeList(); renderRuleGrid(); }
-          else { span.textContent = oldLabel; }
-        };
-        input.onkeydown = function(e) { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { span.textContent = oldLabel; } };
-        span.textContent = '';
-        span.appendChild(input);
-        input.focus();
+      function updateTypePosition(index, field, value) {
+        if (!typePositions[index]) return;
+        typePositions[index][field] = field === 'required_count' ? Math.max(1, Number(value) || 1) : value;
       }
 
-      function deleteType(idx) {
-        var t = typeList[idx];
-        if (!t) return;
-        // 如果该类型已被使用，二次确认
-        var inUse = rules.some(function(r) { return r.scope_level === t.value; });
-        var msg = '确定删除"' + t.label + '"吗？' + (inUse ? '已有规则使用了此类型，删除后相关规则将保留但类型不再可选。' : '');
-        showConfirm(msg).then(function(ok) {
-          if (!ok) return;
-          typeList.splice(idx, 1);
-          saveTypeList();
+      function stepPositionCount(index, delta) {
+        if (!typePositions[index]) return;
+        typePositions[index].required_count = Math.max(1, Number(typePositions[index].required_count || 1) + delta);
+        renderTypeList();
+      }
+
+      function toggleTypePosition(index) {
+        if (!typePositions[index]) return;
+        typePositions[index].is_enabled = !typePositions[index].is_enabled;
+        renderTypeList();
+      }
+
+      function removeTypePosition(index) {
+        var position = typePositions[index];
+        if (!position) return;
+        if (position.id) deletedPositionIds.push(Number(position.id));
+        typePositions.splice(index, 1);
+        renderTypeList();
+      }
+
+      async function saveTypePositionSettings() {
+        var button = document.getElementById('saveTypeRolesBtn');
+        if (typePositions.some(function(position) { return !String(position.role_name || '').trim(); })) {
+          showToast('请填写岗位名称', 'error');
+          return;
+        }
+        button.disabled = true;
+        try {
+          var user = getCurrentUser();
+          if (deletedPositionIds.length) {
+            var deleted = await window.db.from('study_reading_type_positions').delete().in('id', deletedPositionIds);
+            if (deleted.error) throw deleted.error;
+          }
+          for (var i = 0; i < typePositions.length; i++) {
+            var position = typePositions[i];
+            var payload = {
+              reading_type_id: selectedReadingTypeId,
+              role_name: String(position.role_name).trim(),
+              required_count: Math.max(1, Number(position.required_count) || 1),
+              is_enabled: position.is_enabled !== false,
+              sort_order: (i + 1) * 10,
+              updated_at: new Date().toISOString()
+            };
+            var result;
+            if (position.id) {
+              result = await window.db.from('study_reading_type_positions').update(payload).eq('id', position.id);
+            } else {
+              payload.created_by = user ? user.id : null;
+              result = await window.db.from('study_reading_type_positions').insert(payload);
+            }
+            if (result.error) throw result.error;
+          }
+          showToast('岗位设置已保存', 'success');
+          await loadTypePositions();
+          renderTypeList();
+        } catch (error) {
+          showToast('保存失败：' + (error.message || '未知错误'), 'error');
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function showTypeEditor(typeId) {
+        var type = readingTypes.find(function(item) { return Number(item.id) === Number(typeId); });
+        document.getElementById('typeEditorId').value = type ? type.id : '';
+        document.getElementById('typeEditorTitle').textContent = type ? '编辑共读类型' : '新增共读类型';
+        document.getElementById('typeNameInput').value = type ? type.type_name : '';
+        document.getElementById('typeScopeInput').value = type ? type.scope_level : '班级';
+        document.getElementById('typeEditorModal').classList.add('show');
+      }
+
+      function closeTypeEditor() {
+        document.getElementById('typeEditorModal').classList.remove('show');
+      }
+
+      async function saveReadingType() {
+        var id = Number(document.getElementById('typeEditorId').value) || null;
+        var name = document.getElementById('typeNameInput').value.trim();
+        if (!name) { showToast('请填写类型名称', 'error'); return; }
+        var button = document.getElementById('saveTypeBtn');
+        button.disabled = true;
+        try {
+          var user = getCurrentUser();
+          var payload = {
+            semester_id: currentSemesterId,
+            org_id: selectedBigClassId,
+            type_name: name,
+            scope_level: document.getElementById('typeScopeInput').value,
+            sort_order: id
+              ? (readingTypes.find(function(item) { return Number(item.id) === id; }) || {}).sort_order || 0
+              : (readingTypes.length + 1) * 10,
+            updated_at: new Date().toISOString()
+          };
+          var result;
+          if (id) {
+            result = await window.db.from('study_reading_types').update(payload).eq('id', id);
+          } else {
+            payload.created_by = user ? user.id : null;
+            result = await window.db.from('study_reading_types').insert(payload).select('id').single();
+          }
+          if (result.error) throw result.error;
+          if (!id && result.data) selectedReadingTypeId = Number(result.data.id);
+          if (id) {
+            var ruleUpdate = await window.db
+              .from('study_schedule_rules')
+              .update({ scope_level: payload.scope_level })
+              .eq('reading_type_id', id);
+            if (ruleUpdate.error) throw ruleUpdate.error;
+          }
+          closeTypeEditor();
+          await loadReadingTypes();
+          await loadTypePositions();
+          await loadRules();
           renderTypeList();
           renderRuleGrid();
-        });
+          if (id) await generateSchedules(true);
+          showToast('共读类型已保存', 'success');
+        } catch (error) {
+          showToast('保存失败：' + (error.message || '未知错误'), 'error');
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      async function deleteReadingType() {
+        var type = readingTypes.find(function(item) { return Number(item.id) === Number(selectedReadingTypeId); });
+        if (!type) return;
+        var ok = await showConfirm('确定删除“' + type.type_name + '”吗？该类型的岗位设置会一并删除，已生成的历史日程保留。');
+        if (!ok) return;
+        var ruleDelete = await window.db.from('study_schedule_rules').delete().eq('reading_type_id', type.id);
+        if (ruleDelete.error) { showToast('删除关联规则失败', 'error'); return; }
+        var result = await window.db.from('study_reading_types').delete().eq('id', type.id);
+        if (result.error) { showToast('删除失败', 'error'); return; }
+        selectedReadingTypeId = null;
+        await loadReadingTypes();
+        await loadTypePositions();
+        await loadRules();
+        renderTypeList();
+        showToast('共读类型已删除', 'success');
       }
 
       // ---- 规则网格 ----
+      function canEditSelectedRules() {
+        if (!rulesOrgScoped) return StudyWorkflow.isPlatformAdmin(getCurrentUser());
+        return StudyWorkflow.canEditRulesForBigClass(studyContext, selectedBigClassId);
+      }
+
+      function updateRulePermissionHint() {
+        var hint = document.getElementById('ruleScopeHint');
+        var btn = document.getElementById('typeManageBtn');
+        var bc = selectedBigClassId ? StudyWorkflow.getOrg(allOrgs, selectedBigClassId) : null;
+        var canEdit = canEditSelectedRules();
+        if (btn) btn.style.display = canEdit ? '' : 'none';
+        if (!hint) return;
+        if (!selectedBigClassId) {
+          hint.textContent = '请选择一个大班后设置规则。';
+          return;
+        }
+        if (!rulesOrgScoped) {
+          hint.textContent = '远端数据库尚未执行学委 v2 迁移，当前临时使用旧版全局规则；执行 20260625102913_study_workflow_v2.sql 后会自动切换为按大班规则。';
+          return;
+        }
+        hint.textContent = canEdit
+          ? '当前规则作用于：' + (bc ? bc.name : '所选大班') + '。保存后会自动生成该大班下大班、班级、小组各自的日程表。'
+          : '当前仅可查看规则；只有平台管理员或本大班学委可修改。';
+      }
+
       async function loadRules() {
-        if (!currentSemesterId) { document.getElementById('ruleList').innerHTML = ''; return; }
-        var { data, error } = await window.db.from('study_schedule_rules').select('*').eq('semester_id', currentSemesterId).order('weekday');
-        if (error) { showToast('加载规则失败', 'error'); return; }
-        rules = data || [];
+        updateRulePermissionHint();
+        if (!currentSemesterId || !selectedBigClassId) { rules = []; renderRuleGrid(); return; }
+        var result;
+        if (rulesOrgScoped) {
+          result = await window.db
+            .from('study_schedule_rules')
+            .select('*')
+            .eq('semester_id', currentSemesterId)
+            .eq('org_id', selectedBigClassId)
+            .order('weekday');
+          if (result.error && StudyWorkflow.isMissingSchemaError(result.error, ['org_id'])) {
+            rulesOrgScoped = false;
+            sessionStorage.setItem('studyWorkflowV2SchemaReady', 'false');
+            updateRulePermissionHint();
+          } else if (!result.error) {
+            sessionStorage.setItem('studyWorkflowV2SchemaReady', 'true');
+          }
+        }
+        if (!rulesOrgScoped) {
+          result = await window.db
+            .from('study_schedule_rules')
+            .select('*')
+            .eq('semester_id', currentSemesterId)
+            .order('weekday');
+        }
+        if (result.error) { showToast('加载规则失败', 'error'); return; }
+        rules = result.data || [];
         renderRuleGrid();
       }
 
@@ -442,39 +732,42 @@
       function renderRuleGrid() {
         var container = document.getElementById('ruleList');
         var activeTypes = getActiveTypes();
+        var editable = canEditSelectedRules();
         var html = '';
         for (var w = 1; w <= 7; w++) {
           var rule = rules.find(function(r) { return r.weekday === w; });
-          var scopeVal = rule ? rule.scope_level : '';
-          var enabled = !!scopeVal;
+          var fallbackType = rule ? activeTypes.find(function(type) { return type.scope_level === rule.scope_level; }) : null;
+          var typeVal = rule ? (rule.reading_type_id || (fallbackType ? fallbackType.id : '')) : '';
+          var enabled = !!typeVal;
           var toggleCls = enabled ? 'pill-switch on' : 'pill-switch off';
           var rowOpts = '<option value=""> </option>' + activeTypes.map(function(t) {
-            var selected = t.value === scopeVal ? ' selected' : '';
-            return '<option value="' + t.value + '"' + selected + '>' + t.label + '</option>';
+            var selected = Number(t.id) === Number(typeVal) ? ' selected' : '';
+            return '<option value="' + t.id + '"' + selected + '>' + escapeHtml(t.type_name) + '</option>';
           }).join('');
           if (!rowOpts) rowOpts = '<option value=""> </option>';
           html +=
             '<div class="rule-week-row">' +
             '<span class="rule-col-day">' + WEEKDAY_NAMES[w] + '</span>' +
-            '<span class="rule-col-type"><select class="rule-type-select" data-weekday="' + w + '" id="ruleDaySel_' + w + '" onchange="onRuleDayChange(' + w + ')" ' + (!enabled ? 'disabled' : '') + '>' + rowOpts + '</select></span>' +
-            '<span class="rule-col-toggle"><button class="' + toggleCls + '" onclick="toggleRuleDay(' + w + ')" title="' + (enabled ? '点击关闭' : '点击开启') + '"></button></span>' +
+            '<span class="rule-col-type"><select class="rule-type-select" data-weekday="' + w + '" id="ruleDaySel_' + w + '" onchange="onRuleDayChange(' + w + ')" ' + (!enabled || !editable ? 'disabled' : '') + '>' + rowOpts + '</select></span>' +
+            '<span class="rule-col-toggle"><button class="' + toggleCls + '" onclick="toggleRuleDay(' + w + ')" title="' + (enabled ? '点击关闭' : '点击开启') + '" ' + (!editable ? 'disabled' : '') + '></button></span>' +
             '</div>';
         }
         container.innerHTML = html;
       }
 
       function toggleRuleDay(weekday) {
+        if (!canEditSelectedRules()) { showToast('只有本大班学委可修改规则', 'error'); return; }
         var sel = document.getElementById('ruleDaySel_' + weekday);
         if (!sel) return;
         var isOn = sel.disabled;
         sel.disabled = !isOn;
         if (isOn) {
           var prev = sel.getAttribute('data-prev') || '';
-          if (prev && getActiveTypes().some(function(t) { return t.value === prev; })) {
+          if (prev && getActiveTypes().some(function(t) { return String(t.id) === String(prev); })) {
             sel.value = prev;
           } else {
             var firstType = getActiveTypes()[0];
-            sel.value = firstType ? firstType.value : '';
+            sel.value = firstType ? String(firstType.id) : '';
           }
         } else {
           sel.setAttribute('data-prev', sel.value);
@@ -487,6 +780,7 @@
       }
 
       function onRuleDayChange(weekday) {
+        if (!canEditSelectedRules()) return;
         var sel = document.getElementById('ruleDaySel_' + weekday);
         if (!sel) return;
         // 选空白时自动关闭开关
@@ -498,18 +792,21 @@
       }
 
       function scheduleSave() {
-        if (!currentSemesterId) return;
-        var user = getCurrentUser();
-        var isAdmin = user && (user.role === '超级管理员' || user.role === '管理员');
-        if (!isAdmin) return;
+        if (!currentSemesterId || !selectedBigClassId || !canEditSelectedRules()) return;
         if (_saveTimer) clearTimeout(_saveTimer);
         _saveTimer = setTimeout(doSaveRules, 400);
       }
 
       async function doSaveRules() {
         try {
+          if (!canEditSelectedRules()) return;
           // 先查出数据库中已有的规则
-          var { data: oldRules } = await window.db.from('study_schedule_rules').select('weekday').eq('semester_id', currentSemesterId);
+          var oldQuery = window.db
+            .from('study_schedule_rules')
+            .select('weekday')
+            .eq('semester_id', currentSemesterId);
+          if (rulesOrgScoped) oldQuery = oldQuery.eq('org_id', selectedBigClassId);
+          var { data: oldRules } = await oldQuery;
           var oldWeekdays = (oldRules || []).map(function(r) { return r.weekday; });
 
           // 收集当前启用的规则
@@ -518,29 +815,38 @@
           for (var w = 1; w <= 7; w++) {
             var sel = document.getElementById('ruleDaySel_' + w);
             if (!sel || sel.disabled) continue;
-            var scopeVal = sel.value;
-            if (!scopeVal) continue;
-            // 自定义类型映射到其 baseLevel 再写入数据库
-            var dbScope = scopeVal;
-            var matchedType = typeList.find(function(t) { return t.value === scopeVal; });
-            if (matchedType && matchedType.baseLevel) dbScope = matchedType.baseLevel;
-            inserts.push({ semester_id: currentSemesterId, weekday: w, scope_level: dbScope, title: '' });
+            var typeId = Number(sel.value);
+            if (!typeId) continue;
+            var readingType = readingTypes.find(function(type) { return Number(type.id) === typeId; });
+            if (!readingType) continue;
+            var row = {
+              semester_id: currentSemesterId,
+              weekday: w,
+              scope_level: readingType.scope_level,
+              reading_type_id: typeId,
+              title: ''
+            };
+            if (rulesOrgScoped) row.org_id = selectedBigClassId;
+            inserts.push(row);
             activeWeekdays.push(w);
           }
 
           // 删除已关闭的规则（在旧数据中有但不在新数据中的）
           var toDelete = oldWeekdays.filter(function(d) { return activeWeekdays.indexOf(d) === -1; });
           for (var i = 0; i < toDelete.length; i++) {
-            await window.db.from('study_schedule_rules').delete().eq('semester_id', currentSemesterId).eq('weekday', toDelete[i]);
+            var deleteQuery = window.db.from('study_schedule_rules').delete().eq('semester_id', currentSemesterId).eq('weekday', toDelete[i]);
+            if (rulesOrgScoped) deleteQuery = deleteQuery.eq('org_id', selectedBigClassId);
+            await deleteQuery;
           }
 
           // 逐条 upsert 启用的规则（避免 409 冲突）
           for (var j = 0; j < inserts.length; j++) {
-            var r = await window.db.from('study_schedule_rules').upsert(inserts[j], { onConflict: 'semester_id,weekday', ignoreDuplicates: false });
+            var conflictKey = rulesOrgScoped ? 'semester_id,org_id,weekday' : 'semester_id,weekday';
+            var r = await window.db.from('study_schedule_rules').upsert(inserts[j], { onConflict: conflictKey, ignoreDuplicates: false });
             if (r.error) throw r.error;
           }
           await loadRules();
-          await loadWeekSchedules();
+          await generateSchedules(true);
         } catch(e) {
           console.error('自动保存规则失败', e);
         }
@@ -643,7 +949,6 @@
       function renderWeekGrid(range) {
         var container = document.getElementById('dayGrid');
         var activeWeekdays = rules.map(function (r) { return Number(r.weekday); });
-        var today = getToday();
         var start = new Date(range.startDate);
         var end = new Date(range.endDate);
         var semester = semesters.find(function (s) { return Number(s.id) === currentSemesterId; });
@@ -664,7 +969,6 @@
           if ((!semesterStart || dateStr >= semesterStart) && (!semesterEnd || dateStr <= semesterEnd)) {
             var schedule = schedules.find(function (s) { return s.schedule_date === dateStr; });
             var isWeekend = weekday > 5;
-            var isFuture = dateStr > today;
 
             var contentHtml = '';
             if (schedule) {
@@ -679,7 +983,7 @@
             }
 
             rows.push(
-              '<div class="day-row' + (isWeekend ? ' weekend' : '') + (isFuture ? ' future' : '') + '">' +
+              '<div class="day-row' + (isWeekend ? ' weekend' : '') + '">' +
               '<div><div class="day-date">' + d.getDate() + '</div><div class="day-weekday">' + WEEKDAY_NAMES[weekday] + '</div></div>' +
               '<div class="day-content">' + contentHtml + '</div>' +
               '<div class="day-action">' +
@@ -698,63 +1002,28 @@
           : '<div class="empty-state">该学期在此月无日程</div>';
       }
 
-      async function generateSchedules() {
+      async function generateSchedules(silent) {
         if (!currentSemesterId) { showToast('请先选择学期', 'error'); return; }
+        if (!selectedBigClassId) { showToast('请先选择大班', 'error'); return; }
+        if (!canEditSelectedRules()) { showToast('只有本大班学委可生成日程', 'error'); return; }
         if (!rules.length) { showToast('请先设置每周共读规则', 'error'); return; }
 
         var semester = semesters.find(function (s) { return Number(s.id) === currentSemesterId; });
         if (!semester || !semester.start_date || !semester.end_date) { showToast('学期缺少起止日期', 'error'); return; }
 
-        document.getElementById('generateBtn').disabled = true;
         try {
-          // 加载学期下所有组织
-          var { data: orgs } = await window.db.from('organizations').select('id,level,name').eq('semester_id', currentSemesterId);
-          var allOrgs = orgs || [];
+          var generated = await StudyWorkflow.generateSchedulesForBigClass({
+            semester: semester,
+            bigClassId: selectedBigClassId,
+            rules: rules,
+            orgs: allOrgs
+          });
 
-          var start = new Date(semester.start_date);
-          var end = new Date(semester.end_date);
-          var inserts = [];
-
-          while (start <= end) {
-            var dateStr = toDateStr(start);
-            var weekday = start.getDay() || 7;
-            var rule = rules.find(function (r) { return r.weekday === weekday; });
-            if (rule) {
-              // 根据规则层级找到对应组织
-              var targetOrgs = allOrgs.filter(function (o) { return o.level === rule.scope_level; });
-              targetOrgs.forEach(function (org) {
-                inserts.push({
-                  semester_id: currentSemesterId,
-                  schedule_date: dateStr,
-                  scope_level: rule.scope_level,
-                  org_id: org.id,
-                  note: rule.title || ''
-                });
-              });
-            }
-            start.setDate(start.getDate() + 1);
-          }
-
-          if (!inserts.length) { showToast('规则未匹配到任何日期', 'error'); return; }
-
-          showToast('正在生成 ' + inserts.length + ' 条日程...', 'success');
-          // Batch upsert, skip existing
-          for (var i = 0; i < inserts.length; i += 30) {
-            var batch = inserts.slice(i, i + 30);
-            var result = await window.db.from('study_schedule_instances').upsert(batch, {
-              onConflict: 'semester_id,schedule_date,scope_level,org_id',
-              ignoreDuplicates: true
-            });
-            if (result.error) throw result.error;
-          }
-
-          logAction('生成学委日程', 'study_schedule_instances', semester.semester_name + ' 共 ' + inserts.length + ' 条', 'study');
-          showToast('生成完成', 'success');
+          logAction('生成学委日程', 'study_schedule_instances', semester.semester_name + ' 共 ' + generated.count + ' 条', 'study');
+          if (!silent) showToast('生成完成', 'success');
           await loadWeekSchedules();
         } catch (error) {
           showToast('生成失败：' + (error.message || '未知错误'), 'error');
-        } finally {
-          document.getElementById('generateBtn').disabled = false;
         }
       }
 
@@ -857,7 +1126,7 @@
         }
       }
 
-      init();
+      init().finally(notifyEmbeddedReady);
     </script>
   </body>
 </html>
