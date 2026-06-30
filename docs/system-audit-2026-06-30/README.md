@@ -26,7 +26,9 @@
 - 督察首页已改为异常优先、最多 12 组，并补齐热点外键索引迁移。
 - 审查截图仅保留在本机并由 `.gitignore` 排除，避免生产个人信息进入仓库。
 
-仍需在 Supabase 控制台手动开启 Auth 的 Leaked Password Protection；现有 28 个页面的内联脚本也应在后续拆分后进一步收紧 CSP，移除 `unsafe-inline`。
+生产静态站 `tuoyue.space` 仍由旧版 Nginx 文件提供，尚未自动拉取本次 Git 提交，因此撤销 `entry_forms` 匿名直写的迁移已保留在仓库、暂未上线，避免旧表单在发布窗口内中断。静态站部署新版本后应立即执行 `20260630154310_route_public_entry_forms_through_function.sql`。
+
+此外，仍需在 Supabase 控制台手动开启 Auth 的 Leaked Password Protection；现有 28 个页面的内联脚本也应在后续拆分后进一步收紧 CSP，移除 `unsafe-inline`。
 
 ## 主要优点
 
