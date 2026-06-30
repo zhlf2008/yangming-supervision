@@ -304,7 +304,7 @@
           style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--ink-dark)"
           id="scheduleViewTitle"
         ></div>
-        <button class="add-btn" id="generateBtn" onclick="generateSchedules()">📅 自动生成日程</button>
+        <button class="add-btn" id="generateBtn" onclick="generateSchedules()"> 自动生成日程</button>
         <div id="scheduleList" class="schedule-list"></div>
       </div>
     </div>
@@ -455,12 +455,12 @@
         dabans.forEach(function (d) {
           var days = countMap[d.id] || 0;
           html += '<div class="daban-card" onclick="enterDaban(' + d.id + ')">';
-          html += '<div class="daban-card-icon">📅</div>';
+          html += '<div class="daban-card-icon"></div>';
           html += '<div class="daban-card-info">';
           html += '<div class="daban-card-name">' + d.name + '</div>';
           html += '<div class="daban-card-meta">' + days + ' 个考核日</div>';
           html += '</div>';
-          html += '<span class="daban-card-arrow">▶</span>';
+          html += '<span class="daban-card-arrow"></span>';
           html += '</div>';
         });
         html += '</div>';
@@ -522,7 +522,7 @@
               .insertAdjacentHTML(
                 'beforebegin',
                 '<div style="background:#FFF3E0;border-left:3px solid #FF9800;padding:10px 14px;margin-bottom:12px;border-radius:6px;font-size:13px;">' +
-                  '⚠️ 日程与学期日期不匹配：' +
+                  ' 日程与学期日期不匹配：' +
                   msg.join('；') +
                   ' — <a href="javascript:void(0)" onclick="generateSchedules()" style="color:var(--vermillion);text-decoration:underline;">点击重新生成</a></div>'
               );

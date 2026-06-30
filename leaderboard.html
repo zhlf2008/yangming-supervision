@@ -6,15 +6,27 @@
     <title>榜单 - 阳明心学督察管理系统</title>
     <!-- 快速session检查：新设备无session则直接跳转登录，避免闪现页面 -->
     <script>
-      (function(){
-        var supabaseKey = null; for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") > 0) { supabaseKey = k; break; } }
+      (function () {
+        var supabaseKey = null;
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0) {
+            supabaseKey = k;
+            break;
+          }
+        }
         var raw = localStorage.getItem(supabaseKey);
-        if (!raw) { window.location.replace("login.html"); return; }
+        if (!raw) {
+          window.location.replace('login.html');
+          return;
+        }
         try {
           var session = JSON.parse(raw);
-          if (!session || !session.access_token) { window.location.replace("login.html"); }
-        } catch(e) {
-          window.location.replace("login.html");
+          if (!session || !session.access_token) {
+            window.location.replace('login.html');
+          }
+        } catch (e) {
+          window.location.replace('login.html');
         }
       })();
     </script>
@@ -323,8 +335,6 @@
         opacity: 0.7;
       }
 
-
-
       .empty-state {
         text-align: center;
         padding: 40px 20px;
@@ -342,16 +352,32 @@
       /* Certificate Overlay */
       .cert-overlay {
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         z-index: 9999;
         display: flex;
-        align-items: center; justify-content: center;
-        opacity: 0; visibility: hidden;
-        transition: opacity 0.25s, visibility 0.25s;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.25s,
+          visibility 0.25s;
         background: radial-gradient(ellipse at center, #2d0a0a 0%, #1a0505 100%);
       }
-      .cert-overlay.show { opacity: 1; visibility: visible; }
-      .cert-backdrop { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+      .cert-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      .cert-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
       .cert-wrapper {
         position: relative;
         max-width: 680px;
@@ -359,7 +385,9 @@
         max-height: 92vh;
         overflow-y: auto;
         z-index: 1;
-        display: flex; flex-direction: column; align-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         padding: 16px;
       }
 
@@ -369,148 +397,490 @@
         border: 1px solid #d4a017;
         outline: 5px solid #c41e3a;
         outline-offset: 1px;
-        box-shadow: 0 0 0 7px #d4a017, 0 20px 60px rgba(0,0,0,.6), 0 0 80px rgba(220,40,40,.15);
+        box-shadow:
+          0 0 0 7px #d4a017,
+          0 20px 60px rgba(0, 0, 0, 0.6),
+          0 0 80px rgba(220, 40, 40, 0.15);
       }
       .certificate {
-        width: 100%; min-height: 920px; box-sizing: border-box;
-        background: linear-gradient(180deg, #fff5ec 0%, #ffe8d6 20%, #fff2e8 40%, #ffe4cc 60%, #fff0e6 80%, #ffdbc0 100%);
-        position: relative; overflow: hidden;
-        padding: 56px 60px 50px; z-index: 1;
+        width: 100%;
+        min-height: 920px;
+        box-sizing: border-box;
+        background: linear-gradient(
+          180deg,
+          #fff5ec 0%,
+          #ffe8d6 20%,
+          #fff2e8 40%,
+          #ffe4cc 60%,
+          #fff0e6 80%,
+          #ffdbc0 100%
+        );
+        position: relative;
+        overflow: hidden;
+        padding: 56px 60px 50px;
+        z-index: 1;
       }
       /* 内嵌 saffron+金色边框 — 纯 border 零 box-shadow，html2canvas 可靠 */
       .cert-inner-saffron {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        border: 12px solid #ffe8d6;         /* saffron 色带 */
-        pointer-events: none; z-index: 2;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 12px solid #ffe8d6; /* saffron 色带 */
+        pointer-events: none;
+        z-index: 2;
       }
       .cert-inner-gold {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        border: 1px solid #d4a017;          /* 金线，叠加在 saffron 外侧 */
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 1px solid #d4a017; /* 金线，叠加在 saffron 外侧 */
         pointer-events: none;
       }
       .certificate::before {
         content: '';
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background:
-          radial-gradient(circle at 30% 25%, rgba(196,30,58,.04) 0%, transparent 45%),
-          radial-gradient(circle at 70% 55%, rgba(212,160,23,.06) 0%, transparent 45%),
-          radial-gradient(circle at 40% 85%, rgba(196,30,58,.03) 0%, transparent 50%);
+          radial-gradient(circle at 30% 25%, rgba(196, 30, 58, 0.04) 0%, transparent 45%),
+          radial-gradient(circle at 70% 55%, rgba(212, 160, 23, 0.06) 0%, transparent 45%),
+          radial-gradient(circle at 40% 85%, rgba(196, 30, 58, 0.03) 0%, transparent 50%);
         pointer-events: none;
       }
 
       .cert-watermark {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        display: flex; align-items: center; justify-content: center;
-        pointer-events: none; opacity: .025;
-        font-size: 340px; font-weight: 900;
-        color: #c41e3a; letter-spacing: .4em;
-        transform: rotate(-25deg) translateX(150px); user-select: none; z-index: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        opacity: 0.025;
+        font-size: 340px;
+        font-weight: 900;
+        color: #c41e3a;
+        letter-spacing: 0.4em;
+        transform: rotate(-25deg) translateX(150px);
+        user-select: none;
+        z-index: 0;
       }
 
-      .cert-corner { position: absolute; width: 64px; height: 64px; opacity: .55; pointer-events: none; z-index: 1; }
-      .cert-corner.tl { top: 24px; left: 24px; }
-      .cert-corner.tr { top: 24px; right: 24px; }
-      .cert-corner.bl { bottom: 24px; left: 24px; }
-      .cert-corner.br { bottom: 24px; right: 24px; }
-      .cert-corner svg { width: 100%; height: 100%; }
+      .cert-corner {
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        opacity: 0.55;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .cert-corner.tl {
+        top: 24px;
+        left: 24px;
+      }
+      .cert-corner.tr {
+        top: 24px;
+        right: 24px;
+      }
+      .cert-corner.bl {
+        bottom: 24px;
+        left: 24px;
+      }
+      .cert-corner.br {
+        bottom: 24px;
+        right: 24px;
+      }
+      .cert-corner svg {
+        width: 100%;
+        height: 100%;
+      }
 
       .cert-content {
-        position: relative; display: flex; flex-direction: column;
-        align-items: center; z-index: 3; text-align: center;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 3;
+        text-align: center;
       }
 
-      .cert-top-ornament { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 16px; }
-      .cert-orn-line { width: 140px; height: 1px; background: linear-gradient(90deg,transparent,rgba(212,160,23,.5),transparent); }
-      .cert-orn-star { font-size: 18px; color: #c41e3a; opacity: .5; line-height: 1; }
+      .cert-top-ornament {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .cert-orn-line {
+        width: 140px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(212, 160, 23, 0.5), transparent);
+      }
+      .cert-orn-star {
+        font-size: 18px;
+        color: #c41e3a;
+        opacity: 0.5;
+        line-height: 1;
+      }
 
-      .cert-org-name { font-size: 21px; font-weight: 700; letter-spacing: .4em; color: #6b1010; margin-bottom: 10px; }
+      .cert-org-name {
+        font-size: 21px;
+        font-weight: 700;
+        letter-spacing: 0.4em;
+        color: #6b1010;
+        margin-bottom: 10px;
+      }
 
-      .cert-title-area { display: flex; flex-direction: column; align-items: center; margin: 10px 0 22px; }
+      .cert-title-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 10px 0 22px;
+      }
       .cert-title {
         font-family: 'Ma Shan Zheng', 'Liu Jian Mao Cao', cursive;
-        font-size: 72px; color: #c41e3a; letter-spacing: .3em; line-height: 1.2;
-        text-shadow: 2px 2px 0 rgba(212,160,23,.25);
+        font-size: 72px;
+        color: #c41e3a;
+        letter-spacing: 0.3em;
+        line-height: 1.2;
+        text-shadow: 2px 2px 0 rgba(212, 160, 23, 0.25);
       }
       .cert-title-deco {
-        width: 380px; height: 1px;
-        background: linear-gradient(90deg,transparent,rgba(212,160,23,.4),rgba(196,30,58,.3),rgba(212,160,23,.4),transparent);
+        width: 380px;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(212, 160, 23, 0.4),
+          rgba(196, 30, 58, 0.3),
+          rgba(212, 160, 23, 0.4),
+          transparent
+        );
         margin: 8px 0 0;
       }
 
-      .cert-body-text { text-align: center; font-size: 19px; color: #4a1515; line-height: 2.4; max-width: 480px; }
-      .cert-recipient { font-size: 40px; font-weight: 900; color: #c41e3a; letter-spacing: .25em; display: inline-block; position: relative; text-shadow: 1px 1px 0 rgba(212,160,23,.3); }
-      .cert-recipient::after {
-        content: ''; position: absolute; bottom: 0; left: 8%; right: 8%; height: 1px;
-        background: linear-gradient(90deg,transparent,rgba(212,160,23,.4),rgba(196,30,58,.3),rgba(212,160,23,.4),transparent);
+      .cert-body-text {
+        text-align: center;
+        font-size: 19px;
+        color: #4a1515;
+        line-height: 2.4;
+        max-width: 480px;
       }
-      .cert-achievement { display: inline-block; font-size: 40px; font-weight: 900; color: #c41e3a; letter-spacing: .2em; margin: 0 8px; padding: 4px 14px; text-shadow: 1px 1px 0 rgba(212,160,23,.3); }
+      .cert-recipient {
+        font-size: 40px;
+        font-weight: 900;
+        color: #c41e3a;
+        letter-spacing: 0.25em;
+        display: inline-block;
+        position: relative;
+        text-shadow: 1px 1px 0 rgba(212, 160, 23, 0.3);
+      }
+      .cert-recipient::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 8%;
+        right: 8%;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(212, 160, 23, 0.4),
+          rgba(196, 30, 58, 0.3),
+          rgba(212, 160, 23, 0.4),
+          transparent
+        );
+      }
+      .cert-achievement {
+        display: inline-block;
+        font-size: 40px;
+        font-weight: 900;
+        color: #c41e3a;
+        letter-spacing: 0.2em;
+        margin: 0 8px;
+        padding: 4px 14px;
+        text-shadow: 1px 1px 0 rgba(212, 160, 23, 0.3);
+      }
 
-      .cert-divider { display: flex; align-items: center; gap: 14px; margin: 20px 0; }
-      .cert-div-line { width: 140px; height: 1px; background: linear-gradient(90deg,transparent,rgba(212,160,23,.5),transparent); }
-      .cert-div-dot { width: 6px; height: 6px; border-radius: 50%; background: #c41e3a; opacity: .5; }
+      .cert-divider {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 20px 0;
+      }
+      .cert-div-line {
+        width: 140px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(212, 160, 23, 0.5), transparent);
+      }
+      .cert-div-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #c41e3a;
+        opacity: 0.5;
+      }
 
-      .cert-footer { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; position: relative; }
-      .cert-seal { width: 110px; height: 110px; transform: rotate(-15deg); position: absolute; right: 0; bottom: 0; opacity: .85; }
-      .cert-seal svg { width: 100%; height: 100%; }
-      .cert-signature-col { text-align: center; }
-      .cert-issuer { font-size: 18px; color: #8b1a1a; margin-bottom: 4px; font-weight: 700; letter-spacing: .1em; }
+      .cert-footer {
+        margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        position: relative;
+      }
+      .cert-seal {
+        width: 110px;
+        height: 110px;
+        transform: rotate(-15deg);
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        opacity: 0.85;
+      }
+      .cert-seal svg {
+        width: 100%;
+        height: 100%;
+      }
+      .cert-signature-col {
+        text-align: center;
+      }
+      .cert-issuer {
+        font-size: 18px;
+        color: #8b1a1a;
+        margin-bottom: 4px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+      }
       .cert-signature-name {
         font-family: 'Ma Shan Zheng', 'Liu Jian Mao Cao', cursive;
-        font-size: 28px; color: #5c1a1a; margin-bottom: 4px; min-width: 120px;
-        border-bottom: 1px solid rgba(196,30,58,.3); padding-bottom: 4px; display: inline-block;
+        font-size: 28px;
+        color: #5c1a1a;
+        margin-bottom: 4px;
+        min-width: 120px;
+        border-bottom: 1px solid rgba(196, 30, 58, 0.3);
+        padding-bottom: 4px;
+        display: inline-block;
       }
-      .cert-issue-info { text-align: center; font-size: 14px; color: #8b1a1a; line-height: 2.2; }
+      .cert-issue-info {
+        text-align: center;
+        font-size: 14px;
+        color: #8b1a1a;
+        line-height: 2.2;
+      }
 
-      .cert-actions { display: flex; gap: 10px; margin-top: 12px; padding: 0 4px; }
+      .cert-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        padding: 0 4px;
+      }
       .cert-action-btn {
-        flex: 1; padding: 12px 8px; border-radius: 10px; border: none;
-        font-size: 13px; font-weight: 500; cursor: pointer; text-align: center;
+        flex: 1;
+        padding: 12px 8px;
+        border-radius: 10px;
+        border: none;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: center;
         transition: transform 0.15s;
         font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
       }
-      .cert-action-btn:active { transform: scale(0.96); }
-      .cert-action-btn.primary { background: var(--vermillion); color: white; }
-      .cert-action-btn:not(.primary) { background: var(--bg-card); color: var(--ink-dark); border: 1px solid var(--border); }
+      .cert-action-btn:active {
+        transform: scale(0.96);
+      }
+      .cert-action-btn.primary {
+        background: var(--vermillion);
+        color: white;
+      }
+      .cert-action-btn:not(.primary) {
+        background: var(--bg-card);
+        color: var(--ink-dark);
+        border: 1px solid var(--border);
+      }
 
-      .export-mode .cert-overlay { position: relative; opacity: 1; visibility: visible; background: transparent; }
+      .export-mode .cert-overlay {
+        position: relative;
+        opacity: 1;
+        visibility: visible;
+        background: transparent;
+      }
 
       @media (max-width: 700px) {
         .certificate {
           min-height: auto;
           padding: 8.6% 9.2% 7.7%;
           /* 外层边框（移动端 box-shadow 实现），内嵌线由 cert-inner-saffron/gold div 处理 */
-          box-shadow: 0 0 0 1px #d4a017, 0 0 0 4px #c41e3a, 0 0 0 6px #d4a017, 0 15px 40px rgba(0,0,0,.6), 0 0 60px rgba(220,40,40,.15);
+          box-shadow:
+            0 0 0 1px #d4a017,
+            0 0 0 4px #c41e3a,
+            0 0 0 6px #d4a017,
+            0 15px 40px rgba(0, 0, 0, 0.6),
+            0 0 60px rgba(220, 40, 40, 0.15);
         }
-        .cert-inner-saffron { border-width: 4px; }
-        .cert-corner { width: 42px; height: 42px; }
-        .cert-corner.tl { top: 16px; left: 16px; } .cert-corner.tr { top: 16px; right: 16px; }
-        .cert-corner.bl { bottom: 16px; left: 16px; } .cert-corner.br { bottom: 16px; right: 16px; }
-        .cert-top-ornament { gap: 10px; margin-bottom: 12px; }
-        .cert-orn-line { width: 100px; } .cert-orn-star { font-size: 15px; }
-        .cert-org-name { font-size: 16px; letter-spacing: .3em; margin-bottom: 8px; }
-        .cert-title { font-size: 48px; } .cert-title-deco { width: 260px; }
-        .cert-body-text { font-size: 15px; max-width: 100%; line-height: 2.2; }
-        .cert-recipient { font-size: 28px; } .cert-achievement { font-size: 28px; padding: 2px 10px; }
-        .cert-divider { gap: 10px; margin: 16px 0; } .cert-div-line { width: 100px; }
-        .cert-seal { width: 80px; height: 80px; }
-        .cert-issuer { font-size: 15px; } .cert-issue-info { font-size: 12px; }
-        .cert-watermark { font-size: 220px; transform: rotate(-25deg) translateX(100px); }
+        .cert-inner-saffron {
+          border-width: 4px;
+        }
+        .cert-corner {
+          width: 42px;
+          height: 42px;
+        }
+        .cert-corner.tl {
+          top: 16px;
+          left: 16px;
+        }
+        .cert-corner.tr {
+          top: 16px;
+          right: 16px;
+        }
+        .cert-corner.bl {
+          bottom: 16px;
+          left: 16px;
+        }
+        .cert-corner.br {
+          bottom: 16px;
+          right: 16px;
+        }
+        .cert-top-ornament {
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+        .cert-orn-line {
+          width: 100px;
+        }
+        .cert-orn-star {
+          font-size: 15px;
+        }
+        .cert-org-name {
+          font-size: 16px;
+          letter-spacing: 0.3em;
+          margin-bottom: 8px;
+        }
+        .cert-title {
+          font-size: 48px;
+        }
+        .cert-title-deco {
+          width: 260px;
+        }
+        .cert-body-text {
+          font-size: 15px;
+          max-width: 100%;
+          line-height: 2.2;
+        }
+        .cert-recipient {
+          font-size: 28px;
+        }
+        .cert-achievement {
+          font-size: 28px;
+          padding: 2px 10px;
+        }
+        .cert-divider {
+          gap: 10px;
+          margin: 16px 0;
+        }
+        .cert-div-line {
+          width: 100px;
+        }
+        .cert-seal {
+          width: 80px;
+          height: 80px;
+        }
+        .cert-issuer {
+          font-size: 15px;
+        }
+        .cert-issue-info {
+          font-size: 12px;
+        }
+        .cert-watermark {
+          font-size: 220px;
+          transform: rotate(-25deg) translateX(100px);
+        }
       }
       @media (max-width: 400px) {
-        .cert-corner { width: 32px; height: 32px; }
-        .cert-corner.tl { top: 10px; left: 10px; } .cert-corner.tr { top: 10px; right: 10px; }
-        .cert-corner.bl { bottom: 10px; left: 10px; } .cert-corner.br { bottom: 10px; right: 10px; }
-        .cert-top-ornament { gap: 6px; margin-bottom: 8px; }
-        .cert-orn-line { width: 60px; } .cert-orn-star { font-size: 12px; }
-        .cert-org-name { font-size: 13px; letter-spacing: .2em; }
-        .cert-title { font-size: 36px; } .cert-title-deco { width: 200px; }
-        .cert-title-area { margin: 6px 0 14px; }
-        .cert-body-text { font-size: 13px; line-height: 2; }
-        .cert-recipient { font-size: 22px; } .cert-achievement { font-size: 22px; }
-        .cert-divider { gap: 6px; margin: 12px 0; } .cert-div-line { width: 60px; }
-        .cert-seal { width: 60px; height: 60px; }
-        .cert-issuer { font-size: 13px; } .cert-issue-info { font-size: 11px; }
-        .cert-watermark { font-size: 160px; transform: rotate(-25deg) translateX(70px); }
+        .cert-corner {
+          width: 32px;
+          height: 32px;
+        }
+        .cert-corner.tl {
+          top: 10px;
+          left: 10px;
+        }
+        .cert-corner.tr {
+          top: 10px;
+          right: 10px;
+        }
+        .cert-corner.bl {
+          bottom: 10px;
+          left: 10px;
+        }
+        .cert-corner.br {
+          bottom: 10px;
+          right: 10px;
+        }
+        .cert-top-ornament {
+          gap: 6px;
+          margin-bottom: 8px;
+        }
+        .cert-orn-line {
+          width: 60px;
+        }
+        .cert-orn-star {
+          font-size: 12px;
+        }
+        .cert-org-name {
+          font-size: 13px;
+          letter-spacing: 0.2em;
+        }
+        .cert-title {
+          font-size: 36px;
+        }
+        .cert-title-deco {
+          width: 200px;
+        }
+        .cert-title-area {
+          margin: 6px 0 14px;
+        }
+        .cert-body-text {
+          font-size: 13px;
+          line-height: 2;
+        }
+        .cert-recipient {
+          font-size: 22px;
+        }
+        .cert-achievement {
+          font-size: 22px;
+        }
+        .cert-divider {
+          gap: 6px;
+          margin: 12px 0;
+        }
+        .cert-div-line {
+          width: 60px;
+        }
+        .cert-seal {
+          width: 60px;
+          height: 60px;
+        }
+        .cert-issuer {
+          font-size: 13px;
+        }
+        .cert-issue-info {
+          font-size: 11px;
+        }
+        .cert-watermark {
+          font-size: 160px;
+          transform: rotate(-25deg) translateX(70px);
+        }
       }
 
       /* Animations */
@@ -581,32 +951,28 @@
   <body>
     <div class="container">
       <header class="header">
-        <a
-          href="index.html"
-          class="back-btn"
-          aria-label="返回"
-        >&lt;</a>
+        <a href="index.html" class="back-btn" aria-label="返回">&lt;</a>
         <h1 class="header-title">榜单</h1>
       </header>
 
       <div class="date-selector">
         <div class="date-nav">
-          <button class="date-nav-btn" onclick="changeWeek(-1)">◀</button>
+          <button class="date-nav-btn" onclick="changeWeek(-1)"></button>
           <span class="date-current"
             ><div class="date-week-label" id="dateWeekLabel">本周</div>
             <div class="date-week-range" id="dateWeekRange">--</div></span
           >
-          <button class="date-nav-btn" onclick="changeWeek(1)">▶</button>
+          <button class="date-nav-btn" onclick="changeWeek(1)"></button>
         </div>
         <button class="date-today" onclick="goToCurrentWeek()">本周</button>
       </div>
 
       <div class="tab-selector">
         <button class="tab-btn active" id="tabBtnClass" onclick="switchTab('classBoard')">
-          <span class="tab-icon">🏫</span>大班·班级榜
+          <span class="tab-icon"></span>大班·班级榜
         </button>
         <button class="tab-btn" id="tabBtnGroup" onclick="switchTab('groupBoard')">
-          <span class="tab-icon">👥</span>班级·小组榜
+          <span class="tab-icon"></span>班级·小组榜
         </button>
       </div>
 
@@ -619,96 +985,98 @@
       <div class="cert-backdrop" onclick="closeCertificate()"></div>
       <div class="cert-wrapper">
         <div class="cert-frame" id="certFrame">
-        <div class="certificate" id="certificate">
-          <div class="cert-inner-saffron"><div class="cert-inner-gold"></div></div>
-          <div class="cert-watermark">荣 誉</div>
+          <div class="certificate" id="certificate">
+            <div class="cert-inner-saffron"><div class="cert-inner-gold"></div></div>
+            <div class="cert-watermark">荣 誉</div>
 
-          <div class="cert-corner tl">
-            <svg viewBox="0 0 64 64" fill="none">
-              <rect x="0" y="0" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="0" y="0" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="10" y="10" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
-              <rect x="10" y="10" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
-            </svg>
-          </div>
-          <div class="cert-corner tr">
-            <svg viewBox="0 0 64 64" fill="none">
-              <rect x="38" y="0" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="61.5" y="0" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="40" y="10" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
-              <rect x="52.5" y="10" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
-            </svg>
-          </div>
-          <div class="cert-corner bl">
-            <svg viewBox="0 0 64 64" fill="none">
-              <rect x="0" y="61.5" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="0" y="38" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="10" y="52.5" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
-              <rect x="10" y="40" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
-            </svg>
-          </div>
-          <div class="cert-corner br">
-            <svg viewBox="0 0 64 64" fill="none">
-              <rect x="38" y="61.5" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="61.5" y="38" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7"/>
-              <rect x="40" y="52.5" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55"/>
-              <rect x="52.5" y="40" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55"/>
-            </svg>
-          </div>
-
-          <div class="cert-content">
-            <div class="cert-top-ornament">
-              <span class="cert-orn-line"></span>
-              <span class="cert-orn-star">&#9733;</span>
-              <span class="cert-orn-star">&#9733;</span>
-              <span class="cert-orn-star">&#9733;</span>
-              <span class="cert-orn-line"></span>
+            <div class="cert-corner tl">
+              <svg viewBox="0 0 64 64" fill="none">
+                <rect x="0" y="0" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="0" y="0" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="10" y="10" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55" />
+                <rect x="10" y="10" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55" />
+              </svg>
+            </div>
+            <div class="cert-corner tr">
+              <svg viewBox="0 0 64 64" fill="none">
+                <rect x="38" y="0" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="61.5" y="0" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="40" y="10" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55" />
+                <rect x="52.5" y="10" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55" />
+              </svg>
+            </div>
+            <div class="cert-corner bl">
+              <svg viewBox="0 0 64 64" fill="none">
+                <rect x="0" y="61.5" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="0" y="38" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="10" y="52.5" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55" />
+                <rect x="10" y="40" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55" />
+              </svg>
+            </div>
+            <div class="cert-corner br">
+              <svg viewBox="0 0 64 64" fill="none">
+                <rect x="38" y="61.5" width="26" height="2.5" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="61.5" y="38" width="2.5" height="26" rx="1.25" fill="#c41e3a" opacity=".7" />
+                <rect x="40" y="52.5" width="14" height="1.5" rx=".75" fill="#d4a017" opacity=".55" />
+                <rect x="52.5" y="40" width="1.5" height="14" rx=".75" fill="#d4a017" opacity=".55" />
+              </svg>
             </div>
 
-            <div class="cert-org-name">阳明心学督察管理系统</div>
-
-            <div class="cert-title-area">
-              <h1 class="cert-title">荣 誉 证 书</h1>
-              <div class="cert-title-deco"></div>
-            </div>
-
-            <div class="cert-body-text">
-              <p style="margin-bottom:8px;color:#8b1a1a;">兹证明</p>
-              <p style="margin-bottom:14px;">
-                <span class="cert-recipient" id="certRecipient">--</span>
-              </p>
-              <p style="margin-bottom:4px;">在 <strong id="certContextStrong">--</strong></p>
-              <p>出勤考核评比PK赛中，获得考核成绩<strong style="color:#c41e3a;" id="certAwardName">第一名</strong>，</p>
-              <p>荣 获</p>
-              <p style="margin:12px 0 6px;">
-                <span class="cert-achievement" id="certRank">--</span>
-              </p>
-              <p style="font-size:16px;color:#8b1a1a;">特发此证，以资鼓励</p>
-            </div>
-
-            <div class="cert-divider">
-              <span class="cert-div-line"></span>
-              <span class="cert-div-dot"></span>
-              <span class="cert-div-dot"></span>
-              <span class="cert-div-dot"></span>
-              <span class="cert-div-line"></span>
-            </div>
-
-            <div class="cert-footer">
-              <div class="cert-signature-col">
-                <div class="cert-issuer" id="certIssuer">阳明心学督察管理系统</div>
+            <div class="cert-content">
+              <div class="cert-top-ornament">
+                <span class="cert-orn-line"></span>
+                <span class="cert-orn-star">&#9733;</span>
+                <span class="cert-orn-star">&#9733;</span>
+                <span class="cert-orn-star">&#9733;</span>
+                <span class="cert-orn-line"></span>
               </div>
-              <div class="cert-issue-info">
-                <div id="certDateLine">颁发日期：--</div>
-                <div id="certSerialNo">证书编号：--</div>
+
+              <div class="cert-org-name">阳明心学督察管理系统</div>
+
+              <div class="cert-title-area">
+                <h1 class="cert-title">荣 誉 证 书</h1>
+                <div class="cert-title-deco"></div>
               </div>
-              <div class="cert-seal" id="certSealSvg"></div>
+
+              <div class="cert-body-text">
+                <p style="margin-bottom: 8px; color: #8b1a1a">兹证明</p>
+                <p style="margin-bottom: 14px">
+                  <span class="cert-recipient" id="certRecipient">--</span>
+                </p>
+                <p style="margin-bottom: 4px">在 <strong id="certContextStrong">--</strong></p>
+                <p>
+                  出勤考核评比PK赛中，获得考核成绩<strong style="color: #c41e3a" id="certAwardName">第一名</strong>，
+                </p>
+                <p>荣 获</p>
+                <p style="margin: 12px 0 6px">
+                  <span class="cert-achievement" id="certRank">--</span>
+                </p>
+                <p style="font-size: 16px; color: #8b1a1a">特发此证，以资鼓励</p>
+              </div>
+
+              <div class="cert-divider">
+                <span class="cert-div-line"></span>
+                <span class="cert-div-dot"></span>
+                <span class="cert-div-dot"></span>
+                <span class="cert-div-dot"></span>
+                <span class="cert-div-line"></span>
+              </div>
+
+              <div class="cert-footer">
+                <div class="cert-signature-col">
+                  <div class="cert-issuer" id="certIssuer">阳明心学督察管理系统</div>
+                </div>
+                <div class="cert-issue-info">
+                  <div id="certDateLine">颁发日期：--</div>
+                  <div id="certSerialNo">证书编号：--</div>
+                </div>
+                <div class="cert-seal" id="certSealSvg"></div>
+              </div>
             </div>
           </div>
-        </div>
         </div>
         <div class="cert-actions">
-          <button class="cert-action-btn primary" onclick="saveCertificate()" style="white-space:nowrap;">💾 导出</button>
+          <button class="cert-action-btn primary" onclick="saveCertificate()" style="white-space: nowrap">导出</button>
           <button class="cert-action-btn" onclick="closeCertificate()">✕ 关闭</button>
         </div>
       </div>
@@ -760,7 +1128,9 @@
         if (userOrg.level === '大班') return userOrg.id;
         var current = userOrg;
         while (current && current.parent_id) {
-          current = orgs.find(function (o) { return o.id === current.parent_id; });
+          current = orgs.find(function (o) {
+            return o.id === current.parent_id;
+          });
           if (current && current.level === '大班') return current.id;
         }
         return null;
@@ -786,7 +1156,11 @@
 
         var results = await Promise.all([
           currentSemesterId
-            ? window.db.from('organizations').select('*').eq('semester_id', currentSemesterId).order('level', { ascending: true })
+            ? window.db
+                .from('organizations')
+                .select('*')
+                .eq('semester_id', currentSemesterId)
+                .order('level', { ascending: true })
             : Promise.resolve({ data: [] }),
           currentSemesterId
             ? window.db.from('assessment_types').select('*').eq('semester_id', currentSemesterId).order('id')
@@ -809,7 +1183,13 @@
         var role = currentUser.role;
         var userOrg = currentUserOrgId ? orgsMap[currentUserOrgId] : null;
         var allDabanIds = new Set(
-          orgsList.filter(function(o) { return o.level === '大班'; }).map(function(o) { return o.id; })
+          orgsList
+            .filter(function (o) {
+              return o.level === '大班';
+            })
+            .map(function (o) {
+              return o.id;
+            })
         );
         if (role === '超级管理员' || role === '管理员') {
           visibleDabanIds = allDabanIds;
@@ -825,11 +1205,7 @@
         var legacyOrgId = currentUser && currentUser.organization_id ? Number(currentUser.organization_id) : null;
         if (!currentSemesterId || !currentUser || !currentUser.phone) return legacyOrgId;
 
-        var { data: person } = await window.db
-          .from('people')
-          .select('id')
-          .eq('phone', currentUser.phone)
-          .maybeSingle();
+        var { data: person } = await window.db.from('people').select('id').eq('phone', currentUser.phone).maybeSingle();
         if (!person) return legacyOrgId;
 
         var { data: assignment } = await window.db
@@ -936,7 +1312,9 @@
         });
         // 每日小组完成时间: groupDayTime[groupId][dateStr] = completionTime (MAX of sections)
         var groupDayTime = {};
-        allGroups.forEach(function (g) { groupDayTime[g.id] = {}; });
+        allGroups.forEach(function (g) {
+          groupDayTime[g.id] = {};
+        });
         allGroups.forEach(function (g) {
           var recs = recsByGroup[g.id] || [];
           var recMap = {};
@@ -989,8 +1367,10 @@
               filledDays++;
               // 该记录的最后提交时间 = 两个 section 中较晚的时间
               var recCompletedAt = rec.created_at || null;
-              if (rec.att_submitted_at && (!recCompletedAt || rec.att_submitted_at > recCompletedAt)) recCompletedAt = rec.att_submitted_at;
-              if (rec.hw_submitted_at && (!recCompletedAt || rec.hw_submitted_at > recCompletedAt)) recCompletedAt = rec.hw_submitted_at;
+              if (rec.att_submitted_at && (!recCompletedAt || rec.att_submitted_at > recCompletedAt))
+                recCompletedAt = rec.att_submitted_at;
+              if (rec.hw_submitted_at && (!recCompletedAt || rec.hw_submitted_at > recCompletedAt))
+                recCompletedAt = rec.hw_submitted_at;
               if (recCompletedAt && (!earliestCompletedAt || recCompletedAt < earliestCompletedAt)) {
                 earliestCompletedAt = recCompletedAt;
               }
@@ -1068,7 +1448,7 @@
 
         var groupOrderScore = {}; // groupId → 周填报次序之和
         classOrderScore = {}; // classId → 周填报次序之和 (outer scope)
-        var classDayTime = {};    // classId → { date: completionTime }
+        var classDayTime = {}; // classId → { date: completionTime }
 
         scheduleDates.forEach(function (date) {
           // ---- 小组每日排名（班级内部） ----
@@ -1092,7 +1472,8 @@
             });
 
             // 分配名次，同时间并列
-            var prevTime = null, prevRank = 0;
+            var prevTime = null,
+              prevRank = 0;
             ranked.forEach(function (item, idx) {
               var rank;
               if (item.time === null) {
@@ -1138,7 +1519,8 @@
             return 0;
           });
 
-          var prevCt = null, prevCr = 0;
+          var prevCt = null,
+            prevCr = 0;
           classTimes.forEach(function (item, idx) {
             var rank;
             if (item.time === null) {
@@ -1209,7 +1591,7 @@
 
       function showEmptyInTab(msg) {
         var html =
-          '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">' +
+          '<div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">' +
           msg +
           '</div></div>';
         document.getElementById('tabClassBoard').innerHTML = html;
@@ -1246,7 +1628,7 @@
 
         if (bigClasses.length === 0) {
           document.getElementById('tabClassBoard').innerHTML =
-            '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">无大班数据</div></div>';
+            '<div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">无大班数据</div></div>';
           return;
         }
 
@@ -1283,7 +1665,8 @@
             '</span><span class="bigclass-count">' +
             rankings.length +
             '个班级</span></div>';
-          html += '<span class="bigclass-arrow" id="' + collapseId + 'Arrow">▼</span>';
+          html +=
+            '<span class="bigclass-arrow" id="' + collapseId + 'Arrow">' + appIcon('ChevronRightIcon') + '</span>';
           html += '</div>';
           html += '<div class="rank-list" id="' + collapseId + '">';
           rankings.forEach(function (r, i) {
@@ -1294,7 +1677,7 @@
 
         if (!html) {
           html =
-            '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">暂无排名数据</div></div>';
+            '<div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">暂无排名数据</div></div>';
         }
         document.getElementById('tabClassBoard').innerHTML = html;
       }
@@ -1321,7 +1704,7 @@
           '<select class="org-select" id="groupClsSelect" onchange="onGroupClsChange()"><option value="">选择班级</option></select>';
         html += '</div>';
         html +=
-          '<div id="groupRankArea"><div class="empty-state"><div class="empty-state-icon">👆</div><div class="empty-state-text">请选择大班和班级查看排名</div></div></div>';
+          '<div id="groupRankArea"><div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">请选择大班和班级查看排名</div></div></div>';
 
         document.getElementById('tabGroupBoard').innerHTML = html;
 
@@ -1344,7 +1727,7 @@
         if (!bcId) {
           clsSelect.innerHTML = '<option value="">选择班级</option>';
           document.getElementById('groupRankArea').innerHTML =
-            '<div class="empty-state"><div class="empty-state-icon">👆</div><div class="empty-state-text">请选择大班和班级查看排名</div></div>';
+            '<div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">请选择大班和班级查看排名</div></div>';
           return;
         }
 
@@ -1377,7 +1760,7 @@
         var clsId = parseInt(document.getElementById('groupClsSelect').value) || null;
         if (!clsId) {
           document.getElementById('groupRankArea').innerHTML =
-            '<div class="empty-state"><div class="empty-state-icon">👆</div><div class="empty-state-text">请选择班级查看小组排名</div></div>';
+            '<div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">请选择班级查看小组排名</div></div>';
           return;
         }
 
@@ -1408,7 +1791,7 @@
 
         if (rankings.length === 0) {
           document.getElementById('groupRankArea').innerHTML =
-            '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">该班级下暂无小组排名数据</div></div>';
+            '<div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">该班级下暂无小组排名数据</div></div>';
           return;
         }
 
@@ -1428,13 +1811,13 @@
 
         var rankDisplay, rankClass;
         if (hasData && rank === 1) {
-          rankDisplay = '<span class="rank-medal">🥇</span>';
+          rankDisplay = '<span class="rank-medal"></span>';
           rankClass = ' top-1';
         } else if (hasData && rank === 2) {
-          rankDisplay = '<span class="rank-medal">🥈</span>';
+          rankDisplay = '<span class="rank-medal"></span>';
           rankClass = ' top-2';
         } else if (hasData && rank === 3) {
-          rankDisplay = '<span class="rank-medal">🥉</span>';
+          rankDisplay = '<span class="rank-medal"></span>';
           rankClass = ' top-3';
         } else {
           rankDisplay = '<span class="rank-number">' + rank + '</span>';
@@ -1477,7 +1860,7 @@
             certBtn =
               '<button class="cert-btn-small" onclick="event.stopPropagation();openCertificate(\'' +
               certKey +
-              '\')">🏅 生成证书</button>';
+              '\')"> 生成证书</button>';
           }
         }
 
@@ -1524,11 +1907,9 @@
         if (isCollapsed) {
           list.classList.remove('collapsed');
           arrow.classList.remove('collapsed');
-          arrow.textContent = '▼';
         } else {
           list.classList.add('collapsed');
           arrow.classList.add('collapsed');
-          arrow.textContent = '▶';
         }
       }
 
@@ -1546,15 +1927,13 @@
         certAttRate = d.attRate;
         certParentOrg = d.parentOrg;
 
-
         document.getElementById('certRecipient').textContent = d.entityName;
 
         var range = getWeekRange(weekOffset);
         var semName = currentSemester ? currentSemester.semester_name : '';
         var weekLabel = computeWeekLabel(range.monday);
 
-        document.getElementById('certContextStrong').innerHTML =
-          semName + ' ' + weekLabel + ' 的 ' + d.parentOrg;
+        document.getElementById('certContextStrong').textContent = semName + ' ' + weekLabel + ' 的 ' + d.parentOrg;
 
         document.getElementById('certAwardName').textContent = getCertAwardName(d.rank);
         document.getElementById('certRank').textContent = d.rankTitle + getCertLevelLabel(d.level);
@@ -1569,9 +1948,12 @@
         document.getElementById('certSerialNo').textContent =
           '证书编号：YMXX-' +
           (currentSemester ? currentSemester.semester_name.replace(/[^0-9]/g, '') : '') +
-          '-' + weekLabel.replace(/[^0-9]/g, '') +
-          '-' + toOrgAbbr(((d.parentOrg || '').split(' · ')[d.level === 'group' ? 1 : 0] || '')) +
-          '-' + (d.rank < 10 ? '0' + d.rank : d.rank);
+          '-' +
+          weekLabel.replace(/[^0-9]/g, '') +
+          '-' +
+          toOrgAbbr((d.parentOrg || '').split(' · ')[d.level === 'group' ? 1 : 0] || '') +
+          '-' +
+          (d.rank < 10 ? '0' + d.rank : d.rank);
 
         buildSealSvg(d);
         document.getElementById('certOverlay').classList.add('show');
@@ -1579,8 +1961,10 @@
         // 预渲染证书到 canvas，导出时直接使用
         cachedCertCanvas = null;
         var exportBtn = document.querySelector('.cert-action-btn.primary');
-        if (exportBtn) exportBtn.textContent = '💾 导出';
-        setTimeout(function () { preRenderCert(); }, 400);
+        if (exportBtn) exportBtn.textContent = ' 导出';
+        setTimeout(function () {
+          preRenderCert();
+        }, 400);
       }
 
       async function preRenderCert() {
@@ -1591,10 +1975,15 @@
           if (isMobile) {
             cachedCertCanvas = await htmlToImage.toCanvas(certEl, { pixelRatio: 2, backgroundColor: null });
           } else {
-            cachedCertCanvas = await html2canvas(certEl, { scale: 2, backgroundColor: null, allowTaint: false, useCORS: true });
+            cachedCertCanvas = await html2canvas(certEl, {
+              scale: 2,
+              backgroundColor: null,
+              allowTaint: false,
+              useCORS: true
+            });
           }
           var exportBtn = document.querySelector('.cert-action-btn.primary');
-          if (exportBtn) exportBtn.textContent = '💾 导出 ✓';
+          if (exportBtn) exportBtn.textContent = '导出完成';
         } catch (e) {
           cachedCertCanvas = null;
         }
@@ -1603,21 +1992,33 @@
       function buildSealSvg(d) {
         var bcName = d.parentOrg.split(' · ')[0] || d.parentOrg;
         // 使用主题色：金红主题 #C41E3A，紫色主题 #5B2C8E
-        var sealColor = (d.rank && d.rank <= 3) ? '#C41E3A' : '#5B2C8E';
+        var sealColor = d.rank && d.rank <= 3 ? '#C41E3A' : '#5B2C8E';
         var svg =
           '<svg viewBox="0 0 100 100" width="88" height="88">' +
-          '<circle cx="50" cy="50" r="45" fill="none" stroke="' + sealColor + '" stroke-width="3.2" opacity="0.82"/>' +
-          '<circle cx="50" cy="50" r="42" fill="none" stroke="' + sealColor + '" stroke-width="0.8" opacity="0.45"/>' +
+          '<circle cx="50" cy="50" r="45" fill="none" stroke="' +
+          sealColor +
+          '" stroke-width="3.2" opacity="0.82"/>' +
+          '<circle cx="50" cy="50" r="42" fill="none" stroke="' +
+          sealColor +
+          '" stroke-width="0.8" opacity="0.45"/>' +
           '<defs>' +
           '<path id="sealArc" d="M 14,50 A 36,36 0 0,1 86,50"/>' +
           '</defs>' +
-          '<text font-family="\'Noto Serif SC\',serif" font-size="9" fill="' + sealColor + '" font-weight="700" letter-spacing="1.2" dy="4">' +
+          '<text font-family="\'Noto Serif SC\',serif" font-size="9" fill="' +
+          sealColor +
+          '" font-weight="700" letter-spacing="1.2" dy="4">' +
           '<textPath href="#sealArc" startOffset="50%" text-anchor="middle">阳明心学督察管理系统</textPath>' +
           '</text>' +
-          '<text x="50" y="57" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="20" fill="' + sealColor + '" font-weight="900">★</text>' +
-          '<line x1="32" y1="67" x2="68" y2="67" stroke="' + sealColor + '" stroke-width="1.2" opacity="0.7"/>' +
-          '<text x="50" y="80" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="8.5" fill="' + sealColor + '" font-weight="700" letter-spacing="1.5">' +
-          bcName +
+          '<text x="50" y="57" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="20" fill="' +
+          sealColor +
+          '" font-weight="900"></text>' +
+          '<line x1="32" y1="67" x2="68" y2="67" stroke="' +
+          sealColor +
+          '" stroke-width="1.2" opacity="0.7"/>' +
+          '<text x="50" y="80" text-anchor="middle" font-family="\'Noto Serif SC\',serif" font-size="8.5" fill="' +
+          sealColor +
+          '" font-weight="700" letter-spacing="1.5">' +
+          escapeHtml(bcName) +
           '</text>' +
           '</svg>';
         document.getElementById('certSealSvg').innerHTML = svg;
@@ -1639,17 +2040,30 @@
           if (!cachedCertCanvas) {
             showToast('正在准备证书…');
             await preRenderCert();
-            if (!cachedCertCanvas) { showToast('证书渲染失败', 'error'); return; }
+            if (!cachedCertCanvas) {
+              showToast('证书渲染失败', 'error');
+              return;
+            }
           }
           var rawCanvas = cachedCertCanvas;
-          var M = 14, W = rawCanvas.width + M*2, H = rawCanvas.height + M*2;
+          var M = 14,
+            W = rawCanvas.width + M * 2,
+            H = rawCanvas.height + M * 2;
           var canvas = document.createElement('canvas');
-          canvas.width = W; canvas.height = H;
+          canvas.width = W;
+          canvas.height = H;
           var ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
-          ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W-2, H-2);
-          ctx.strokeStyle = '#C41E3A'; ctx.lineWidth = 10; ctx.strokeRect(7, 7, W-14, H-14);
-          ctx.strokeStyle = '#D4A574'; ctx.lineWidth = 2; ctx.strokeRect(13, 13, W-26, H-26);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, W, H);
+          ctx.strokeStyle = '#D4A574';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(1, 1, W - 2, H - 2);
+          ctx.strokeStyle = '#C41E3A';
+          ctx.lineWidth = 10;
+          ctx.strokeRect(7, 7, W - 14, H - 14);
+          ctx.strokeStyle = '#D4A574';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(13, 13, W - 26, H - 26);
           ctx.drawImage(rawCanvas, M, M);
           if (isMobile) {
             document.getElementById('imgOverlayImg').src = canvas.toDataURL('image/png');
@@ -1658,7 +2072,9 @@
             var a = document.createElement('a');
             a.download = '荣誉证书_' + certEntityName + '.png';
             a.href = canvas.toDataURL('image/png');
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
             showToast('证书已保存');
           }
         } catch (e) {
@@ -1741,7 +2157,18 @@
       // 证书主题切换
       // 奖项名称映射（纯数字排名）
       function getCertAwardName(rank) {
-        var suffixes = { 1: '第一名', 2: '第二名', 3: '第三名', 4: '第四名', 5: '第五名', 6: '第六名', 7: '第七名', 8: '第八名', 9: '第九名', 10: '第十名' };
+        var suffixes = {
+          1: '第一名',
+          2: '第二名',
+          3: '第三名',
+          4: '第四名',
+          5: '第五名',
+          6: '第六名',
+          7: '第七名',
+          8: '第八名',
+          9: '第九名',
+          10: '第十名'
+        };
         return suffixes[rank] || '第' + rank + '名';
       }
 
@@ -1756,10 +2183,17 @@
       function toOrgAbbr(name) {
         if (!name) return '';
         // CDN 加载失败时降级：只保留 ASCII 字母数字
-        if (typeof pinyinPro === 'undefined') return name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
+        if (typeof pinyinPro === 'undefined')
+          return name
+            .replace(/[^A-Za-z0-9]/g, '')
+            .toUpperCase()
+            .substring(0, 8);
         // pattern:'first' 取拼音首字母，toneType:'none' 去声调
-        return pinyinPro.pinyin(name, { pattern: 'first', toneType: 'none' })
-          .replace(/\s+/g, '').toUpperCase().substring(0, 8);
+        return pinyinPro
+          .pinyin(name, { pattern: 'first', toneType: 'none' })
+          .replace(/\s+/g, '')
+          .toUpperCase()
+          .substring(0, 8);
       }
 
       // Get formulas from assessment types for a given schedule (matched by type_name)

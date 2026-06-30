@@ -7,6 +7,7 @@
     "lint": "node scripts/lint.mjs",
     "format": "prettier --write \"**/*.{html,css,js,mjs}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{html,css,js,mjs}\" --ignore-path .gitignore",
+    "deploy:entry-form": "npx supabase functions deploy entry-form-submit --no-verify-jwt",
     "deploy:function": "npx supabase functions deploy clever-endpoint --no-verify-jwt",
     "deploy:award": "npx supabase functions deploy award-notification --no-verify-jwt"
   },

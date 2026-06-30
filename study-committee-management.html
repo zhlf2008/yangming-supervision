@@ -413,7 +413,7 @@
               '<span><span class="list-parent-kicker">上级' + escapeHtml(parent.level) + '</span>' +
               '<span class="list-parent-name">' + escapeHtml(parent.name) + '</span>' +
               '<span class="list-parent-path">' + escapeHtml(StudyWorkflow.getOrgPath(parent.id, allOrgs)) + '</span></span>' +
-              '<svg class="list-parent-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>' +
+              appIcon('ChevronRightIcon', 'list-parent-arrow') +
             '</button>'
           : '';
         var cards = orgs.map(function (org) {
@@ -423,7 +423,7 @@
           return '<button class="org-card' + cardClass + '" type="button" onclick="openOrg(' + org.id + ')">' +
             '<span class="org-mark">' + escapeHtml(org.name.charAt(0)) + '</span>' +
             '<span><span class="org-card-name">' + escapeHtml(org.name) + '</span><span class="org-card-meta">' + meta + '</span></span>' +
-            '<svg class="org-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>' +
+            appIcon('ChevronRightIcon', 'org-card-arrow') +
           '</button>';
         }).join('');
         document.getElementById('managerContent').innerHTML =
@@ -635,8 +635,7 @@
       }
 
       function arrowSvg(direction) {
-        var path = direction === 'left' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6';
-        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + path + '"/></svg>';
+        return appIcon(direction === 'left' ? 'ChevronLeftIcon' : 'ChevronRightIcon');
       }
 
       window.addEventListener('message', function (event) {

@@ -281,7 +281,7 @@
           renderLogs(reset);
           var statusText = '共 ' + totalCount + ' 条日志' + (moduleVal || semVal || userVal || actionVal ? '（已筛选）' : '');
           if (!hasPlatformColumns && (moduleVal || semVal)) {
-            statusText += ' ⚠️ 模块/学期筛选暂不可用（需执行数据库迁移）';
+            statusText += '  模块/学期筛选暂不可用（需执行数据库迁移）';
           }
           document.getElementById('statusCount').textContent = statusText;
 

@@ -51,7 +51,7 @@ function withFrom(url) {
 
 // 返回按钮动态设定：读取 ?from= 参数设置 .back-btn 的 href
 // 兼容两种格式：from=portal 和 from=portal.html
-(function() {
+(function () {
   var from = getFromParam();
   if (from) {
     // 子系统首页：始终返回平台首页（portal.html），不受 ?from= 参数影响
@@ -60,7 +60,7 @@ function withFrom(url) {
     var currentPage = getCurrentPageName().replace('.html', '').replace('.htm', '');
     var isSubHome = SUBSYSTEM_HOMES.indexOf(currentPage) !== -1;
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       var target = isSubHome ? 'portal.html' : from;
       if (target.indexOf('.') === -1 && target.indexOf('/') === -1) {
         target += '.html';
@@ -112,7 +112,9 @@ function showConfirm(msg) {
       'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:3000;animation:confirmFadeIn 0.2s;';
     overlay.innerHTML =
       '<div style="background:#fff;border-radius:14px;width:calc(100% - 64px);max-width:340px;padding:28px 24px 20px;text-align:left;box-shadow:0 12px 40px rgba(0,0,0,0.25);">' +
-      '<div style="font-size:30px;margin-bottom:12px;text-align:center;">⚠️</div>' +
+      '<div style="font-size:30px;margin-bottom:12px;text-align:center;">' +
+      appIcon('AlertIcon') +
+      '</div>' +
       '<div style="font-size:14px;color:#2D2D2D;margin-bottom:8px;line-height:1.7;">' +
       msg +
       '</div>' +
@@ -401,30 +403,40 @@ function logAction(action, target, detail, moduleKey) {
     module_key: inferAuditModuleKey(moduleKey)
   };
   // 异步获取当前学期ID并补充
-  getCurrentSemesterId().then(function(semId) {
-    if (semId) entry.semester_id = semId;
-    // 异步写入，不阻塞主流程
-    try {
-      window.db.from('audit_logs').insert(entry).then(function () {
-        flushAuditBacklog();
-      }).catch(function () {
+  getCurrentSemesterId()
+    .then(function (semId) {
+      if (semId) entry.semester_id = semId;
+      // 异步写入，不阻塞主流程
+      try {
+        window.db
+          .from('audit_logs')
+          .insert(entry)
+          .then(function () {
+            flushAuditBacklog();
+          })
+          .catch(function () {
+            appendAuditBacklog(entry);
+          });
+      } catch (e) {
         appendAuditBacklog(entry);
-      });
-    } catch (e) {
-      appendAuditBacklog(entry);
-    }
-  }).catch(function() {
-    // 获取学期失败时仍然写入（不带 semester_id）
-    try {
-      window.db.from('audit_logs').insert(entry).then(function () {
-        flushAuditBacklog();
-      }).catch(function () {
+      }
+    })
+    .catch(function () {
+      // 获取学期失败时仍然写入（不带 semester_id）
+      try {
+        window.db
+          .from('audit_logs')
+          .insert(entry)
+          .then(function () {
+            flushAuditBacklog();
+          })
+          .catch(function () {
+            appendAuditBacklog(entry);
+          });
+      } catch (e) {
         appendAuditBacklog(entry);
-      });
-    } catch (e) {
-      appendAuditBacklog(entry);
-    }
-  });
+      }
+    });
 }
 
 function appendAuditBacklog(entry) {
@@ -444,16 +456,22 @@ function flushAuditBacklog() {
   var backlog = [];
   try {
     backlog = JSON.parse(localStorage.getItem(AUDITLOG_BACKLOG_KEY) || '[]');
-  } catch (e) { return; }
+  } catch (e) {
+    return;
+  }
   if (!backlog.length) return;
 
   AUDITLOG_FLUSHING = true;
-  window.db.from('audit_logs').insert(backlog).then(function () {
-    localStorage.removeItem(AUDITLOG_BACKLOG_KEY);
-    AUDITLOG_FLUSHING = false;
-  }).catch(function () {
-    AUDITLOG_FLUSHING = false;
-  });
+  window.db
+    .from('audit_logs')
+    .insert(backlog)
+    .then(function () {
+      localStorage.removeItem(AUDITLOG_BACKLOG_KEY);
+      AUDITLOG_FLUSHING = false;
+    })
+    .catch(function () {
+      AUDITLOG_FLUSHING = false;
+    });
 }
 
 function checkLogin() {
@@ -507,7 +525,9 @@ async function guardModuleAccess(moduleKey) {
     var semId = await getCurrentSemesterId();
     if (!semId) {
       showToast('当前学期未设置，请联系管理员', 'error');
-      setTimeout(function () { window.location.href = 'portal.html'; }, 1500);
+      setTimeout(function () {
+        window.location.href = 'portal.html';
+      }, 1500);
       return false;
     }
     var result = await window.db
@@ -524,7 +544,9 @@ async function guardModuleAccess(moduleKey) {
   }
 
   showToast('当前学期暂无"' + moduleKey + '"模块权限，请联系管理员或秘书处', 'error');
-  setTimeout(function () { window.location.href = 'portal.html'; }, 2000);
+  setTimeout(function () {
+    window.location.href = 'portal.html';
+  }, 2000);
   return false;
 }
 
@@ -552,18 +574,13 @@ async function guardSupervisionAccess() {
     console.error('guardSupervisionAccess error:', e);
   }
 
-  var legacyRoles = [
-    '大班总督',
-    '大班副督',
-    '班级总督察',
-    '班级副总督察',
-    '小组督察',
-    '小组副督察'
-  ];
+  var legacyRoles = ['大班总督', '大班副督', '班级总督察', '班级副总督察', '小组督察', '小组副督察'];
   if (legacyRoles.indexOf(profile.role) !== -1) return true;
 
   showToast('当前学期暂无督察模块权限，请联系管理员或秘书处', 'error');
-  setTimeout(function () { window.location.href = 'portal.html'; }, 2000);
+  setTimeout(function () {
+    window.location.href = 'portal.html';
+  }, 2000);
   return false;
 }
 
@@ -668,13 +685,22 @@ function setCurrentSemester(container, semesterName, variant) {
   if (!el) return;
   var cls = 'semester-subtitle';
   var showLabel = false;
-  if (variant === 'tag') { cls = 'semester-tag'; showLabel = true; }
-  else if (variant === 'tag-lg') { cls = 'semester-tag lg'; showLabel = true; }
+  if (variant === 'tag') {
+    cls = 'semester-tag';
+    showLabel = true;
+  } else if (variant === 'tag-lg') {
+    cls = 'semester-tag lg';
+    showLabel = true;
+  }
   el.innerHTML =
-    '<span class="' + cls + '">' +
-      '<span class="dot"></span>' +
-      (showLabel ? '<span class="label">当前学期</span>' : '') +
-      '<span class="name">' + escapeHtml(semesterName) + '</span>' +
+    '<span class="' +
+    cls +
+    '">' +
+    '<span class="dot"></span>' +
+    (showLabel ? '<span class="label">当前学期</span>' : '') +
+    '<span class="name">' +
+    escapeHtml(semesterName) +
+    '</span>' +
     '</span>';
 }
 

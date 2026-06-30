@@ -560,12 +560,12 @@
 
       <div class="date-selector">
         <div class="date-nav">
-          <button class="date-nav-btn" onclick="changeWeek(-1)">◀</button>
+          <button class="date-nav-btn" onclick="changeWeek(-1)"></button>
           <span class="date-current"
             ><div class="date-week-label" id="dateWeekLabel">本周</div>
             <div class="date-week-range" id="dateWeekRange">--</div></span
           >
-          <button class="date-nav-btn" onclick="changeWeek(1)">▶</button>
+          <button class="date-nav-btn" onclick="changeWeek(1)"></button>
         </div>
         <button class="date-today" onclick="goToCurrentWeek()">本周</button>
       </div>
@@ -1358,7 +1358,7 @@
         // Section 1: 考勤 (only if attendance is assessed)
         if (cats.hasAttendance) {
           html += '<div class="raw-section">';
-          html += '<div class="raw-section-title"><span class="raw-section-icon att">📊</span>考勤</div>';
+          html += '<div class="raw-section-title"><span class="raw-section-icon att"></span>考勤</div>';
           html +=
             '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">应到人数</div><div class="raw-field-value">' +
             (yingdao || '--') +
@@ -1390,7 +1390,7 @@
         // Section 2: 作业 (only if homework is assessed)
         if (cats.hasHomework) {
           html += '<div class="raw-section">';
-          html += '<div class="raw-section-title"><span class="raw-section-icon hw">📝</span>作业</div>';
+          html += '<div class="raw-section-title"><span class="raw-section-icon hw"></span>作业</div>';
           html +=
             '<div class="raw-field-row"><div class="raw-field"><div class="raw-field-label">应做作业人数</div><div class="raw-field-value">' +
             (yingzuo || '--') +
@@ -1418,7 +1418,7 @@
 
         if (customFields.length > 0) {
           html += '<div class="raw-section">';
-          html += '<div class="raw-section-title"><span class="raw-section-icon other">📋</span>其他考核项</div>';
+          html += '<div class="raw-section-title"><span class="raw-section-icon other"></span>其他考核项</div>';
           var cfHtml = '';
           customFields.forEach(function (cf, i) {
             if (i % 2 === 0) cfHtml += '<div class="raw-field-row">';
@@ -1455,7 +1455,7 @@
         if (rec) {
           var firstTime = rec.first_submitted_at || rec.created_at;
           if (firstTime) {
-            html += '<div class="raw-section"><div class="raw-section-title"><span class="raw-section-icon other">📋</span>填报信息</div>';
+            html += '<div class="raw-section"><div class="raw-section-title"><span class="raw-section-icon other"></span>填报信息</div>';
             html += '<div class="raw-field-row">';
             html += '<div class="raw-field"><div class="raw-field-label">首次提交</div><div class="raw-field-value">' + new Date(firstTime).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>';
             var firstBy = rec.first_submitted_by || rec.fill_user_id;
@@ -1982,7 +1982,7 @@
 
       function showEmpty(msg) {
         document.getElementById('contentArea').innerHTML =
-          '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">' +
+          '<div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">' +
           msg +
           '</div></div>';
       }

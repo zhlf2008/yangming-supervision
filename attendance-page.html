@@ -550,7 +550,7 @@
       <!-- Organization Selector (three-level cascade) -->
       <div class="section" id="orgSelectorSection" style="display: none">
         <div class="section-title">
-          <span class="section-icon">🏢</span>
+          <span class="section-icon"></span>
           选择填报小组
         </div>
         <div class="org-cascade">
@@ -590,13 +590,13 @@
       <!-- Assessment Forms Container -->
       <div class="section" id="filledTip" style="display: none; background: var(--green-light)">
         <div style="display: flex; align-items: center; justify-content: space-between">
-          <span>✅ 今日已填报，可修改后重新提交</span>
+          <span> 今日已填报，可修改后重新提交</span>
           <span style="font-size: 12px; color: var(--ink-muted)" id="filledTime"></span>
         </div>
       </div>
       <div id="formsContainer">
         <div class="empty-state">
-          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-icon"></div>
           <p>正在加载考核项目...</p>
         </div>
       </div>
@@ -694,7 +694,7 @@
         if (orgs.length === 0) {
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-icon"></div>
             <p>暂无组织架构，请先设置学期组织</p>
           </div>`;
         }
@@ -817,7 +817,7 @@
           groupSelect.innerHTML = '<option value="">--</option>';
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">🔒</div>
+            <div class="empty-state-icon"></div>
             <p>您在当前学期暂无可填报的小组，请联系管理员分配组织</p>
           </div>`;
           return;
@@ -864,7 +864,7 @@
           // 多个大班，需要手动选择
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-icon"></div>
             <p>请选择组织后加载考核项目</p>
           </div>`;
         }
@@ -1010,7 +1010,7 @@
         if (!currentSemester) {
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-icon"></div>
             <p>暂无当前学期，请先在设置中创建学期</p>
           </div>`;
           return;
@@ -1046,7 +1046,7 @@
         if (!currentSchedule) {
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-icon"></div>
             <p>今日暂无日程安排</p>
           </div>`;
           return;
@@ -1057,7 +1057,7 @@
         if (itemIds.length === 0) {
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-icon"></div>
             <p>今日未设置考核项目</p>
           </div>`;
           return;
@@ -1066,7 +1066,7 @@
         if (!types || typesResult.error) {
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-icon"></div>
             <p>加载考核项目失败</p>
           </div>`;
           return;
@@ -1084,7 +1084,7 @@
         if (todayTypes.length === 0) {
           document.getElementById('formsContainer').innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-icon"></div>
             <p>考核项目不存在</p>
           </div>`;
           return;
@@ -1160,9 +1160,9 @@
           html +=
             '<div class="section">' +
             '<div class="section-title" id="attSectionTitle">' +
-            '<span class="section-icon 考勤">📊</span>' +
+            '<span class="section-icon 考勤"></span>' +
             '上线率' +
-            (attLocked ? ' <span style="font-size:11px; color:var(--vermillion);">🔒 已超截止时间</span>' : '') +
+            (attLocked ? ' <span style="font-size:11px; color:var(--vermillion);"> 已超截止时间</span>' : '') +
             '</div>';
 
           // Render merged fields in pairs
@@ -1211,7 +1211,7 @@
           html +=
             '<button class="submit-btn" style="margin-top:12px;"' +
             ' onclick="submitSection(\'att\')" id="attSubmitBtn"' + disabledAttr(attLocked) + '>' +
-            (attLocked ? '🔒 已截止' : '📋 提交晨读数据') + '</button>' +
+            (attLocked ? ' 已截止' : ' 提交晨读数据') + '</button>' +
             '</div>';
         }
 
@@ -1240,9 +1240,9 @@
             html +=
               '<div class="section">' +
               '<div class="section-title hw-section-title">' +
-              '<span class="section-icon 作业">📝</span>' +
+              '<span class="section-icon 作业"></span>' +
               (type.type_name || '作业率') +
-              (lockedTypeIds.has(type.id) ? ' <span style="font-size:11px; color:var(--vermillion);">🔒 已超截止时间</span>' : '') +
+              (lockedTypeIds.has(type.id) ? ' <span style="font-size:11px; color:var(--vermillion);"> 已超截止时间</span>' : '') +
               '</div>';
 
             for (let i = 0; i < fields.length; i += 2) {
@@ -1282,7 +1282,7 @@
               '<button class="submit-btn" style="margin-top:12px;"' +
               ' onclick="submitSection(\'hw\',' + type.id + ')" id="hwSubmitBtn_' + type.id + '"' +
               disabledAttr(typeLocked) + '>' +
-              (typeLocked ? '🔒 已截止' : '📝 提交作业数据') + '</button>';
+              (typeLocked ? ' 已截止' : ' 提交作业数据') + '</button>';
 
             html += '</div>';
           });
@@ -1292,7 +1292,7 @@
         if (!showOnline && !showHw && typeNames.length === 0) {
           html =
             '<div class=\"empty-state\">' +
-            '<div class=\"empty-state-icon\">📋</div>' +
+            '<div class=\"empty-state-icon\"></div>' +
             '<p>今日未设置考核项目</p>' +
             '</div>';
         }
@@ -1617,7 +1617,7 @@
           }
           if (otherHasData && !otherSubmitted) {
             setTimeout(function () {
-              showToast('⚠️ 你已填写了' + otherLabel + '，请点击对应按钮完成提交');
+              showToast(' 你已填写了' + otherLabel + '，请点击对应按钮完成提交');
             }, 600);
           }
         }
@@ -1630,7 +1630,7 @@
           var d = new Date(timeStr);
           displayTime = d.toTimeString().substring(0, 5);
         }
-        var badge = ' <span class="section-status" style="font-size:11px; color:var(--green);">✅ 已填报' + (displayTime ? ' ' + displayTime : '') + '</span>';
+        var badge = ' <span class="section-status" style="font-size:11px; color:var(--green);"> 已填报' + (displayTime ? ' ' + displayTime : '') + '</span>';
         if (sectionKey === 'att') {
           var attTitle = document.getElementById('attSectionTitle');
           if (attTitle) {
@@ -1639,7 +1639,7 @@
           }
           var attBtn = document.getElementById('attSubmitBtn');
           if (attBtn && !attBtn.disabled) {
-            attBtn.textContent = '✅ 已提交 ' + displayTime;
+            attBtn.textContent = ' 已提交 ' + displayTime;
             attBtn.classList.add('submitted');
           }
         } else {
@@ -1651,7 +1651,7 @@
           var hwBtns = document.querySelectorAll('[id^="hwSubmitBtn_"]');
           hwBtns.forEach(function (btn) {
             if (!btn.disabled) {
-              btn.textContent = '✅ 已提交 ' + displayTime;
+              btn.textContent = ' 已提交 ' + displayTime;
               btn.classList.add('submitted');
             }
           });

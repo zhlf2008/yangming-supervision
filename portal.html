@@ -280,7 +280,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="app-loading">
     <div class="container">
       <header class="header">
         <h1 class="header-title">阳明心学班级管理平台</h1>
@@ -297,17 +297,7 @@
             <div class="user-name" id="profileName">加载中...</div>
             <div class="user-role" id="profileRole">加载中...</div>
           </div>
-          <svg
-            class="user-arrow"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <span class="user-arrow" data-icon="ChevronRightIcon"></span>
         </a>
       </div>
 
@@ -315,17 +305,17 @@
         <h2 class="section-title">平台管理</h2>
         <div class="action-grid">
           <a class="action-card semester" href="secretariat-semesters.html?from=portal">
-            <div class="icon">📅</div>
+            <div class="icon" data-icon="CalendarIcon"></div>
             <div class="title">学期管理</div>
             <div class="desc">新增、编辑、切换当前学期</div>
           </a>
           <a class="action-card library" href="study-course-library.html?from=portal">
-            <div class="icon">📚</div>
+            <div class="icon" data-icon="LibraryIcon"></div>
             <div class="title">课程内容库</div>
             <div class="desc">维护跨学期复用的课程资产</div>
           </a>
           <a class="action-card audit" href="audit-log.html?from=portal">
-            <div class="icon">🧾</div>
+            <div class="icon" data-icon="AuditLogIcon"></div>
             <div class="title">操作日志</div>
             <div class="desc">查看全平台关键审计记录</div>
           </a>
@@ -337,17 +327,17 @@
         <div class="semester-wrap" id="semesterBanner"></div>
         <div class="action-grid" id="moduleGrid">
           <a class="action-card supervision" href="index.html?from=portal" id="cardSupervision" onclick="setActiveSystem('supervision')">
-            <div class="icon">📋</div>
+            <div class="icon" data-icon="ClipboardCheckIcon"></div>
             <div class="title">督察管理</div>
             <div class="desc">考勤、汇总、榜单与日常督察</div>
           </a>
           <a class="action-card secretariat" href="secretariat-dashboard.html?from=portal" id="cardSecretariat" onclick="setActiveSystem('secretariat')">
-            <div class="icon">🏛️</div>
+            <div class="icon" data-icon="BuildingIcon"></div>
             <div class="title">秘书处</div>
             <div class="desc">人员、组织、职务与权限维护</div>
           </a>
           <a class="action-card study" href="study-dashboard.html?from=portal" id="cardStudy" onclick="setActiveSystem('study')">
-            <div class="icon">📖</div>
+            <div class="icon" data-icon="BookOpenIcon"></div>
             <div class="title">学委管理</div>
             <div class="desc">课程、排班、周课与学习通知</div>
           </a>
@@ -355,7 +345,7 @@
       </section>
 
       <div class="noaccess-banner" id="noaccessBanner">
-        <div class="icon">🔒</div>
+        <div class="icon" data-icon="LockIcon"></div>
         <div class="title">当前学期暂无权限</div>
         <div class="desc">您在当前学期没有任何可进入的模块。<br>请联系管理员或秘书处为您分配模块权限。</div>
       </div>
@@ -446,7 +436,9 @@
         }
       }
 
-      init();
+      init().finally(function () {
+        document.body.classList.remove('app-loading');
+      });
     </script>
   </body>
 </html>

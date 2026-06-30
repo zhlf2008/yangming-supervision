@@ -105,9 +105,9 @@
           <button class="date-today" onclick="goToCurrentWeek()">&#26412;&#21608;</button>
         </div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="toggleView()" id="viewToggleBtn" style="flex:1;">📅 日历视图</button>
-          <button class="btn btn-secondary btn-sm" onclick="generateRoster()" style="flex:1;">📋 生成排班表</button>
-          <button class="btn btn-secondary btn-sm" onclick="generateNotices()" style="flex:1;">📢 生成通知</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleView()" id="viewToggleBtn" style="flex:1;"> 日历视图</button>
+          <button class="btn btn-secondary btn-sm" onclick="generateRoster()" style="flex:1;"> 生成排班表</button>
+          <button class="btn btn-secondary btn-sm" onclick="generateNotices()" style="flex:1;"> 生成通知</button>
         </div>
         <div class="org-cascade" id="weeklyOrgCascade" style="margin-top:12px;">
           <div class="org-group">
@@ -133,7 +133,7 @@
       <!-- Calendar view (hidden by default) -->
       <section class="section" id="calendarSection" style="display:none;">
         <div class="section-header">
-          <div class="section-title">📅 日历视图</div>
+          <div class="section-title"> 日历视图</div>
           <button class="btn btn-sm btn-secondary" onclick="document.getElementById('calendarSection').style.display='none'">关闭</button>
         </div>
         <div id="calendarGrid" class="empty-state">加载中...</div>
@@ -142,11 +142,11 @@
       <!-- Notification output -->
       <section class="section" id="noticeSection" style="display:none;">
         <div class="section-header">
-          <div class="section-title">📢 通知文案</div>
+          <div class="section-title"> 通知文案</div>
           <button class="btn btn-sm btn-secondary" onclick="document.getElementById('noticeSection').style.display='none'">关闭</button>
         </div>
         <pre class="roster-output" id="noticeOutput"></pre>
-        <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" onclick="copyNotice()">📋 复制通知文案</button>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" onclick="copyNotice()"> 复制通知文案</button>
       </section>
 
       <!-- Roster output -->
@@ -156,7 +156,7 @@
           <button class="btn btn-sm btn-secondary" onclick="document.getElementById('rosterSection').style.display='none'">关闭</button>
         </div>
         <pre class="roster-output" id="rosterOutput"></pre>
-        <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" onclick="copyRoster()">📋 复制到剪贴板</button>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" onclick="copyRoster()"> 复制到剪贴板</button>
       </section>
 
       <!-- Schedule list -->
@@ -621,7 +621,7 @@
             var course = courses.find(function (c) { return Number(c.id) === Number(s.course_id); });
             var courseTitle = s.custom_title || (course ? course.title : '未设置课程');
 
-            html += '<div class="day-course">📖 ' + escapeHtml(courseTitle) + ' · ' + escapeHtml(getOrgName(s.org_id)) + '</div>';
+            html += '<div class="day-course"> ' + escapeHtml(courseTitle) + ' · ' + escapeHtml(getOrgName(s.org_id)) + '</div>';
 
             // Demands section
             var dayDemands = demands[s.id] || [];
@@ -947,12 +947,12 @@
         var btn = document.getElementById('viewToggleBtn');
         if (_viewMode === 'list') {
           _viewMode = 'calendar';
-          btn.textContent = '📋 列表视图';
+          btn.textContent = ' 列表视图';
           renderCalendarView();
           document.getElementById('calendarSection').style.display = '';
         } else {
           _viewMode = 'list';
-          btn.textContent = '📅 日历视图';
+          btn.textContent = ' 日历视图';
           document.getElementById('calendarSection').style.display = 'none';
         }
       }
@@ -1018,7 +1018,7 @@
             peopleMap[p.demand_id].push(p);
           });
 
-          var text = '📢   共读安排通知\n';
+          var text = '   共读安排通知\n';
           text += week.label + '\n\n';
 
           var d = new Date(week.start);
@@ -1031,13 +1031,13 @@
               text += '【' + weekdayLabels[weekday] + ' ' + formatDateDisplay(dateStr) + '】\n';
               daySchedules.forEach(function(s) {
                 var scopeLabel = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' }[s.scope_level] || '';
-                text += '  📖 ' + scopeLabel + ' · ' + getOrgName(s.org_id) + '\n';
+                text += '   ' + scopeLabel + ' · ' + getOrgName(s.org_id) + '\n';
                 var dayDemands = demands[s.id] || [];
                 if (dayDemands.length) {
                   dayDemands.forEach(function(dm) {
                     var assigned = peopleMap[dm.id] || [];
                     var names = assigned.map(function(p) { return p.person_name_snapshot; }).join('、');
-                    text += '    👤 ' + dm.role_name;
+                    text += '     ' + dm.role_name;
                     if (names) text += '：' + names;
                     text += '\n';
                   });
@@ -1048,7 +1048,7 @@
             d.setDate(d.getDate() + 1);
           }
 
-          text += '🙏 有言实行，四个100%！';
+          text += ' 有言实行，四个100%！';
           output.textContent = text;
         });
       }

@@ -6,14 +6,26 @@
     <title>阳明心学督察管理系统</title>
     <!-- 快速session检查：新设备无session则直接跳转登录，避免闪现首页 -->
     <script>
-      (function(){
-        var supabaseKey = null; for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") > 0) { supabaseKey = k; break; } }
+      (function () {
+        var supabaseKey = null;
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0) {
+            supabaseKey = k;
+            break;
+          }
+        }
         var raw = localStorage.getItem(supabaseKey);
-        if (!raw) { window.location.replace('login.html'); return; }
+        if (!raw) {
+          window.location.replace('login.html');
+          return;
+        }
         try {
           var session = JSON.parse(raw);
-          if (!session || !session.access_token) { window.location.replace('login.html'); }
-        } catch(e) {
+          if (!session || !session.access_token) {
+            window.location.replace('login.html');
+          }
+        } catch (e) {
           window.location.replace('login.html');
         }
       })();
@@ -264,6 +276,8 @@
         margin-top: 12px;
       }
       .carousel-dot {
+        padding: 0;
+        border: 0;
         width: 8px;
         height: 8px;
         border-radius: 50%;
@@ -366,7 +380,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="app-loading">
     <div class="container">
       <!-- Header -->
       <header class="header">
@@ -388,9 +402,7 @@
             <div class="user-name" id="userName">加载中...</div>
             <div class="user-role" id="userRole">加载中...</div>
           </div>
-          <svg class="user-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <span class="user-arrow" data-icon="ChevronRightIcon"></span>
         </a>
       </div>
 
@@ -398,17 +410,17 @@
       <h2 class="section-title">快捷入口</h2>
       <div class="quick-actions" id="quickActions">
         <a href="attendance-page.html?from=index" class="action-card">
-          <div class="action-icon attendance">📋</div>
+          <div class="action-icon attendance" data-icon="ClipboardCheckIcon"></div>
           <div class="action-title">考勤</div>
           <div class="action-desc">每日考勤数据录入</div>
         </a>
         <a href="summary-page.html?from=index" class="action-card">
-          <div class="action-icon summary">📊</div>
+          <div class="action-icon summary" data-icon="ChartIcon"></div>
           <div class="action-title">汇总</div>
           <div class="action-desc">查看统计数据</div>
         </a>
         <a href="leaderboard.html?from=index" class="action-card">
-          <div class="action-icon summary">🏆</div>
+          <div class="action-icon summary" data-icon="TrophyIcon"></div>
           <div class="action-title">榜单</div>
           <div class="action-desc">出勤率排名与证书</div>
         </a>
@@ -467,7 +479,7 @@
             'beforeend',
             `
           <a href="reminder-settings.html?from=index" class="action-card">
-            <div class="action-icon attendance">📢</div>
+            <div class="action-icon attendance" data-icon="MegaphoneIcon"></div>
             <div class="action-title">填报提醒</div>
             <div class="action-desc">企业微信自动提醒</div>
           </a>
@@ -479,17 +491,17 @@
               'beforeend',
               `
               <a href="schedule-management.html?semester_id=${currentSemesterId}&from=index" class="action-card">
-                <div class="action-icon summary">📅</div>
+                <div class="action-icon summary" data-icon="CalendarIcon"></div>
                 <div class="action-title">日程管理</div>
                 <div class="action-desc">管理每日考核日程</div>
               </a>
               <a href="assessment-management.html?semester_id=${currentSemesterId}&from=index" class="action-card">
-                <div class="action-icon summary">📝</div>
+                <div class="action-icon summary" data-icon="FileEditIcon"></div>
                 <div class="action-title">考核项目</div>
                 <div class="action-desc">配置考核模板</div>
               </a>
               <a href="data-management.html?semester_id=${currentSemesterId}&from=index" class="action-card">
-                <div class="action-icon summary">🗄️</div>
+                <div class="action-icon summary" data-icon="DatabaseIcon"></div>
                 <div class="action-title">数据管理</div>
                 <div class="action-desc">管理所有填报记录</div>
               </a>
@@ -502,7 +514,7 @@
             'beforeend',
             `
               <a href="schedule-management.html?semester_id=${currentSemesterId}&org_id=${currentUserOrgId}&from=index" class="action-card">
-                <div class="action-icon summary">📅</div>
+                <div class="action-icon summary" data-icon="CalendarIcon"></div>
                 <div class="action-title">日程管理</div>
                 <div class="action-desc">管理本大班考核日程</div>
               </a>
@@ -527,7 +539,11 @@
 
         // Load organization info
         if (currentUserOrgId) {
-          var { data: currentOrg } = await window.db.from('organizations').select('name').eq('id', currentUserOrgId).maybeSingle();
+          var { data: currentOrg } = await window.db
+            .from('organizations')
+            .select('name')
+            .eq('id', currentUserOrgId)
+            .maybeSingle();
           if (currentOrg) document.querySelector('.user-role').textContent += ' · ' + currentOrg.name;
         }
 
@@ -542,11 +558,7 @@
         var legacyOrgId = profile && profile.organization_id ? Number(profile.organization_id) : null;
         if (!semesterId || !profile || !profile.phone) return legacyOrgId;
 
-        var { data: person } = await window.db
-          .from('people')
-          .select('id')
-          .eq('phone', profile.phone)
-          .maybeSingle();
+        var { data: person } = await window.db.from('people').select('id').eq('phone', profile.phone).maybeSingle();
         if (!person) return legacyOrgId;
 
         var { data: assignment } = await window.db
@@ -620,9 +632,13 @@
         var role = profile.role;
         var userOrgId = currentUserOrgId;
 
-        var semId = currentSemesterId || await getCurrentSemesterId();
+        var semId = currentSemesterId || (await getCurrentSemesterId());
         var { data: orgs } = semId
-          ? await window.db.from('organizations').select('id,name,parent_id,level').eq('semester_id', semId).eq('is_active', true)
+          ? await window.db
+              .from('organizations')
+              .select('id,name,parent_id,level')
+              .eq('semester_id', semId)
+              .eq('is_active', true)
           : { data: [] };
         orgs = orgs || [];
 
@@ -801,11 +817,21 @@
         groups.forEach(function (g) {
           var gd = groupData[g.id];
           if (!gd) return;
-          var online = gd.online != null ? gd.online.toFixed(1) : '--';
-          var video = gd.video != null ? gd.video.toFixed(1) : '--';
-          var hw = gd.hw != null ? gd.hw.toFixed(1) : '--';
-          carouselData.push({ name: gd.name, online: online, video: video, hw: hw });
+          var values = [gd.online, gd.video, gd.hw].filter(function (value) {
+            return value != null;
+          });
+          carouselData.push({
+            name: gd.name,
+            online: gd.online,
+            video: gd.video,
+            hw: gd.hw,
+            priority: values.length ? Math.min.apply(Math, values) : 101
+          });
         });
+        carouselData.sort(function (a, b) {
+          return a.priority - b.priority || a.name.localeCompare(b.name, 'zh-CN');
+        });
+        carouselData = carouselData.slice(0, 12);
 
         if (carouselData.length === 0) {
           empty.style.display = 'block';
@@ -820,19 +846,16 @@
           .map(function (d) {
             return (
               '<div class="carousel-slide"><div class="carousel-group-name">' +
-              d.name +
+              escapeHtml(d.name) +
               '</div>' +
               '<div class="stat-item"><div class="stat-value high">' +
-              d.online +
-              (d.online !== '--' ? '%' : '') +
+              (d.online != null ? d.online.toFixed(1) + '%' : '--') +
               '</div><div class="stat-label">上线率</div></div>' +
               '<div class="stat-item"><div class="stat-value medium">' +
-              d.hw +
-              (d.hw !== '--' ? '%' : '') +
+              (d.hw != null ? d.hw.toFixed(1) + '%' : '--') +
               '</div><div class="stat-label">作业率</div></div>' +
               '<div class="stat-item"><div class="stat-value high">' +
-              d.video +
-              (d.video !== '--' ? '%' : '') +
+              (d.video != null ? d.video.toFixed(1) + '%' : '--') +
               '</div><div class="stat-label">视频率</div></div>' +
               '</div>'
             );
@@ -843,7 +866,13 @@
         dots.innerHTML = carouselData
           .map(function (_, i) {
             return (
-              '<span class="carousel-dot' + (i === 0 ? ' active' : '') + '" onclick="goToSlide(' + i + ')"></span>'
+              '<button type="button" class="carousel-dot' +
+              (i === 0 ? ' active' : '') +
+              '" aria-label="查看第 ' +
+              (i + 1) +
+              ' 组" onclick="goToSlide(' +
+              i +
+              ')"></button>'
             );
           })
           .join('');
@@ -886,7 +915,9 @@
         }
       });
 
-      init();
+      init().finally(function () {
+        document.body.classList.remove('app-loading');
+      });
     </script>
   </body>
 </html>

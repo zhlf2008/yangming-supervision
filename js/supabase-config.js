@@ -1,9 +1,9 @@
 // Supabase Configuration
 // 使用说明：初始化 Supabase 连接
-// ⚠️ service_role 操作已移至 Edge Function: supabase/functions/admin-user
+//  service_role 操作已移至 Edge Function: supabase/functions/admin-user
 //    部署命令: supabase functions deploy admin-user
 //
-// 📌 版本号：修改此文件后递增此值（同时也会刷新 utils.js、components.js 的缓存）
+//  版本号：修改此文件后递增此值（同时也会刷新 utils.js、components.js 的缓存）
 var APP_CACHE_VERSION = '9';
 
 const SUPABASE_URL = 'https://tuoyue.space/supabase';

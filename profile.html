@@ -672,24 +672,20 @@
       <div class="menu-section">
         <div class="menu-section-title">账户</div>
         <div class="menu-item" onclick="editProfile()">
-          <div class="menu-item-icon person">👤</div>
+          <div class="menu-item-icon person" data-icon="UserIcon"></div>
           <div class="menu-item-content">
             <div class="menu-item-title">编辑资料</div>
             <div class="menu-item-desc">修改姓名、头像等信息</div>
           </div>
-          <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <span class="menu-item-arrow" data-icon="ChevronRightIcon"></span>
         </div>
         <div class="menu-item" onclick="viewStats()">
-          <div class="menu-item-icon stats">📊</div>
+          <div class="menu-item-icon stats" data-icon="ChartIcon"></div>
           <div class="menu-item-content">
             <div class="menu-item-title">我的填报记录</div>
             <div class="menu-item-desc">查看历史填报数据</div>
           </div>
-          <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <span class="menu-item-arrow" data-icon="ChevronRightIcon"></span>
         </div>
       </div>
 
@@ -697,38 +693,32 @@
       <div class="menu-section">
         <div class="menu-section-title">设置</div>
         <div class="menu-item" onclick="showHelp()">
-          <div class="menu-item-icon help">❓</div>
+          <div class="menu-item-icon help" data-icon="HelpIcon"></div>
           <div class="menu-item-content">
             <div class="menu-item-title">帮助与反馈</div>
             <div class="menu-item-desc">遇到问题？联系我们</div>
           </div>
-          <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <span class="menu-item-arrow" data-icon="ChevronRightIcon"></span>
         </div>
         <div class="menu-item" onclick="showAbout()">
-          <div class="menu-item-icon about">ℹ️</div>
+          <div class="menu-item-icon about" data-icon="InfoIcon"></div>
           <div class="menu-item-content">
             <div class="menu-item-title">关于系统</div>
             <div class="menu-item-desc">版本信息与相关说明</div>
           </div>
-          <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <span class="menu-item-arrow" data-icon="ChevronRightIcon"></span>
         </div>
       </div>
 
       <!-- Logout -->
       <div class="menu-section">
         <div class="menu-item" onclick="logout()">
-          <div class="menu-item-icon logout">🚪</div>
+          <div class="menu-item-icon logout"></div>
           <div class="menu-item-content">
             <div class="menu-item-title" style="color: var(--vermillion)">退出登录</div>
             <div class="menu-item-desc">切换其他账号</div>
           </div>
-          <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <span class="menu-item-arrow" data-icon="ChevronRightIcon"></span>
         </div>
       </div>
 

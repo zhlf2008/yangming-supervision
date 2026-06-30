@@ -5,6 +5,7 @@
 !package.json
 !package-lock.json
 !tsconfig.json
+!supabase/functions/**/deno.json
 *.txt
 *.py
 *.log
@@ -47,3 +48,6 @@ supabase/.temp/
 tasks/test-accounts.local.md
 **/test-accounts.local.md
 tmp/
+
+# Audit screenshots may contain production personal data; keep the written report only.
+docs/system-audit-*/**/*.png

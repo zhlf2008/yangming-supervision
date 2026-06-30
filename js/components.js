@@ -44,17 +44,17 @@ function renderBottomNav(activePage) {
   setActiveSystem('supervision');
 
   var pages = [
-    { key: 'home', href: 'index.html', icon: '🏠', label: '首页' },
-    { key: 'attendance', href: 'attendance-page.html', icon: '📋', label: '考勤' },
-    { key: 'summary', href: 'summary-page.html', icon: '📊', label: '汇总' },
-    { key: 'rank', href: 'leaderboard.html', icon: '🏆', label: '榜单' },
-    { key: 'profile', href: 'profile.html?system=supervision', icon: '👤', label: '我的' }
+    { key: 'home', href: 'index.html', icon: 'HomeIcon', label: '首页' },
+    { key: 'attendance', href: 'attendance-page.html', icon: 'ClipboardCheckIcon', label: '考勤' },
+    { key: 'summary', href: 'summary-page.html', icon: 'ChartIcon', label: '汇总' },
+    { key: 'rank', href: 'leaderboard.html', icon: 'TrophyIcon', label: '榜单' },
+    { key: 'profile', href: 'profile.html?system=supervision', icon: 'UserIcon', label: '我的' }
   ];
 
   var html = '<nav class="bottom-nav">';
   pages.forEach(function (p) {
     html += '<a href="' + withFrom(p.href) + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
-    html += '<span class="nav-icon">' + p.icon + '</span>';
+    html += appIcon(p.icon, 'nav-icon');
     html += '<span class="nav-label">' + p.label + '</span>';
     html += '</a>';
   });
@@ -76,17 +76,17 @@ function renderPortalBottomNav(activePage) {
   setActiveSystem('portal');
 
   var pages = [
-    { key: 'home', href: 'portal.html', icon: '🏠', label: '首页' },
-    { key: 'supervision', href: 'index.html', icon: '📋', label: '督察' },
-    { key: 'secretariat', href: 'secretariat-dashboard.html', icon: '🏛️', label: '秘书处' },
-    { key: 'study', href: 'study-dashboard.html', icon: '📖', label: '学委' },
-    { key: 'profile', href: 'profile.html?system=portal', icon: '👤', label: '我的' }
+    { key: 'home', href: 'portal.html', icon: 'HomeIcon', label: '首页' },
+    { key: 'supervision', href: 'index.html', icon: 'ClipboardCheckIcon', label: '督察' },
+    { key: 'secretariat', href: 'secretariat-dashboard.html', icon: 'BuildingIcon', label: '秘书处' },
+    { key: 'study', href: 'study-dashboard.html', icon: 'BookOpenIcon', label: '学委' },
+    { key: 'profile', href: 'profile.html?system=portal', icon: 'UserIcon', label: '我的' }
   ];
 
   var html = '<nav class="bottom-nav portal-bottom-nav">';
   pages.forEach(function (p) {
     html += '<a href="' + withFrom(p.href) + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
-    html += '<span class="nav-icon">' + p.icon + '</span>';
+    html += appIcon(p.icon, 'nav-icon');
     html += '<span class="nav-label">' + p.label + '</span>';
     html += '</a>';
   });
@@ -109,18 +109,18 @@ function renderModuleBottomNav(systemKey, activePage) {
 
   var navMap = {
     secretariat: [
-      { key: 'home', href: 'secretariat-dashboard.html', icon: '🏠', label: '首页' },
-      { key: 'org', href: 'secretariat-org-management.html', icon: '🏛️', label: '组织' },
-      { key: 'people', href: 'secretariat-people.html', icon: '👥', label: '人员' },
-      { key: 'entry', href: 'secretariat-entry-form.html', icon: '📋', label: '进班' },
-      { key: 'profile', href: 'profile.html?system=secretariat', icon: '👤', label: '我的' }
+      { key: 'home', href: 'secretariat-dashboard.html', icon: 'HomeIcon', label: '首页' },
+      { key: 'org', href: 'secretariat-org-management.html', icon: 'BuildingIcon', label: '组织' },
+      { key: 'people', href: 'secretariat-people.html', icon: 'UsersIcon', label: '人员' },
+      { key: 'entry', href: 'secretariat-entry-form.html', icon: 'ClipboardCheckIcon', label: '进班' },
+      { key: 'profile', href: 'profile.html?system=secretariat', icon: 'UserIcon', label: '我的' }
     ],
     study: [
-      { key: 'home', href: 'study-dashboard.html', icon: '🏠', label: '首页' },
-      { key: 'management', href: 'study-committee-management.html', icon: '⚙️', label: '管理' },
-      { key: 'rules', href: 'study-schedule-rules.html', icon: '🗓️', label: '规则' },
-      { key: 'weekly', href: 'study-org-schedule.html', icon: '👥', label: '日程' },
-      { key: 'profile', href: 'profile.html?system=study', icon: '👤', label: '我的' }
+      { key: 'home', href: 'study-dashboard.html', icon: 'HomeIcon', label: '首页' },
+      { key: 'management', href: 'study-committee-management.html', icon: 'SettingsIcon', label: '管理' },
+      { key: 'rules', href: 'study-schedule-rules.html', icon: 'CalendarIcon', label: '规则' },
+      { key: 'weekly', href: 'study-org-schedule.html', icon: 'UsersIcon', label: '日程' },
+      { key: 'profile', href: 'profile.html?system=study', icon: 'UserIcon', label: '我的' }
     ]
   };
 
@@ -128,7 +128,7 @@ function renderModuleBottomNav(systemKey, activePage) {
   var html = '<nav class="bottom-nav module-bottom-nav">';
   pages.forEach(function (p) {
     html += '<a href="' + withFrom(p.href) + '" class="nav-item' + (p.key === activePage ? ' active' : '') + '">';
-    html += '<span class="nav-icon">' + p.icon + '</span>';
+    html += appIcon(p.icon, 'nav-icon');
     html += '<span class="nav-label">' + p.label + '</span>';
     html += '</a>';
   });
@@ -661,3 +661,16 @@ document.addEventListener('click', function (event) {
     }
   });
 });
+// Load the local Lucide icon set generated by better-icons.
+(function loadIconRuntime() {
+  if (document.querySelector('script[data-app-icon-runtime]')) return;
+  var script = document.createElement('script');
+  script.type = 'module';
+  script.src = 'js/icon-runtime.js?v=1';
+  script.dataset.appIconRuntime = 'true';
+  document.head.appendChild(script);
+})();
+
+function appIcon(name, className) {
+  return '<span class="' + (className || 'app-icon') + '" data-icon="' + name + '"></span>';
+}

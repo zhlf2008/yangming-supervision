@@ -901,7 +901,7 @@
 
         // 编辑关闭时的提示
         if (!orgEditable && role !== '超级管理员' && role !== '管理员') {
-          html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e65100;">🔒 组织架构编辑已关闭，请联系管理员开启</div>';
+          html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e65100;"> 组织架构编辑已关闭，请联系管理员开启</div>';
         }
 
         // 系统管理员区域
@@ -935,7 +935,7 @@
         const canManage = managedOrgIds.has(bigclass.id);
         return `<div class="tree-node">
         <div class="tree-node-content level-0" onclick="toggleNode('${bigclassId}')">
-          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}"></span>
           <span class="tree-node-name">${escapeHtml(bigclass.name)}</span>
           <span class="tree-node-level">${getTotalUsersCount(bigclass.id)}人</span>
           <div class="tree-node-actions">
@@ -965,7 +965,7 @@
         if (bigClass) label = escapeHtml(bigClass.name) + ' - ' + label;
         return `<div class="tree-node">
         <div class="tree-node-content level-1" onclick="toggleNode('${classId}')">
-          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}"></span>
           <span class="tree-node-name">${label}</span>
           <span class="tree-node-level">${getTotalUsersCount(cls.id)}人</span>
           <div class="tree-node-actions">
@@ -990,7 +990,7 @@
         const path = buildOrgPath(group.id, organizations);
         return `<div class="tree-node">
         <div class="tree-node-content level-2" onclick="toggleNode('${groupId}')">
-          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}"></span>
           <span class="tree-node-name">${escapeHtml(path)}</span>
           <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>
           <div class="tree-node-actions">
@@ -1015,7 +1015,7 @@
           const isArchived = cls.is_active === false;
           html += `<div class="tree-node">
           <div class="tree-node-content level-1${isArchived ? ' archived' : ''}" onclick="toggleNode('${classId}')">
-            <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+            <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}"></span>
             ${isArchived ? '<span class="tree-archived-badge">已归档</span>' : ''}
             <span class="tree-node-name">${escapeHtml(cls.name)}</span>
             <span class="tree-node-level">${getTotalUsersCount(cls.id)}人</span>
@@ -1053,7 +1053,7 @@
           const isArchived = group.is_active === false;
           html += `<div class="tree-node">
           <div class="tree-node-content level-2${isArchived ? ' archived' : ''}" onclick="toggleNode('${groupId}')">
-            <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}">▶</span>
+            <span class="tree-expand-btn ${isExpanded ? 'expanded' : ''}"></span>
             ${isArchived ? '<span class="tree-archived-badge">已归档</span>' : ''}
             <span class="tree-node-name">${escapeHtml(group.name)}</span>
             <span class="tree-node-level">${getTotalUsersCount(group.id)}人</span>

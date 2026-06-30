@@ -272,8 +272,8 @@
         container.innerHTML = '<div class="course-grid">' + courses.map(function (c, i) {
           var count = (c.chapters && c.chapters.length) ? c.chapters[0].count : 0;
           var coverImg = c.cover_url
-            ? '<img class="course-card-cover" src="' + escapeHtml(c.cover_url) + '" alt="" onerror="this.onerror=null;this.style.display=\'none\';var p=document.createElement(\'div\');p.className=\'course-card-cover-placeholder\';p.textContent=\'📖\';this.parentNode.insertBefore(p,this);" />'
-            : '<div class="course-card-cover-placeholder">📖</div>';
+            ? '<img class="course-card-cover" src="' + escapeHtml(c.cover_url) + '" alt="" onerror="this.onerror=null;this.style.display=\'none\';var p=document.createElement(\'div\');p.className=\'course-card-cover-placeholder\';p.textContent=\'\';this.parentNode.insertBefore(p,this);" />'
+            : '<div class="course-card-cover-placeholder"></div>';
           return (
             '<div class="course-card" onclick="enterCourse(' + c.id + ')" style="animation-delay:' + (i * 0.06) + 's">' +
             '<div class="course-card-cover-wrap">' +
@@ -288,7 +288,7 @@
             (c.description ? '<div class="course-card-desc">' + escapeHtml(c.description) + '</div>' : '') +
             (isAdmin ? '' : '<div class="course-card-actions"><span style="font-size:11px;color:var(--ink-muted);">点击进入查看章节</span></div>') +
             (isAdmin ? '<div class="course-card-actions">' +
-            '<button class="btn btn-secondary" onclick="event.stopPropagation();editCourse(' + c.id + ')">✎ 编辑</button>' +
+            '<button class="btn btn-secondary" onclick="event.stopPropagation();editCourse(' + c.id + ')"> 编辑</button>' +
             '<button class="course-card-toggle' + (c.is_active ? ' active' : '') + '" onclick="event.stopPropagation();toggleCourse(' + c.id + ')" title="' + (c.is_active ? '点击停用' : '点击启用') + '"></button>' +
             '</div>' : '') +
             '</div>' +
