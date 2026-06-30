@@ -7,29 +7,28 @@
     <link rel="stylesheet" href="css/common.css?v=5" />
     <style>
       :root {
-        --manager-ink: #292824;
-        --manager-paper: #fffefb;
-        --manager-line: #ddd8ce;
-        --manager-red: #a6372d;
-        --manager-red-soft: #f6e8e4;
-        --manager-green: #315d50;
-        --manager-gold: #a27634;
+        --manager-ink: var(--ink-dark);
+        --manager-paper: var(--bg-card);
+        --manager-line: var(--border);
+        --manager-red: var(--vermillion);
+        --manager-red-soft: var(--vermillion-light);
+        --manager-green: var(--green);
+        --manager-gold: var(--gold);
       }
       body { color: var(--manager-ink); }
-      .manager-shell { max-width: 980px; }
+      .manager-shell { max-width: 760px; }
       .manager-header { padding-bottom: 12px; }
-      .manager-header .page-title { font-size: 24px; }
-      .semester-line { color: var(--ink-muted); font-size: 13px; text-align: center; margin-top: 5px; }
+      .manager-header .page-title { font-size: 22px; }
+      .semester-line { color: var(--ink-muted); font-size: 12px; white-space: nowrap; }
       .level-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 8px 2px 14px;
-        border-bottom: 1px solid var(--manager-line);
-        margin-bottom: 18px;
+        padding: 4px 4px 12px;
+        margin-bottom: 2px;
       }
-      .level-title { font-size: 18px; font-weight: 700; }
+      .level-title { font-family: 'STSong', 'SimSun', serif; font-size: 17px; font-weight: 700; }
       .level-count { color: var(--ink-muted); font-size: 12px; }
       .org-card-grid {
         display: grid;
@@ -38,32 +37,32 @@
       }
       .org-card {
         width: 100%;
-        min-height: 112px;
+        min-height: 104px;
         display: grid;
-        grid-template-columns: 48px minmax(0, 1fr) 28px;
+        grid-template-columns: 46px minmax(0, 1fr) 28px;
         align-items: center;
-        gap: 14px;
-        padding: 18px;
+        gap: 12px;
+        padding: 16px;
         border: 1px solid var(--manager-line);
-        border-radius: 8px;
+        border-radius: var(--radius);
         background: var(--manager-paper);
         color: inherit;
         text-align: left;
         cursor: pointer;
-        box-shadow: 0 2px 9px rgba(49, 43, 34, 0.05);
+        box-shadow: 0 2px 12px var(--shadow);
         transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
       }
       .org-card:hover {
-        border-color: rgba(166, 55, 45, 0.48);
+        border-color: rgba(230, 57, 70, 0.34);
         transform: translateY(-2px);
-        box-shadow: 0 7px 18px rgba(49, 43, 34, 0.09);
+        box-shadow: 0 7px 18px rgba(45, 45, 45, 0.09);
       }
       .org-mark {
-        width: 48px;
-        height: 48px;
+        width: 46px;
+        height: 46px;
         display: grid;
         place-items: center;
-        border-radius: 50%;
+        border-radius: 12px;
         background: var(--manager-red-soft);
         color: var(--manager-red);
         font-family: 'STSong', 'SimSun', serif;
@@ -82,24 +81,54 @@
       .org-card-meta { color: var(--ink-muted); font-size: 12px; margin-top: 5px; }
       .org-card-arrow { width: 22px; height: 22px; color: var(--ink-muted); }
       .empty-panel { padding: 52px 12px; text-align: center; color: var(--ink-muted); }
+      .list-parent-card {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) 24px;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .list-parent-icon {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+        background: var(--vermillion-light);
+        color: var(--vermillion);
+      }
+      .list-parent-icon svg { width: 24px; height: 24px; }
+      .list-parent-kicker { display: block; margin-bottom: 3px; color: var(--ink-muted); font-size: 11px; }
+      .list-parent-name { display: block; color: var(--ink-dark); font-family: 'STSong', 'SimSun', serif; font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+      .list-parent-path { display: block; margin-top: 3px; color: var(--ink-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .list-parent-arrow { width: 22px; height: 22px; color: var(--ink-muted); }
 
       .detail-card {
         position: relative;
         overflow: hidden;
         border: 1px solid var(--manager-line);
-        border-radius: 8px;
+        border-radius: var(--radius);
         background: var(--manager-paper);
-        box-shadow: 0 5px 20px rgba(49, 43, 34, 0.08);
+        box-shadow: 0 2px 12px var(--shadow);
       }
       .detail-main {
-        min-height: 150px;
+        min-height: 142px;
         display: grid;
-        grid-template-columns: 64px minmax(0, 1fr) 64px;
+        grid-template-columns: 58px minmax(0, 1fr) 58px;
         align-items: center;
-        gap: 18px;
-        padding: 24px;
+        gap: 14px;
+        padding: 22px;
       }
-      .detail-main.no-forward { grid-template-columns: 64px minmax(0, 1fr) 64px; }
+      .detail-main.no-forward { grid-template-columns: 58px minmax(0, 1fr) 58px; }
       .detail-copy { min-width: 0; text-align: center; }
       .detail-level {
         display: inline-block;
@@ -111,18 +140,18 @@
       .detail-name {
         margin: 0;
         font-family: 'STSong', 'SimSun', serif;
-        font-size: clamp(24px, 4vw, 34px);
+        font-size: 30px;
         line-height: 1.25;
         overflow-wrap: anywhere;
       }
       .detail-path { margin-top: 8px; color: var(--ink-muted); font-size: 12px; }
       .direction-btn {
-        width: 58px;
-        height: 70px;
+        width: 52px;
+        height: 62px;
         display: grid;
         place-items: center;
         border: 1px solid var(--manager-line);
-        border-radius: 8px;
+        border-radius: 12px;
         background: var(--bg-primary);
         color: var(--manager-ink);
         cursor: pointer;
@@ -133,13 +162,13 @@
         background: var(--manager-red);
         color: #fff;
       }
-      .direction-btn svg { width: 31px; height: 31px; }
-      .direction-placeholder { width: 58px; height: 70px; }
+      .direction-btn svg { width: 30px; height: 30px; }
+      .direction-placeholder { width: 52px; height: 62px; }
       .detail-tabs {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         border-top: 1px solid var(--manager-line);
-        background: #f8f6f1;
+        background: var(--bg-primary);
       }
       .detail-tab {
         min-height: 52px;
@@ -246,6 +275,11 @@
         .notice-editor { grid-template-columns: 1fr; }
         .feature-frame { height: 720px; }
       }
+      @media (max-width: 420px) {
+        .manager-header { gap: 9px; }
+        .semester-line { max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
+        .list-parent-card { padding: 12px; }
+      }
     </style>
   </head>
   <body>
@@ -279,7 +313,7 @@
       var listLevel = '大班';
       var listParentId = null;
       var params = new URLSearchParams(location.search);
-      var FEATURE_BUILD = '20260630-3';
+      var FEATURE_BUILD = '20260630-4';
 
       var TAB_CONFIG = {
         '大班': [
@@ -315,16 +349,24 @@
           return;
         }
 
-        var semesterResult = await window.db.from('semesters').select('*').eq('id', currentSemesterId).maybeSingle();
+        var initialResults = await Promise.all([
+          window.db
+            .from('semesters')
+            .select('id,semester_name,start_date,end_date,trial_start_date')
+            .eq('id', currentSemesterId)
+            .maybeSingle(),
+          window.db
+            .from('organizations')
+            .select('id,name,level,parent_id,is_active,sort_order')
+            .eq('semester_id', currentSemesterId)
+            .eq('is_active', true)
+            .order('sort_order')
+        ]);
+        var semesterResult = initialResults[0];
         currentSemester = semesterResult.data || null;
         document.getElementById('semesterLine').textContent = currentSemester ? currentSemester.semester_name : '当前学期';
 
-        var orgResult = await window.db
-          .from('organizations')
-          .select('id,name,level,parent_id,is_active,sort_order')
-          .eq('semester_id', currentSemesterId)
-          .eq('is_active', true)
-          .order('sort_order');
+        var orgResult = initialResults[1];
         allOrgs = orgResult.data || [];
         studyContext = await StudyWorkflow.loadContext(currentSemesterId, allOrgs);
 
@@ -365,8 +407,14 @@
         listParentId = parentId;
         var orgs = getVisibleChildren(level, parentId);
         var parent = parentId ? StudyWorkflow.getOrg(allOrgs, parentId) : null;
-        var backAction = parent
-          ? '<button class="direction-btn" type="button" onclick="openOrg(' + parent.id + ')" aria-label="返回' + escapeHtml(parent.name) + '">' + arrowSvg('left') + '</button>'
+        var parentCard = parent
+          ? '<button class="list-parent-card" type="button" onclick="openOrg(' + parent.id + ')" aria-label="返回' + escapeHtml(parent.name) + '详情">' +
+              '<span class="list-parent-icon">' + arrowSvg('left') + '</span>' +
+              '<span><span class="list-parent-kicker">上级' + escapeHtml(parent.level) + '</span>' +
+              '<span class="list-parent-name">' + escapeHtml(parent.name) + '</span>' +
+              '<span class="list-parent-path">' + escapeHtml(StudyWorkflow.getOrgPath(parent.id, allOrgs)) + '</span></span>' +
+              '<svg class="list-parent-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>' +
+            '</button>'
           : '';
         var cards = orgs.map(function (org) {
           var count = getChildCount(org);
@@ -379,7 +427,7 @@
           '</button>';
         }).join('');
         document.getElementById('managerContent').innerHTML =
-          (parent ? '<div style="margin-bottom:12px;">' + backAction + '</div>' : '') +
+          parentCard +
           '<div class="level-bar"><div class="level-title">' + level + '列表</div><div class="level-count">' + orgs.length + ' 个组织</div></div>' +
           (cards ? '<div class="org-card-grid">' + cards + '</div>' : '<div class="empty-panel">暂无可管理的' + level + '</div>');
       }
@@ -391,7 +439,7 @@
           return;
         }
         currentOrg = org;
-        currentTab = org.level === '小组' ? 'week' : 'schedule';
+        currentTab = 'schedule';
         renderOrgDetail();
       }
 
@@ -425,7 +473,7 @@
           ? '<button class="direction-btn" type="button" onclick="openChildren()" aria-label="进入下级组织">' + arrowSvg('right') + '</button>'
           : '<span class="direction-placeholder" aria-hidden="true"></span>';
         var tabHtml = tabs.map(function (tab) {
-          return '<button class="detail-tab' + (tab.key === currentTab ? ' active' : '') + '" type="button" onclick="selectTab(\'' + tab.key + '\')">' + tab.label + '</button>';
+          return '<button class="detail-tab' + (tab.key === currentTab ? ' active' : '') + '" data-tab-key="' + tab.key + '" type="button" onclick="selectTab(\'' + tab.key + '\')">' + tab.label + '</button>';
         }).join('');
 
         document.getElementById('managerContent').innerHTML =
@@ -443,7 +491,10 @@
 
       function selectTab(tabKey) {
         currentTab = tabKey;
-        renderOrgDetail();
+        document.querySelectorAll('.detail-tab').forEach(function(button) {
+          button.classList.toggle('active', button.getAttribute('data-tab-key') === currentTab);
+        });
+        renderFeature();
       }
 
       function renderFeature() {
@@ -469,10 +520,25 @@
           src = 'study-org-schedule.html?embedded=1&view=schedule&org_id=' + currentOrg.id;
           title = '周切换排班设置';
         }
+        var isScheduleFeature = currentTab === 'course' || currentTab === 'schedule' || currentTab === 'week';
+        var existingFrame = isScheduleFeature
+          ? area.querySelector('.feature-frame[data-feature-kind="org-schedule"][data-org-id="' + currentOrg.id + '"]')
+          : null;
+        if (existingFrame) {
+          var existingTitle = area.querySelector('.feature-title');
+          var existingOrg = area.querySelector('.feature-org');
+          if (existingTitle) existingTitle.textContent = title;
+          if (existingOrg) existingOrg.textContent = currentOrg.name;
+          existingFrame.title = title;
+          existingFrame.dataset.view = currentTab;
+          existingFrame.contentWindow.postMessage({ type: 'study-set-view', view: currentTab }, location.origin);
+          return;
+        }
         src += '&build=' + FEATURE_BUILD;
         area.innerHTML =
           '<div class="feature-heading"><div class="feature-title">' + title + '</div><div class="feature-org">' + escapeHtml(currentOrg.name) + '</div></div>' +
-          '<iframe class="feature-frame" id="featureFrame" src="' + src + '" title="' + title + '"></iframe>';
+          '<iframe class="feature-frame" id="featureFrame" data-feature-kind="' + (isScheduleFeature ? 'org-schedule' : 'rules') +
+          '" data-org-id="' + currentOrg.id + '" data-view="' + currentTab + '" src="' + src + '" title="' + title + '"></iframe>';
       }
 
       async function renderNoticeEditor() {
@@ -576,7 +642,12 @@
       window.addEventListener('message', function (event) {
         if (event.origin !== location.origin || !event.data || event.data.type !== 'study-embedded-ready') return;
         var frame = document.getElementById('featureFrame');
-        if (frame && event.source === frame.contentWindow) frame.classList.add('ready');
+        if (frame && event.source === frame.contentWindow) {
+          frame.classList.add('ready');
+          if (frame.dataset.featureKind === 'org-schedule') {
+            frame.contentWindow.postMessage({ type: 'study-set-view', view: frame.dataset.view || currentTab }, location.origin);
+          }
+        }
       });
 
       init();

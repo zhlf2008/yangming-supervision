@@ -25,7 +25,7 @@
       .date-week-label { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
       .date-week-range { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
       .date-today { font-size: 12px; color: var(--vermillion); padding: 6px 12px; background: var(--vermillion-light); border-radius: 6px; cursor: pointer; border: none; }
-      .scope-tag { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+      .scope-tag { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 62px; margin-left: auto; padding: 3px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
       .scope-tag.大班 { background: var(--vermillion-light); color: var(--vermillion); }
       .scope-tag.班级 { background: var(--green-light); color: var(--green); }
       .scope-tag.小组 { background: rgba(250, 250, 248, 0.9); color: var(--ink-dark); }
@@ -33,41 +33,51 @@
       .schedule-card.readonly { background: #f5f5f3; border-color: #ddddda; }
       .schedule-card.readonly .schedule-head,
       .schedule-card.readonly .schedule-body { opacity: .58; }
-      .schedule-card.readonly .schedule-head { cursor: default; }
+      .schedule-card.readonly .schedule-head { min-height: 54px; padding: 8px 12px; cursor: default; border-bottom: 0; }
       .schedule-card.readonly .schedule-head::after { display: none; }
-      .readonly-note { padding: 14px; color: var(--ink-muted); text-align: center; font-size: 13px; }
+      .schedule-card.readonly .schedule-body { padding: 0 12px 8px; }
+      .readonly-note { padding: 3px 0 2px; color: var(--ink-muted); text-align: left; font-size: 11px; }
       .schedule-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-primary); border-bottom: 1px solid var(--border); cursor: pointer; list-style: none; }
       .schedule-head::-webkit-details-marker { display: none; }
-      .schedule-head::after { content: '›'; color: var(--ink-muted); font-size: 18px; transform: rotate(90deg); transition: transform .2s; }
-      .schedule-card[open] > .schedule-head::after { transform: rotate(-90deg); }
+      .schedule-head::after { content: ''; width: 34px; height: 34px; display: block; flex: 0 0 34px; border: 1px solid var(--border); border-radius: 9px; background-color: var(--bg-card); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 20px 20px; }
+      .schedule-card[open] > .schedule-head::after { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E"); }
+      .schedule-head-main { flex: 1; min-width: 0; }
       .schedule-date { font-weight: 700; color: var(--ink-dark); }
-      .schedule-sub { margin-top: 2px; font-size: 12px; color: var(--ink-muted); }
+      .schedule-sub { margin-top: 2px; font-size: 12px; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .schedule-body { padding: 14px; }
       .content-title { font-size: 15px; font-weight: 700; color: var(--ink-dark); margin-bottom: 6px; }
       .content-line { color: var(--ink-light); font-size: 13px; line-height: 1.6; }
       .content-source { margin-top: 8px; font-size: 12px; color: var(--ink-muted); }
       .course-stack { display: grid; gap: 8px; min-width: 0; flex: 1; }
       .course-summary { padding: 0; border-left: 3px solid var(--gold); background: var(--bg-primary); border-radius: 0 8px 8px 0; overflow: hidden; }
-      .course-summary summary { list-style: none; cursor: pointer; padding: 10px 12px; }
+      .course-summary summary { position: relative; list-style: none; cursor: pointer; min-height: 46px; padding: 10px 48px 10px 12px; }
       .course-summary summary::-webkit-details-marker { display: none; }
-      .course-summary summary::after { content: '›'; float: right; color: var(--ink-muted); transform: rotate(90deg); transition: transform .2s; }
-      .course-summary[open] summary::after { transform: rotate(-90deg); }
+      .course-summary summary::after { content: ''; position: absolute; top: 50%; right: 9px; width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 7px; background-color: var(--bg-card); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 18px 18px; transform: translateY(-50%); }
+      .course-summary[open] summary::after { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E"); }
       .course-detail-body { padding: 0 12px 12px; border-top: 1px solid var(--border); }
       .course-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 9px 0; color: var(--ink-muted); font-size: 12px; }
       .ebook-link { color: var(--vermillion); font-weight: 600; text-decoration: none; }
       .course-summary .content-title { margin-bottom: 3px; }
       .course-editor-list { display: grid; gap: 10px; }
-      .course-editor-item { position: relative; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
-      .course-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-      .course-editor-index { font-weight: 700; color: var(--ink-dark); }
+      .course-editor-item { position: relative; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); overflow: hidden; }
+      .course-editor-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; padding: 9px 10px 9px 12px; list-style: none; cursor: pointer; background: var(--bg-card); }
+      .course-editor-summary::-webkit-details-marker { display: none; }
+      .course-editor-head-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+      .course-editor-index { min-width: 0; font-weight: 700; color: var(--ink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .course-editor-toggle { width: 30px; height: 30px; display: block; border: 1px solid var(--border); border-radius: 7px; background-color: var(--bg-card); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 18px 18px; }
+      .course-editor-item[open] .course-editor-toggle { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E"); }
+      .course-editor-body { padding: 12px; border-top: 1px solid var(--border); }
       .course-picker { position: relative; }
       .course-picker-trigger { width: 100%; min-height: 40px; padding: 8px 34px 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--ink-dark); text-align: left; cursor: pointer; position: relative; }
-      .course-picker-trigger::after { content: '›'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%) rotate(90deg); color: var(--ink-muted); }
+      .course-picker-trigger::after { content: ''; position: absolute; right: 9px; top: 50%; width: 22px; height: 22px; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 18px 18px; transform: translateY(-50%); }
       .course-picker-panel { display: none; margin-top: 6px; max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); }
       .course-picker-panel.open { display: block; }
       .course-group { border-bottom: 1px solid var(--border); }
       .course-group:last-child { border-bottom: 0; }
-      .course-group > summary { padding: 9px 11px; cursor: pointer; font-weight: 700; color: var(--ink-dark); background: var(--bg-primary); }
+      .course-group > summary { position: relative; min-height: 40px; padding: 9px 42px 9px 11px; cursor: pointer; list-style: none; font-weight: 700; color: var(--ink-dark); background: var(--bg-primary); }
+      .course-group > summary::-webkit-details-marker { display: none; }
+      .course-group > summary::after { content: ''; position: absolute; top: 50%; right: 9px; width: 24px; height: 24px; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 17px 17px; transform: translateY(-50%); }
+      .course-group[open] > summary::after { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E"); }
       .course-chapter-option { display: block; width: 100%; padding: 8px 12px 8px 22px; border: 0; border-top: 1px solid var(--border); background: var(--bg-card); color: var(--ink-light); text-align: left; cursor: pointer; }
       .course-chapter-option:hover, .course-chapter-option.selected { color: var(--vermillion); background: var(--vermillion-light); }
       .role-template-list { display: grid; gap: 8px; }
@@ -325,6 +335,7 @@
       var visibleSchedules = [];
       var relevantSchedules = [];
       var activeRules = [];
+      var activeRulesBigClassId = null;
       var contentByScheduleId = {};
       var readingTypes = [];
       var readingTypesById = {};
@@ -354,10 +365,8 @@
         if (!ok) return;
         currentSemesterId = await getCurrentSemesterId();
         if (!currentSemesterId) { showToast('请先设置当前学期', 'error'); return; }
-        await loadCurrentSemester();
-        await loadOrganizations();
+        await Promise.all([loadCurrentSemester(), loadOrganizations(), loadCourses()]);
         studyContext = await StudyWorkflow.loadContext(currentSemesterId, orgs);
-        await loadCourses();
         initOrgSelectors();
         applyRequestedOrg();
         await refreshAll();
@@ -368,6 +377,19 @@
           window.parent.postMessage({ type: 'study-embedded-ready' }, location.origin);
         }
       }
+
+      function setScheduleView(nextView) {
+        if (['course', 'schedule', 'week'].indexOf(nextView) === -1 || scheduleView === nextView) return;
+        document.body.classList.remove('view-course', 'view-schedule', 'view-week');
+        scheduleView = nextView;
+        document.body.classList.add('view-' + scheduleView);
+        renderSchedules();
+      }
+
+      window.addEventListener('message', function(event) {
+        if (event.origin !== location.origin || !event.data || event.data.type !== 'study-set-view') return;
+        setScheduleView(event.data.view);
+      });
 
       async function loadCurrentSemester() {
         var result = await window.db.from('semesters').select('*').eq('id', currentSemesterId).maybeSingle();
@@ -385,18 +407,22 @@
       }
 
       async function loadCourses() {
-        var groupResult = await window.db
-          .from('study_courses')
-          .select('id,title,description,sort_order')
-          .eq('is_active', true)
-          .order('sort_order')
-          .order('id');
-        var result = await window.db
-          .from('study_course_library')
-          .select('id,course_id,title,chapter_no,chapter_title,theme,study_content,thinking_questions,paper_pages,ebook_url,sort_order')
-          .eq('is_active', true)
-          .order('sort_order')
-          .order('id');
+        var results = await Promise.all([
+          window.db
+            .from('study_courses')
+            .select('id,title,description,sort_order')
+            .eq('is_active', true)
+            .order('sort_order')
+            .order('id'),
+          window.db
+            .from('study_course_library')
+            .select('id,course_id,title,chapter_no,chapter_title,theme,study_content,thinking_questions,paper_pages,ebook_url,sort_order')
+            .eq('is_active', true)
+            .order('sort_order')
+            .order('id')
+        ]);
+        var groupResult = results[0];
+        var result = results[1];
         courseGroups = groupResult.data || [];
         courses = result.data || [];
         var groupOrder = {};
@@ -436,10 +462,7 @@
       }
 
       function getCourseChapterLabel(course, index) {
-        var rawNumber = course.chapter_no || (index + 1);
-        var numberText = /^\d+$/.test(String(rawNumber))
-          ? String(rawNumber).padStart(2, '0')
-          : String(rawNumber);
+        var numberText = String(index + 1).padStart(2, '0');
         return '第' + numberText + '章 · ' + (course.chapter_title || course.theme || course.title || '未命名章节');
       }
 
@@ -593,8 +616,7 @@
 
       async function refreshAll() {
         if (!selectedOrgId) return;
-        await loadRoles();
-        await loadTypeRoles();
+        await Promise.all([loadRoles(), loadTypeRoles()]);
         await loadWeekSchedules();
       }
 
@@ -761,16 +783,20 @@
         visibleSchedules = relevantSchedules.filter(function (schedule) {
           return Number(schedule.org_id) === Number(selectedOrgId);
         });
-        await loadScheduleContent();
-        await loadDemandsAndPeople();
-        selectedMembers = StudyWorkflow.getOrgLevel(selectedOrgId, orgs) === '小组'
-          ? await loadMembersForOrg(selectedOrgId)
-          : [];
+        var needsMembers = StudyWorkflow.getOrgLevel(selectedOrgId, orgs) === '小组';
+        var dependentResults = await Promise.all([
+          loadScheduleContent(),
+          loadDemandsAndPeople(),
+          needsMembers ? loadMembersForOrg(selectedOrgId) : Promise.resolve([])
+        ]);
+        selectedMembers = dependentResults[2] || [];
         renderSchedules();
       }
 
       async function loadActiveRules() {
+        if (activeRulesBigClassId === Number(selectedBigClassId) && activeRules.length) return;
         activeRules = [];
+        activeRulesBigClassId = Number(selectedBigClassId) || null;
         if (!selectedBigClassId) return;
         var query = window.db
           .from('study_schedule_rules')
@@ -950,7 +976,7 @@
             ? '<article class="schedule-card readonly">'
             : '<details class="schedule-card"' + (scheduleIndex === 0 ? ' open' : '') + '>';
           html += isReadonlySchedule ? '<div class="schedule-head">' : '<summary class="schedule-head">';
-          html += '<div><div class="schedule-date">' + formatDateDisplay(schedule.schedule_date) + ' ' + WEEKDAY_NAMES[weekday] + '</div>';
+          html += '<div class="schedule-head-main"><div class="schedule-date">' + formatDateDisplay(schedule.schedule_date) + ' ' + WEEKDAY_NAMES[weekday] + '</div>';
           html += '<div class="schedule-sub">' + escapeHtml(StudyWorkflow.getOrgPath(schedule.org_id, orgs)) + '</div></div>';
           html += '<span class="scope-tag ' + schedule.scope_level + '">' + escapeHtml(getScheduleTypeLabel(schedule)) + '</span>';
           html += isReadonlySchedule ? '</div><div class="schedule-body">' : '</summary><div class="schedule-body">';
@@ -1190,13 +1216,14 @@
         });
         document.getElementById('contentScheduleId').value = schedule.id;
         document.getElementById('contentModalTitle').textContent = formatDateDisplay(schedule.schedule_date) + ' ' + getScheduleTypeLabel(schedule);
-        contentEditorItems = sourceRows.map(function(row) {
+        contentEditorItems = sourceRows.map(function(row, index) {
           return {
             id: row.id || null,
             course_id: row.course_id || null,
             title: row.custom_title || '',
             content: row.custom_content || '',
-            question: row.custom_question || ''
+            question: row.custom_question || '',
+            expanded: index === 0
           };
         });
         if (!contentEditorItems.length) addCourseEditorItem(false);
@@ -1210,19 +1237,22 @@
 
       function renderCourseEditor() {
         document.getElementById('courseEditorList').innerHTML = contentEditorItems.map(function(item, index) {
-          return '<div class="course-editor-item">' +
-            '<div class="course-editor-head"><span class="course-editor-index">课程 ' + (index + 1) + '</span>' +
-            '<button class="btn btn-danger btn-sm" onclick="removeCourseEditorItem(' + index + ')">删除</button></div>' +
+          var selectedCourse = item.course_id ? coursesById[Number(item.course_id)] : null;
+          var summaryTitle = item.title || (selectedCourse && (selectedCourse.chapter_title || selectedCourse.theme || selectedCourse.title)) || '未命名课程';
+          return '<details class="course-editor-item"' + (item.expanded !== false ? ' open' : '') + ' ontoggle="setCourseEditorExpanded(' + index + ',this.open)">' +
+            '<summary class="course-editor-summary"><span class="course-editor-index">课程 ' + (index + 1) + ' · ' + escapeHtml(summaryTitle) + '</span>' +
+            '<span class="course-editor-head-actions"><button type="button" class="btn btn-danger btn-sm" onclick="event.preventDefault();event.stopPropagation();removeCourseEditorItem(' + index + ')">删除</button><span class="course-editor-toggle" aria-hidden="true"></span></span></summary>' +
+            '<div class="course-editor-body">' +
             '<div class="form-item"><label class="form-label">引用课程</label>' + renderCoursePicker(index, item) + '</div>' +
             '<div class="form-item"><label class="form-label">标题</label><input class="form-input" value="' + escapeHtml(item.title) + '" oninput="updateCourseEditorItem(' + index + ',\'title\',this.value)" /></div>' +
             '<div class="form-item"><label class="form-label">学习内容</label><textarea class="form-textarea" style="min-height:70px;" oninput="updateCourseEditorItem(' + index + ',\'content\',this.value)">' + escapeHtml(item.content) + '</textarea></div>' +
             '<div class="form-item"><label class="form-label">思考题</label><textarea class="form-textarea" style="min-height:60px;" oninput="updateCourseEditorItem(' + index + ',\'question\',this.value)">' + escapeHtml(item.question) + '</textarea></div>' +
-            '</div>';
+            '</div></details>';
         }).join('');
       }
 
       function addCourseEditorItem(renderNow) {
-        contentEditorItems.push({ id: null, course_id: null, title: '', content: '', question: '' });
+        contentEditorItems.push({ id: null, course_id: null, title: '', content: '', question: '', expanded: true });
         if (renderNow !== false) renderCourseEditor();
       }
 
@@ -1233,6 +1263,10 @@
 
       function updateCourseEditorItem(index, field, value) {
         if (contentEditorItems[index]) contentEditorItems[index][field] = value;
+      }
+
+      function setCourseEditorExpanded(index, expanded) {
+        if (contentEditorItems[index]) contentEditorItems[index].expanded = expanded;
       }
 
       function onContentCourseChange(index, value) {

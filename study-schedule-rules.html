@@ -44,7 +44,7 @@
       .type-item:last-child { border-bottom: none; }
       .type-item .type-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--ink-dark); }
       .type-item .type-label-input { flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
-      .type-settings-layout { display: grid; grid-template-columns: 156px minmax(0, 1fr); gap: 14px; min-height: 360px; }
+      .type-settings-layout { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 12px; min-height: 360px; }
       .type-sidebar { padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
       .type-sidebar-title { padding: 4px 6px 8px; color: var(--ink-muted); font-size: 12px; }
       .reading-type-tabs { display: grid; gap: 5px; }
@@ -55,13 +55,16 @@
       .type-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
       .type-scope-note { font-size: 12px; color: var(--ink-muted); }
       .role-setting-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-      .role-setting-row { display: grid; grid-template-columns: minmax(110px, 1fr) auto 46px 34px; align-items: center; gap: 8px; min-height: 56px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+      .role-setting-header, .role-setting-row { display: grid; grid-template-columns: minmax(96px, 138px) 98px 52px 40px; align-items: center; justify-content: start; gap: 8px; }
+      .role-setting-header { min-height: 34px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--bg-primary); color: var(--ink-muted); font-size: 11px; font-weight: 600; }
+      .role-setting-header span:not(:first-child) { text-align: center; }
+      .role-setting-row { min-height: 54px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
       .role-setting-row:last-child { border-bottom: 0; }
-      .role-setting-name { min-width: 0; min-height: 34px; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; font-weight: 600; color: var(--ink-dark); background: transparent; }
+      .role-setting-name { width: 100%; min-width: 0; min-height: 34px; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; font-weight: 600; color: var(--ink-dark); background: transparent; }
       .role-setting-name:focus { border-color: var(--border); background: var(--bg-card); outline: none; }
-      .count-stepper { display: grid; grid-template-columns: 30px 42px 30px; height: 32px; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--bg-card); }
+      .count-stepper { display: grid; grid-template-columns: 28px 40px 28px; width: 96px; height: 32px; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--bg-card); }
       .count-stepper button { border: 0; background: var(--bg-primary); color: var(--ink-dark); cursor: pointer; font-size: 18px; }
-      .count-stepper input { width: 42px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; background: var(--bg-card); color: var(--ink-dark); pointer-events: none; }
+      .count-stepper input { width: 40px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; background: var(--bg-card); color: var(--ink-dark); pointer-events: none; }
       .icon-danger { width: 32px; height: 32px; border: 0; border-radius: 6px; background: var(--vermillion-light); color: var(--vermillion); cursor: pointer; font-size: 18px; }
 
       .date-selector {
@@ -100,7 +103,7 @@
 
       .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
       .modal-overlay.show { display: flex; }
-      .modal { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 760px; max-height: 90vh; overflow-y: auto; }
+      .modal { background: var(--bg-card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; }
       .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
       .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
       .modal-actions .btn { flex: 1; }
@@ -109,8 +112,8 @@
       /* 折叠 */
       .collapse-body { overflow: hidden; transition: max-height 0.25s ease; max-height: 0; }
       .collapse-body.open { max-height: 2000px; }
-      .collapse-arrow { display: inline-block; transition: transform 0.2s ease; font-size: 12px; margin-right: 6px; color: var(--ink-muted); }
-      .collapse-arrow.open { transform: rotate(90deg); }
+      .collapse-arrow { width: 26px; height: 26px; display: inline-block; flex-shrink: 0; margin-right: 6px; border: 1px solid var(--border); border-radius: 7px; background-color: var(--bg-card); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 18px 18px; vertical-align: middle; }
+      .collapse-arrow.open { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
       .section-title { display: inline-flex; align-items: center; }
       body.embedded-page { min-height: 0; padding-bottom: 0; background: transparent; }
       body.embedded-page > .container { max-width: none; padding: 0; }
@@ -120,9 +123,20 @@
       body.embedded-page #termScheduleSection,
       body.embedded-page #bottomNavContainer { display: none !important; }
       body.embedded-page .section { margin-bottom: 12px; box-shadow: none; }
-      @media (max-width: 560px) {
-        .type-settings-layout { grid-template-columns: 112px minmax(0, 1fr); gap: 8px; }
-        .role-setting-row { grid-template-columns: minmax(90px, 1fr) auto 42px 32px; gap: 5px; padding: 7px; }
+      @media (max-width: 480px) {
+        #ruleModal { padding: 10px; }
+        #ruleModal .modal { padding: 16px; }
+        .type-settings-layout { grid-template-columns: 1fr; gap: 8px; min-height: 0; }
+        .type-sidebar { display: grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; }
+        .type-sidebar-title { display:none; }
+        .reading-type-tabs { display:flex; gap:5px; overflow-x:auto; scrollbar-width:thin; }
+        .reading-type-tab { width:auto; min-width:max-content; }
+        .type-sidebar .btn { width:auto !important; margin-top:0 !important; }
+        .role-setting-header, .role-setting-row { grid-template-columns:minmax(76px,1fr) 88px 42px 34px; gap:4px; }
+        .role-setting-header, .role-setting-row { padding-left:6px; padding-right:6px; }
+        .count-stepper { grid-template-columns:25px 36px 25px; width:86px; }
+        .count-stepper input { width:36px; }
+        .icon-danger { width:32px; }
       }
     </style>
   </head>
@@ -159,7 +173,7 @@
       <section class="section">
         <div class="section-header" onclick="toggleRuleSection()" style="cursor:pointer;">
           <div class="section-title">
-            <span class="collapse-arrow open" id="ruleArrow">▶</span>
+            <span class="collapse-arrow open" id="ruleArrow" aria-hidden="true"></span>
             每周共读规则
           </div>
           <button class="btn btn-primary btn-sm" id="typeManageBtn" onclick="event.stopPropagation();showRuleModal()">+ 设置</button>
@@ -205,7 +219,7 @@
           <aside class="type-sidebar">
             <div class="type-sidebar-title">共读类型</div>
             <div class="reading-type-tabs" id="readingTypeTabs"></div>
-            <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;" onclick="showTypeEditor()">+ 新增类型</button>
+            <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;" onclick="showTypeEditor()">添加</button>
           </aside>
           <div class="type-main">
             <div class="type-toolbar">
@@ -311,11 +325,12 @@
         if (!checkLogin()) return;
         var ok = await guardModuleAccess('study');
         if (!ok) return;
-        await loadCourses();
         await loadSemesters();
-        await loadOrgCascade();
-        await loadRules();
-        await loadWeekSchedules();
+        await Promise.all([
+          ruleEmbedded ? Promise.resolve() : loadCourses(),
+          loadOrgCascade()
+        ]);
+        if (!ruleEmbedded) await loadWeekSchedules();
       }
 
       function notifyEmbeddedReady() {
@@ -368,21 +383,21 @@
         }
         document.getElementById('scheduleClsSelect').innerHTML = '<option value="">全部班级</option>';
         document.getElementById('scheduleGrpSelect').innerHTML = '<option value="">全部小组</option>';
-        await onScheduleBcChange();
+        await onScheduleBcChange(false);
       }
 
-      async function onScheduleBcChange() {
+      async function onScheduleBcChange(loadSchedules) {
         var bcId = document.getElementById('scheduleBcSelect').value;
         var clsSel = document.getElementById('scheduleClsSelect');
         var grpSel = document.getElementById('scheduleGrpSelect');
         selectedBigClassId = bcId ? Number(bcId) : null;
         grpSel.innerHTML = '<option value="">全部小组</option>';
-        if (!bcId) { clsSel.innerHTML = '<option value="">全部班级</option>'; filterByOrg(); await loadReadingTypes(); await loadRules(); return; }
+        if (!bcId) { clsSel.innerHTML = '<option value="">全部班级</option>'; filterByOrg(loadSchedules); await loadReadingTypes(); await loadRules(); return; }
         var classes = StudyWorkflow.sortOrgs(allOrgs.filter(function(o) { return Number(o.parent_id) === Number(bcId) && o.level === '班级'; }));
         clsSel.innerHTML = '<option value="">全部班级</option>' + classes.map(function(o) {
           return '<option value="' + o.id + '">' + escapeHtml(o.name) + '</option>';
         }).join('');
-        filterByOrg();
+        filterByOrg(loadSchedules);
         await loadReadingTypes();
         await loadRules();
       }
@@ -402,12 +417,12 @@
         filterByOrg();
       }
 
-      function filterByOrg() {
+      function filterByOrg(loadSchedules) {
         var grp = document.getElementById('scheduleGrpSelect').value;
         var cls = document.getElementById('scheduleClsSelect').value;
         var bc = document.getElementById('scheduleBcSelect').value;
         selectedOrgId = grp || cls || bc || null;
-        loadWeekSchedules();
+        if (loadSchedules !== false && !ruleEmbedded) loadWeekSchedules();
       }
 
       // ---- 共读类型管理 ----
@@ -438,7 +453,9 @@
           container.innerHTML = '<div class="empty-state">该类型暂无岗位，点击下方按钮添加。</div>';
           return;
         }
-        container.innerHTML = '<div class="role-setting-list">' + typePositions.map(function(position, index) {
+        container.innerHTML = '<div class="role-setting-list">' +
+          '<div class="role-setting-header" aria-hidden="true"><span>岗位</span><span>人数</span><span>开关</span><span>删除</span></div>' +
+          typePositions.map(function(position, index) {
           return '<div class="role-setting-row">' +
             '<input class="role-setting-name" value="' + escapeHtml(position.role_name || '') + '" placeholder="岗位名称" oninput="updateTypePosition(' + index + ',\'role_name\',this.value)" />' +
             '<div class="count-stepper">' +
@@ -450,13 +467,13 @@
             (position.is_enabled ? '关闭岗位' : '启用岗位') + '"></button>' +
             '<button class="icon-danger" onclick="removeTypePosition(' + index + ')" aria-label="删除岗位">×</button>' +
             '</div>';
-        }).join('') + '</div>';
+          }).join('') + '</div>';
       }
 
       async function showRuleModal() {
         if (!currentSemesterId) { showToast('请先选择学期', 'error'); return; }
         if (!canEditSelectedRules()) { showToast('只有平台管理员或本大班学委可维护共读类型', 'error'); return; }
-        await loadReadingTypes();
+        if (!readingTypes.length) await loadReadingTypes();
         await loadTypePositions();
         renderTypeList();
         document.getElementById('ruleModal').classList.add('show');
