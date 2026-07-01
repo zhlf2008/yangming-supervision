@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -6,13 +6,13 @@
     <title>宣委管理</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <style>
-      .page-header {
-        display: block;
+      .header {
         position: relative;
+        margin-bottom: 22px;
         padding: 30px 20px 20px;
         text-align: center;
       }
-      .page-header::before {
+      .header::before {
         content: '';
         position: absolute;
         top: 0;
@@ -23,13 +23,15 @@
         border-radius: 2px;
         background: linear-gradient(90deg, #28685d, var(--gold));
       }
-      .page-title {
+      .header-title {
+        color: var(--ink-dark);
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
         font-size: 25px;
         font-weight: 600;
+        letter-spacing: 1px;
       }
-      .page-subtitle {
-        margin-top: 6px;
+      .header-subtitle {
+        margin-top: 7px;
         color: var(--ink-muted);
         font-size: 13px;
       }
@@ -37,1034 +39,228 @@
         margin-top: 12px;
         margin-left: -20px;
       }
-      .filter-band {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 12px;
-        padding: 15px 0 17px;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-      }
-      .field-label {
-        display: block;
-        margin-bottom: 6px;
-        color: var(--ink-light);
-        font-size: 12px;
-        font-weight: 600;
-      }
-      .field-control {
-        width: 100%;
-        min-width: 0;
-        height: 42px;
-        padding: 0 11px;
+      .user-card {
+        padding: 18px;
+        margin-bottom: 22px;
         border: 1px solid var(--border);
-        border-radius: 7px;
-        background: #fff;
-        color: var(--ink-dark);
-        font-size: 13px;
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 2px 12px var(--shadow);
       }
-      textarea.field-control {
-        height: auto;
-        min-height: 76px;
-        padding-block: 10px;
-        resize: vertical;
-        font-family: inherit;
-        line-height: 1.55;
-      }
-      .field-control:focus {
-        border-color: #4f8b80;
-        outline: 2px solid rgba(40, 104, 93, 0.12);
-      }
-      .collection-section {
-        padding: 18px 0 6px;
-      }
-      .section-head {
+      .user-card a {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 16px;
+        color: inherit;
+        text-decoration: none;
       }
-      .section-title {
+      .user-avatar {
+        display: flex;
+        width: 54px;
+        height: 54px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28685d, #4f8b80);
+        color: #fff;
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
-        font-size: 17px;
-        font-weight: 600;
-      }
-      .collection-total {
-        color: #28685d;
-        font-size: 13px;
+        font-size: 22px;
         font-weight: 700;
+        box-shadow: 0 4px 16px rgba(40, 104, 93, 0.25);
       }
-      .progress-track {
-        height: 7px;
-        overflow: hidden;
-        margin-bottom: 13px;
-        border-radius: 4px;
-        background: var(--border);
-      }
-      .progress-fill {
-        width: 0;
-        height: 100%;
-        border-radius: inherit;
-        background: #397b70;
-        transition: width 0.25s ease;
-      }
-      .group-status-list {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-      .group-status {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
+      .user-info {
         min-width: 0;
-        padding: 10px 11px;
-        border: 1px solid var(--border);
-        border-radius: 7px;
-        background: #fff;
+        flex: 1;
       }
-      .group-status-name {
+      .user-name {
         overflow: hidden;
-        font-size: 12px;
+        margin-bottom: 4px;
+        font-size: 17px;
         font-weight: 600;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      .group-status-count {
-        flex-shrink: 0;
-        color: var(--vermillion);
-        font-size: 11px;
-        font-weight: 700;
-      }
-      .group-status.complete .group-status-count {
-        color: var(--green);
-      }
-      .waiting-band {
-        margin-top: 14px;
-        padding: 14px;
-        border-left: 3px solid var(--gold);
-        background: #fbf7f2;
-        color: var(--ink-light);
-        font-size: 12px;
-        line-height: 1.65;
-      }
-      .editor-section {
-        margin-top: 18px;
-        padding-top: 18px;
-        border-top: 1px solid var(--border);
-      }
-      .status-badge {
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: var(--gold-light);
-        color: #8a5d2e;
-        font-size: 11px;
-        font-weight: 600;
-      }
-      .status-badge.ready {
-        background: var(--green-light);
-        color: var(--green);
-      }
-      .entry-picker {
-        display: grid;
-        gap: 8px;
-        margin-bottom: 18px;
-      }
-      .entry-group {
-        border-bottom: 1px solid var(--border);
-      }
-      .entry-group summary {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 42px;
-        color: var(--ink-dark);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        list-style: none;
-      }
-      .entry-group summary::-webkit-details-marker {
-        display: none;
-      }
-      .entry-group summary [data-icon] {
-        width: 20px;
-        height: 20px;
-        transition: transform 0.2s ease;
-      }
-      .entry-group[open] summary [data-icon] {
-        transform: rotate(90deg);
-      }
-      .entry-options {
-        padding: 0 0 10px;
-      }
-      .entry-option {
-        display: grid;
-        grid-template-columns: 22px minmax(0, 1fr);
-        gap: 9px;
-        padding: 9px 4px;
-        cursor: pointer;
-      }
-      .entry-option input {
-        width: 18px;
-        height: 18px;
-        margin-top: 2px;
-        accent-color: #28685d;
-      }
-      .entry-person {
-        font-size: 12px;
-        font-weight: 700;
-      }
-      .entry-content {
-        display: -webkit-box;
-        margin-top: 3px;
-        overflow: hidden;
-        color: var(--ink-light);
-        font-size: 12px;
-        line-height: 1.55;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-      }
-      .editor-fields {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-      .field-wide {
-        grid-column: 1 / -1;
-      }
-      .control-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        padding: 12px 0;
-        border-top: 1px solid var(--border);
-      }
-      .control-label {
-        color: var(--ink-light);
-        font-size: 12px;
-        font-weight: 600;
-      }
-      .theme-swatches {
-        display: flex;
-        gap: 9px;
-      }
-      .theme-swatch {
-        width: 30px;
-        height: 30px;
-        border: 2px solid #fff;
-        border-radius: 50%;
-        box-shadow: 0 0 0 1px var(--border);
-        cursor: pointer;
-      }
-      .theme-swatch.active {
-        box-shadow: 0 0 0 2px var(--ink-dark);
-      }
-      .theme-swatch[data-theme="vermillion"] { background: #b83b3f; }
-      .theme-swatch[data-theme="ink"] { background: #303b44; }
-      .theme-swatch[data-theme="jade"] { background: #2e6b5f; }
-      .theme-swatch[data-theme="paper"] { background: #8a5b3d; }
-      .segmented {
-        display: inline-grid;
-        grid-template-columns: 1fr 1fr;
-        padding: 3px;
-        border-radius: 7px;
-        background: #efede9;
-      }
-      .segment-btn {
-        min-width: 64px;
-        min-height: 30px;
-        padding: 5px 10px;
-        border: 0;
-        border-radius: 5px;
-        background: transparent;
+      .user-role {
         color: var(--ink-muted);
-        font-size: 12px;
-        cursor: pointer;
+        font-size: 13px;
       }
-      .segment-btn.active {
-        background: #fff;
-        color: var(--ink-dark);
-        box-shadow: 0 1px 4px rgba(45, 45, 45, 0.12);
-        font-weight: 600;
+      .user-arrow {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        color: var(--ink-muted);
       }
-      .preview-label {
-        margin: 19px 0 10px;
-        color: var(--ink-light);
-        font-size: 12px;
-        font-weight: 600;
-      }
-      .preview-shell {
-        padding: 14px;
-        background: #ece9e4;
-      }
-      .publicity-card {
-        --card-bg: #fffaf7;
-        --card-accent: #b83b3f;
-        --card-secondary: #c89955;
-        --card-text: #2f2c2a;
-        --card-line: #ead3ca;
-        --card-muted: #756b66;
-        position: relative;
-        display: flex;
-        width: 100%;
-        aspect-ratio: 3 / 4;
-        flex-direction: column;
-        overflow: hidden;
-        padding: 28px 25px 23px;
-        border: 1px solid var(--card-line);
-        background: var(--card-bg);
-        color: var(--card-text);
-      }
-      .publicity-card.theme-ink {
-        --card-bg: #f4f3ef;
-        --card-accent: #303b44;
-        --card-secondary: #a44a3f;
-        --card-text: #23282c;
-        --card-line: #cfd2d3;
-        --card-muted: #62696d;
-      }
-      .publicity-card.theme-jade {
-        --card-bg: #f3f8f5;
-        --card-accent: #2e6b5f;
-        --card-secondary: #b38b4a;
-        --card-text: #25342f;
-        --card-line: #cbded7;
-        --card-muted: #61736c;
-      }
-      .publicity-card.theme-paper {
-        --card-bg: #fffdf7;
-        --card-accent: #7b4e32;
-        --card-secondary: #b53c3c;
-        --card-text: #342b25;
-        --card-line: #e1d5c8;
-        --card-muted: #76685e;
-      }
-      .card-brand {
+      .section-title {
         display: flex;
         align-items: center;
         gap: 8px;
-        color: var(--card-accent);
-        font-size: 10px;
-        font-weight: 700;
-      }
-      .card-brand::before {
-        content: '';
-        width: 24px;
-        height: 2px;
-        background: var(--card-secondary);
-      }
-      .card-title {
-        margin-top: 17px;
-        color: var(--card-accent);
+        margin: 0 0 14px;
+        padding-left: 4px;
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
-        font-size: 27px;
-        line-height: 1.2;
+        font-size: 16px;
+        font-weight: 600;
       }
-      .card-subtitle {
-        margin-top: 7px;
-        color: var(--card-muted);
-        font-size: 11px;
-      }
-      .card-intro {
-        margin-top: 14px;
-        padding-top: 12px;
-        border-top: 1px solid var(--card-line);
-        font-size: 11px;
-        line-height: 1.55;
-      }
-      .card-entries {
-        display: grid;
-        flex: 1;
-        align-content: center;
-        gap: 11px;
-        min-height: 0;
-        margin-top: 11px;
-      }
-      .card-entry {
-        min-height: 0;
-        padding-left: 11px;
-        border-left: 2px solid var(--card-secondary);
-      }
-      .card-entry-name {
-        color: var(--card-accent);
-        font-size: 11px;
-        font-weight: 700;
-      }
-      .card-entry-text {
-        display: -webkit-box;
-        margin-top: 4px;
-        overflow: hidden;
-        font-size: 12px;
-        line-height: 1.5;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 3;
-      }
-      .publicity-card.layout-single .card-entry-text {
-        font-size: 15px;
-        line-height: 1.75;
-        -webkit-line-clamp: 9;
-      }
-      .card-footer {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 14px;
-        padding-top: 11px;
-        border-top: 1px solid var(--card-line);
-        font-size: 10px;
-      }
-      .card-footer-copy {
-        max-width: 74%;
-        line-height: 1.45;
-      }
-      .card-date {
+      .section-title::before {
+        content: '';
+        width: 3px;
+        height: 16px;
         flex-shrink: 0;
-        color: var(--card-accent);
-        font-weight: 700;
+        border-radius: 2px;
+        background: linear-gradient(180deg, #28685d, var(--gold));
       }
-      .action-bar {
+      .action-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 9px;
-        margin-top: 12px;
+        gap: 14px;
       }
-      .action-btn {
-        display: inline-flex;
+      .action-card {
+        display: block;
+        min-height: 142px;
+        padding: 18px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 2px 12px var(--shadow);
+        color: inherit;
+        text-align: center;
+        text-decoration: none;
+        transition: transform 0.2s;
+      }
+      .action-card:active {
+        transform: scale(0.96);
+      }
+      .action-card .icon {
+        display: flex;
+        width: 52px;
+        height: 52px;
         align-items: center;
         justify-content: center;
-        gap: 7px;
-        min-height: 42px;
-        padding: 9px 11px;
-        border: 1px solid var(--border);
-        border-radius: 7px;
-        background: #fff;
-        color: var(--ink-dark);
-        font-size: 12px;
+        margin: 0 auto 13px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #e5f2ed, #f6fbf8);
+        color: #28685d;
+        font-size: 25px;
+      }
+      .action-card:nth-child(2) .icon {
+        background: linear-gradient(135deg, var(--gold-light), #fbf7f2);
+        color: #8a5d2e;
+      }
+      .action-card:nth-child(3) .icon {
+        background: linear-gradient(135deg, var(--vermillion-light), #ffeced);
+        color: var(--vermillion);
+      }
+      .action-card .title {
+        margin-bottom: 6px;
+        font-size: 15px;
         font-weight: 600;
-        cursor: pointer;
       }
-      .action-btn.primary {
-        border-color: #28685d;
-        background: #28685d;
-        color: #fff;
+      .action-card .desc {
+        color: var(--ink-muted);
+        font-size: 12px;
+        line-height: 1.45;
       }
-      .action-btn.ready {
-        border-color: var(--vermillion);
-        background: var(--vermillion);
-        color: #fff;
-      }
-      .action-btn svg {
-        width: 17px;
-        height: 17px;
-      }
-      .action-btn:disabled {
-        cursor: wait;
+      .action-card.disabled {
+        cursor: default;
         opacity: 0.58;
       }
-      .empty-panel {
-        padding: 42px 18px;
-        border-top: 1px solid var(--border);
-        color: var(--ink-muted);
-        text-align: center;
-        font-size: 13px;
-        line-height: 1.7;
+      .action-card.disabled:active {
+        transform: none;
       }
-      @media (max-width: 390px) {
-        .container { padding-inline: 12px; }
-        .filter-band,
-        .editor-fields { grid-template-columns: 1fr; }
-        .field-wide { grid-column: auto; }
-        .group-status-list { grid-template-columns: 1fr; }
-        .publicity-card { padding: 22px 19px 18px; }
-        .card-title { font-size: 24px; }
+      .coming-soon {
+        display: inline-block;
+        margin-top: 5px;
+        color: #28685d;
+        font-size: 10px;
+        font-weight: 600;
+      }
+      @media (max-width: 360px) {
+        .container {
+          padding-inline: 12px;
+        }
+        .action-grid {
+          gap: 12px;
+        }
+        .action-card {
+          min-height: 134px;
+          padding: 16px 8px;
+        }
       }
     </style>
   </head>
   <body class="app-loading">
     <main class="container">
-      <header class="page-header">
-        <h1 class="page-title">宣委管理</h1>
-        <p class="page-subtitle" id="semesterSubtitle">加载中...</p>
-        <a class="back-btn module-switch" href="portal.html" aria-label="返回平台首页"></a>
+      <header class="header">
+        <h1 class="header-title">阳明心学宣委管理系统</h1>
+        <p class="header-subtitle" id="semesterSubtitle">加载中...</p>
+        <a class="back-btn module-switch" href="portal.html?from=publicity-dashboard" aria-label="切换模块"></a>
       </header>
 
-      <section class="filter-band" aria-label="制卡范围与日期">
-        <label>
-          <span class="field-label">宣发范围</span>
-          <select class="field-control" id="scopeSelect" onchange="onScopeChange()"></select>
-        </label>
-        <label>
-          <span class="field-label">作业考核日程</span>
-          <select class="field-control" id="scheduleSelect" onchange="loadSelectedSchedule()"></select>
-        </label>
-      </section>
-
-      <section class="collection-section" id="collectionSection" hidden>
-        <div class="section-head">
-          <h2 class="section-title">收集进度</h2>
-          <span class="collection-total" id="collectionTotal">0/0</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="group-status-list" id="groupStatusList"></div>
-        <div class="waiting-band" id="waitingBand" hidden></div>
-      </section>
-
-      <section class="editor-section" id="editorSection" hidden>
-        <div class="section-head">
-          <h2 class="section-title">优秀作业制卡</h2>
-          <span class="status-badge" id="cardStatus">新卡片</span>
-        </div>
-
-        <div class="entry-picker" id="entryPicker"></div>
-
-        <div class="editor-fields">
-          <label>
-            <span class="field-label">主标题</span>
-            <input class="field-control" id="cardTitleInput" maxlength="32" value="今日优秀作业" oninput="updatePreview()" />
-          </label>
-          <label>
-            <span class="field-label">副标题</span>
-            <input class="field-control" id="cardSubtitleInput" maxlength="48" oninput="updatePreview()" />
-          </label>
-          <label class="field-wide">
-            <span class="field-label">开篇</span>
-            <textarea class="field-control" id="cardIntroInput" maxlength="160" oninput="updatePreview()">在文字里照见思考，在坚持中积蓄成长。</textarea>
-          </label>
-          <label class="field-wide">
-            <span class="field-label">寄语</span>
-            <textarea class="field-control" id="cardClosingInput" maxlength="120" oninput="updatePreview()">知行合一，日日精进。</textarea>
-          </label>
-        </div>
-
-        <div class="control-row">
-          <span class="control-label">主题</span>
-          <div class="theme-swatches" aria-label="卡片主题">
-            <button class="theme-swatch active" data-theme="vermillion" aria-label="朱红" onclick="setTheme('vermillion')"></button>
-            <button class="theme-swatch" data-theme="ink" aria-label="墨色" onclick="setTheme('ink')"></button>
-            <button class="theme-swatch" data-theme="jade" aria-label="青玉" onclick="setTheme('jade')"></button>
-            <button class="theme-swatch" data-theme="paper" aria-label="宣纸" onclick="setTheme('paper')"></button>
+      <div class="user-card">
+        <a href="profile.html?system=publicity&from=publicity-dashboard">
+          <div class="user-avatar" id="profileAvatar">?</div>
+          <div class="user-info">
+            <div class="user-name" id="profileName">加载中...</div>
+            <div class="user-role" id="profileRole">加载中...</div>
           </div>
+          <span class="user-arrow" data-icon="ChevronRightIcon"></span>
+        </a>
+      </div>
+
+      <h2 class="section-title">宣委工作台</h2>
+      <div class="action-grid">
+        <a class="action-card" href="publicity-homework-card.html?from=publicity-dashboard">
+          <div class="icon" data-icon="FileEditIcon"></div>
+          <div class="title">优秀作业卡片制作</div>
+          <div class="desc">查看各小组优秀作业，排版并导出转发图片</div>
+        </a>
+
+        <div class="action-card disabled" aria-disabled="true">
+          <div class="icon" data-icon="ImagesIcon"></div>
+          <div class="title">宣发素材库</div>
+          <div class="desc">集中管理常用图片、文案与品牌素材</div>
+          <span class="coming-soon">后续开放</span>
         </div>
 
-        <div class="control-row">
-          <span class="control-label">版式</span>
-          <div class="segmented" aria-label="卡片版式">
-            <button class="segment-btn" id="layoutSingle" onclick="setLayout('single')">单篇</button>
-            <button class="segment-btn active" id="layoutCollection" onclick="setLayout('collection')">合集</button>
-          </div>
+        <div class="action-card disabled" aria-disabled="true">
+          <div class="icon" data-icon="ClipboardCheckIcon"></div>
+          <div class="title">发布记录</div>
+          <div class="desc">查看已完成卡片和历史发布状态</div>
+          <span class="coming-soon">后续开放</span>
         </div>
-
-        <div class="preview-label">宣发预览</div>
-        <div class="preview-shell">
-          <article class="publicity-card theme-vermillion layout-collection" id="publicityCard"></article>
-        </div>
-
-        <div class="action-bar">
-          <button class="action-btn primary" id="saveDraftBtn" onclick="saveCard('draft')">
-            <span data-icon="SaveIcon"></span><span>保存草稿</span>
-          </button>
-          <button class="action-btn ready" id="markReadyBtn" onclick="saveCard('ready')">
-            <span data-icon="CheckIcon"></span><span>标记可发布</span>
-          </button>
-          <button class="action-btn" onclick="copyCardText()">
-            <span data-icon="LinkIcon"></span><span>复制文案</span>
-          </button>
-          <button class="action-btn" id="downloadCardBtn" onclick="downloadCard()">
-            <span data-icon="DownloadIcon"></span><span>导出 PNG</span>
-          </button>
-        </div>
-      </section>
-
-      <div class="empty-panel" id="emptyPanel">正在加载宣委工作台...</div>
+      </div>
     </main>
 
     <div id="bottomNavContainer"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=14"></script>
-    <script src="js/excellent-homework.js?v=2"></script>
+    <script src="js/components.js?v=15"></script>
     <script>
       renderModuleBottomNav('publicity', 'home');
-
-      var publicityContext = null;
-      var publicitySchedules = [];
-      var currentScope = null;
-      var currentSchedule = null;
-      var currentGroups = [];
-      var currentEntries = [];
-      var currentCard = null;
-      var selectedEntryIds = [];
-      var cardTheme = 'vermillion';
-      var cardLayout = 'collection';
 
       async function init() {
         await waitForDb();
         await refreshCurrentUser();
-        if (!checkLogin()) return;
+        var profile = checkLogin();
+        if (!profile) return;
         if (!(await guardModuleAccess('publicity'))) return;
 
-        try {
-          publicityContext = await ExcellentHomework.loadAccessContext('publicity', {
-            adminAllOrgScopes: true
-          });
-          var semesterResult = await window.db.from('semesters')
-            .select('semester_name')
-            .eq('id', publicityContext.semesterId)
-            .single();
-          document.getElementById('semesterSubtitle').textContent =
-            semesterResult.data ? semesterResult.data.semester_name : '当前学期';
-          publicitySchedules = (await ExcellentHomework.loadEligibleSchedules(publicityContext))
-            .filter(function (schedule) { return schedule.schedule_date <= getToday(); });
-          renderScopeOptions();
-          await onScopeChange();
-        } catch (error) {
-          showEmpty('加载失败：' + (error.message || error));
-        }
-      }
+        var userName = profile.name || '未知';
+        document.getElementById('profileName').textContent = userName;
+        document.getElementById('profileAvatar').textContent = userName.charAt(0);
+        document.getElementById('profileRole').textContent = profile.role || '宣委成员';
 
-      function renderScopeOptions() {
-        var select = document.getElementById('scopeSelect');
-        select.innerHTML = publicityContext.scopes.map(function (scope) {
-          return '<option value="' + scope.id + '">' +
-            escapeHtml(buildOrgPath(scope.id, publicityContext.orgs)) + '</option>';
-        }).join('');
-        select.disabled = publicityContext.scopes.length <= 1;
-      }
-
-      async function onScopeChange() {
-        var scopeId = Number(document.getElementById('scopeSelect').value || 0);
-        currentScope = ExcellentHomework.getOrg(publicityContext.orgs, scopeId);
-        currentGroups = ExcellentHomework.getGroupsForScope(publicityContext.orgs, scopeId);
-        renderScheduleOptions();
-        await loadSelectedSchedule();
-      }
-
-      function renderScheduleOptions() {
-        var dabanId = currentScope
-          ? ExcellentHomework.getDabanId(publicityContext.orgs, currentScope.id)
-          : null;
-        var schedules = publicitySchedules.filter(function (schedule) {
-          return Number(schedule.org_id) === Number(dabanId);
-        });
-        var select = document.getElementById('scheduleSelect');
-        select.innerHTML = schedules.map(function (schedule) {
-          return '<option value="' + schedule.id + '">' +
-            escapeHtml(ExcellentHomework.formatDate(schedule.schedule_date, false)) +
-            '</option>';
-        }).join('');
-        select.disabled = schedules.length <= 1;
-      }
-
-      async function loadSelectedSchedule() {
-        var scheduleId = Number(document.getElementById('scheduleSelect').value || 0);
-        currentSchedule = publicitySchedules.find(function (schedule) {
-          return Number(schedule.id) === scheduleId;
-        }) || null;
-        currentCard = null;
-        selectedEntryIds = [];
-
-        if (!publicityContext.scopes.length) {
-          showEmpty('当前账号没有宣委管理权限');
+        var semesterId = await getCurrentSemesterId();
+        if (!semesterId) {
+          setCurrentSemester('semesterSubtitle', '暂无当前学期');
           return;
         }
-        if (!currentGroups.length) {
-          showEmpty('当前宣发范围下暂无在用小组');
-          return;
-        }
-        if (!currentSchedule) {
-          showEmpty('当前组织暂无已开始的作业考核日程');
-          return;
-        }
-
-        try {
-          currentEntries = await ExcellentHomework.loadEntries(
-            currentSchedule.id,
-            currentGroups.map(function (group) { return Number(group.id); })
-          );
-          renderCollectionState();
-          if (allGroupsComplete()) await loadCardEditor();
-        } catch (error) {
-          showEmpty('优秀作业加载失败：' + (error.message || error));
-        }
-      }
-
-      function getGroupEntries(groupId) {
-        return currentEntries.filter(function (entry) {
-          return Number(entry.org_id) === Number(groupId);
-        }).sort(function (a, b) {
-          return Number(a.slot_index) - Number(b.slot_index);
-        });
-      }
-
-      function allGroupsComplete() {
-        return currentGroups.length > 0 && currentGroups.every(function (group) {
-          return getGroupEntries(group.id).length === 3;
-        });
-      }
-
-      function renderCollectionState() {
-        var completeGroups = currentGroups.filter(function (group) {
-          return getGroupEntries(group.id).length === 3;
-        });
-        var total = currentGroups.length;
-        document.getElementById('collectionSection').hidden = false;
-        document.getElementById('collectionTotal').textContent = completeGroups.length + '/' + total;
-        document.getElementById('progressFill').style.width =
-          (total ? Math.round(completeGroups.length * 100 / total) : 0) + '%';
-        document.getElementById('groupStatusList').innerHTML = currentGroups.map(function (group) {
-          var count = getGroupEntries(group.id).length;
-          return '<div class="group-status' + (count === 3 ? ' complete' : '') + '">' +
-            '<span class="group-status-name">' + escapeHtml(group.name) + '</span>' +
-            '<span class="group-status-count">' + count + '/3</span>' +
-          '</div>';
-        }).join('');
-
-        var pending = currentGroups.filter(function (group) {
-          return getGroupEntries(group.id).length !== 3;
-        });
-        var waiting = document.getElementById('waitingBand');
-        waiting.hidden = pending.length === 0;
-        waiting.textContent = pending.length
-          ? '待提交：' + pending.map(function (group) { return group.name; }).join('、')
-          : '';
-        document.getElementById('editorSection').hidden = pending.length !== 0;
-        document.getElementById('emptyPanel').style.display = 'none';
-      }
-
-      async function loadCardEditor() {
-        var cardResult = await window.db.from('publicity_homework_cards')
-          .select('*')
-          .eq('schedule_id', currentSchedule.id)
-          .eq('org_id', currentScope.id)
-          .maybeSingle();
-        if (cardResult.error) throw cardResult.error;
-        currentCard = cardResult.data || null;
-
-        if (currentCard) {
-          var itemResult = await window.db.from('publicity_homework_card_items')
-            .select('entry_id,sort_order')
-            .eq('card_id', currentCard.id)
-            .order('sort_order');
-          if (itemResult.error) throw itemResult.error;
-          selectedEntryIds = (itemResult.data || []).map(function (item) {
-            return Number(item.entry_id);
-          });
-          setEditorValues(currentCard);
-        } else {
-          selectedEntryIds = currentEntries.slice(0, 3).map(function (entry) {
-            return Number(entry.id);
-          });
-          setEditorValues(null);
-        }
-        renderEntryPicker();
-        updatePreview();
-      }
-
-      function setEditorValues(card) {
-        var scopeLabel = currentScope ? currentScope.name : '';
-        document.getElementById('cardTitleInput').value = card ? card.title : '今日优秀作业';
-        document.getElementById('cardSubtitleInput').value = card
-          ? card.subtitle
-          : scopeLabel + ' · ' + ExcellentHomework.formatDate(currentSchedule.schedule_date, false);
-        document.getElementById('cardIntroInput').value = card
-          ? card.intro_text
-          : '在文字里照见思考，在坚持中积蓄成长。';
-        document.getElementById('cardClosingInput').value = card
-          ? card.closing_text
-          : '知行合一，日日精进。';
-        setTheme(card ? card.theme : 'vermillion');
-        setLayout(card ? card.layout : 'collection');
-        renderCardStatus(card ? card.status : '');
-      }
-
-      function renderEntryPicker() {
-        document.getElementById('entryPicker').innerHTML = currentGroups.map(function (group) {
-          var entries = getGroupEntries(group.id);
-          return '<details class="entry-group" open>' +
-            '<summary><span>' + escapeHtml(group.name) + ' · 3篇</span>' +
-              '<span data-icon="ChevronRightIcon"></span></summary>' +
-            '<div class="entry-options">' +
-              entries.map(function (entry) {
-                var checked = selectedEntryIds.indexOf(Number(entry.id)) >= 0;
-                return '<label class="entry-option">' +
-                  '<input type="checkbox" value="' + entry.id + '"' +
-                    (checked ? ' checked' : '') +
-                    ' onchange="toggleEntry(' + entry.id + ', this.checked, this)" />' +
-                  '<span><span class="entry-person">' +
-                    escapeHtml(entry.person_name_snapshot) +
-                  '</span><span class="entry-content">' +
-                    escapeHtml(entry.content) +
-                  '</span></span>' +
-                '</label>';
-              }).join('') +
-            '</div>' +
-          '</details>';
-        }).join('');
-      }
-
-      function toggleEntry(entryId, checked, checkbox) {
-        entryId = Number(entryId);
-        if (checked) {
-          if (selectedEntryIds.length >= 3) {
-            checkbox.checked = false;
-            showToast('每张卡片最多选择3篇优秀作业', 'error');
-            return;
-          }
-          if (selectedEntryIds.indexOf(entryId) < 0) selectedEntryIds.push(entryId);
-        } else {
-          selectedEntryIds = selectedEntryIds.filter(function (id) {
-            return Number(id) !== entryId;
-          });
-        }
-        if (cardLayout === 'single' && selectedEntryIds.length > 1) {
-          selectedEntryIds = [selectedEntryIds[selectedEntryIds.length - 1]];
-          renderEntryPicker();
-        }
-        updatePreview();
-      }
-
-      function setTheme(theme) {
-        cardTheme = ['vermillion', 'ink', 'jade', 'paper'].indexOf(theme) >= 0
-          ? theme
-          : 'vermillion';
-        document.querySelectorAll('.theme-swatch').forEach(function (button) {
-          button.classList.toggle('active', button.dataset.theme === cardTheme);
-        });
-        updatePreview();
-      }
-
-      function setLayout(layout) {
-        cardLayout = layout === 'single' ? 'single' : 'collection';
-        document.getElementById('layoutSingle').classList.toggle('active', cardLayout === 'single');
-        document.getElementById('layoutCollection').classList.toggle('active', cardLayout === 'collection');
-        if (cardLayout === 'single' && selectedEntryIds.length > 1) {
-          selectedEntryIds = [selectedEntryIds[0]];
-          renderEntryPicker();
-        }
-        updatePreview();
-      }
-
-      function getSelectedEntries() {
-        return selectedEntryIds.map(function (id) {
-          return currentEntries.find(function (entry) {
-            return Number(entry.id) === Number(id);
-          });
-        }).filter(Boolean);
-      }
-
-      function updatePreview() {
-        var card = document.getElementById('publicityCard');
-        if (!card || !currentSchedule || !currentScope) return;
-        card.className = 'publicity-card theme-' + cardTheme + ' layout-' + cardLayout;
-        var selected = getSelectedEntries();
-        var entriesHtml = selected.length
-          ? selected.map(function (entry) {
-            var group = ExcellentHomework.getOrg(publicityContext.orgs, entry.org_id);
-            return '<div class="card-entry">' +
-              '<div class="card-entry-name">' +
-                escapeHtml(entry.person_name_snapshot + ' · ' + (group ? group.name : '')) +
-              '</div>' +
-              '<div class="card-entry-text">' + escapeHtml(entry.content) + '</div>' +
-            '</div>';
-          }).join('')
-          : '<div class="card-entry"><div class="card-entry-text">请选择优秀作业</div></div>';
-        card.innerHTML =
-          '<div class="card-brand">阳明心学 · 优秀作业</div>' +
-          '<h3 class="card-title">' +
-            escapeHtml(document.getElementById('cardTitleInput').value || '今日优秀作业') +
-          '</h3>' +
-          '<div class="card-subtitle">' +
-            escapeHtml(document.getElementById('cardSubtitleInput').value || currentScope.name) +
-          '</div>' +
-          '<div class="card-intro">' +
-            escapeHtml(document.getElementById('cardIntroInput').value || '') +
-          '</div>' +
-          '<div class="card-entries">' + entriesHtml + '</div>' +
-          '<footer class="card-footer">' +
-            '<span class="card-footer-copy">' +
-              escapeHtml(document.getElementById('cardClosingInput').value || '') +
-            '</span>' +
-            '<span class="card-date">' +
-              escapeHtml(ExcellentHomework.formatShortDate(currentSchedule.schedule_date)) +
-            '</span>' +
-          '</footer>';
-      }
-
-      async function saveCard(status) {
-        var selected = getSelectedEntries();
-        if (!selected.length) {
-          showToast('请至少选择1篇优秀作业', 'error');
-          return;
-        }
-        if (cardLayout === 'single' && selected.length !== 1) {
-          showToast('单篇版式只能选择1篇作业', 'error');
-          return;
-        }
-        var button = status === 'ready'
-          ? document.getElementById('markReadyBtn')
-          : document.getElementById('saveDraftBtn');
-        button.disabled = true;
-        try {
-          var payload = {
-            semester_id: publicityContext.semesterId,
-            schedule_id: Number(currentSchedule.id),
-            org_id: Number(currentScope.id),
-            title: document.getElementById('cardTitleInput').value.trim() || '今日优秀作业',
-            subtitle: document.getElementById('cardSubtitleInput').value.trim(),
-            intro_text: document.getElementById('cardIntroInput').value.trim(),
-            closing_text: document.getElementById('cardClosingInput').value.trim(),
-            theme: cardTheme,
-            layout: cardLayout,
-            status: status,
-            created_by: currentCard ? currentCard.created_by : publicityContext.profile.id,
-            updated_by: publicityContext.profile.id,
-            updated_at: new Date().toISOString()
-          };
-          var cardResult = await window.db.from('publicity_homework_cards')
-            .upsert(payload, { onConflict: 'schedule_id,org_id' })
-            .select('*')
-            .single();
-          if (cardResult.error) throw cardResult.error;
-          currentCard = cardResult.data;
-
-          var deleteResult = await window.db.from('publicity_homework_card_items')
-            .delete()
-            .eq('card_id', currentCard.id);
-          if (deleteResult.error) throw deleteResult.error;
-          var itemRows = selected.map(function (entry, index) {
-            return {
-              card_id: currentCard.id,
-              entry_id: entry.id,
-              sort_order: index + 1
-            };
-          });
-          var itemResult = await window.db.from('publicity_homework_card_items').insert(itemRows);
-          if (itemResult.error) throw itemResult.error;
-
-          renderCardStatus(status);
-          showToast(status === 'ready' ? '卡片已标记为可发布' : '草稿已保存', 'success');
-          logAction(
-            status === 'ready' ? '优秀作业卡片可发布' : '保存优秀作业卡片',
-            currentScope.name,
-            ExcellentHomework.formatDate(currentSchedule.schedule_date, true) +
-              ' · ' + selected.length + '篇',
-            'publicity'
-          );
-        } catch (error) {
-          showToast('保存失败：' + (error.message || error), 'error');
-        } finally {
-          button.disabled = false;
-        }
-      }
-
-      function renderCardStatus(status) {
-        var badge = document.getElementById('cardStatus');
-        badge.className = 'status-badge' + (status === 'ready' || status === 'published' ? ' ready' : '');
-        badge.textContent = status === 'ready'
-          ? '可发布'
-          : status === 'published'
-            ? '已发布'
-            : status === 'draft'
-              ? '草稿'
-              : '新卡片';
-      }
-
-      function getCardText() {
-        var selected = getSelectedEntries();
-        return [
-          document.getElementById('cardTitleInput').value.trim() || '今日优秀作业',
-          document.getElementById('cardSubtitleInput').value.trim(),
-          document.getElementById('cardIntroInput').value.trim(),
-          selected.map(function (entry) {
-            var group = ExcellentHomework.getOrg(publicityContext.orgs, entry.org_id);
-            return (entry.person_name_snapshot || '') + ' · ' +
-              (group ? group.name : '') + '\n' + (entry.content || '');
-          }).join('\n\n'),
-          document.getElementById('cardClosingInput').value.trim()
-        ].filter(Boolean).join('\n\n');
-      }
-
-      async function copyCardText() {
-        var text = getCardText();
-        try {
-          if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('clipboard unavailable');
-          await navigator.clipboard.writeText(text);
-          showToast('宣发文案已复制', 'success');
-        } catch (error) {
-          var input = document.createElement('textarea');
-          input.value = text;
-          input.setAttribute('readonly', '');
-          input.style.cssText = 'position:fixed;left:-9999px;top:0;';
-          document.body.appendChild(input);
-          input.select();
-          var copied = false;
-          try {
-            copied = document.execCommand('copy');
-          } catch (fallbackError) {}
-          input.remove();
-          showToast(copied ? '宣发文案已复制' : '复制失败，请重试', copied ? 'success' : 'error');
-        }
-      }
-
-      async function downloadCard() {
-        var button = document.getElementById('downloadCardBtn');
-        button.disabled = true;
-        try {
-          await loadHtml2Canvas();
-          if (document.fonts && document.fonts.ready) await document.fonts.ready;
-          var canvas = await html2canvas(document.getElementById('publicityCard'), {
-            scale: 3,
-            backgroundColor: null,
-            useCORS: true,
-            allowTaint: false
-          });
-          var link = document.createElement('a');
-          link.download = '优秀作业_' + currentScope.name + '_' +
-            currentSchedule.schedule_date + '.png';
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-          showToast('卡片已导出', 'success');
-        } catch (error) {
-          showToast('导出失败：' + (error.message || error), 'error');
-        } finally {
-          button.disabled = false;
-        }
-      }
-
-      function loadHtml2Canvas() {
-        if (typeof html2canvas === 'function') return Promise.resolve();
-        return new Promise(function (resolve, reject) {
-          var existing = document.querySelector('script[data-html2canvas]');
-          if (existing) {
-            existing.addEventListener('load', resolve, { once: true });
-            existing.addEventListener('error', function () {
-              reject(new Error('图片组件加载失败，请检查网络'));
-            }, { once: true });
-            return;
-          }
-          var script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-          script.dataset.html2canvas = 'true';
-          script.onload = resolve;
-          script.onerror = function () {
-            reject(new Error('图片组件加载失败，请检查网络'));
-          };
-          document.head.appendChild(script);
-        });
-      }
-
-      function showEmpty(message) {
-        document.getElementById('collectionSection').hidden = true;
-        document.getElementById('editorSection').hidden = true;
-        var panel = document.getElementById('emptyPanel');
-        panel.textContent = message;
-        panel.style.display = '';
+        var result = await window.db.from('semesters').select('semester_name').eq('id', semesterId).single();
+        setCurrentSemester(
+          'semesterSubtitle',
+          result.data ? result.data.semester_name : '当前学期'
+        );
       }
 
       init().finally(function () {

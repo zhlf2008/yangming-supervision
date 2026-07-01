@@ -126,7 +126,8 @@ function renderModuleBottomNav(systemKey, activePage) {
       { key: 'profile', href: 'profile.html?system=study', icon: 'UserIcon', label: '我的' }
     ],
     publicity: [
-      { key: 'home', href: 'publicity-dashboard.html', icon: 'MegaphoneIcon', label: '制卡' },
+      { key: 'home', href: 'publicity-dashboard.html', icon: 'HomeIcon', label: '首页' },
+      { key: 'cards', href: 'publicity-homework-card.html', icon: 'FileEditIcon', label: '作业卡' },
       { key: 'profile', href: 'profile.html?system=publicity', icon: 'UserIcon', label: '我的' }
     ]
   };
@@ -673,7 +674,7 @@ document.addEventListener('click', function (event) {
   if (document.querySelector('script[data-app-icon-runtime]')) return;
   var script = document.createElement('script');
   script.type = 'module';
-  script.src = 'js/icon-runtime.js?v=3';
+  script.src = 'js/icon-runtime.js?v=4';
   script.dataset.appIconRuntime = 'true';
   document.head.appendChild(script);
 })();

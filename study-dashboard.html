@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>晨读安排</title>
+    <title>学委管理</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <style>
       .page-header {
@@ -225,18 +225,31 @@
         font-weight: 400;
       }
       @media (max-width: 360px) {
-        .container { padding-inline: 12px; }
-        .action-grid { gap: 12px; }
-        .action-card { min-height: 124px; padding: 16px 8px; }
-        .action-card .icon { width: 46px; height: 46px; font-size: 22px; }
-        .action-card .title { font-size: 14px; }
+        .container {
+          padding-inline: 12px;
+        }
+        .action-grid {
+          gap: 12px;
+        }
+        .action-card {
+          min-height: 124px;
+          padding: 16px 8px;
+        }
+        .action-card .icon {
+          width: 46px;
+          height: 46px;
+          font-size: 22px;
+        }
+        .action-card .title {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
   <body class="app-loading">
     <div class="container">
       <header class="header">
-        <h1 class="header-title">阳明心学晨读安排系统</h1>
+        <h1 class="header-title">阳明心学学委管理系统</h1>
         <p class="header-subtitle" id="semesterSubtitle">加载中...</p>
         <a class="back-btn module-switch" href="portal.html?from=study-dashboard" aria-label="切换模块"></a>
       </header>
@@ -254,7 +267,6 @@
 
       <h2 class="section-title">晨读工作台</h2>
       <div class="action-grid">
-
         <a class="action-card" href="study-committee-management.html?from=study-dashboard">
           <div class="icon" data-icon="GraduationCapIcon"></div>
           <div class="title">晨读安排</div>
@@ -273,7 +285,6 @@
           <div class="desc">企业微信通知（后续阶段开放）</div>
         </div>
       </div>
-
     </div>
 
     <div id="bottomNavContainer"></div>

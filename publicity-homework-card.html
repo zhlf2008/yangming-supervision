@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>优秀作业卡片制作 - 宣委管理</title>
+    <link rel="stylesheet" href="css/common.css?v=9" />
+    <style>
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .page-title {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .header-card,
+      .section,
+      .card-workbench {
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .header-card {
+        padding: 16px 18px;
+      }
+      .header-body {
+        display: flex;
+        gap: 16px;
+      }
+      .header-col {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .header-col + .header-col {
+        padding-left: 16px;
+        border-left: 1px solid var(--border);
+      }
+      .header-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .header-label {
+        width: 42px;
+        flex-shrink: 0;
+        color: var(--ink-muted);
+        font-size: 12px;
+      }
+      .header-value {
+        overflow: hidden;
+        color: var(--ink-dark);
+        font-size: 13px;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .header-value.date {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+      }
+      .section-title,
+      .workbench-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .section-icon {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--gold-light);
+        color: #28685d;
+      }
+      .workbench-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .workbench-title {
+        min-width: 0;
+        margin: 0;
+      }
+      .status-badge {
+        flex-shrink: 0;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: var(--gold-light);
+        color: #8a5d2e;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .status-badge.ready {
+        background: var(--green-light);
+        color: var(--green);
+      }
+      .settings-toolbar {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        margin-bottom: 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fcfbf9;
+      }
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .setting-label {
+        flex-shrink: 0;
+        color: var(--ink-light);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .theme-swatches {
+        display: flex;
+        gap: 9px;
+      }
+      .theme-swatch {
+        width: 30px;
+        height: 30px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px var(--border);
+        cursor: pointer;
+      }
+      .theme-swatch.active {
+        box-shadow: 0 0 0 2px var(--ink-dark);
+      }
+      .theme-swatch[data-theme='vermillion'] {
+        background: #b83b3f;
+      }
+      .theme-swatch[data-theme='ink'] {
+        background: #303b44;
+      }
+      .theme-swatch[data-theme='jade'] {
+        background: #2e6b5f;
+      }
+      .theme-swatch[data-theme='paper'] {
+        background: #8a5b3d;
+      }
+      .segmented {
+        display: inline-grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 3px;
+        border-radius: 7px;
+        background: #efede9;
+      }
+      .segment-btn {
+        min-width: 64px;
+        min-height: 30px;
+        padding: 5px 10px;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: var(--ink-muted);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .segment-btn.active {
+        background: #fff;
+        color: var(--ink-dark);
+        box-shadow: 0 1px 4px rgba(45, 45, 45, 0.12);
+        font-weight: 600;
+      }
+      .tool-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 7px 11px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--ink-dark);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .tool-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .editor-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 14px;
+        margin-bottom: 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+      }
+      .editor-fields[hidden],
+      .export-preview-panel[hidden] {
+        display: none;
+      }
+      .field-wide {
+        grid-column: 1 / -1;
+      }
+      .field-label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--ink-light);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .field-control {
+        width: 100%;
+        min-width: 0;
+        min-height: 42px;
+        padding: 10px 11px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-primary);
+        color: var(--ink-dark);
+        font: inherit;
+        font-size: 13px;
+      }
+      textarea.field-control {
+        min-height: 72px;
+        resize: vertical;
+        line-height: 1.55;
+      }
+      .field-control:focus {
+        border-color: #4f8b80;
+        outline: 2px solid rgba(40, 104, 93, 0.12);
+      }
+      .preview-label {
+        margin: 0 0 9px;
+        color: var(--ink-light);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .preview-shell {
+        padding: 14px;
+        border-radius: 10px;
+        background: #ece9e4;
+      }
+      .publicity-card {
+        --card-bg: #fffaf7;
+        --card-accent: #b83b3f;
+        --card-secondary: #c89955;
+        --card-text: #2f2c2a;
+        --card-line: #ead3ca;
+        --card-muted: #756b66;
+        position: relative;
+        display: flex;
+        width: 100%;
+        aspect-ratio: 3 / 4;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 28px 25px 23px;
+        border: 1px solid var(--card-line);
+        background: var(--card-bg);
+        color: var(--card-text);
+      }
+      .publicity-card.theme-ink {
+        --card-bg: #f4f3ef;
+        --card-accent: #303b44;
+        --card-secondary: #a44a3f;
+        --card-text: #23282c;
+        --card-line: #cfd2d3;
+        --card-muted: #62696d;
+      }
+      .publicity-card.theme-jade {
+        --card-bg: #f3f8f5;
+        --card-accent: #2e6b5f;
+        --card-secondary: #b38b4a;
+        --card-text: #25342f;
+        --card-line: #cbded7;
+        --card-muted: #61736c;
+      }
+      .publicity-card.theme-paper {
+        --card-bg: #fffdf7;
+        --card-accent: #7b4e32;
+        --card-secondary: #b53c3c;
+        --card-text: #342b25;
+        --card-line: #e1d5c8;
+        --card-muted: #76685e;
+      }
+      .card-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--card-accent);
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .card-brand::before {
+        content: '';
+        width: 24px;
+        height: 2px;
+        background: var(--card-secondary);
+      }
+      .card-title {
+        margin-top: 17px;
+        color: var(--card-accent);
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 27px;
+        line-height: 1.2;
+      }
+      .card-subtitle {
+        margin-top: 7px;
+        color: var(--card-muted);
+        font-size: 11px;
+      }
+      .card-intro {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--card-line);
+        font-size: 11px;
+        line-height: 1.55;
+      }
+      .card-entries {
+        display: grid;
+        flex: 1;
+        align-content: center;
+        gap: 11px;
+        min-height: 0;
+        margin-top: 11px;
+      }
+      .card-entry {
+        min-height: 0;
+        padding-left: 11px;
+        border-left: 2px solid var(--card-secondary);
+      }
+      .card-entry-name {
+        color: var(--card-accent);
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .card-entry-text {
+        display: -webkit-box;
+        margin-top: 4px;
+        overflow: hidden;
+        font-size: 12px;
+        line-height: 1.5;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+      }
+      .publicity-card.layout-single .card-entry-text {
+        font-size: 15px;
+        line-height: 1.75;
+        -webkit-line-clamp: 9;
+      }
+      .card-footer {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 14px;
+        padding-top: 11px;
+        border-top: 1px solid var(--card-line);
+        font-size: 10px;
+      }
+      .card-footer-copy {
+        max-width: 74%;
+        line-height: 1.45;
+      }
+      .card-date {
+        flex-shrink: 0;
+        color: var(--card-accent);
+        font-weight: 700;
+      }
+      .action-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+        margin-top: 12px;
+      }
+      .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 44px;
+        padding: 10px 11px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: #fff;
+        color: var(--ink-dark);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .action-btn.primary {
+        border-color: #28685d;
+        background: #28685d;
+        color: #fff;
+      }
+      .action-btn.ready {
+        border-color: var(--vermillion);
+        background: var(--vermillion);
+        color: #fff;
+      }
+      .action-btn svg {
+        width: 17px;
+        height: 17px;
+      }
+      .action-btn:disabled {
+        cursor: wait;
+        opacity: 0.58;
+      }
+      .empty-panel {
+        padding: 42px 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        color: var(--ink-muted);
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .export-preview-panel {
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        text-align: center;
+      }
+      .export-preview-panel img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .export-preview-hint {
+        margin-top: 9px;
+        color: var(--ink-muted);
+        font-size: 12px;
+      }
+      @media (max-width: 390px) {
+        .container {
+          padding-inline: 12px;
+        }
+        .editor-fields {
+          grid-template-columns: 1fr;
+        }
+        .field-wide {
+          grid-column: auto;
+        }
+        .publicity-card {
+          padding: 22px 19px 18px;
+        }
+        .card-title {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body class="app-loading">
+    <main class="container">
+      <header class="page-header">
+        <a class="back-btn" href="publicity-dashboard.html" aria-label="返回宣委管理首页"></a>
+        <h1 class="page-title">优秀作业卡片制作</h1>
+      </header>
+
+      <div class="header-card">
+        <div class="semester-wrap" id="semesterName"></div>
+        <div class="header-body">
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">日期</span><span class="header-value date" id="currentDate">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">星期</span><span class="header-value" id="currentWeekday">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">制卡人</span><span class="header-value" id="operatorName">--</span>
+            </div>
+          </div>
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">大班</span><span class="header-value" id="bigClassName">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">班级</span><span class="header-value" id="className">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">小组</span><span class="header-value" id="groupName">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="section" id="orgSelectorSection">
+        <div class="section-title">
+          <span class="section-icon" data-icon="BuildingIcon"></span>
+          选择制卡小组
+        </div>
+        <div class="org-cascade">
+          <div class="org-group">
+            <label class="org-label" for="bigClassSelect">大班</label>
+            <select class="org-select" id="bigClassSelect" onchange="onBigClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="classSelect">班级</label>
+            <select class="org-select" id="classSelect" onchange="onClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="groupSelect">小组</label>
+            <select class="org-select" id="groupSelect" onchange="onGroupChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card-workbench" id="editorSection" hidden>
+        <div class="workbench-head">
+          <div class="workbench-title">
+            <span class="section-icon" data-icon="FileEditIcon"></span>
+            <span id="workbenchTitle">优秀作业卡片</span>
+          </div>
+          <span class="status-badge" id="cardStatus">待填报</span>
+        </div>
+
+        <div class="settings-toolbar">
+          <div class="setting-row">
+            <span class="setting-label">主题风格</span>
+            <div class="theme-swatches" aria-label="卡片主题">
+              <button class="theme-swatch active" data-theme="vermillion" aria-label="朱红" onclick="setTheme('vermillion')"></button>
+              <button class="theme-swatch" data-theme="ink" aria-label="墨色" onclick="setTheme('ink')"></button>
+              <button class="theme-swatch" data-theme="jade" aria-label="青玉" onclick="setTheme('jade')"></button>
+              <button class="theme-swatch" data-theme="paper" aria-label="宣纸" onclick="setTheme('paper')"></button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">内容版式</span>
+            <div class="segmented" aria-label="卡片版式">
+              <button class="segment-btn" id="layoutSingle" onclick="setLayout('single')">单篇</button>
+              <button class="segment-btn active" id="layoutCollection" onclick="setLayout('collection')">三篇</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">文案设置</span>
+            <button class="tool-btn" type="button" onclick="toggleEditorFields()">
+              <span data-icon="FileEditIcon"></span><span>编辑标题与寄语</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="editor-fields" id="editorFields" hidden>
+          <label>
+            <span class="field-label">主标题</span>
+            <input class="field-control" id="cardTitleInput" maxlength="32" value="今日优秀作业" oninput="updatePreview()" />
+          </label>
+          <label>
+            <span class="field-label">副标题</span>
+            <input class="field-control" id="cardSubtitleInput" maxlength="48" oninput="updatePreview()" />
+          </label>
+          <label class="field-wide">
+            <span class="field-label">开篇</span>
+            <textarea class="field-control" id="cardIntroInput" maxlength="160" oninput="updatePreview()">在文字里照见思考，在坚持中积蓄成长。</textarea>
+          </label>
+          <label class="field-wide">
+            <span class="field-label">寄语</span>
+            <textarea class="field-control" id="cardClosingInput" maxlength="120" oninput="updatePreview()">知行合一，日日精进。</textarea>
+          </label>
+        </div>
+
+        <div class="preview-label">成品预览</div>
+        <div class="preview-shell">
+          <article class="publicity-card theme-vermillion layout-collection" id="publicityCard"></article>
+        </div>
+
+        <div class="action-bar">
+          <button class="action-btn primary" id="saveDraftBtn" onclick="saveCard('draft')">
+            <span data-icon="SaveIcon"></span><span>保存草稿</span>
+          </button>
+          <button class="action-btn ready" id="markReadyBtn" onclick="saveCard('ready')">
+            <span data-icon="CheckIcon"></span><span>标记可发布</span>
+          </button>
+          <button class="action-btn" onclick="copyCardText()">
+            <span data-icon="LinkIcon"></span><span>复制文案</span>
+          </button>
+          <button class="action-btn" id="downloadCardBtn" onclick="downloadCard()">
+            <span data-icon="DownloadIcon"></span><span>导出图片</span>
+          </button>
+        </div>
+
+        <div class="export-preview-panel" id="exportPreviewPanel" hidden>
+          <img id="exportPreviewImage" alt="优秀作业宣发卡片" />
+          <div class="export-preview-hint">手机端可长按图片保存或转发。</div>
+        </div>
+      </section>
+
+      <div class="empty-panel" id="emptyPanel">正在加载优秀作业...</div>
+    </main>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=15"></script>
+    <script src="js/excellent-homework.js?v=2"></script>
+    <script>
+      renderModuleBottomNav('publicity', 'cards');
+
+      var publicityContext = null;
+      var currentUser = null;
+      var accessibleGroups = [];
+      var publicitySchedules = [];
+      var currentGroup = null;
+      var currentSchedule = null;
+      var currentEntries = [];
+      var currentCard = null;
+      var selectedEntryIds = [];
+      var cardTheme = 'vermillion';
+      var cardLayout = 'collection';
+      var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        currentUser = checkLogin();
+        if (!currentUser) return;
+        if (!(await guardModuleAccess('publicity'))) return;
+
+        try {
+          publicityContext = await ExcellentHomework.loadAccessContext('publicity', {
+            adminAllOrgScopes: true
+          });
+          var semesterResult = await window.db
+            .from('semesters')
+            .select('semester_name')
+            .eq('id', publicityContext.semesterId)
+            .single();
+          setCurrentSemester(
+            'semesterName',
+            semesterResult.data ? semesterResult.data.semester_name : '当前学期',
+            'tag-lg'
+          );
+          renderTodayInfo();
+          accessibleGroups = getAccessibleGroups();
+          publicitySchedules = await ExcellentHomework.loadEligibleSchedules(publicityContext);
+          if (!accessibleGroups.length) {
+            renderOrganizationSelector(null);
+            showEmpty('当前账号在本学期没有可查看的下属小组');
+            return;
+          }
+          var detectedGroup = await resolveCurrentUserGroup();
+          currentGroup =
+            accessibleGroups.find(function (group) {
+              return detectedGroup && Number(group.id) === Number(detectedGroup.id);
+            }) || accessibleGroups[0];
+          renderOrganizationSelector(currentGroup);
+          await loadCurrentGroup();
+        } catch (error) {
+          showEmpty('加载失败：' + (error.message || error));
+        }
+      }
+
+      function renderTodayInfo() {
+        var today = getToday();
+        document.getElementById('currentDate').textContent = today;
+        document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
+        document.getElementById('operatorName').textContent = currentUser.name || '未知';
+      }
+
+      async function resolveCurrentUserGroup() {
+        var orgs = publicityContext.orgs || [];
+        if (currentUser.phone) {
+          var personResult = await window.db.from('people').select('id').eq('phone', currentUser.phone).maybeSingle();
+          if (personResult.error) throw personResult.error;
+          if (personResult.data) {
+            var assignmentResult = await window.db
+              .from('person_org_assignments')
+              .select('org_id,sort_order')
+              .eq('semester_id', publicityContext.semesterId)
+              .eq('person_id', personResult.data.id)
+              .eq('org_level', '小组')
+              .eq('status', 'active')
+              .order('sort_order')
+              .limit(1);
+            if (assignmentResult.error) throw assignmentResult.error;
+            var assignment = (assignmentResult.data || [])[0];
+            var assignedGroup = assignment
+              ? ExcellentHomework.getOrg(orgs, assignment.org_id)
+              : null;
+            if (assignedGroup && assignedGroup.level === '小组') return assignedGroup;
+          }
+        }
+        var membershipGroup = (publicityContext.memberships || [])
+          .map(function (membership) {
+            return ExcellentHomework.getOrg(orgs, membership.org_id);
+          })
+          .find(function (org) {
+            return org && org.level === '小组';
+          });
+        return membershipGroup || null;
+      }
+
+      function getAccessibleGroups() {
+        var groups = [];
+        (publicityContext.scopes || []).forEach(function (scope) {
+          ExcellentHomework.getGroupsForScope(publicityContext.orgs, scope.id).forEach(function (group) {
+            if (
+              !groups.some(function (item) {
+                return Number(item.id) === Number(group.id);
+              })
+            ) {
+              groups.push(group);
+            }
+          });
+        });
+        return groups.sort(function (a, b) {
+          return (
+            (a.sort_order || 0) - (b.sort_order || 0) ||
+            String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN')
+          );
+        });
+      }
+
+      function uniqueOrgs(orgs) {
+        var seen = {};
+        return orgs.filter(function (org) {
+          if (!org || seen[org.id]) return false;
+          seen[org.id] = true;
+          return true;
+        });
+      }
+
+      function getClassesForBigClass(bigClassId) {
+        return uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = ExcellentHomework.getOrg(publicityContext.orgs, group.parent_id);
+            return classOrg && Number(classOrg.parent_id) === Number(bigClassId) ? classOrg : null;
+          })
+        );
+      }
+
+      function getGroupsForClass(classId) {
+        return accessibleGroups.filter(function (group) {
+          return Number(group.parent_id) === Number(classId);
+        });
+      }
+
+      function renderOptions(select, orgs, placeholder) {
+        select.innerHTML =
+          (orgs.length === 1 ? '' : '<option value="">' + placeholder + '</option>') +
+          orgs
+            .map(function (org) {
+              return '<option value="' + org.id + '">' + escapeHtml(org.name) + '</option>';
+            })
+            .join('');
+      }
+
+      function renderOrganizationSelector(defaultGroup) {
+        var bigClassSelect = document.getElementById('bigClassSelect');
+        var classSelect = document.getElementById('classSelect');
+        var groupSelect = document.getElementById('groupSelect');
+        var bigClasses = uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = ExcellentHomework.getOrg(publicityContext.orgs, group.parent_id);
+            return classOrg ? ExcellentHomework.getOrg(publicityContext.orgs, classOrg.parent_id) : null;
+          })
+        );
+        renderOptions(bigClassSelect, bigClasses, '请选择');
+        if (!defaultGroup) {
+          classSelect.innerHTML = '<option value="">--</option>';
+          groupSelect.innerHTML = '<option value="">--</option>';
+          renderCurrentPath(null);
+          return;
+        }
+        var classOrg = ExcellentHomework.getOrg(publicityContext.orgs, defaultGroup.parent_id);
+        var bigClass = classOrg
+          ? ExcellentHomework.getOrg(publicityContext.orgs, classOrg.parent_id)
+          : null;
+        if (!classOrg || !bigClass) return;
+        bigClassSelect.value = String(bigClass.id);
+        renderOptions(classSelect, getClassesForBigClass(bigClass.id), '请选择');
+        classSelect.value = String(classOrg.id);
+        renderOptions(groupSelect, getGroupsForClass(classOrg.id), '请选择');
+        groupSelect.value = String(defaultGroup.id);
+        renderCurrentPath(defaultGroup);
+      }
+
+      async function onBigClassChange(bigClassId) {
+        currentGroup = null;
+        renderCurrentPath(null);
+        var classes = bigClassId ? getClassesForBigClass(bigClassId) : [];
+        var classSelect = document.getElementById('classSelect');
+        renderOptions(classSelect, classes, '请选择');
+        document.getElementById('groupSelect').innerHTML = '<option value="">请选择</option>';
+        if (classes.length === 1) {
+          classSelect.value = String(classes[0].id);
+          await onClassChange(classes[0].id);
+        } else {
+          showEmpty('请选择班级和小组');
+        }
+      }
+
+      async function onClassChange(classId) {
+        currentGroup = null;
+        renderCurrentPath(null);
+        var groups = classId ? getGroupsForClass(classId) : [];
+        var groupSelect = document.getElementById('groupSelect');
+        renderOptions(groupSelect, groups, '请选择');
+        if (groups.length === 1) {
+          groupSelect.value = String(groups[0].id);
+          await onGroupChange(groups[0].id);
+        } else {
+          showEmpty('请选择小组查看优秀作业卡片');
+        }
+      }
+
+      async function onGroupChange(groupId) {
+        currentGroup =
+          accessibleGroups.find(function (group) {
+            return Number(group.id) === Number(groupId);
+          }) || null;
+        renderCurrentPath(currentGroup);
+        if (!currentGroup) {
+          showEmpty('请选择小组查看优秀作业卡片');
+          return;
+        }
+        showEmpty('正在加载该小组的优秀作业...');
+        try {
+          await loadCurrentGroup();
+        } catch (error) {
+          showEmpty('优秀作业加载失败：' + (error.message || error));
+        }
+      }
+
+      function renderCurrentPath(group) {
+        var classOrg = group
+          ? ExcellentHomework.getOrg(publicityContext.orgs, group.parent_id)
+          : null;
+        var bigClass = classOrg
+          ? ExcellentHomework.getOrg(publicityContext.orgs, classOrg.parent_id)
+          : null;
+        document.getElementById('bigClassName').textContent = bigClass ? bigClass.name : '--';
+        document.getElementById('className').textContent = classOrg ? classOrg.name : '--';
+        document.getElementById('groupName').textContent = group ? group.name : '--';
+      }
+
+      async function loadCurrentGroup() {
+        var groupId = Number(currentGroup.id);
+        var dabanId = ExcellentHomework.getDabanId(publicityContext.orgs, groupId);
+        currentSchedule =
+          publicitySchedules.find(function (schedule) {
+            return schedule.schedule_date === getToday() && Number(schedule.org_id) === Number(dabanId);
+          }) || null;
+        currentEntries = currentSchedule
+          ? await ExcellentHomework.loadEntries(currentSchedule.id, [groupId])
+          : [];
+        currentCard = null;
+        selectedEntryIds = currentEntries.slice(0, 3).map(function (entry) {
+          return Number(entry.id);
+        });
+        await loadCardEditor();
+        renderWorkbench();
+      }
+
+      async function loadCardEditor() {
+        if (currentSchedule) {
+          var cardResult = await window.db
+            .from('publicity_homework_cards')
+            .select('*')
+            .eq('schedule_id', currentSchedule.id)
+            .eq('org_id', currentGroup.id)
+            .maybeSingle();
+          if (cardResult.error) throw cardResult.error;
+          currentCard = cardResult.data || null;
+          if (currentCard) {
+            var itemResult = await window.db
+              .from('publicity_homework_card_items')
+              .select('entry_id,sort_order')
+              .eq('card_id', currentCard.id)
+              .order('sort_order');
+            if (itemResult.error) throw itemResult.error;
+            selectedEntryIds = (itemResult.data || [])
+              .map(function (item) {
+                return Number(item.entry_id);
+              })
+              .filter(function (id) {
+                return currentEntries.some(function (entry) {
+                  return Number(entry.id) === id;
+                });
+              });
+          }
+        }
+        setEditorValues(currentCard);
+      }
+
+      function setEditorValues(card) {
+        document.getElementById('cardTitleInput').value = card ? card.title : '今日优秀作业';
+        document.getElementById('cardSubtitleInput').value = card
+          ? card.subtitle
+          : currentGroup.name + ' · ' + ExcellentHomework.formatDate(getToday(), false);
+        document.getElementById('cardIntroInput').value = card
+          ? card.intro_text
+          : '在文字里照见思考，在坚持中积蓄成长。';
+        document.getElementById('cardClosingInput').value = card
+          ? card.closing_text
+          : '知行合一，日日精进。';
+        setTheme(card ? card.theme : 'vermillion');
+        setLayout(card ? card.layout : 'collection');
+      }
+
+      function renderWorkbench() {
+        document.getElementById('editorSection').hidden = false;
+        document.getElementById('emptyPanel').style.display = 'none';
+        document.getElementById('workbenchTitle').textContent =
+          currentGroup.name + ' · 优秀作业卡片';
+        renderCardStatus(currentCard ? currentCard.status : '');
+        updatePreview();
+      }
+
+      function toggleEditorFields() {
+        var fields = document.getElementById('editorFields');
+        fields.hidden = !fields.hidden;
+      }
+
+      function setTheme(theme) {
+        cardTheme = ['vermillion', 'ink', 'jade', 'paper'].indexOf(theme) >= 0
+          ? theme
+          : 'vermillion';
+        document.querySelectorAll('.theme-swatch').forEach(function (button) {
+          button.classList.toggle('active', button.dataset.theme === cardTheme);
+        });
+        updatePreview();
+      }
+
+      function setLayout(layout) {
+        cardLayout = layout === 'single' ? 'single' : 'collection';
+        document.getElementById('layoutSingle').classList.toggle('active', cardLayout === 'single');
+        document.getElementById('layoutCollection').classList.toggle('active', cardLayout === 'collection');
+        updatePreview();
+      }
+
+      function getSelectedEntries() {
+        var selected = selectedEntryIds
+          .map(function (id) {
+            return currentEntries.find(function (entry) {
+              return Number(entry.id) === Number(id);
+            });
+          })
+          .filter(Boolean);
+        return cardLayout === 'single' ? selected.slice(0, 1) : selected.slice(0, 3);
+      }
+
+      function updatePreview() {
+        var card = document.getElementById('publicityCard');
+        if (!card || !currentGroup) return;
+        card.className = 'publicity-card theme-' + cardTheme + ' layout-' + cardLayout;
+        var selected = getSelectedEntries();
+        var entriesHtml = selected.length
+          ? selected
+              .map(function (entry) {
+                return (
+                  '<div class="card-entry">' +
+                  '<div class="card-entry-name">' +
+                  escapeHtml(entry.person_name_snapshot + ' · ' + currentGroup.name) +
+                  '</div>' +
+                  '<div class="card-entry-text">' +
+                  escapeHtml(entry.content) +
+                  '</div>' +
+                  '</div>'
+                );
+              })
+              .join('')
+          : '<div class="card-entry"><div class="card-entry-name">' +
+            escapeHtml(currentGroup.name) +
+            '</div><div class="card-entry-text">本组今天尚未提交优秀作业</div></div>';
+        card.innerHTML =
+          '<div class="card-brand">阳明心学 · 优秀作业</div>' +
+          '<h3 class="card-title">' +
+          escapeHtml(document.getElementById('cardTitleInput').value || '今日优秀作业') +
+          '</h3>' +
+          '<div class="card-subtitle">' +
+          escapeHtml(document.getElementById('cardSubtitleInput').value || currentGroup.name) +
+          '</div>' +
+          '<div class="card-intro">' +
+          escapeHtml(document.getElementById('cardIntroInput').value || '') +
+          '</div>' +
+          '<div class="card-entries">' +
+          entriesHtml +
+          '</div>' +
+          '<footer class="card-footer">' +
+          '<span class="card-footer-copy">' +
+          escapeHtml(document.getElementById('cardClosingInput').value || '') +
+          '</span>' +
+          '<span class="card-date">' +
+          escapeHtml(ExcellentHomework.formatShortDate(getToday())) +
+          '</span>' +
+          '</footer>';
+      }
+
+      function renderCardStatus(status) {
+        var badge = document.getElementById('cardStatus');
+        var entryCount = currentEntries.length;
+        badge.className =
+          'status-badge' + (status === 'ready' || status === 'published' ? ' ready' : '');
+        badge.textContent =
+          status === 'ready'
+            ? '可发布'
+            : status === 'published'
+              ? '已发布'
+              : status === 'draft'
+                ? '草稿'
+                : entryCount + '/3';
+      }
+
+      async function saveCard(status) {
+        var selected = getSelectedEntries();
+        if (!currentSchedule || !selected.length) {
+          showToast('本组今天暂无可保存的优秀作业', 'error');
+          return;
+        }
+        var button =
+          status === 'ready'
+            ? document.getElementById('markReadyBtn')
+            : document.getElementById('saveDraftBtn');
+        button.disabled = true;
+        try {
+          var payload = {
+            semester_id: publicityContext.semesterId,
+            schedule_id: Number(currentSchedule.id),
+            org_id: Number(currentGroup.id),
+            title: document.getElementById('cardTitleInput').value.trim() || '今日优秀作业',
+            subtitle: document.getElementById('cardSubtitleInput').value.trim(),
+            intro_text: document.getElementById('cardIntroInput').value.trim(),
+            closing_text: document.getElementById('cardClosingInput').value.trim(),
+            theme: cardTheme,
+            layout: cardLayout,
+            status: status,
+            created_by: currentCard ? currentCard.created_by : publicityContext.profile.id,
+            updated_by: publicityContext.profile.id,
+            updated_at: new Date().toISOString()
+          };
+          var cardResult = await window.db
+            .from('publicity_homework_cards')
+            .upsert(payload, { onConflict: 'schedule_id,org_id' })
+            .select('*')
+            .single();
+          if (cardResult.error) throw cardResult.error;
+          currentCard = cardResult.data;
+          var deleteResult = await window.db
+            .from('publicity_homework_card_items')
+            .delete()
+            .eq('card_id', currentCard.id);
+          if (deleteResult.error) throw deleteResult.error;
+          var itemRows = selected.map(function (entry, index) {
+            return {
+              card_id: currentCard.id,
+              entry_id: entry.id,
+              sort_order: index + 1
+            };
+          });
+          var itemResult = await window.db.from('publicity_homework_card_items').insert(itemRows);
+          if (itemResult.error) throw itemResult.error;
+          renderCardStatus(status);
+          showToast(status === 'ready' ? '卡片已标记为可发布' : '草稿已保存', 'success');
+        } catch (error) {
+          showToast('保存失败：' + (error.message || error), 'error');
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function getCardText() {
+        return [
+          document.getElementById('cardTitleInput').value.trim() || '今日优秀作业',
+          document.getElementById('cardSubtitleInput').value.trim(),
+          document.getElementById('cardIntroInput').value.trim(),
+          getSelectedEntries()
+            .map(function (entry) {
+              return entry.person_name_snapshot + ' · ' + currentGroup.name + '\n' + entry.content;
+            })
+            .join('\n\n'),
+          document.getElementById('cardClosingInput').value.trim()
+        ]
+          .filter(Boolean)
+          .join('\n\n');
+      }
+
+      async function copyCardText() {
+        var text = getCardText();
+        try {
+          if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('clipboard unavailable');
+          await navigator.clipboard.writeText(text);
+          showToast('宣发文案已复制', 'success');
+        } catch (error) {
+          var input = document.createElement('textarea');
+          input.value = text;
+          input.setAttribute('readonly', '');
+          input.style.cssText = 'position:fixed;left:-9999px;top:0;';
+          document.body.appendChild(input);
+          input.select();
+          var copied = false;
+          try {
+            copied = document.execCommand('copy');
+          } catch (fallbackError) {}
+          input.remove();
+          showToast(copied ? '宣发文案已复制' : '复制失败，请重试', copied ? 'success' : 'error');
+        }
+      }
+
+      async function downloadCard() {
+        var button = document.getElementById('downloadCardBtn');
+        button.disabled = true;
+        try {
+          await loadHtml2Canvas();
+          if (document.fonts && document.fonts.ready) await document.fonts.ready;
+          var canvas = await html2canvas(document.getElementById('publicityCard'), {
+            scale: 3,
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: false
+          });
+          var fileName = '优秀作业_' + currentGroup.name + '_' + getToday() + '.png';
+          var blob = await new Promise(function (resolve) {
+            if (!canvas.toBlob) {
+              resolve(null);
+              return;
+            }
+            canvas.toBlob(resolve, 'image/png');
+          });
+          var isMobileBrowser =
+            /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
+          if (isMobileBrowser && blob && window.File && navigator.share && navigator.canShare) {
+            var file = new File([blob], fileName, { type: 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              try {
+                await navigator.share({ files: [file], title: '优秀作业宣发卡片' });
+                return;
+              } catch (shareError) {
+                if (shareError && shareError.name === 'AbortError') return;
+              }
+            }
+          }
+          if (isMobileBrowser) {
+            document.getElementById('exportPreviewImage').src = canvas.toDataURL('image/png');
+            document.getElementById('exportPreviewPanel').hidden = false;
+            showToast('请长按下方图片保存或转发', 'success');
+            return;
+          }
+          var link = document.createElement('a');
+          var objectUrl = blob ? URL.createObjectURL(blob) : '';
+          link.download = fileName;
+          link.href = objectUrl || canvas.toDataURL('image/png');
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          if (objectUrl) {
+            setTimeout(function () {
+              URL.revokeObjectURL(objectUrl);
+            }, 1000);
+          }
+          showToast('卡片已导出', 'success');
+        } catch (error) {
+          showToast('导出失败：' + (error.message || error), 'error');
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function loadHtml2Canvas() {
+        if (typeof html2canvas === 'function') return Promise.resolve();
+        return new Promise(function (resolve, reject) {
+          var existing = document.querySelector('script[data-html2canvas]');
+          if (existing) {
+            existing.addEventListener('load', resolve, { once: true });
+            existing.addEventListener(
+              'error',
+              function () {
+                reject(new Error('图片组件加载失败，请检查网络'));
+              },
+              { once: true }
+            );
+            return;
+          }
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          script.dataset.html2canvas = 'true';
+          script.onload = resolve;
+          script.onerror = function () {
+            reject(new Error('图片组件加载失败，请检查网络'));
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      function showEmpty(message) {
+        document.getElementById('editorSection').hidden = true;
+        var panel = document.getElementById('emptyPanel');
+        panel.textContent = message;
+        panel.style.display = '';
+      }
+
+      init().finally(function () {
+        document.body.classList.remove('app-loading');
+      });
+    </script>
+  </body>
+</html>

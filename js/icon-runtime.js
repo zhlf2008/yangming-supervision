@@ -1,4 +1,4 @@
-import * as IconSet from '../src/icons/icons.js?v=2';
+import * as IconSet from '../src/icons/icons.js?v=3';
 
 function hydrateIcon(element) {
   if (!element || element.dataset.iconReady === 'true') return;

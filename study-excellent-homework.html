@@ -1,56 +1,90 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>晨读安排 - 优秀作业</title>
+    <title>学委管理 - 优秀作业</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <style>
       .page-header {
-        display: block;
-        position: relative;
-        padding: 30px 20px 20px;
-        text-align: center;
-      }
-      .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 50%;
-        width: 60px;
-        height: 4px;
-        transform: translateX(-50%);
-        border-radius: 2px;
-        background: linear-gradient(90deg, var(--vermillion), var(--gold));
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
       }
       .page-title {
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
-        font-size: 25px;
+        font-size: 20px;
         font-weight: 600;
       }
-      .page-subtitle {
-        margin-top: 6px;
+      .header-card {
+        padding: 16px 18px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .header-body {
+        display: flex;
+        gap: 16px;
+      }
+      .header-col {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .header-col + .header-col {
+        padding-left: 16px;
+        border-left: 1px solid var(--border);
+      }
+      .header-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .header-label {
+        width: 42px;
+        flex-shrink: 0;
         color: var(--ink-muted);
-        font-size: 13px;
-      }
-      .module-switch {
-        margin-top: 12px;
-        margin-left: -20px;
-      }
-      .filter-band {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 12px;
-        padding: 15px 0 17px;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-      }
-      .field-label {
-        display: block;
-        margin-bottom: 6px;
-        color: var(--ink-light);
         font-size: 12px;
+      }
+      .header-value {
+        overflow: hidden;
+        color: var(--ink-dark);
+        font-size: 13px;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .header-value.date {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+      }
+      .section {
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        font-size: 16px;
         font-weight: 600;
+      }
+      .section-icon {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--gold-light);
       }
       .field-control {
         width: 100%;
@@ -68,57 +102,42 @@
         border-color: var(--gold);
         outline: 2px solid rgba(212, 165, 116, 0.16);
       }
-      .progress-band {
-        padding: 18px 2px 14px;
-      }
-      .progress-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 9px;
-      }
-      .progress-title {
-        font-size: 14px;
-        font-weight: 600;
-      }
-      .progress-count {
-        color: var(--vermillion);
-        font-size: 13px;
-        font-weight: 700;
-      }
-      .progress-track {
-        height: 7px;
-        overflow: hidden;
-        border-radius: 4px;
-        background: var(--border);
-      }
-      .progress-fill {
-        width: 0;
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, var(--vermillion), var(--gold));
-        transition: width 0.25s ease;
-      }
       .group-list {
         display: grid;
         gap: 13px;
       }
       .group-card {
-        overflow: hidden;
+        padding: 20px;
+        overflow: visible;
         border: 1px solid var(--border);
-        border-radius: 8px;
-        background: #fff;
-        box-shadow: 0 2px 10px var(--shadow);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
       }
       .group-card-head {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 14px 15px;
-        border-bottom: 1px solid var(--border);
-        background: #fcfbf9;
+        padding: 0 0 16px;
+      }
+      .group-heading {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 9px;
+      }
+      .group-card-icon {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--gold-light);
+        color: var(--vermillion);
+        font-size: 16px;
       }
       .group-name {
         font-size: 15px;
@@ -143,14 +162,17 @@
         color: var(--green);
       }
       .homework-rows {
-        padding: 2px 15px 0;
+        padding: 0;
       }
       .homework-row {
         display: grid;
-        grid-template-columns: 112px minmax(0, 1fr);
-        gap: 10px;
-        padding: 13px 0;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr);
+        gap: 12px;
+        padding: 14px 0;
         border-bottom: 1px solid #f1eeea;
+      }
+      .homework-row:first-child {
+        border-top: 1px solid #f1eeea;
       }
       .member-field {
         min-width: 0;
@@ -163,45 +185,52 @@
         font-weight: 600;
       }
       .member-select {
-        height: 40px;
+        height: 44px;
       }
       .homework-content {
         width: 100%;
-        min-height: 68px;
+        min-height: 72px;
         resize: vertical;
-        padding: 10px 11px;
+        padding: 11px 12px;
         border: 1px solid var(--border);
-        border-radius: 7px;
-        background: #fff;
+        border-radius: 8px;
+        background: var(--bg-primary);
         color: var(--ink-dark);
         font: inherit;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.55;
       }
       .group-actions {
-        display: flex;
-        justify-content: flex-end;
-        padding: 13px 15px 15px;
+        padding: 0;
       }
       .submit-group-btn {
         display: inline-flex;
+        width: 100%;
         align-items: center;
         justify-content: center;
         gap: 7px;
-        min-width: 112px;
-        min-height: 40px;
-        padding: 9px 15px;
+        padding: 18px;
+        margin-top: 16px;
         border: 0;
-        border-radius: 7px;
+        border-radius: 12px;
         background: var(--vermillion);
         color: #fff;
-        font-size: 13px;
+        font-size: 17px;
         font-weight: 600;
         cursor: pointer;
+        transition:
+          background 0.3s,
+          transform 0.15s;
       }
       .submit-group-btn svg {
-        width: 17px;
-        height: 17px;
+        width: 18px;
+        height: 18px;
+      }
+      .submit-group-btn.submitted {
+        background: var(--green);
+      }
+      .submit-group-btn:active {
+        transform: scale(0.98);
       }
       .submit-group-btn:disabled {
         cursor: wait;
@@ -209,46 +238,91 @@
       }
       .empty-panel {
         padding: 42px 18px;
-        border-top: 1px solid var(--border);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
         color: var(--ink-muted);
         text-align: center;
         font-size: 13px;
         line-height: 1.7;
       }
       @media (max-width: 390px) {
-        .container { padding-inline: 12px; }
-        .filter-band { grid-template-columns: 1fr; }
-        .homework-row { grid-template-columns: 1fr; gap: 8px; }
-        .slot-label { margin-bottom: 4px; }
-        .member-select { height: 42px; }
+        .container {
+          padding-inline: 12px;
+        }
+        .homework-row {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .slot-label {
+          margin-bottom: 4px;
+        }
+        .member-select {
+          height: 42px;
+        }
       }
     </style>
   </head>
   <body class="app-loading">
     <main class="container">
       <header class="page-header">
+        <a class="back-btn" href="study-dashboard.html" aria-label="返回学委管理首页"></a>
         <h1 class="page-title">优秀作业</h1>
-        <p class="page-subtitle" id="semesterSubtitle">加载中...</p>
-        <a class="back-btn module-switch" href="study-dashboard.html" aria-label="返回晨读安排首页"></a>
       </header>
 
-      <section class="filter-band" aria-label="填报范围与日期">
-        <label>
-          <span class="field-label">组织范围</span>
-          <select class="field-control" id="scopeSelect" onchange="onScopeChange()"></select>
-        </label>
-        <label>
-          <span class="field-label">作业考核日程</span>
-          <select class="field-control" id="scheduleSelect" onchange="loadSelectedSchedule()"></select>
-        </label>
-      </section>
-
-      <section class="progress-band" id="progressBand" hidden>
-        <div class="progress-head">
-          <span class="progress-title">小组提交进度</span>
-          <span class="progress-count" id="progressCount">0/0</span>
+      <div class="header-card">
+        <div class="semester-wrap" id="semesterName"></div>
+        <div class="header-body">
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">日期</span><span class="header-value date" id="currentDate">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">星期</span><span class="header-value" id="currentWeekday">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">填报人</span><span class="header-value" id="reporterName">--</span>
+            </div>
+          </div>
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">大班</span><span class="header-value" id="bigClassName">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">班级</span><span class="header-value" id="className">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">小组</span><span class="header-value" id="groupName">--</span>
+            </div>
+          </div>
         </div>
-        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <section class="section" id="orgSelectorSection">
+        <div class="section-title">
+          <span class="section-icon" data-icon="BuildingIcon"></span>
+          选择填报小组
+        </div>
+        <div class="org-cascade">
+          <div class="org-group">
+            <label class="org-label" for="bigClassSelect">大班</label>
+            <select class="org-select" id="bigClassSelect" onchange="onBigClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="classSelect">班级</label>
+            <select class="org-select" id="classSelect" onchange="onClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="groupSelect">小组</label>
+            <select class="org-select" id="groupSelect" onchange="onGroupChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+        </div>
       </section>
 
       <section class="group-list" id="groupList"></section>
@@ -265,165 +339,383 @@
       renderModuleBottomNav('study', 'homework');
 
       var homeworkContext = null;
+      var currentUser = null;
+      var currentGroup = null;
+      var currentSchedule = null;
+      var accessibleGroups = [];
       var eligibleSchedules = [];
-      var currentGroups = [];
       var currentMembersByGroup = {};
       var currentEntries = [];
+      var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       async function init() {
         await waitForDb();
         await refreshCurrentUser();
-        if (!checkLogin()) return;
+        currentUser = checkLogin();
+        if (!currentUser) return;
         if (!(await guardModuleAccess('study'))) return;
 
         try {
           homeworkContext = await ExcellentHomework.loadAccessContext('study');
-          var semesterResult = await window.db.from('semesters')
+          var semesterResult = await window.db
+            .from('semesters')
             .select('semester_name')
             .eq('id', homeworkContext.semesterId)
             .single();
-          document.getElementById('semesterSubtitle').textContent =
-            semesterResult.data ? semesterResult.data.semester_name : '当前学期';
-          eligibleSchedules = (await ExcellentHomework.loadEligibleSchedules(homeworkContext))
-            .filter(function (schedule) { return schedule.schedule_date <= getToday(); });
-          renderScopeOptions();
-          await onScopeChange();
+          setCurrentSemester(
+            'semesterName',
+            semesterResult.data ? semesterResult.data.semester_name : '当前学期',
+            'tag-lg'
+          );
+          renderTodayInfo();
+          accessibleGroups = getAccessibleGroups();
+          if (!accessibleGroups.length) {
+            renderOrganizationSelector(null);
+            showEmpty('当前账号在本学期没有可填报的下属小组');
+            return;
+          }
+          eligibleSchedules = await ExcellentHomework.loadEligibleSchedules(homeworkContext);
+          var detectedGroup = await resolveCurrentUserGroup();
+          currentGroup =
+            accessibleGroups.find(function (group) {
+              return detectedGroup && Number(group.id) === Number(detectedGroup.id);
+            }) || accessibleGroups[0];
+          renderOrganizationSelector(currentGroup);
+          await loadCurrentGroup();
         } catch (error) {
           showEmpty('加载失败：' + (error.message || error));
         }
       }
 
-      function renderScopeOptions() {
-        var select = document.getElementById('scopeSelect');
-        var scopes = homeworkContext.scopes || [];
-        select.innerHTML = scopes.map(function (scope) {
-          return '<option value="' + scope.id + '">' +
-            escapeHtml(scope.level + ' · ' + scope.name) + '</option>';
-        }).join('');
-        select.disabled = scopes.length <= 1;
+      function renderTodayInfo() {
+        var today = getToday();
+        document.getElementById('currentDate').textContent = today;
+        document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
+        document.getElementById('reporterName').textContent = currentUser.name || '未知';
       }
 
-      async function onScopeChange() {
-        var scopeId = Number(document.getElementById('scopeSelect').value || 0);
-        currentGroups = ExcellentHomework.getGroupsForScope(homeworkContext.orgs, scopeId);
-        var groupIds = currentGroups.map(function (group) { return Number(group.id); });
-        currentMembersByGroup = await ExcellentHomework.loadGroupMembers(
-          homeworkContext.semesterId,
-          groupIds
+      async function resolveCurrentUserGroup() {
+        var orgs = homeworkContext.orgs || [];
+        if (currentUser.phone) {
+          var personResult = await window.db.from('people').select('id').eq('phone', currentUser.phone).maybeSingle();
+          if (personResult.error) throw personResult.error;
+          if (personResult.data) {
+            var assignmentResult = await window.db
+              .from('person_org_assignments')
+              .select('org_id,sort_order')
+              .eq('semester_id', homeworkContext.semesterId)
+              .eq('person_id', personResult.data.id)
+              .eq('org_level', '小组')
+              .eq('status', 'active')
+              .order('sort_order')
+              .limit(1);
+            if (assignmentResult.error) throw assignmentResult.error;
+            var assignment = (assignmentResult.data || [])[0];
+            var assignedGroup = assignment ? ExcellentHomework.getOrg(orgs, assignment.org_id) : null;
+            if (assignedGroup && assignedGroup.level === '小组') return assignedGroup;
+          }
+        }
+        var membershipGroup = (homeworkContext.memberships || [])
+          .map(function (membership) {
+            return ExcellentHomework.getOrg(orgs, membership.org_id);
+          })
+          .find(function (org) {
+            return org && org.level === '小组';
+          });
+        if (membershipGroup) return membershipGroup;
+        return (
+          (homeworkContext.scopes || []).find(function (org) {
+            return org && org.level === '小组';
+          }) || null
         );
-        renderScheduleOptions(scopeId);
-        await loadSelectedSchedule();
       }
 
-      function renderScheduleOptions(scopeId) {
-        var dabanId = ExcellentHomework.getDabanId(homeworkContext.orgs, scopeId);
-        var schedules = eligibleSchedules.filter(function (schedule) {
-          return Number(schedule.org_id) === Number(dabanId);
+      function getAccessibleGroups() {
+        var groups = [];
+        (homeworkContext.scopes || []).forEach(function (scope) {
+          ExcellentHomework.getGroupsForScope(homeworkContext.orgs, scope.id).forEach(function (group) {
+            if (
+              !groups.some(function (item) {
+                return Number(item.id) === Number(group.id);
+              })
+            ) {
+              groups.push(group);
+            }
+          });
         });
-        var select = document.getElementById('scheduleSelect');
-        select.innerHTML = schedules.map(function (schedule) {
-          return '<option value="' + schedule.id + '">' +
-            escapeHtml(ExcellentHomework.formatDate(schedule.schedule_date, false)) +
-            '</option>';
-        }).join('');
-        select.disabled = schedules.length <= 1;
+        return groups.sort(function (a, b) {
+          return (
+            (a.sort_order || 0) - (b.sort_order || 0) ||
+            String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN')
+          );
+        });
       }
 
-      async function loadSelectedSchedule() {
-        var scheduleId = Number(document.getElementById('scheduleSelect').value || 0);
-        if (!homeworkContext.scopes.length) {
-          showEmpty('当前账号没有可管理的晨读组织范围');
+      function uniqueOrgs(orgs) {
+        var seen = {};
+        return orgs.filter(function (org) {
+          if (!org || seen[org.id]) return false;
+          seen[org.id] = true;
+          return true;
+        });
+      }
+
+      function getClassesForBigClass(bigClassId) {
+        return uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = ExcellentHomework.getOrg(homeworkContext.orgs, group.parent_id);
+            return classOrg && Number(classOrg.parent_id) === Number(bigClassId) ? classOrg : null;
+          })
+        );
+      }
+
+      function getGroupsForClass(classId) {
+        return accessibleGroups.filter(function (group) {
+          return Number(group.parent_id) === Number(classId);
+        });
+      }
+
+      function renderOptions(select, orgs, placeholder) {
+        select.innerHTML =
+          (orgs.length === 1 ? '' : '<option value="">' + placeholder + '</option>') +
+          orgs
+            .map(function (org) {
+              return '<option value="' + org.id + '">' + escapeHtml(org.name) + '</option>';
+            })
+            .join('');
+      }
+
+      function renderOrganizationSelector(defaultGroup) {
+        var bigClassSelect = document.getElementById('bigClassSelect');
+        var classSelect = document.getElementById('classSelect');
+        var groupSelect = document.getElementById('groupSelect');
+        var bigClasses = uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = ExcellentHomework.getOrg(homeworkContext.orgs, group.parent_id);
+            return classOrg ? ExcellentHomework.getOrg(homeworkContext.orgs, classOrg.parent_id) : null;
+          })
+        );
+        renderOptions(bigClassSelect, bigClasses, '请选择');
+        if (!defaultGroup) {
+          classSelect.innerHTML = '<option value="">--</option>';
+          groupSelect.innerHTML = '<option value="">--</option>';
+          renderCurrentPath(null);
           return;
         }
-        if (!currentGroups.length) {
-          showEmpty('当前组织范围下暂无在用小组');
+        var classOrg = ExcellentHomework.getOrg(homeworkContext.orgs, defaultGroup.parent_id);
+        var bigClass = classOrg
+          ? ExcellentHomework.getOrg(homeworkContext.orgs, classOrg.parent_id)
+          : null;
+        if (!classOrg || !bigClass) return;
+        bigClassSelect.value = String(bigClass.id);
+        var classes = getClassesForBigClass(bigClass.id);
+        renderOptions(classSelect, classes, '请选择');
+        classSelect.value = String(classOrg.id);
+        var groups = getGroupsForClass(classOrg.id);
+        renderOptions(groupSelect, groups, '请选择');
+        groupSelect.value = String(defaultGroup.id);
+        renderCurrentPath(defaultGroup);
+      }
+
+      async function onBigClassChange(bigClassId) {
+        currentGroup = null;
+        currentSchedule = null;
+        renderCurrentPath(null);
+        document.getElementById('groupList').innerHTML = '';
+        var classes = bigClassId ? getClassesForBigClass(bigClassId) : [];
+        var classSelect = document.getElementById('classSelect');
+        var groupSelect = document.getElementById('groupSelect');
+        renderOptions(classSelect, classes, '请选择');
+        groupSelect.innerHTML = '<option value="">请选择</option>';
+        if (classes.length === 1) {
+          classSelect.value = String(classes[0].id);
+          await onClassChange(classes[0].id);
+        } else {
+          showEmpty('请选择班级和小组');
+        }
+      }
+
+      async function onClassChange(classId) {
+        currentGroup = null;
+        currentSchedule = null;
+        renderCurrentPath(null);
+        document.getElementById('groupList').innerHTML = '';
+        var groups = classId ? getGroupsForClass(classId) : [];
+        var groupSelect = document.getElementById('groupSelect');
+        renderOptions(groupSelect, groups, '请选择');
+        if (groups.length === 1) {
+          groupSelect.value = String(groups[0].id);
+          await onGroupChange(groups[0].id);
+        } else {
+          showEmpty('请选择小组后填报今天的优秀作业');
+        }
+      }
+
+      async function onGroupChange(groupId) {
+        currentGroup =
+          accessibleGroups.find(function (group) {
+            return Number(group.id) === Number(groupId);
+          }) || null;
+        renderCurrentPath(currentGroup);
+        if (!currentGroup) {
+          showEmpty('请选择小组后填报今天的优秀作业');
           return;
         }
-        if (!scheduleId) {
-          showEmpty('当前组织暂无已开始的作业考核日程');
-          return;
-        }
+        showEmpty('正在加载该小组今天的优秀作业...');
         try {
-          currentEntries = await ExcellentHomework.loadEntries(
-            scheduleId,
-            currentGroups.map(function (group) { return Number(group.id); })
-          );
-          renderGroups();
+          await loadCurrentGroup();
         } catch (error) {
           showEmpty('优秀作业加载失败：' + (error.message || error));
         }
       }
 
-      function renderGroups() {
+      function renderCurrentPath(group) {
+        var classOrg = group ? ExcellentHomework.getOrg(homeworkContext.orgs, group.parent_id) : null;
+        var bigClass = classOrg
+          ? ExcellentHomework.getOrg(homeworkContext.orgs, classOrg.parent_id)
+          : null;
+        document.getElementById('bigClassName').textContent = bigClass ? bigClass.name : '--';
+        document.getElementById('className').textContent = classOrg ? classOrg.name : '--';
+        document.getElementById('groupName').textContent = group ? group.name : '--';
+      }
+
+      async function loadCurrentGroup() {
+        var groupId = Number(currentGroup.id);
+        currentMembersByGroup = await ExcellentHomework.loadGroupMembers(homeworkContext.semesterId, [groupId]);
+        var dabanId = ExcellentHomework.getDabanId(homeworkContext.orgs, groupId);
+        currentSchedule =
+          eligibleSchedules.find(function (schedule) {
+            return schedule.schedule_date === getToday() && Number(schedule.org_id) === Number(dabanId);
+          }) || null;
+        if (!currentSchedule) {
+          showEmpty('该小组今天没有作业考核日程，无需填报优秀作业');
+          return;
+        }
+        currentEntries = await ExcellentHomework.loadEntries(currentSchedule.id, [groupId]);
+        renderGroup();
+      }
+
+      function renderGroup() {
         var container = document.getElementById('groupList');
-        container.innerHTML = currentGroups.map(function (group) {
-          var entries = currentEntries.filter(function (entry) {
-            return Number(entry.org_id) === Number(group.id);
-          });
-          var complete = entries.length === 3 && entries.every(function (entry) {
+        var group = currentGroup;
+        var entries = currentEntries.filter(function (entry) {
+          return Number(entry.org_id) === Number(group.id);
+        });
+        var complete =
+          entries.length === 3 &&
+          entries.every(function (entry) {
             return entry.person_id && String(entry.content || '').trim();
           });
-          var rows = [1, 2, 3].map(function (slot) {
-            var entry = entries.find(function (item) {
-              return Number(item.slot_index) === slot;
-            }) || {};
+        var rows = [1, 2, 3]
+          .map(function (slot) {
+            var entry =
+              entries.find(function (item) {
+                return Number(item.slot_index) === slot;
+              }) || {};
             return renderHomeworkRow(group, slot, entry);
-          }).join('');
-          return '<article class="group-card" id="groupCard-' + group.id + '">' +
-            '<header class="group-card-head">' +
-              '<div><div class="group-name">' + escapeHtml(group.name) + '</div>' +
-              '<div class="group-path">' +
-                escapeHtml(buildOrgPath(group.id, homeworkContext.orgs)) +
-              '</div></div>' +
-              '<span class="status-tag' + (complete ? ' complete' : '') + '">' +
-                (complete ? '已提交' : entries.length + '/3') +
-              '</span>' +
-            '</header>' +
-            '<div class="homework-rows">' + rows + '</div>' +
-            '<div class="group-actions">' +
-              '<button class="submit-group-btn" id="submitGroup-' + group.id +
-                '" onclick="submitGroup(' + group.id + ')">' +
-                '<span data-icon="SaveIcon"></span><span>' +
-                  (complete ? '更新提交' : '提交本组') +
-                '</span>' +
-              '</button>' +
-            '</div>' +
+          })
+          .join('');
+        container.innerHTML =
+          '<article class="group-card" id="groupCard-' +
+          group.id +
+          '">' +
+          '<header class="group-card-head">' +
+          '<div class="group-heading">' +
+          '<span class="group-card-icon" data-icon="FileEditIcon"></span>' +
+          '<div><div class="group-name">' +
+          escapeHtml(group.name) +
+          '</div>' +
+          '<div class="group-path">' +
+          escapeHtml(buildOrgPath(group.id, homeworkContext.orgs)) +
+          '</div></div></div>' +
+          '<span class="status-tag' +
+          (complete ? ' complete' : '') +
+          '">' +
+          (complete ? '已提交' : entries.length + '/3') +
+          '</span>' +
+          '</header>' +
+          '<div class="homework-rows">' +
+          rows +
+          '</div>' +
+          '<div class="group-actions">' +
+          '<button class="submit-group-btn' +
+          (complete ? ' submitted' : '') +
+          '" id="submitGroup-' +
+          group.id +
+          '" onclick="submitGroup(' +
+          group.id +
+          ')">' +
+          '<span data-icon="SaveIcon"></span><span>' +
+          (complete ? '已提交，点击更新' : '提交优秀作业') +
+          '</span>' +
+          '</button>' +
+          '</div>' +
           '</article>';
-        }).join('');
         document.getElementById('emptyPanel').style.display = 'none';
-        document.getElementById('progressBand').hidden = false;
-        updateProgress();
       }
 
       function renderHomeworkRow(group, slot, entry) {
         var members = currentMembersByGroup[Number(group.id)] || [];
-        var options = '<option value="">选择成员</option>' + members.map(function (member) {
-          return '<option value="' + member.id + '"' +
-            (Number(entry.person_id) === Number(member.id) ? ' selected' : '') + '>' +
-            escapeHtml(member.name) + '</option>';
-        }).join('');
-        return '<div class="homework-row">' +
+        var options =
+          '<option value="">选择成员</option>' +
+          members
+            .map(function (member) {
+              return (
+                '<option value="' +
+                member.id +
+                '"' +
+                (Number(entry.person_id) === Number(member.id) ? ' selected' : '') +
+                '>' +
+                escapeHtml(member.name) +
+                '</option>'
+              );
+            })
+            .join('');
+        return (
+          '<div class="homework-row">' +
           '<div class="member-field">' +
-            '<label class="slot-label" for="member-' + group.id + '-' + slot +
-              '">优秀作业 ' + slot + '</label>' +
-            '<select class="field-control member-select" id="member-' + group.id + '-' +
-              slot + '">' + options + '</select>' +
+          '<label class="slot-label" for="member-' +
+          group.id +
+          '-' +
+          slot +
+          '">优秀作业 ' +
+          slot +
+          '</label>' +
+          '<select class="field-control member-select" id="member-' +
+          group.id +
+          '-' +
+          slot +
+          '">' +
+          options +
+          '</select>' +
           '</div>' +
           '<div>' +
-            '<label class="slot-label" for="content-' + group.id + '-' + slot +
-              '">作业内容</label>' +
-            '<textarea class="homework-content" id="content-' + group.id + '-' + slot +
-              '" maxlength="4000" placeholder="输入优秀作业内容">' +
-              escapeHtml(entry.content || '') + '</textarea>' +
+          '<label class="slot-label" for="content-' +
+          group.id +
+          '-' +
+          slot +
+          '">作业内容</label>' +
+          '<textarea class="homework-content" id="content-' +
+          group.id +
+          '-' +
+          slot +
+          '" maxlength="4000" placeholder="输入优秀作业内容">' +
+          escapeHtml(entry.content || '') +
+          '</textarea>' +
           '</div>' +
-        '</div>';
+          '</div>'
+        );
       }
 
       async function submitGroup(groupId) {
-        var scheduleId = Number(document.getElementById('scheduleSelect').value || 0);
+        var scheduleId = currentSchedule ? Number(currentSchedule.id) : 0;
         var group = ExcellentHomework.getOrg(homeworkContext.orgs, groupId);
-        if (!scheduleId || !group) return;
+        if (!scheduleId || !group || currentSchedule.schedule_date !== getToday()) {
+          showToast('仅可填报当天的优秀作业', 'error');
+          return;
+        }
         var rows = [];
+        var selectedPersonIds = [];
         for (var slot = 1; slot <= 3; slot += 1) {
           var personId = Number(document.getElementById('member-' + groupId + '-' + slot).value || 0);
           var content = document.getElementById('content-' + groupId + '-' + slot).value.trim();
@@ -431,6 +723,11 @@
             showToast('请完整填写三条优秀作业', 'error');
             return;
           }
+          if (selectedPersonIds.indexOf(personId) >= 0) {
+            showToast('三条优秀作业不能重复选择同一位成员', 'error');
+            return;
+          }
+          selectedPersonIds.push(personId);
           var member = (currentMembersByGroup[Number(groupId)] || []).find(function (person) {
             return Number(person.id) === personId;
           });
@@ -448,7 +745,8 @@
         var button = document.getElementById('submitGroup-' + groupId);
         button.disabled = true;
         try {
-          var result = await window.db.from('excellent_homework_entries')
+          var result = await window.db
+            .from('excellent_homework_entries')
             .upsert(rows, { onConflict: 'schedule_id,org_id,slot_index' })
             .select('*');
           if (result.error) throw result.error;
@@ -456,15 +754,11 @@
           logAction(
             '提交优秀作业',
             group.name,
-            ExcellentHomework.formatDate(
-              eligibleSchedules.find(function (item) {
-                return Number(item.id) === scheduleId;
-              }).schedule_date,
-              true
-            ) + ' · 3条',
+            ExcellentHomework.formatDate(currentSchedule.schedule_date, true) + ' · 3条',
             'study'
           );
-          await loadSelectedSchedule();
+          currentEntries = await ExcellentHomework.loadEntries(scheduleId, [Number(groupId)]);
+          renderGroup();
         } catch (error) {
           showToast('提交失败：' + (error.message || error), 'error');
         } finally {
@@ -472,24 +766,8 @@
         }
       }
 
-      function updateProgress() {
-        var completeCount = currentGroups.filter(function (group) {
-          var entries = currentEntries.filter(function (entry) {
-            return Number(entry.org_id) === Number(group.id);
-          });
-          return entries.length === 3 && entries.every(function (entry) {
-            return entry.person_id && String(entry.content || '').trim();
-          });
-        }).length;
-        var total = currentGroups.length;
-        document.getElementById('progressCount').textContent = completeCount + '/' + total;
-        document.getElementById('progressFill').style.width =
-          (total ? Math.round(completeCount * 100 / total) : 0) + '%';
-      }
-
       function showEmpty(message) {
         document.getElementById('groupList').innerHTML = '';
-        document.getElementById('progressBand').hidden = true;
         var panel = document.getElementById('emptyPanel');
         panel.textContent = message;
         panel.style.display = '';

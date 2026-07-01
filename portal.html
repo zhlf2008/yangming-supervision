@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -331,22 +331,42 @@
         <h2 class="section-title">模块入口</h2>
         <div class="semester-wrap" id="semesterBanner"></div>
         <div class="action-grid" id="moduleGrid">
-          <a class="action-card supervision" href="index.html?from=portal" id="cardSupervision" onclick="setActiveSystem('supervision')">
+          <a
+            class="action-card supervision"
+            href="index.html?from=portal"
+            id="cardSupervision"
+            onclick="setActiveSystem('supervision')"
+          >
             <div class="icon" data-icon="ClipboardCheckIcon"></div>
             <div class="title">督察管理</div>
             <div class="desc">考勤、汇总、榜单与日常督察</div>
           </a>
-          <a class="action-card secretariat" href="secretariat-dashboard.html?from=portal" id="cardSecretariat" onclick="setActiveSystem('secretariat')">
+          <a
+            class="action-card secretariat"
+            href="secretariat-dashboard.html?from=portal"
+            id="cardSecretariat"
+            onclick="setActiveSystem('secretariat')"
+          >
             <div class="icon" data-icon="BuildingIcon"></div>
             <div class="title">秘书处</div>
             <div class="desc">人员、组织、职务与权限维护</div>
           </a>
-          <a class="action-card study" href="study-dashboard.html?from=portal" id="cardStudy" onclick="setActiveSystem('study')">
+          <a
+            class="action-card study"
+            href="study-dashboard.html?from=portal"
+            id="cardStudy"
+            onclick="setActiveSystem('study')"
+          >
             <div class="icon" data-icon="BookOpenIcon"></div>
-            <div class="title">晨读安排</div>
+            <div class="title">学委管理</div>
             <div class="desc">规则、课程、排班与优秀作业</div>
           </a>
-          <a class="action-card publicity" href="publicity-dashboard.html?from=portal" id="cardPublicity" onclick="setActiveSystem('publicity')">
+          <a
+            class="action-card publicity"
+            href="publicity-dashboard.html?from=portal"
+            id="cardPublicity"
+            onclick="setActiveSystem('publicity')"
+          >
             <div class="icon" data-icon="MegaphoneIcon"></div>
             <div class="title">宣委管理</div>
             <div class="desc">优秀作业收集进度与宣发制卡</div>
@@ -357,7 +377,7 @@
       <div class="noaccess-banner" id="noaccessBanner">
         <div class="icon" data-icon="LockIcon"></div>
         <div class="title">当前学期暂无权限</div>
-        <div class="desc">您在当前学期没有任何可进入的模块。<br>请联系管理员或秘书处为您分配模块权限。</div>
+        <div class="desc">您在当前学期没有任何可进入的模块。<br />请联系管理员或秘书处为您分配模块权限。</div>
       </div>
     </div>
 
@@ -418,13 +438,18 @@
         } else {
           try {
             if (currentSemesterId) {
-              var permRes = await window.db.from('module_memberships')
+              var permRes = await window.db
+                .from('module_memberships')
                 .select('module_key')
                 .eq('user_id', profile.id)
                 .eq('semester_id', currentSemesterId)
                 .eq('enabled', true);
-              var allowedModules = new Set((permRes.data || []).map(function(m) { return m.module_key; }));
-              Object.keys(cards).forEach(function(k) {
+              var allowedModules = new Set(
+                (permRes.data || []).map(function (m) {
+                  return m.module_key;
+                })
+              );
+              Object.keys(cards).forEach(function (k) {
                 if (allowedModules.has(cards[k].key)) {
                   cards[k].el.style.display = '';
                   hasAnyCard = true;
