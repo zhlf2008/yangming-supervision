@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>线下活动报名</title>
+    <link rel="stylesheet" href="css/common.css?v=9" />
+    <style>
+      :root { --org-blue:#496b9f; --org-soft:#e7eef9; }
+      .registration-shell { max-width:480px; margin:0 auto; padding:18px 16px 48px; }
+      .topbar { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+      .back-link { display:flex; width:40px; height:40px; flex-shrink:0; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--ink-dark); }
+      .back-link span { width:20px; height:20px; }
+      .topbar-title { font-size:16px; font-weight:600; }
+      .activity-hero,.registration-card,.success-card { border:1px solid var(--border); border-radius:18px; background:rgba(255,255,255,.95); box-shadow:0 4px 18px var(--shadow); }
+      .activity-hero { overflow:hidden; }
+      .hero-band { padding:24px 20px; background:linear-gradient(135deg,#3f608f,#718fbb); color:#fff; }
+      .hero-kicker { display:flex; align-items:center; gap:7px; margin-bottom:12px; color:rgba(255,255,255,.78); font-size:11px; letter-spacing:.5px; }
+      .hero-kicker span { width:16px; height:16px; }
+      .hero-title { font:600 25px/1.35 'STSong','SimSun','Noto Serif SC',serif; }
+      .hero-org { margin-top:10px; color:rgba(255,255,255,.8); font-size:12px; }
+      .hero-details { display:grid; gap:13px; padding:18px 20px; }
+      .detail-row { display:flex; align-items:flex-start; gap:10px; color:var(--ink-muted); font-size:13px; line-height:1.5; }
+      .detail-row span[data-icon] { width:18px; height:18px; flex-shrink:0; margin-top:1px; color:var(--org-blue); }
+      .activity-desc { padding:0 20px 18px; color:var(--ink-muted); font-size:13px; line-height:1.75; white-space:pre-wrap; }
+      .capacity-box { margin:0 20px 20px; padding:13px; border-radius:12px; background:#f5f7fb; }
+      .capacity-head { display:flex; justify-content:space-between; margin-bottom:8px; color:var(--ink-muted); font-size:11px; }
+      .capacity-head strong { color:var(--org-blue); font-size:12px; }
+      .progress { height:7px; overflow:hidden; border-radius:999px; background:#e1e5eb; }
+      .progress span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--org-blue),#7d9bc5); }
+      .registration-card { margin-top:16px; padding:20px; }
+      .card-title { margin-bottom:4px; font-size:18px; font-weight:600; }
+      .card-note { margin-bottom:16px; color:var(--ink-muted); font-size:12px; }
+      .form-group { margin-bottom:13px; }
+      .form-label { display:block; margin-bottom:6px; color:var(--ink-muted); font-size:12px; }
+      .form-control { width:100%; min-height:44px; padding:11px 12px; border:1px solid var(--border); border-radius:11px; background:#fff; color:var(--ink-dark); font:inherit; }
+      textarea.form-control { min-height:88px; resize:vertical; line-height:1.6; }
+      .submit-btn { width:100%; min-height:46px; border:1px solid var(--org-blue); background:var(--org-blue); color:#fff; }
+      .cancel-btn { width:100%; min-height:42px; margin-top:10px; }
+      .success-card { display:none; margin-top:16px; padding:24px 20px; text-align:center; }
+      .success-card.show { display:block; }
+      .success-icon { width:48px; height:48px; margin:0 auto 12px; color:#2f775d; }
+      .success-title { font-size:18px; font-weight:600; }
+      .success-note { margin-top:7px; color:var(--ink-muted); font-size:12px; line-height:1.6; }
+      .empty-state { padding:70px 20px; text-align:center; color:var(--ink-muted); }
+      .empty-state span { display:block; width:48px; height:48px; margin:0 auto 12px; color:var(--org-blue); }
+    </style>
+  </head>
+  <body class="app-loading">
+    <main class="registration-shell">
+      <header class="topbar">
+        <a class="back-link" href="portal.html" aria-label="返回平台首页"><span data-icon="ChevronLeftIcon"></span></a>
+        <div class="topbar-title">线下活动报名</div>
+      </header>
+      <div id="pageContent"></div>
+    </main>
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=13"></script>
+    <script src="js/components.js?v=15"></script>
+    <script>
+      var activity = null;
+      var currentProfile = null;
+      var ownRegistration = null;
+
+      function formatDateTime(value) {
+        var date = new Date(value);
+        return date.getFullYear() + '年' + (date.getMonth()+1) + '月' + date.getDate() + '日 ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
+      }
+
+      function renderPage() {
+        var content = document.getElementById('pageContent');
+        if (!activity) {
+          content.innerHTML = '<div class="empty-state"><span data-icon="CalendarIcon"></span>活动不存在或暂未开放</div>';
+          if (window.renderAppIcons) window.renderAppIcons(content);
+          return;
+        }
+        var count = Number(activity.registered_count || 0);
+        var capacity = Number(activity.capacity || 1);
+        var full = count >= capacity;
+        var expired = new Date(activity.registration_deadline).getTime() < Date.now();
+        var canRegister = activity.status === 'open' && !expired && !full;
+        var registered = ownRegistration && ownRegistration.status === 'registered';
+        var percent = Math.min(100, Math.round(count / capacity * 100));
+        content.innerHTML =
+          '<article class="activity-hero"><div class="hero-band"><div class="hero-kicker"><span data-icon="CalendarPlusIcon"></span>阳明心学线下活动</div>' +
+          '<h1 class="hero-title">' + escapeHtml(activity.title) + '</h1><div class="hero-org">' + escapeHtml(activity.organizations ? activity.organizations.name : '班级活动') + '</div></div>' +
+          '<div class="hero-details"><div class="detail-row"><span data-icon="CalendarIcon"></span><div>' + formatDateTime(activity.starts_at) + '</div></div>' +
+          '<div class="detail-row"><span data-icon="MapPinIcon"></span><div>' + escapeHtml(activity.location) + '</div></div>' +
+          '<div class="detail-row"><span data-icon="ClockIcon"></span><div>报名截止：' + formatDateTime(activity.registration_deadline) + '</div></div></div>' +
+          (activity.description ? '<div class="activity-desc">' + escapeHtml(activity.description) + '</div>' : '') +
+          '<div class="capacity-box"><div class="capacity-head"><span>报名进度</span><strong>' + count + ' / ' + capacity + ' 人</strong></div><div class="progress"><span style="width:' + percent + '%"></span></div></div></article>' +
+          '<section class="registration-card" id="registrationCard"><h2 class="card-title">' + (registered ? '我的报名' : '填写报名信息') + '</h2>' +
+          '<p class="card-note">' + (registered ? '你已成功报名，如行程有变可取消报名。' : (canRegister ? '提交后将占用一个活动名额。' : (full ? '活动名额已满。' : '当前活动已停止报名。'))) + '</p>' +
+          '<form id="registrationForm"><div class="form-group"><label class="form-label" for="participantName">姓名</label><input class="form-control" id="participantName" maxlength="50" required ' + (registered ? 'disabled' : '') + ' value="' + escapeHtml(registered ? ownRegistration.participant_name : (currentProfile.name || '')) + '"></div>' +
+          '<div class="form-group"><label class="form-label" for="participantPhone">联系电话</label><input class="form-control" id="participantPhone" maxlength="30" ' + (registered ? 'disabled' : '') + ' value="' + escapeHtml(registered ? ownRegistration.phone : (currentProfile.phone || '')) + '"></div>' +
+          '<div class="form-group"><label class="form-label" for="participantNote">备注</label><textarea class="form-control" id="participantNote" maxlength="500" ' + (registered ? 'disabled' : '') + ' placeholder="饮食、交通或其他需要组织委留意的信息">' + escapeHtml(registered ? ownRegistration.note : '') + '</textarea></div>' +
+          (registered ? '<button type="button" class="btn btn-secondary cancel-btn" id="cancelRegistrationBtn">取消报名</button>' :
+            '<button type="submit" class="btn submit-btn" id="submitRegistrationBtn" ' + (canRegister ? '' : 'disabled') + '><span data-icon="CheckIcon"></span>' + (canRegister ? '确认报名' : '暂不可报名') + '</button>') +
+          '</form></section><section class="success-card" id="successCard"><div class="success-icon" data-icon="CheckIcon"></div><div class="success-title">报名成功</div><div class="success-note">组织委已收到你的报名信息，请按活动时间准时参加。</div></section>';
+        if (window.renderAppIcons) window.renderAppIcons(content);
+        var form = document.getElementById('registrationForm');
+        if (form) form.addEventListener('submit', submitRegistration);
+        var cancel = document.getElementById('cancelRegistrationBtn');
+        if (cancel) cancel.addEventListener('click', cancelRegistration);
+      }
+
+      async function submitRegistration(event) {
+        event.preventDefault();
+        var payload = {
+          activity_id: activity.id,
+          user_id: currentProfile.id,
+          participant_name: document.getElementById('participantName').value.trim(),
+          phone: document.getElementById('participantPhone').value.trim(),
+          note: document.getElementById('participantNote').value.trim(),
+          status: 'registered',
+          updated_at: new Date().toISOString()
+        };
+        if (!payload.participant_name) return showToast('请填写姓名', 'error');
+        var button = document.getElementById('submitRegistrationBtn');
+        button.disabled = true;
+        var result = await window.db.from('activity_registrations').upsert(payload, { onConflict:'activity_id,user_id' }).select().single();
+        button.disabled = false;
+        if (result.error) return showToast(result.error.message || '报名失败，请稍后重试', 'error');
+        ownRegistration = result.data;
+        activity.registered_count = Number(activity.registered_count || 0) + 1;
+        renderPage();
+        logAction('活动报名', activity.title, payload.participant_name, 'organization');
+        showToast('报名成功', 'success');
+      }
+
+      async function cancelRegistration() {
+        if (!ownRegistration) return;
+        var result = await window.db.from('activity_registrations').update({ status:'cancelled', updated_at:new Date().toISOString() }).eq('id', ownRegistration.id).select().single();
+        if (result.error) return showToast(result.error.message || '取消报名失败', 'error');
+        ownRegistration = result.data;
+        activity.registered_count = Math.max(0, Number(activity.registered_count || 0) - 1);
+        renderPage();
+        showToast('已取消报名', 'success');
+      }
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        currentProfile = checkLogin();
+        if (!currentProfile) return;
+        var id = Number(new URLSearchParams(window.location.search).get('id'));
+        if (!id) return renderPage();
+        var result = await window.db.from('organization_activities').select('*,organizations(name)').eq('id', id).maybeSingle();
+        activity = result.data || null;
+        if (activity) {
+          var registrationResult = await window.db.from('activity_registrations').select('*').eq('activity_id', id).eq('user_id', currentProfile.id).maybeSingle();
+          ownRegistration = registrationResult.data || null;
+        }
+        renderPage();
+      }
+      init().finally(function () { document.body.classList.remove('app-loading'); });
+    </script>
+  </body>
+</html>

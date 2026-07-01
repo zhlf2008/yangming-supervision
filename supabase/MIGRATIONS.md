@@ -53,6 +53,11 @@
 | 045 | `20260701092929_excellent_homework_publicity.sql` | 新增优秀作业填报、宣委组织权限与宣发卡片工作流 | 2026-07-01 |
 | 046 | `20260701094640_allow_repeated_excellent_homework_member.sql` | 允许同一成员在同一日入选多篇优秀作业 | 2026-07-01 |
 | 047 | `20260701095635_optimize_excellent_homework_indexes_rls.sql` | 补齐优秀作业外键索引并优化 RLS 身份计算 | 2026-07-01 |
+| 048 | `20260701161628_life_and_organization_workflows.sql` | 新增生活委生日关怀、组织委活动发布与实名报名工作流 | 2026-07-02 |
+| 049 | `20260701161738_optimize_life_organization_indexes.sql` | 补齐生活委与组织委工作流外键索引 | 2026-07-02 |
+| 050 | `20260701162053_sync_committee_module_memberships.sql` | 生活委、组织委职务与模块权限自动同步 | 2026-07-02 |
+| 051 | `20260701162235_backfill_entry_form_next_birthday.sql` | 对齐进班申请“下次生日”字段并回填历史数据 | 2026-07-02 |
+| 052 | `20260701162413_entry_form_source_org.sql` | 保留公开进班申请来源班级供生活委按组织范围关怀 | 2026-07-02 |
 | fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断

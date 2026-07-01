@@ -56,7 +56,7 @@ function withFrom(url) {
   if (from) {
     // 子系统首页：始终返回平台首页（portal.html），不受 ?from= 参数影响
     // 这些页面是 portal.html 中各子系统卡片的入口
-    var SUBSYSTEM_HOMES = ['index', 'secretariat-dashboard', 'study-dashboard', 'publicity-dashboard'];
+    var SUBSYSTEM_HOMES = ['index', 'secretariat-dashboard', 'study-dashboard', 'publicity-dashboard', 'life-dashboard', 'organization-dashboard'];
     var currentPage = getCurrentPageName().replace('.html', '').replace('.htm', '');
     var isSubHome = SUBSYSTEM_HOMES.indexOf(currentPage) !== -1;
 
@@ -385,9 +385,12 @@ function inferAuditModuleKey(moduleKey) {
     if (path.indexOf('secretariat-') === 0) return 'secretariat';
     if (path.indexOf('study-') === 0) return 'study';
     if (path.indexOf('publicity-') === 0) return 'publicity';
+    if (path.indexOf('life-') === 0) return 'life';
+    if (path.indexOf('organization-') === 0 || path.indexOf('activity-registration') === 0) return 'organization';
     if (path === 'portal.html' || path === 'secretariat-semesters.html') return 'admin';
     var activeSystem = sessionStorage.getItem('activeSystem') || localStorage.getItem('activeSystem');
-    if (activeSystem === 'secretariat' || activeSystem === 'study' || activeSystem === 'publicity') {
+    if (activeSystem === 'secretariat' || activeSystem === 'study' || activeSystem === 'publicity' ||
+        activeSystem === 'life' || activeSystem === 'organization') {
       return activeSystem;
     }
   } catch (e) {}

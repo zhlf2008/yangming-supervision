@@ -148,11 +148,13 @@ Deno.serve(async (req) => {
 
     const { error: insertError } = await adminClient.from('entry_forms').insert({
       semester_id: semester.id,
+      org_id: orgId || null,
       person_id: null,
       name,
       phone,
       gender,
       birthday_date: birthdayDate,
+      next_birthday: birthdayDate,
       birthday_type: 'solar',
       province,
       city_old: city,

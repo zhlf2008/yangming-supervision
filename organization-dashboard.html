@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阳明心学组织委管理系统</title>
+    <link rel="stylesheet" href="css/common.css?v=9" />
+    <style>
+      :root { --org-blue:#496b9f; --org-soft:#e7eef9; }
+      .header { position:relative; margin-bottom:20px; padding:30px 20px 18px; text-align:center; }
+      .header::before { content:''; position:absolute; top:0; left:50%; width:60px; height:4px; transform:translateX(-50%); border-radius:2px; background:linear-gradient(90deg,var(--org-blue),var(--gold)); }
+      .header-title { color:var(--ink-dark); font:600 25px 'STSong','SimSun','Noto Serif SC',serif; letter-spacing:1px; }
+      .header-subtitle { margin-top:7px; color:var(--ink-muted); font-size:13px; }
+      .module-switch { margin-top:12px; margin-left:-20px; }
+      .user-card,.summary-card,.create-panel,.activity-panel { padding:18px; border:1px solid var(--border); border-radius:var(--radius); background:rgba(255,255,255,.94); box-shadow:0 2px 12px var(--shadow); }
+      .user-card { margin-bottom:18px; }
+      .user-card a { display:flex; align-items:center; gap:14px; color:inherit; text-decoration:none; }
+      .user-avatar { display:flex; width:52px; height:52px; flex-shrink:0; align-items:center; justify-content:center; border-radius:50%; background:linear-gradient(135deg,var(--org-blue),#7090be); color:#fff; font:700 21px 'STSong','SimSun',serif; box-shadow:0 4px 14px rgba(73,107,159,.24); }
+      .user-info { min-width:0; flex:1; }
+      .user-name { margin-bottom:4px; font-size:17px; font-weight:600; }
+      .user-role { color:var(--ink-muted); font-size:13px; }
+      .user-arrow { width:24px; height:24px; color:var(--ink-muted); }
+      .summary-card { margin-bottom:18px; padding:14px; }
+      .summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+      .summary-item { padding:13px 6px; border-radius:12px; background:#f5f7fb; text-align:center; }
+      .summary-item strong { display:block; color:var(--org-blue); font-size:22px; line-height:1.1; }
+      .summary-item span { display:block; margin-top:6px; color:var(--ink-muted); font-size:11px; }
+      .create-panel { margin-bottom:18px; }
+      .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+      .section-title { display:flex; align-items:center; gap:8px; margin:0; font:600 17px 'STSong','SimSun','Noto Serif SC',serif; }
+      .section-title::before { content:''; width:3px; height:17px; border-radius:2px; background:linear-gradient(180deg,var(--org-blue),var(--gold)); }
+      .toggle-create { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(73,107,159,.25); border-radius:11px; background:var(--org-soft); color:var(--org-blue); }
+      .toggle-create span { width:20px; height:20px; }
+      .activity-form { display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
+      .activity-form.open { display:block; }
+      .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .form-group { margin-bottom:12px; }
+      .form-group.full { grid-column:1/-1; }
+      .form-label { display:block; margin-bottom:6px; color:var(--ink-muted); font-size:12px; }
+      .form-control { width:100%; min-height:42px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--ink-dark); font:inherit; }
+      textarea.form-control { min-height:92px; resize:vertical; line-height:1.6; }
+      .btn-primary-org { width:100%; min-height:44px; border:1px solid var(--org-blue); background:var(--org-blue); color:#fff; }
+      .activity-panel { padding:18px 14px; }
+      .activity-list { display:grid; gap:13px; margin-top:14px; }
+      .activity-card { padding:15px; border:1px solid var(--border); border-radius:14px; background:#fff; }
+      .activity-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+      .activity-title { font-size:16px; font-weight:600; line-height:1.35; }
+      .status-tag { flex-shrink:0; padding:4px 9px; border-radius:999px; background:#f1efec; color:var(--ink-muted); font-size:10px; }
+      .status-tag.open { background:#e8f4ee; color:#2f775d; }
+      .status-tag.draft { background:#f5efe5; color:#8a6334; }
+      .activity-meta { display:grid; gap:7px; margin:12px 0; color:var(--ink-muted); font-size:12px; }
+      .meta-row { display:flex; align-items:center; gap:7px; }
+      .meta-row span[data-icon] { width:15px; height:15px; flex-shrink:0; color:var(--org-blue); }
+      .progress-line { height:7px; overflow:hidden; border-radius:999px; background:#eceff4; }
+      .progress-line span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--org-blue),#7d9bc5); }
+      .progress-note { display:flex; justify-content:space-between; margin-top:6px; color:var(--ink-muted); font-size:10px; }
+      .activity-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:13px; }
+      .activity-actions .btn { min-height:34px; padding:7px 5px; font-size:11px; }
+      .empty-state { padding:34px 12px; text-align:center; color:var(--ink-muted); }
+      .empty-icon { width:42px; height:42px; margin:0 auto 10px; color:var(--org-blue); }
+      .drawer-overlay { position:fixed; z-index:1000; inset:0; display:none; align-items:flex-end; justify-content:center; padding:18px; background:rgba(33,29,25,.42); }
+      .drawer-overlay.open { display:flex; }
+      .drawer { width:min(100%,460px); max-height:78vh; overflow:auto; padding:20px; border-radius:20px 20px 14px 14px; background:#fff; }
+      .drawer-title { font-size:18px; font-weight:600; }
+      .drawer-note { margin:5px 0 14px; color:var(--ink-muted); font-size:12px; }
+      .registration-list { display:grid; gap:9px; }
+      .registration-item { display:flex; align-items:center; gap:11px; padding:11px; border-radius:11px; background:#f7f8fa; }
+      .registration-index { display:flex; width:28px; height:28px; flex-shrink:0; align-items:center; justify-content:center; border-radius:50%; background:var(--org-soft); color:var(--org-blue); font-size:11px; font-weight:600; }
+      .registration-info { min-width:0; flex:1; }
+      .registration-name { font-size:13px; font-weight:600; }
+      .registration-phone { margin-top:2px; color:var(--ink-muted); font-size:11px; }
+      .drawer-close { width:100%; margin-top:14px; }
+      @media (max-width:380px) { .container { padding-inline:12px; } .form-grid { grid-template-columns:1fr; } .form-group.full { grid-column:auto; } }
+    </style>
+  </head>
+  <body class="app-loading">
+    <main class="container">
+      <header class="header">
+        <h1 class="header-title">阳明心学组织委管理系统</h1>
+        <p class="header-subtitle" id="semesterSubtitle">加载中...</p>
+        <a class="back-btn module-switch" href="portal.html?from=organization-dashboard" aria-label="切换模块"></a>
+      </header>
+
+      <section class="user-card">
+        <a href="profile.html?system=organization&from=organization-dashboard">
+          <div class="user-avatar" id="profileAvatar">?</div>
+          <div class="user-info"><div class="user-name" id="profileName">加载中...</div><div class="user-role" id="profileRole">加载中...</div></div>
+          <span class="user-arrow" data-icon="ChevronRightIcon"></span>
+        </a>
+      </section>
+
+      <section class="summary-card" aria-label="活动概览">
+        <div class="summary-grid">
+          <div class="summary-item"><strong id="countOpen">0</strong><span>报名中</span></div>
+          <div class="summary-item"><strong id="countUpcoming">0</strong><span>即将开始</span></div>
+          <div class="summary-item"><strong id="countRegistrations">0</strong><span>累计报名</span></div>
+        </div>
+      </section>
+
+      <section class="create-panel">
+        <div class="section-head">
+          <h2 class="section-title">发布线下活动</h2>
+          <button type="button" class="toggle-create" id="toggleCreateBtn" aria-label="展开活动表单" aria-expanded="false"><span data-icon="CalendarPlusIcon"></span></button>
+        </div>
+        <form class="activity-form" id="activityForm">
+          <div class="form-grid">
+            <div class="form-group full"><label class="form-label" for="activityOrg">活动组织范围</label><select class="form-control" id="activityOrg" required></select></div>
+            <div class="form-group full"><label class="form-label" for="activityTitle">活动名称</label><input class="form-control" id="activityTitle" maxlength="80" placeholder="例如：阳明文化线下共学交流会" required /></div>
+            <div class="form-group full"><label class="form-label" for="activityLocation">活动地点</label><input class="form-control" id="activityLocation" maxlength="120" placeholder="填写详细地点" required /></div>
+            <div class="form-group"><label class="form-label" for="activityStart">开始时间</label><input class="form-control" type="datetime-local" id="activityStart" required /></div>
+            <div class="form-group"><label class="form-label" for="activityDeadline">报名截止</label><input class="form-control" type="datetime-local" id="activityDeadline" required /></div>
+            <div class="form-group full"><label class="form-label" for="activityCapacity">报名名额</label><input class="form-control" type="number" id="activityCapacity" min="1" max="2000" value="30" required /></div>
+            <div class="form-group full"><label class="form-label" for="activityDescription">活动说明</label><textarea class="form-control" id="activityDescription" maxlength="2000" placeholder="介绍活动安排、注意事项和参与准备"></textarea></div>
+          </div>
+          <button type="submit" class="btn btn-primary-org" id="createActivityBtn"><span data-icon="SaveIcon"></span>保存活动草稿</button>
+        </form>
+      </section>
+
+      <section class="activity-panel" id="activities">
+        <div class="section-head"><h2 class="section-title">活动与报名管理</h2></div>
+        <div class="activity-list" id="activityList"></div>
+      </section>
+    </main>
+
+    <div class="drawer-overlay" id="registrationDrawer" aria-hidden="true">
+      <section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+        <h2 class="drawer-title" id="drawerTitle">报名名单</h2>
+        <p class="drawer-note" id="drawerNote"></p>
+        <div class="registration-list" id="registrationList"></div>
+        <button type="button" class="btn btn-secondary drawer-close" id="closeDrawerBtn">关闭名单</button>
+      </section>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=13"></script>
+    <script src="js/components.js?v=15"></script>
+    <script>
+      renderModuleBottomNav('organization', 'home');
+      var currentSemesterId = null;
+      var currentProfile = null;
+      var organizations = [];
+      var accessibleOrgIds = [];
+      var activities = [];
+
+      function descendantIds(rootIds) {
+        var result = new Set((rootIds || []).map(Number));
+        var changed = true;
+        while (changed) {
+          changed = false;
+          organizations.forEach(function (org) {
+            if (org.parent_id && result.has(Number(org.parent_id)) && !result.has(Number(org.id))) {
+              result.add(Number(org.id));
+              changed = true;
+            }
+          });
+        }
+        return Array.from(result);
+      }
+
+      function orgName(id) {
+        var org = organizations.find(function (item) { return Number(item.id) === Number(id); });
+        return org ? org.name : '未命名组织';
+      }
+
+      function formatDateTime(value) {
+        if (!value) return '待定';
+        var date = new Date(value);
+        return (date.getMonth() + 1) + '月' + date.getDate() + '日 ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
+      }
+
+      function statusLabel(status) {
+        return { draft:'草稿', open:'报名中', closed:'已截止', completed:'已完成', cancelled:'已取消' }[status] || status;
+      }
+
+      function renderSummary() {
+        var now = Date.now();
+        document.getElementById('countOpen').textContent = activities.filter(function (item) { return item.status === 'open'; }).length;
+        document.getElementById('countUpcoming').textContent = activities.filter(function (item) { return new Date(item.starts_at).getTime() >= now && item.status !== 'cancelled'; }).length;
+        document.getElementById('countRegistrations').textContent = activities.reduce(function (sum,item) { return sum + Number(item.registered_count || 0); },0);
+      }
+
+      function renderActivities() {
+        var list = document.getElementById('activityList');
+        if (!activities.length) {
+          list.innerHTML = '<div class="empty-state"><div class="empty-icon" data-icon="CalendarPlusIcon"></div><div>还没有活动，先发布一个线下活动吧</div></div>';
+          if (window.renderAppIcons) window.renderAppIcons(list);
+          return;
+        }
+        list.innerHTML = activities.map(function (item) {
+          var count = Number(item.registered_count || 0);
+          var percent = Math.min(100, Math.round(count / Number(item.capacity || 1) * 100));
+          var stateClass = item.status === 'open' ? ' open' : (item.status === 'draft' ? ' draft' : '');
+          var primaryAction = item.status === 'draft' ? '开放报名' : (item.status === 'open' ? '截止报名' : '重新开放');
+          return '<article class="activity-card">' +
+            '<div class="activity-card-head"><div class="activity-title">' + escapeHtml(item.title) + '</div><span class="status-tag' + stateClass + '">' + statusLabel(item.status) + '</span></div>' +
+            '<div class="activity-meta"><div class="meta-row"><span data-icon="CalendarIcon"></span>' + formatDateTime(item.starts_at) + '</div>' +
+            '<div class="meta-row"><span data-icon="MapPinIcon"></span>' + escapeHtml(item.location) + '</div>' +
+            '<div class="meta-row"><span data-icon="BuildingIcon"></span>' + escapeHtml(orgName(item.org_id)) + '</div></div>' +
+            '<div class="progress-line"><span style="width:' + percent + '%"></span></div><div class="progress-note"><span>已报名 ' + count + ' 人</span><span>名额 ' + item.capacity + ' 人</span></div>' +
+            '<div class="activity-actions"><button type="button" class="btn btn-secondary" data-status="' + item.id + '">' + primaryAction + '</button>' +
+            '<button type="button" class="btn btn-secondary" data-copy="' + item.id + '"><span data-icon="ShareIcon"></span>报名链接</button>' +
+            '<button type="button" class="btn btn-secondary" data-list="' + item.id + '"><span data-icon="UsersIcon"></span>报名名单</button></div></article>';
+        }).join('');
+        if (window.renderAppIcons) window.renderAppIcons(list);
+      }
+
+      function setDefaultDates() {
+        var start = new Date(Date.now() + 86400000 * 7);
+        start.setHours(9,0,0,0);
+        var deadline = new Date(start.getTime() - 86400000);
+        function localValue(date) {
+          var offset = date.getTimezoneOffset() * 60000;
+          return new Date(date.getTime() - offset).toISOString().slice(0,16);
+        }
+        document.getElementById('activityStart').value = localValue(start);
+        document.getElementById('activityDeadline').value = localValue(deadline);
+      }
+
+      async function createActivity(event) {
+        event.preventDefault();
+        var start = new Date(document.getElementById('activityStart').value);
+        var deadline = new Date(document.getElementById('activityDeadline').value);
+        if (!start.getTime() || !deadline.getTime()) return showToast('请填写活动时间', 'error');
+        if (deadline > start) return showToast('报名截止时间不能晚于活动开始时间', 'error');
+        var payload = {
+          semester_id: currentSemesterId,
+          org_id: Number(document.getElementById('activityOrg').value),
+          title: document.getElementById('activityTitle').value.trim(),
+          description: document.getElementById('activityDescription').value.trim(),
+          location: document.getElementById('activityLocation').value.trim(),
+          starts_at: start.toISOString(),
+          registration_deadline: deadline.toISOString(),
+          capacity: Number(document.getElementById('activityCapacity').value),
+          status: 'draft',
+          created_by: currentProfile.id
+        };
+        if (!payload.title || !payload.location || !payload.org_id) return showToast('请完整填写活动信息', 'error');
+        var button = document.getElementById('createActivityBtn');
+        button.disabled = true;
+        var result = await window.db.from('organization_activities').insert(payload).select().single();
+        button.disabled = false;
+        if (result.error) return showToast(result.error.message || '创建活动失败', 'error');
+        activities.unshift(result.data);
+        renderSummary();
+        renderActivities();
+        document.getElementById('activityForm').reset();
+        setDefaultDates();
+        document.getElementById('activityOrg').value = String(payload.org_id);
+        logAction('创建活动', payload.title, orgName(payload.org_id), 'organization');
+        showToast('活动草稿已保存', 'success');
+      }
+
+      async function toggleStatus(id) {
+        var activity = activities.find(function (item) { return Number(item.id) === Number(id); });
+        if (!activity) return;
+        var nextStatus = activity.status === 'draft' ? 'open' : (activity.status === 'open' ? 'closed' : 'open');
+        if (nextStatus === 'open' && new Date(activity.registration_deadline).getTime() < Date.now()) {
+          return showToast('报名截止时间已过，请新建活动或调整时间', 'error');
+        }
+        var result = await window.db.from('organization_activities').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', activity.id).select().single();
+        if (result.error) return showToast(result.error.message || '更新状态失败', 'error');
+        Object.assign(activity, result.data);
+        renderSummary();
+        renderActivities();
+        showToast(nextStatus === 'open' ? '活动已开放报名' : '活动已截止报名', 'success');
+      }
+
+      async function copyRegistrationLink(id) {
+        var url = new URL('activity-registration.html', window.location.href);
+        url.searchParams.set('id', id);
+        try {
+          await navigator.clipboard.writeText(url.href);
+          showToast('报名链接已复制', 'success');
+        } catch (error) {
+          showToast('复制失败，请在浏览器地址栏复制', 'error');
+        }
+      }
+
+      async function showRegistrations(id) {
+        var activity = activities.find(function (item) { return Number(item.id) === Number(id); });
+        if (!activity) return;
+        var result = await window.db.from('activity_registrations').select('id,participant_name,phone,note,status,registered_at').eq('activity_id', activity.id).eq('status', 'registered').order('registered_at');
+        if (result.error) return showToast(result.error.message || '读取报名名单失败', 'error');
+        document.getElementById('drawerTitle').textContent = activity.title + ' · 报名名单';
+        document.getElementById('drawerNote').textContent = '已报名 ' + (result.data || []).length + ' 人，计划名额 ' + activity.capacity + ' 人';
+        var rows = result.data || [];
+        document.getElementById('registrationList').innerHTML = rows.length ? rows.map(function (item,index) {
+          return '<div class="registration-item"><span class="registration-index">' + (index + 1) + '</span><div class="registration-info"><div class="registration-name">' + escapeHtml(item.participant_name) + '</div><div class="registration-phone">' + escapeHtml(item.phone || '未留电话') + (item.note ? ' · ' + escapeHtml(item.note) : '') + '</div></div></div>';
+        }).join('') : '<div class="empty-state">暂时还没有人报名</div>';
+        document.getElementById('registrationDrawer').classList.add('open');
+        document.getElementById('registrationDrawer').setAttribute('aria-hidden','false');
+      }
+
+      function closeDrawer() {
+        document.getElementById('registrationDrawer').classList.remove('open');
+        document.getElementById('registrationDrawer').setAttribute('aria-hidden','true');
+      }
+
+      async function loadData() {
+        currentSemesterId = await getCurrentSemesterId();
+        var semesterResult = await window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single();
+        setCurrentSemester('semesterSubtitle', semesterResult.data ? semesterResult.data.semester_name : '当前学期');
+        var orgResult = await window.db.from('organizations').select('id,name,level,parent_id').eq('semester_id', currentSemesterId).order('sort_order');
+        organizations = orgResult.data || [];
+        var membershipResult = await window.db.from('module_memberships').select('org_id,role').eq('user_id', currentProfile.id).eq('semester_id', currentSemesterId).eq('module_key','organization').eq('enabled',true);
+        var rootIds = (membershipResult.data || []).map(function (item) { return Number(item.org_id); }).filter(Boolean);
+        var isAdmin = currentProfile.role === '超级管理员' || currentProfile.role === '管理员';
+        accessibleOrgIds = isAdmin && !rootIds.length ? organizations.map(function (item) { return Number(item.id); }) : descendantIds(rootIds);
+        var selectableOrgs = organizations.filter(function (item) { return accessibleOrgIds.indexOf(Number(item.id)) >= 0; });
+        document.getElementById('activityOrg').innerHTML = selectableOrgs.map(function (item) { return '<option value="' + item.id + '">' + escapeHtml(item.name) + '（' + escapeHtml(item.level) + '）</option>'; }).join('');
+        var result = await window.db.from('organization_activities').select('*').eq('semester_id', currentSemesterId).in('org_id', accessibleOrgIds).order('starts_at', { ascending:false });
+        activities = result.data || [];
+        renderSummary();
+        renderActivities();
+      }
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        currentProfile = checkLogin();
+        if (!currentProfile) return;
+        if (!(await guardModuleAccess('organization'))) return;
+        var name = currentProfile.name || '未知';
+        document.getElementById('profileName').textContent = name;
+        document.getElementById('profileAvatar').textContent = name.charAt(0);
+        document.getElementById('profileRole').textContent = currentProfile.role || '组织委';
+        setDefaultDates();
+        await loadData();
+      }
+
+      document.getElementById('toggleCreateBtn').addEventListener('click', function () {
+        var form = document.getElementById('activityForm');
+        var open = form.classList.toggle('open');
+        this.setAttribute('aria-expanded', String(open));
+      });
+      document.getElementById('activityForm').addEventListener('submit', createActivity);
+      document.getElementById('activityList').addEventListener('click', function (event) {
+        var statusButton = event.target.closest('[data-status]');
+        var copyButton = event.target.closest('[data-copy]');
+        var listButton = event.target.closest('[data-list]');
+        if (statusButton) toggleStatus(statusButton.getAttribute('data-status'));
+        else if (copyButton) copyRegistrationLink(copyButton.getAttribute('data-copy'));
+        else if (listButton) showRegistrations(listButton.getAttribute('data-list'));
+      });
+      document.getElementById('closeDrawerBtn').addEventListener('click', closeDrawer);
+      document.getElementById('registrationDrawer').addEventListener('click', function (event) { if (event.target === this) closeDrawer(); });
+      init().finally(function () { document.body.classList.remove('app-loading'); });
+    </script>
+  </body>
+</html>

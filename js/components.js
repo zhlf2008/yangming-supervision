@@ -13,7 +13,7 @@ function setActiveSystem(systemKey) {
 }
 
 function getActiveSystem() {
-  var allowed = ['portal', 'supervision', 'secretariat', 'study', 'publicity'];
+  var allowed = ['portal', 'supervision', 'secretariat', 'study', 'publicity', 'life', 'organization'];
   try {
     var params = new URLSearchParams(window.location.search);
     var fromQuery = params.get('system');
@@ -26,6 +26,8 @@ function getActiveSystem() {
     if (path.indexOf('secretariat-') !== -1) return 'secretariat';
     if (path.indexOf('study-') !== -1) return 'study';
     if (path.indexOf('publicity-') !== -1) return 'publicity';
+    if (path.indexOf('life-') !== -1) return 'life';
+    if (path.indexOf('organization-') !== -1 || path.indexOf('activity-registration') !== -1) return 'organization';
     if (path.indexOf('portal.html') !== -1) return 'portal';
 
     var fromSession = sessionStorage.getItem('activeSystem');
@@ -102,7 +104,7 @@ function renderPortalBottomNav(activePage) {
 }
 
 // ---- 独立系统底部导航栏 ----
-// systemKey: 'secretariat' | 'study' | 'publicity'
+// systemKey: 'secretariat' | 'study' | 'publicity' | 'life' | 'organization'
 function renderModuleBottomNav(systemKey, activePage) {
   var container = document.getElementById('bottomNavContainer');
   if (!container) return;
@@ -129,6 +131,16 @@ function renderModuleBottomNav(systemKey, activePage) {
       { key: 'home', href: 'publicity-dashboard.html', icon: 'HomeIcon', label: '首页' },
       { key: 'cards', href: 'publicity-homework-card.html', icon: 'FileEditIcon', label: '作业卡' },
       { key: 'profile', href: 'profile.html?system=publicity', icon: 'UserIcon', label: '我的' }
+    ],
+    life: [
+      { key: 'home', href: 'life-dashboard.html', icon: 'HomeIcon', label: '首页' },
+      { key: 'birthday', href: 'life-dashboard.html', icon: 'CakeSliceIcon', label: '生日关怀' },
+      { key: 'profile', href: 'profile.html?system=life', icon: 'UserIcon', label: '我的' }
+    ],
+    organization: [
+      { key: 'home', href: 'organization-dashboard.html', icon: 'HomeIcon', label: '首页' },
+      { key: 'activities', href: 'organization-dashboard.html', icon: 'CalendarPlusIcon', label: '活动' },
+      { key: 'profile', href: 'profile.html?system=organization', icon: 'UserIcon', label: '我的' }
     ]
   };
 
@@ -674,7 +686,7 @@ document.addEventListener('click', function (event) {
   if (document.querySelector('script[data-app-icon-runtime]')) return;
   var script = document.createElement('script');
   script.type = 'module';
-  script.src = 'js/icon-runtime.js?v=4';
+  script.src = 'js/icon-runtime.js?v=5';
   script.dataset.appIconRuntime = 'true';
   document.head.appendChild(script);
 })();

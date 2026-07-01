@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阳明心学生活委管理系统</title>
+    <link rel="stylesheet" href="css/common.css?v=9" />
+    <style>
+      :root { --life: #b34c63; --life-soft: #fde8ec; }
+      .header { position: relative; margin-bottom: 20px; padding: 30px 20px 18px; text-align: center; }
+      .header::before { content: ''; position: absolute; top: 0; left: 50%; width: 60px; height: 4px; transform: translateX(-50%); border-radius: 2px; background: linear-gradient(90deg, var(--life), var(--gold)); }
+      .header-title { color: var(--ink-dark); font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 25px; font-weight: 600; letter-spacing: 1px; }
+      .header-subtitle { margin-top: 7px; color: var(--ink-muted); font-size: 13px; }
+      .module-switch { margin-top: 12px; margin-left: -20px; }
+      .user-card, .summary-card, .care-panel { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(255,255,255,.94); box-shadow: 0 2px 12px var(--shadow); }
+      .user-card { margin-bottom: 18px; }
+      .user-card a { display: flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; }
+      .user-avatar { display: flex; width: 52px; height: 52px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg,var(--life),#cf7185); color: #fff; font: 700 21px 'STSong','SimSun',serif; box-shadow: 0 4px 14px rgba(179,76,99,.24); }
+      .user-info { min-width: 0; flex: 1; }
+      .user-name { margin-bottom: 4px; font-size: 17px; font-weight: 600; }
+      .user-role { color: var(--ink-muted); font-size: 13px; }
+      .user-arrow { width: 24px; height: 24px; color: var(--ink-muted); }
+      .summary-card { margin-bottom: 18px; padding: 14px; }
+      .summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+      .summary-item { padding: 13px 6px; border-radius: 12px; background: #fbf7f5; text-align: center; }
+      .summary-item strong { display: block; color: var(--life); font-size: 22px; line-height: 1.1; }
+      .summary-item span { display: block; margin-top: 6px; color: var(--ink-muted); font-size: 11px; }
+      .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+      .section-title { display: flex; align-items: center; gap: 8px; margin: 0; font: 600 17px 'STSong','SimSun','Noto Serif SC',serif; }
+      .section-title::before { content: ''; width: 3px; height: 17px; border-radius: 2px; background: linear-gradient(180deg,var(--life),var(--gold)); }
+      .section-note { color: var(--ink-muted); font-size: 11px; }
+      .filter-row { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; }
+      .filter-btn { flex: 0 0 auto; padding: 7px 13px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--ink-muted); font-size: 12px; }
+      .filter-btn.active { border-color: rgba(179,76,99,.35); background: var(--life-soft); color: var(--life); font-weight: 600; }
+      .birthday-list { display: grid; gap: 12px; }
+      .birthday-item { display: grid; grid-template-columns: 52px minmax(0,1fr); gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: #fff; }
+      .date-block { display: flex; min-height: 54px; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: var(--life-soft); color: var(--life); }
+      .date-block strong { font-size: 20px; line-height: 1; }
+      .date-block span { margin-top: 4px; font-size: 10px; }
+      .birthday-main { min-width: 0; }
+      .birthday-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .birthday-name { overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+      .birthday-status { flex-shrink: 0; padding: 3px 8px; border-radius: 999px; background: #f4f1ed; color: var(--ink-muted); font-size: 10px; }
+      .birthday-status.sent { background: #e8f4ee; color: #2f775d; }
+      .birthday-meta { margin: 5px 0 10px; color: var(--ink-muted); font-size: 11px; }
+      .birthday-actions { display: flex; gap: 8px; }
+      .birthday-actions .btn { min-height: 34px; padding: 7px 11px; font-size: 12px; }
+      .btn-life { border: 1px solid var(--life); background: var(--life); color: #fff; }
+      .empty-state { padding: 34px 12px; text-align: center; color: var(--ink-muted); }
+      .empty-icon { width: 42px; height: 42px; margin: 0 auto 10px; color: var(--life); }
+      .modal-overlay { position: fixed; z-index: 1000; inset: 0; display: none; align-items: flex-end; justify-content: center; padding: 18px; background: rgba(33,29,25,.42); }
+      .modal-overlay.open { display: flex; }
+      .care-modal { width: min(100%,460px); padding: 20px; border-radius: 20px 20px 14px 14px; background: #fff; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
+      .modal-title { margin-bottom: 5px; font-size: 18px; font-weight: 600; }
+      .modal-desc { margin-bottom: 14px; color: var(--ink-muted); font-size: 12px; }
+      .care-textarea { width: 100%; min-height: 140px; padding: 13px; border: 1px solid var(--border); border-radius: 12px; resize: vertical; font: inherit; line-height: 1.7; }
+      .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+      .modal-close-row { margin-top: 10px; text-align: center; }
+      .text-btn { border: 0; background: transparent; color: var(--ink-muted); font-size: 12px; }
+      @media (max-width:360px) { .container { padding-inline: 12px; } .birthday-item { padding: 12px; } }
+    </style>
+  </head>
+  <body class="app-loading">
+    <main class="container">
+      <header class="header">
+        <h1 class="header-title">阳明心学生活委管理系统</h1>
+        <p class="header-subtitle" id="semesterSubtitle">加载中...</p>
+        <a class="back-btn module-switch" href="portal.html?from=life-dashboard" aria-label="切换模块"></a>
+      </header>
+
+      <section class="user-card">
+        <a href="profile.html?system=life&from=life-dashboard">
+          <div class="user-avatar" id="profileAvatar">?</div>
+          <div class="user-info">
+            <div class="user-name" id="profileName">加载中...</div>
+            <div class="user-role" id="profileRole">加载中...</div>
+          </div>
+          <span class="user-arrow" data-icon="ChevronRightIcon"></span>
+        </a>
+      </section>
+
+      <section class="summary-card" aria-label="生日关怀概览">
+        <div class="summary-grid">
+          <div class="summary-item"><strong id="countWeek">0</strong><span>7天内生日</span></div>
+          <div class="summary-item"><strong id="countMonth">0</strong><span>30天内生日</span></div>
+          <div class="summary-item"><strong id="countSent">0</strong><span>已完成关怀</span></div>
+        </div>
+      </section>
+
+      <section class="care-panel" id="birthdayCare">
+        <div class="section-head">
+          <h2 class="section-title">近期生日关怀</h2>
+          <span class="section-note">来源：秘书处进班申请</span>
+        </div>
+        <div class="filter-row" role="group" aria-label="生日范围">
+          <button type="button" class="filter-btn active" data-days="7">近7天</button>
+          <button type="button" class="filter-btn" data-days="30">近30天</button>
+          <button type="button" class="filter-btn" data-days="365">全部生日</button>
+        </div>
+        <div class="birthday-list" id="birthdayList"></div>
+      </section>
+    </main>
+
+    <div class="modal-overlay" id="careModal" aria-hidden="true">
+      <section class="care-modal" role="dialog" aria-modal="true" aria-labelledby="careModalTitle">
+        <h2 class="modal-title" id="careModalTitle">发送生日祝福</h2>
+        <p class="modal-desc" id="careModalDesc"></p>
+        <textarea class="care-textarea" id="careMessage" maxlength="1000" aria-label="生日祝福内容"></textarea>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="shareBlessingBtn"><span data-icon="ShareIcon"></span>分享祝福</button>
+          <button type="button" class="btn btn-life" id="markSentBtn"><span data-icon="CheckIcon"></span>记录已发送</button>
+        </div>
+        <div class="modal-close-row"><button type="button" class="text-btn" id="closeCareModal">暂不处理</button></div>
+      </section>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=13"></script>
+    <script src="js/components.js?v=15"></script>
+    <script>
+      renderModuleBottomNav('life', 'home');
+      var currentSemesterId = null;
+      var currentProfile = null;
+      var organizations = [];
+      var birthdays = [];
+      var careRecords = [];
+      var activeDays = 7;
+      var selectedBirthday = null;
+
+      function dayDistance(dateText) {
+        var today = new Date(getToday() + 'T00:00:00');
+        var target = new Date(dateText + 'T00:00:00');
+        return Math.ceil((target - today) / 86400000);
+      }
+
+      function orgDescendantIds(rootIds) {
+        var result = new Set((rootIds || []).map(Number));
+        var changed = true;
+        while (changed) {
+          changed = false;
+          organizations.forEach(function (org) {
+            if (org.parent_id && result.has(Number(org.parent_id)) && !result.has(Number(org.id))) {
+              result.add(Number(org.id));
+              changed = true;
+            }
+          });
+        }
+        return Array.from(result);
+      }
+
+      function orgName(id) {
+        var org = organizations.find(function (item) { return Number(item.id) === Number(id); });
+        return org ? org.name : '未分组';
+      }
+
+      function careKey(item) { return String(item.id) + ':' + item.next_birthday; }
+      function isSent(item) {
+        return careRecords.some(function (record) {
+          return Number(record.entry_form_id) === Number(item.id) &&
+            record.care_date === item.next_birthday && record.status === 'sent';
+        });
+      }
+
+      function renderStats() {
+        document.getElementById('countWeek').textContent = birthdays.filter(function (item) { var d = dayDistance(item.next_birthday); return d >= 0 && d <= 7; }).length;
+        document.getElementById('countMonth').textContent = birthdays.filter(function (item) { var d = dayDistance(item.next_birthday); return d >= 0 && d <= 30; }).length;
+        document.getElementById('countSent').textContent = birthdays.filter(isSent).length;
+      }
+
+      function renderBirthdays() {
+        var list = document.getElementById('birthdayList');
+        var items = birthdays.filter(function (item) {
+          var days = dayDistance(item.next_birthday);
+          return days >= 0 && days <= activeDays;
+        });
+        if (!items.length) {
+          list.innerHTML = '<div class="empty-state"><div class="empty-icon" data-icon="CakeSliceIcon"></div><div>当前范围内没有待关怀的生日</div></div>';
+          if (window.renderAppIcons) window.renderAppIcons(list);
+          return;
+        }
+        list.innerHTML = items.map(function (item) {
+          var date = new Date(item.next_birthday + 'T00:00:00');
+          var days = dayDistance(item.next_birthday);
+          var sent = isSent(item);
+          var dayLabel = days === 0 ? '今天生日' : (days === 1 ? '明天生日' : days + '天后');
+          return '<article class="birthday-item">' +
+            '<div class="date-block"><strong>' + date.getDate() + '</strong><span>' + (date.getMonth() + 1) + '月</span></div>' +
+            '<div class="birthday-main"><div class="birthday-top"><div class="birthday-name">' + escapeHtml(item.name) + '</div>' +
+            '<span class="birthday-status' + (sent ? ' sent' : '') + '">' + (sent ? '已关怀' : dayLabel) + '</span></div>' +
+            '<div class="birthday-meta">' + escapeHtml(orgName(item.org_id)) + ' · ' + (item.birthday_type === 'lunar' ? '农历生日' : '公历生日') + '</div>' +
+            '<div class="birthday-actions"><button type="button" class="btn btn-life" data-care="' + item.id + '"' + (item.org_id ? '' : ' disabled') + '><span data-icon="HeartHandshakeIcon"></span>' + (item.org_id ? (sent ? '再次祝福' : '发送祝福') : '等待分班') + '</button></div></div></article>';
+        }).join('');
+        if (window.renderAppIcons) window.renderAppIcons(list);
+      }
+
+      function openCare(item) {
+        selectedBirthday = item;
+        document.getElementById('careModalTitle').textContent = '给' + item.name + '发送生日祝福';
+        document.getElementById('careModalDesc').textContent = orgName(item.org_id) + ' · ' + item.next_birthday;
+        document.getElementById('careMessage').value = item.name + '，生日快乐！愿你在新的一岁里身心安乐、所行皆有收获，在知行合一的路上日日精进。';
+        document.getElementById('careModal').classList.add('open');
+        document.getElementById('careModal').setAttribute('aria-hidden', 'false');
+      }
+
+      function closeCare() {
+        document.getElementById('careModal').classList.remove('open');
+        document.getElementById('careModal').setAttribute('aria-hidden', 'true');
+        selectedBirthday = null;
+      }
+
+      async function shareBlessing() {
+        var text = document.getElementById('careMessage').value.trim();
+        if (!text) return showToast('请先填写祝福内容', 'error');
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: '生日祝福', text: text });
+          } else {
+            await navigator.clipboard.writeText(text);
+            showToast('祝福内容已复制', 'success');
+          }
+        } catch (error) {
+          if (error && error.name !== 'AbortError') showToast('分享失败，请重试', 'error');
+        }
+      }
+
+      async function markSent() {
+        if (!selectedBirthday) return;
+        var caredName = selectedBirthday.name;
+        var message = document.getElementById('careMessage').value.trim();
+        if (!message) return showToast('请先填写祝福内容', 'error');
+        var payload = {
+          semester_id: currentSemesterId,
+          entry_form_id: selectedBirthday.id,
+          org_id: selectedBirthday.org_id,
+          care_date: selectedBirthday.next_birthday,
+          message: message,
+          status: 'sent',
+          cared_by: currentProfile.id,
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        var result = await window.db.from('life_care_records').upsert(payload, { onConflict: 'entry_form_id,care_date' }).select().single();
+        if (result.error) return showToast(result.error.message || '保存关怀记录失败', 'error');
+        careRecords = careRecords.filter(function (record) {
+          return !(Number(record.entry_form_id) === Number(result.data.entry_form_id) && record.care_date === result.data.care_date);
+        });
+        careRecords.push(result.data);
+        renderStats();
+        renderBirthdays();
+        closeCare();
+        logAction('记录生日关怀', caredName, '已发送生日祝福', 'life');
+        showToast('已记录为完成关怀', 'success');
+      }
+
+      async function loadData() {
+        currentSemesterId = await getCurrentSemesterId();
+        var semesterResult = await window.db.from('semesters').select('semester_name').eq('id', currentSemesterId).single();
+        setCurrentSemester('semesterSubtitle', semesterResult.data ? semesterResult.data.semester_name : '当前学期');
+        var orgResult = await window.db.from('organizations').select('id,name,level,parent_id').eq('semester_id', currentSemesterId).order('sort_order');
+        organizations = orgResult.data || [];
+        var isAdmin = currentProfile.role === '超级管理员' || currentProfile.role === '管理员';
+        var membershipResult = await window.db.from('module_memberships').select('org_id,role').eq('user_id', currentProfile.id).eq('semester_id', currentSemesterId).eq('module_key', 'life').eq('enabled', true);
+        var rootIds = (membershipResult.data || []).map(function (item) { return Number(item.org_id); }).filter(Boolean);
+        var accessibleIds = isAdmin && !rootIds.length ? organizations.map(function (org) { return Number(org.id); }) : orgDescendantIds(rootIds);
+        if (!accessibleIds.length) return;
+        var assignmentResult = await window.db.from('person_org_assignments').select('person_id,org_id,org_level').eq('semester_id', currentSemesterId).eq('status', 'active').in('org_id', accessibleIds);
+        var assignmentMap = {};
+        (assignmentResult.data || []).forEach(function (item) {
+          if (!assignmentMap[item.person_id] || item.org_level === '小组') assignmentMap[item.person_id] = item.org_id;
+        });
+        var personIds = Object.keys(assignmentMap).map(Number);
+        var entryMap = {};
+        if (personIds.length) {
+          var entryResult = await window.db.from('entry_forms').select('id,name,phone,next_birthday,birthday_type,person_id,org_id,status').eq('semester_id', currentSemesterId).not('next_birthday', 'is', null).in('person_id', personIds).order('next_birthday');
+          (entryResult.data || []).forEach(function (entry) {
+            entry.org_id = assignmentMap[entry.person_id];
+            entryMap[entry.id] = entry;
+          });
+        }
+        var sourceQuery = window.db.from('entry_forms').select('id,name,phone,next_birthday,birthday_type,person_id,org_id,status').eq('semester_id', currentSemesterId).not('next_birthday', 'is', null);
+        if (!isAdmin) sourceQuery = sourceQuery.in('org_id', accessibleIds);
+        var sourceResult = await sourceQuery.order('next_birthday');
+        (sourceResult.data || []).forEach(function (entry) {
+          if (!entryMap[entry.id]) entryMap[entry.id] = entry;
+        });
+        birthdays = Object.keys(entryMap).map(function (id) { return entryMap[id]; }).sort(function (a,b) {
+          return String(a.next_birthday).localeCompare(String(b.next_birthday));
+        });
+        var careResult = await window.db.from('life_care_records').select('*').eq('semester_id', currentSemesterId).in('org_id', accessibleIds);
+        careRecords = careResult.data || [];
+        renderStats();
+        renderBirthdays();
+      }
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        currentProfile = checkLogin();
+        if (!currentProfile) return;
+        if (!(await guardModuleAccess('life'))) return;
+        var name = currentProfile.name || '未知';
+        document.getElementById('profileName').textContent = name;
+        document.getElementById('profileAvatar').textContent = name.charAt(0);
+        document.getElementById('profileRole').textContent = currentProfile.role || '生活委';
+        await loadData();
+      }
+
+      document.querySelector('.filter-row').addEventListener('click', function (event) {
+        var button = event.target.closest('[data-days]');
+        if (!button) return;
+        document.querySelectorAll('[data-days]').forEach(function (item) { item.classList.toggle('active', item === button); });
+        activeDays = Number(button.getAttribute('data-days'));
+        renderBirthdays();
+      });
+      document.getElementById('birthdayList').addEventListener('click', function (event) {
+        var button = event.target.closest('[data-care]');
+        if (!button) return;
+        var item = birthdays.find(function (birthday) { return Number(birthday.id) === Number(button.getAttribute('data-care')); });
+        if (item) openCare(item);
+      });
+      document.getElementById('shareBlessingBtn').addEventListener('click', shareBlessing);
+      document.getElementById('markSentBtn').addEventListener('click', markSent);
+      document.getElementById('closeCareModal').addEventListener('click', closeCare);
+      document.getElementById('careModal').addEventListener('click', function (event) { if (event.target === this) closeCare(); });
+      init().finally(function () { document.body.classList.remove('app-loading'); });
+    </script>
+  </body>
+</html>

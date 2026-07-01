@@ -203,6 +203,16 @@
         color: #28685d;
       }
 
+      .action-card.life .icon {
+        background: linear-gradient(135deg, #fde8ec 0%, #fff7f8 100%);
+        color: #b34c63;
+      }
+
+      .action-card.organization .icon {
+        background: linear-gradient(135deg, #e7eef9 0%, #f7f9fd 100%);
+        color: #496b9f;
+      }
+
       .action-card .title {
         margin-bottom: 6px;
         color: var(--ink-dark);
@@ -371,6 +381,26 @@
             <div class="title">宣委管理</div>
             <div class="desc">优秀作业收集进度与宣发制卡</div>
           </a>
+          <a
+            class="action-card life"
+            href="life-dashboard.html?from=portal"
+            id="cardLife"
+            onclick="setActiveSystem('life')"
+          >
+            <div class="icon" data-icon="HeartHandshakeIcon"></div>
+            <div class="title">生活委管理</div>
+            <div class="desc">生日关怀、祝福发送与关怀记录</div>
+          </a>
+          <a
+            class="action-card organization"
+            href="organization-dashboard.html?from=portal"
+            id="cardOrganization"
+            onclick="setActiveSystem('organization')"
+          >
+            <div class="icon" data-icon="CalendarPlusIcon"></div>
+            <div class="title">组织委管理</div>
+            <div class="desc">线下活动、报名进度与名单管理</div>
+          </a>
         </div>
       </section>
 
@@ -384,8 +414,8 @@
     <div id="bottomNavContainer"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=14"></script>
+    <script src="js/utils.js?v=13"></script>
+    <script src="js/components.js?v=15"></script>
     <script>
       renderPortalBottomNav('home');
     </script>
@@ -425,7 +455,9 @@
           supervision: { el: document.getElementById('cardSupervision'), key: 'supervision' },
           secretariat: { el: document.getElementById('cardSecretariat'), key: 'secretariat' },
           study: { el: document.getElementById('cardStudy'), key: 'study' },
-          publicity: { el: document.getElementById('cardPublicity'), key: 'publicity' }
+          publicity: { el: document.getElementById('cardPublicity'), key: 'publicity' },
+          life: { el: document.getElementById('cardLife'), key: 'life' },
+          organization: { el: document.getElementById('cardOrganization'), key: 'organization' }
         };
         var hasAnyCard = false;
 
