@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>晨读安排 - 优秀作业</title>
+    <link rel="stylesheet" href="css/common.css?v=9" />
+    <style>
+      .page-header {
+        display: block;
+        position: relative;
+        padding: 30px 20px 20px;
+        text-align: center;
+      }
+      .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 60px;
+        height: 4px;
+        transform: translateX(-50%);
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--vermillion), var(--gold));
+      }
+      .page-title {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 25px;
+        font-weight: 600;
+      }
+      .page-subtitle {
+        margin-top: 6px;
+        color: var(--ink-muted);
+        font-size: 13px;
+      }
+      .module-switch {
+        margin-top: 12px;
+        margin-left: -20px;
+      }
+      .filter-band {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 12px;
+        padding: 15px 0 17px;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+      }
+      .field-label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--ink-light);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .field-control {
+        width: 100%;
+        min-width: 0;
+        height: 42px;
+        padding: 0 11px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--ink-dark);
+        font-size: 13px;
+      }
+      .field-control:focus,
+      .homework-content:focus {
+        border-color: var(--gold);
+        outline: 2px solid rgba(212, 165, 116, 0.16);
+      }
+      .progress-band {
+        padding: 18px 2px 14px;
+      }
+      .progress-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 9px;
+      }
+      .progress-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .progress-count {
+        color: var(--vermillion);
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .progress-track {
+        height: 7px;
+        overflow: hidden;
+        border-radius: 4px;
+        background: var(--border);
+      }
+      .progress-fill {
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--vermillion), var(--gold));
+        transition: width 0.25s ease;
+      }
+      .group-list {
+        display: grid;
+        gap: 13px;
+      }
+      .group-card {
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 10px var(--shadow);
+      }
+      .group-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 15px;
+        border-bottom: 1px solid var(--border);
+        background: #fcfbf9;
+      }
+      .group-name {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .group-path {
+        margin-top: 3px;
+        color: var(--ink-muted);
+        font-size: 11px;
+      }
+      .status-tag {
+        flex-shrink: 0;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: var(--gold-light);
+        color: #8a5d2e;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .status-tag.complete {
+        background: var(--green-light);
+        color: var(--green);
+      }
+      .homework-rows {
+        padding: 2px 15px 0;
+      }
+      .homework-row {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        gap: 10px;
+        padding: 13px 0;
+        border-bottom: 1px solid #f1eeea;
+      }
+      .member-field {
+        min-width: 0;
+      }
+      .slot-label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--ink-muted);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .member-select {
+        height: 40px;
+      }
+      .homework-content {
+        width: 100%;
+        min-height: 68px;
+        resize: vertical;
+        padding: 10px 11px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--ink-dark);
+        font: inherit;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .group-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 13px 15px 15px;
+      }
+      .submit-group-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-width: 112px;
+        min-height: 40px;
+        padding: 9px 15px;
+        border: 0;
+        border-radius: 7px;
+        background: var(--vermillion);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .submit-group-btn svg {
+        width: 17px;
+        height: 17px;
+      }
+      .submit-group-btn:disabled {
+        cursor: wait;
+        opacity: 0.58;
+      }
+      .empty-panel {
+        padding: 42px 18px;
+        border-top: 1px solid var(--border);
+        color: var(--ink-muted);
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      @media (max-width: 390px) {
+        .container { padding-inline: 12px; }
+        .filter-band { grid-template-columns: 1fr; }
+        .homework-row { grid-template-columns: 1fr; gap: 8px; }
+        .slot-label { margin-bottom: 4px; }
+        .member-select { height: 42px; }
+      }
+    </style>
+  </head>
+  <body class="app-loading">
+    <main class="container">
+      <header class="page-header">
+        <h1 class="page-title">优秀作业</h1>
+        <p class="page-subtitle" id="semesterSubtitle">加载中...</p>
+        <a class="back-btn module-switch" href="study-dashboard.html" aria-label="返回晨读安排首页"></a>
+      </header>
+
+      <section class="filter-band" aria-label="填报范围与日期">
+        <label>
+          <span class="field-label">组织范围</span>
+          <select class="field-control" id="scopeSelect" onchange="onScopeChange()"></select>
+        </label>
+        <label>
+          <span class="field-label">作业考核日程</span>
+          <select class="field-control" id="scheduleSelect" onchange="loadSelectedSchedule()"></select>
+        </label>
+      </section>
+
+      <section class="progress-band" id="progressBand" hidden>
+        <div class="progress-head">
+          <span class="progress-title">小组提交进度</span>
+          <span class="progress-count" id="progressCount">0/0</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </section>
+
+      <section class="group-list" id="groupList"></section>
+      <div class="empty-panel" id="emptyPanel">正在加载优秀作业填报...</div>
+    </main>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=14"></script>
+    <script src="js/excellent-homework.js?v=2"></script>
+    <script>
+      renderModuleBottomNav('study', 'homework');
+
+      var homeworkContext = null;
+      var eligibleSchedules = [];
+      var currentGroups = [];
+      var currentMembersByGroup = {};
+      var currentEntries = [];
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        if (!checkLogin()) return;
+        if (!(await guardModuleAccess('study'))) return;
+
+        try {
+          homeworkContext = await ExcellentHomework.loadAccessContext('study');
+          var semesterResult = await window.db.from('semesters')
+            .select('semester_name')
+            .eq('id', homeworkContext.semesterId)
+            .single();
+          document.getElementById('semesterSubtitle').textContent =
+            semesterResult.data ? semesterResult.data.semester_name : '当前学期';
+          eligibleSchedules = (await ExcellentHomework.loadEligibleSchedules(homeworkContext))
+            .filter(function (schedule) { return schedule.schedule_date <= getToday(); });
+          renderScopeOptions();
+          await onScopeChange();
+        } catch (error) {
+          showEmpty('加载失败：' + (error.message || error));
+        }
+      }
+
+      function renderScopeOptions() {
+        var select = document.getElementById('scopeSelect');
+        var scopes = homeworkContext.scopes || [];
+        select.innerHTML = scopes.map(function (scope) {
+          return '<option value="' + scope.id + '">' +
+            escapeHtml(scope.level + ' · ' + scope.name) + '</option>';
+        }).join('');
+        select.disabled = scopes.length <= 1;
+      }
+
+      async function onScopeChange() {
+        var scopeId = Number(document.getElementById('scopeSelect').value || 0);
+        currentGroups = ExcellentHomework.getGroupsForScope(homeworkContext.orgs, scopeId);
+        var groupIds = currentGroups.map(function (group) { return Number(group.id); });
+        currentMembersByGroup = await ExcellentHomework.loadGroupMembers(
+          homeworkContext.semesterId,
+          groupIds
+        );
+        renderScheduleOptions(scopeId);
+        await loadSelectedSchedule();
+      }
+
+      function renderScheduleOptions(scopeId) {
+        var dabanId = ExcellentHomework.getDabanId(homeworkContext.orgs, scopeId);
+        var schedules = eligibleSchedules.filter(function (schedule) {
+          return Number(schedule.org_id) === Number(dabanId);
+        });
+        var select = document.getElementById('scheduleSelect');
+        select.innerHTML = schedules.map(function (schedule) {
+          return '<option value="' + schedule.id + '">' +
+            escapeHtml(ExcellentHomework.formatDate(schedule.schedule_date, false)) +
+            '</option>';
+        }).join('');
+        select.disabled = schedules.length <= 1;
+      }
+
+      async function loadSelectedSchedule() {
+        var scheduleId = Number(document.getElementById('scheduleSelect').value || 0);
+        if (!homeworkContext.scopes.length) {
+          showEmpty('当前账号没有可管理的晨读组织范围');
+          return;
+        }
+        if (!currentGroups.length) {
+          showEmpty('当前组织范围下暂无在用小组');
+          return;
+        }
+        if (!scheduleId) {
+          showEmpty('当前组织暂无已开始的作业考核日程');
+          return;
+        }
+        try {
+          currentEntries = await ExcellentHomework.loadEntries(
+            scheduleId,
+            currentGroups.map(function (group) { return Number(group.id); })
+          );
+          renderGroups();
+        } catch (error) {
+          showEmpty('优秀作业加载失败：' + (error.message || error));
+        }
+      }
+
+      function renderGroups() {
+        var container = document.getElementById('groupList');
+        container.innerHTML = currentGroups.map(function (group) {
+          var entries = currentEntries.filter(function (entry) {
+            return Number(entry.org_id) === Number(group.id);
+          });
+          var complete = entries.length === 3 && entries.every(function (entry) {
+            return entry.person_id && String(entry.content || '').trim();
+          });
+          var rows = [1, 2, 3].map(function (slot) {
+            var entry = entries.find(function (item) {
+              return Number(item.slot_index) === slot;
+            }) || {};
+            return renderHomeworkRow(group, slot, entry);
+          }).join('');
+          return '<article class="group-card" id="groupCard-' + group.id + '">' +
+            '<header class="group-card-head">' +
+              '<div><div class="group-name">' + escapeHtml(group.name) + '</div>' +
+              '<div class="group-path">' +
+                escapeHtml(buildOrgPath(group.id, homeworkContext.orgs)) +
+              '</div></div>' +
+              '<span class="status-tag' + (complete ? ' complete' : '') + '">' +
+                (complete ? '已提交' : entries.length + '/3') +
+              '</span>' +
+            '</header>' +
+            '<div class="homework-rows">' + rows + '</div>' +
+            '<div class="group-actions">' +
+              '<button class="submit-group-btn" id="submitGroup-' + group.id +
+                '" onclick="submitGroup(' + group.id + ')">' +
+                '<span data-icon="SaveIcon"></span><span>' +
+                  (complete ? '更新提交' : '提交本组') +
+                '</span>' +
+              '</button>' +
+            '</div>' +
+          '</article>';
+        }).join('');
+        document.getElementById('emptyPanel').style.display = 'none';
+        document.getElementById('progressBand').hidden = false;
+        updateProgress();
+      }
+
+      function renderHomeworkRow(group, slot, entry) {
+        var members = currentMembersByGroup[Number(group.id)] || [];
+        var options = '<option value="">选择成员</option>' + members.map(function (member) {
+          return '<option value="' + member.id + '"' +
+            (Number(entry.person_id) === Number(member.id) ? ' selected' : '') + '>' +
+            escapeHtml(member.name) + '</option>';
+        }).join('');
+        return '<div class="homework-row">' +
+          '<div class="member-field">' +
+            '<label class="slot-label" for="member-' + group.id + '-' + slot +
+              '">优秀作业 ' + slot + '</label>' +
+            '<select class="field-control member-select" id="member-' + group.id + '-' +
+              slot + '">' + options + '</select>' +
+          '</div>' +
+          '<div>' +
+            '<label class="slot-label" for="content-' + group.id + '-' + slot +
+              '">作业内容</label>' +
+            '<textarea class="homework-content" id="content-' + group.id + '-' + slot +
+              '" maxlength="4000" placeholder="输入优秀作业内容">' +
+              escapeHtml(entry.content || '') + '</textarea>' +
+          '</div>' +
+        '</div>';
+      }
+
+      async function submitGroup(groupId) {
+        var scheduleId = Number(document.getElementById('scheduleSelect').value || 0);
+        var group = ExcellentHomework.getOrg(homeworkContext.orgs, groupId);
+        if (!scheduleId || !group) return;
+        var rows = [];
+        for (var slot = 1; slot <= 3; slot += 1) {
+          var personId = Number(document.getElementById('member-' + groupId + '-' + slot).value || 0);
+          var content = document.getElementById('content-' + groupId + '-' + slot).value.trim();
+          if (!personId || !content) {
+            showToast('请完整填写三条优秀作业', 'error');
+            return;
+          }
+          var member = (currentMembersByGroup[Number(groupId)] || []).find(function (person) {
+            return Number(person.id) === personId;
+          });
+          rows.push({
+            semester_id: homeworkContext.semesterId,
+            schedule_id: scheduleId,
+            org_id: Number(groupId),
+            slot_index: slot,
+            person_id: personId,
+            person_name_snapshot: member ? member.name : '',
+            content: content,
+            submitted_by: homeworkContext.profile.id
+          });
+        }
+        var button = document.getElementById('submitGroup-' + groupId);
+        button.disabled = true;
+        try {
+          var result = await window.db.from('excellent_homework_entries')
+            .upsert(rows, { onConflict: 'schedule_id,org_id,slot_index' })
+            .select('*');
+          if (result.error) throw result.error;
+          showToast(group.name + '优秀作业已提交', 'success');
+          logAction(
+            '提交优秀作业',
+            group.name,
+            ExcellentHomework.formatDate(
+              eligibleSchedules.find(function (item) {
+                return Number(item.id) === scheduleId;
+              }).schedule_date,
+              true
+            ) + ' · 3条',
+            'study'
+          );
+          await loadSelectedSchedule();
+        } catch (error) {
+          showToast('提交失败：' + (error.message || error), 'error');
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function updateProgress() {
+        var completeCount = currentGroups.filter(function (group) {
+          var entries = currentEntries.filter(function (entry) {
+            return Number(entry.org_id) === Number(group.id);
+          });
+          return entries.length === 3 && entries.every(function (entry) {
+            return entry.person_id && String(entry.content || '').trim();
+          });
+        }).length;
+        var total = currentGroups.length;
+        document.getElementById('progressCount').textContent = completeCount + '/' + total;
+        document.getElementById('progressFill').style.width =
+          (total ? Math.round(completeCount * 100 / total) : 0) + '%';
+      }
+
+      function showEmpty(message) {
+        document.getElementById('groupList').innerHTML = '';
+        document.getElementById('progressBand').hidden = true;
+        var panel = document.getElementById('emptyPanel');
+        panel.textContent = message;
+        panel.style.display = '';
+      }
+
+      init().finally(function () {
+        document.body.classList.remove('app-loading');
+      });
+    </script>
+  </body>
+</html>

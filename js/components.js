@@ -13,7 +13,7 @@ function setActiveSystem(systemKey) {
 }
 
 function getActiveSystem() {
-  var allowed = ['portal', 'supervision', 'secretariat', 'study'];
+  var allowed = ['portal', 'supervision', 'secretariat', 'study', 'publicity'];
   try {
     var params = new URLSearchParams(window.location.search);
     var fromQuery = params.get('system');
@@ -25,6 +25,7 @@ function getActiveSystem() {
     var path = window.location.pathname || '';
     if (path.indexOf('secretariat-') !== -1) return 'secretariat';
     if (path.indexOf('study-') !== -1) return 'study';
+    if (path.indexOf('publicity-') !== -1) return 'publicity';
     if (path.indexOf('portal.html') !== -1) return 'portal';
 
     var fromSession = sessionStorage.getItem('activeSystem');
@@ -79,7 +80,7 @@ function renderPortalBottomNav(activePage) {
     { key: 'home', href: 'portal.html', icon: 'HomeIcon', label: '首页' },
     { key: 'supervision', href: 'index.html', icon: 'ClipboardCheckIcon', label: '督察' },
     { key: 'secretariat', href: 'secretariat-dashboard.html', icon: 'BuildingIcon', label: '秘书处' },
-    { key: 'study', href: 'study-dashboard.html', icon: 'BookOpenIcon', label: '学委' },
+    { key: 'study', href: 'study-dashboard.html', icon: 'BookOpenIcon', label: '晨读' },
     { key: 'profile', href: 'profile.html?system=portal', icon: 'UserIcon', label: '我的' }
   ];
 
@@ -101,11 +102,14 @@ function renderPortalBottomNav(activePage) {
 }
 
 // ---- 独立系统底部导航栏 ----
-// systemKey: 'secretariat' | 'study'
+// systemKey: 'secretariat' | 'study' | 'publicity'
 function renderModuleBottomNav(systemKey, activePage) {
   var container = document.getElementById('bottomNavContainer');
   if (!container) return;
   setActiveSystem(systemKey);
+  if (systemKey === 'study' && (activePage === 'rules' || activePage === 'weekly')) {
+    activePage = 'management';
+  }
 
   var navMap = {
     secretariat: [
@@ -117,10 +121,13 @@ function renderModuleBottomNav(systemKey, activePage) {
     ],
     study: [
       { key: 'home', href: 'study-dashboard.html', icon: 'HomeIcon', label: '首页' },
-      { key: 'management', href: 'study-committee-management.html', icon: 'SettingsIcon', label: '管理' },
-      { key: 'rules', href: 'study-schedule-rules.html', icon: 'CalendarIcon', label: '规则' },
-      { key: 'weekly', href: 'study-org-schedule.html', icon: 'UsersIcon', label: '日程' },
+      { key: 'management', href: 'study-committee-management.html', icon: 'CalendarIcon', label: '晨读' },
+      { key: 'homework', href: 'study-excellent-homework.html', icon: 'TrophyIcon', label: '作业' },
       { key: 'profile', href: 'profile.html?system=study', icon: 'UserIcon', label: '我的' }
+    ],
+    publicity: [
+      { key: 'home', href: 'publicity-dashboard.html', icon: 'MegaphoneIcon', label: '制卡' },
+      { key: 'profile', href: 'profile.html?system=publicity', icon: 'UserIcon', label: '我的' }
     ]
   };
 

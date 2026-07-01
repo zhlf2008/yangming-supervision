@@ -198,6 +198,11 @@
         background: linear-gradient(135deg, var(--gold-light) 0%, rgba(255, 255, 255, 0.9) 100%);
       }
 
+      .action-card.publicity .icon {
+        background: linear-gradient(135deg, #e4f1ee 0%, #f7fbfa 100%);
+        color: #28685d;
+      }
+
       .action-card .title {
         margin-bottom: 6px;
         color: var(--ink-dark);
@@ -338,8 +343,13 @@
           </a>
           <a class="action-card study" href="study-dashboard.html?from=portal" id="cardStudy" onclick="setActiveSystem('study')">
             <div class="icon" data-icon="BookOpenIcon"></div>
-            <div class="title">学委管理</div>
-            <div class="desc">课程、排班、周课与学习通知</div>
+            <div class="title">晨读安排</div>
+            <div class="desc">规则、课程、排班与优秀作业</div>
+          </a>
+          <a class="action-card publicity" href="publicity-dashboard.html?from=portal" id="cardPublicity" onclick="setActiveSystem('publicity')">
+            <div class="icon" data-icon="MegaphoneIcon"></div>
+            <div class="title">宣委管理</div>
+            <div class="desc">优秀作业收集进度与宣发制卡</div>
           </a>
         </div>
       </section>
@@ -354,8 +364,8 @@
     <div id="bottomNavContainer"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=11"></script>
-    <script src="js/components.js?v=12"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=14"></script>
     <script>
       renderPortalBottomNav('home');
     </script>
@@ -394,7 +404,8 @@
         var cards = {
           supervision: { el: document.getElementById('cardSupervision'), key: 'supervision' },
           secretariat: { el: document.getElementById('cardSecretariat'), key: 'secretariat' },
-          study: { el: document.getElementById('cardStudy'), key: 'study' }
+          study: { el: document.getElementById('cardStudy'), key: 'study' },
+          publicity: { el: document.getElementById('cardPublicity'), key: 'publicity' }
         };
         var hasAnyCard = false;
 

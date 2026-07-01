@@ -306,8 +306,8 @@
     <div id="bottomNavContainer"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=11"></script>
-    <script src="js/components.js?v=12"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=14"></script>
     <script>
       (async function () {
         await waitForDb();
@@ -333,7 +333,7 @@
         // 若无 from 参数则默认回到 profile
         var backLink = document.querySelector('.back-btn');
         if (backLink && !getFromParam()) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
-        if (activeSystem === 'secretariat' || activeSystem === 'study') {
+        if (activeSystem === 'secretariat' || activeSystem === 'study' || activeSystem === 'publicity') {
           renderModuleBottomNav(activeSystem, 'profile');
         } else if (activeSystem === 'portal') {
           renderPortalBottomNav('profile');

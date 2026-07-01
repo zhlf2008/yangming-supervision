@@ -93,6 +93,10 @@
       .date-nav-btn:active {
         background: var(--border);
       }
+      .date-nav-btn svg {
+        width: 18px;
+        height: 18px;
+      }
       .date-current {
         text-align: center;
         min-width: 140px;
@@ -560,12 +564,22 @@
 
       <div class="date-selector">
         <div class="date-nav">
-          <button class="date-nav-btn" onclick="changeWeek(-1)"></button>
+          <button
+            class="date-nav-btn"
+            data-icon="ChevronLeftIcon"
+            aria-label="上一周"
+            onclick="changeWeek(-1)"
+          ></button>
           <span class="date-current"
             ><div class="date-week-label" id="dateWeekLabel">本周</div>
             <div class="date-week-range" id="dateWeekRange">--</div></span
           >
-          <button class="date-nav-btn" onclick="changeWeek(1)"></button>
+          <button
+            class="date-nav-btn"
+            data-icon="ChevronRightIcon"
+            aria-label="下一周"
+            onclick="changeWeek(1)"
+          ></button>
         </div>
         <button class="date-today" onclick="goToCurrentWeek()">本周</button>
       </div>
@@ -592,8 +606,8 @@
     <div id="bottomNavContainer"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=11"></script>
-    <script src="js/components.js?v=12"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=14"></script>
     <script>
       renderBottomNav('summary');
     </script>

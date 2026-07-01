@@ -1,4 +1,4 @@
-// Step 4 浏览器回归 — 验证 17 个关键页面无白屏、无 JS 错误、关键 UI 元素存在
+// Step 4 浏览器回归 — 验证关键页面无白屏、无 JS 错误、关键 UI 元素存在
 import { chromium } from 'playwright';
 
 const BASE = 'http://127.0.0.1:8765/';
@@ -18,11 +18,15 @@ const PAGES = [
   { path: 'secretariat-org-management.html', mustHave: ['body'] },
   { path: 'secretariat-people.html', mustHave: ['body'] },
   { path: 'secretariat-entry-form.html', mustHave: ['body'] },
-  // 学委
+  // 晨读安排
   { path: 'study-dashboard.html', mustHave: ['body'] },
+  { path: 'study-committee-management.html', mustHave: ['body'] },
   { path: 'study-course-library.html', mustHave: ['body'] },
   { path: 'study-schedule-rules.html', mustHave: ['body'] },
   { path: 'study-weekly-assignment.html', mustHave: ['body'] },
+  { path: 'study-excellent-homework.html', mustHave: ['body'] },
+  // 宣委
+  { path: 'publicity-dashboard.html', mustHave: ['body'] },
   // 平台审计
   { path: 'audit-log.html', mustHave: ['body'] },
 ];

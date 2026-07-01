@@ -89,7 +89,8 @@
           <select class="filter-select" id="filterModule">
             <option value="">全部模块</option>
             <option value="supervision">督察管理</option>
-            <option value="study">学委管理</option>
+            <option value="study">晨读安排</option>
+            <option value="publicity">宣委管理</option>
             <option value="secretariat">秘书处</option>
             <option value="admin">平台管理</option>
           </select>
@@ -136,7 +137,7 @@
     </div>
 
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=11"></script>
+    <script src="js/utils.js?v=12"></script>
     <script>
       var allLogs = [];
       var allSemesters = [];
@@ -149,7 +150,8 @@
 
       var MODULE_LABELS = {
         supervision: '督察管理',
-        study: '学委管理',
+        study: '晨读安排',
+        publicity: '宣委管理',
         secretariat: '秘书处',
         admin: '平台管理',
         unknown: '未归类'

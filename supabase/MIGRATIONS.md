@@ -46,6 +46,13 @@
 | 038 | `20260629114523_study_workflow_v4.sql` | 学委工作流 v4：可维护共读类型、类型岗位与逐级名额槽位 | 2026-06-29 |
 | 039 | `20260630053455_restrict_person_position_scopes.sql` | 按秘书处所属组织级别限制人员职务写入范围 | 2026-06-30 |
 | 040 | `20260630060948_normalize_person_position_scopes.sql` | 归一化历史人员职务级别与所属组织级别 | 2026-06-30 |
+| 041 | `20260630153924_remove_legacy_public_access_policies.sql` | 移除历史宽松访问策略并恢复最小表权限 | 2026-06-30 |
+| 042 | `20260630154310_route_public_entry_forms_through_function.sql` | 外部进班申请统一改由校验函数写入 | 2026-07-01 |
+| 043 | `20260630154856_tighten_audit_and_function_security.sql` | 收紧审计日志与数据库函数执行权限 | 2026-06-30 |
+| 044 | `20260630162724_add_missing_foreign_key_indexes.sql` | 补齐外键查询索引 | 2026-06-30 |
+| 045 | `20260701092929_excellent_homework_publicity.sql` | 新增优秀作业填报、宣委组织权限与宣发卡片工作流 | 2026-07-01 |
+| 046 | `20260701094640_allow_repeated_excellent_homework_member.sql` | 允许同一成员在同一日入选多篇优秀作业 | 2026-07-01 |
+| 047 | `20260701095635_optimize_excellent_homework_indexes_rls.sql` | 补齐优秀作业外键索引并优化 RLS 身份计算 | 2026-07-01 |
 | fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断

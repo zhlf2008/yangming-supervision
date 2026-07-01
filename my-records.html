@@ -139,15 +139,15 @@
     </div>
     <div id="bottomNavContainer"></div>
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=11"></script>
-    <script src="js/components.js?v=12"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=14"></script>
     <script>
       var activeSystem = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
       // utils.js 的 auto-init 已根据 ?from= 设置了返回按钮，
       // 若无 from 参数则默认回到 profile
       var backLink = document.querySelector('.back-btn');
       if (backLink && !getFromParam()) backLink.href = 'profile.html?system=' + encodeURIComponent(activeSystem);
-      if (activeSystem === 'secretariat' || activeSystem === 'study') {
+      if (activeSystem === 'secretariat' || activeSystem === 'study' || activeSystem === 'publicity') {
         renderModuleBottomNav(activeSystem, 'profile');
       } else if (activeSystem === 'portal') {
         renderPortalBottomNav('profile');

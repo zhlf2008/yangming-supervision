@@ -55,8 +55,8 @@ function withFrom(url) {
   var from = getFromParam();
   if (from) {
     // 子系统首页：始终返回平台首页（portal.html），不受 ?from= 参数影响
-    // 这三个页面是 portal.html 中三个子系统卡片的入口
-    var SUBSYSTEM_HOMES = ['index', 'secretariat-dashboard', 'study-dashboard'];
+    // 这些页面是 portal.html 中各子系统卡片的入口
+    var SUBSYSTEM_HOMES = ['index', 'secretariat-dashboard', 'study-dashboard', 'publicity-dashboard'];
     var currentPage = getCurrentPageName().replace('.html', '').replace('.htm', '');
     var isSubHome = SUBSYSTEM_HOMES.indexOf(currentPage) !== -1;
 
@@ -384,9 +384,12 @@ function inferAuditModuleKey(moduleKey) {
     var path = (window.location.pathname || '').split('/').pop();
     if (path.indexOf('secretariat-') === 0) return 'secretariat';
     if (path.indexOf('study-') === 0) return 'study';
+    if (path.indexOf('publicity-') === 0) return 'publicity';
     if (path === 'portal.html' || path === 'secretariat-semesters.html') return 'admin';
     var activeSystem = sessionStorage.getItem('activeSystem') || localStorage.getItem('activeSystem');
-    if (activeSystem === 'secretariat' || activeSystem === 'study') return activeSystem;
+    if (activeSystem === 'secretariat' || activeSystem === 'study' || activeSystem === 'publicity') {
+      return activeSystem;
+    }
   } catch (e) {}
   return 'supervision';
 }
@@ -512,7 +515,7 @@ async function hasCurrentModuleRole(moduleKey, roles) {
   }
 }
 // ---- 模块页面权限拦截 ----
-// 在页面 init 中调用：await guardModuleAccess('secretariat') 或 'study'
+// 在页面 init 中调用：await guardModuleAccess('secretariat')、'study' 或 'publicity'
 // 管理员/超级管理员直接放行；普通用户检查当前学期 module_memberships
 async function guardModuleAccess(moduleKey) {
   var profile = checkLogin();

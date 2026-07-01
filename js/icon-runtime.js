@@ -15,6 +15,15 @@ function prepareLegacyControls(root) {
     element.dataset.icon = 'ChevronLeftIcon';
     if (!element.hasAttribute('aria-label')) element.setAttribute('aria-label', '返回');
   });
+  scope.querySelectorAll('.date-nav-btn:not([data-icon]), .dp-nav:not([data-icon])').forEach((element) => {
+    if (element.querySelector('[data-icon]')) return;
+    const action = element.getAttribute('onclick') || '';
+    const isPrevious = /(?:changeWeek\s*\(\s*-1\s*\)|prev|previous)/i.test(action);
+    element.dataset.icon = isPrevious ? 'ChevronLeftIcon' : 'ChevronRightIcon';
+    if (!element.hasAttribute('aria-label')) {
+      element.setAttribute('aria-label', isPrevious ? '上一个' : '下一个');
+    }
+  });
   scope.querySelectorAll('.datepicker-trigger').forEach((element) => {
     if (element.querySelector('.datepicker-runtime-icon')) return;
     const icon = document.createElement('span');

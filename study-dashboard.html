@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>学委管理</title>
+    <title>晨读安排</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <style>
       .page-header {
@@ -197,8 +197,11 @@
       .action-card:nth-child(3) .icon {
         background: linear-gradient(135deg, var(--green-light) 0%, #f3faf4 100%);
       }
-      .action-card:nth-child(4) .icon {
+      .action-card.notification-card .icon {
         background: linear-gradient(135deg, var(--vermillion-light) 0%, #ffeced 100%);
+      }
+      .action-card.homework-card .icon {
+        background: linear-gradient(135deg, var(--green-light) 0%, #f3faf4 100%);
       }
       .action-card .title {
         margin-bottom: 6px;
@@ -233,7 +236,7 @@
   <body class="app-loading">
     <div class="container">
       <header class="header">
-        <h1 class="header-title">阳明心学学委管理系统</h1>
+        <h1 class="header-title">阳明心学晨读安排系统</h1>
         <p class="header-subtitle" id="semesterSubtitle">加载中...</p>
         <a class="back-btn module-switch" href="portal.html?from=study-dashboard" aria-label="切换模块"></a>
       </header>
@@ -249,28 +252,22 @@
         </a>
       </div>
 
-      <h2 class="section-title">学委工作台</h2>
+      <h2 class="section-title">晨读工作台</h2>
       <div class="action-grid">
 
         <a class="action-card" href="study-committee-management.html?from=study-dashboard">
           <div class="icon" data-icon="GraduationCapIcon"></div>
-          <div class="title">学委管理</div>
-          <div class="desc">大班·班级·小组逐级管理</div>
+          <div class="title">晨读安排</div>
+          <div class="desc">规则·课程·排班·通知逐级管理</div>
         </a>
 
-        <a class="action-card" href="study-schedule-rules.html?from=study-dashboard">
-          <div class="icon" data-icon="CalendarIcon"></div>
-          <div class="title">日程规则</div>
-          <div class="desc">共读层级·学期日程·选课</div>
+        <a class="action-card homework-card" href="study-excellent-homework.html?from=study-dashboard">
+          <div class="icon" data-icon="TrophyIcon"></div>
+          <div class="title">优秀作业</div>
+          <div class="desc">按作业考核日程提交小组优秀作业</div>
         </a>
 
-        <a class="action-card" href="study-org-schedule.html?from=study-dashboard">
-          <div class="icon" data-icon="UsersIcon"></div>
-          <div class="title">组织日程</div>
-          <div class="desc">内容继承·岗位摊派·人员落位</div>
-        </a>
-
-        <div class="action-card disabled">
+        <div class="action-card notification-card disabled">
           <div class="icon" data-icon="MegaphoneIcon"></div>
           <div class="title">通知与推送</div>
           <div class="desc">企业微信通知（后续阶段开放）</div>
@@ -282,8 +279,8 @@
     <div id="bottomNavContainer"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=11"></script>
-    <script src="js/components.js?v=12"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=14"></script>
     <script>
       renderModuleBottomNav('study', 'home');
 

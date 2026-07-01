@@ -22,7 +22,7 @@ const ACCOUNT_MANAGE_ACTIONS = new Set([
   'grantModuleMembership',
   'disableModuleMembership'
 ]);
-const MODULE_KEYS = new Set(['supervision', 'study', 'secretariat']);
+const MODULE_KEYS = new Set(['supervision', 'study', 'secretariat', 'publicity']);
 
 function normalizePhone(value) {
   return String(value || '').replace(/\D/g, '');
@@ -42,9 +42,10 @@ async function getCurrentSemesterId() {
 }
 
 const SECRETARIAT_ACCOUNT_MANAGER_ROLES = ['管理员', '秘书处'];
-const NON_ADMIN_MANAGEABLE_MODULES = new Set(['supervision', 'study', 'secretariat']);
+const NON_ADMIN_MANAGEABLE_MODULES = new Set(['supervision', 'study', 'secretariat', 'publicity']);
 const STUDY_ROLES = new Set(['学委', '副学委']);
 const SECRETARIAT_ROLES = new Set(['秘书处']);
+const PUBLICITY_ROLES = new Set(['宣委', '副宣委', '总宣委', '副总宣委']);
 const SUPERVISION_ROLE_LEVEL = {
   '大班总督': '大班',
   '大班副督': '大班',
@@ -252,6 +253,9 @@ async function validateModuleMembershipInput(params, caller) {
   }
   if (moduleKey === 'secretariat' && !SECRETARIAT_ROLES.has(role) && !ADMIN_ROLES.has(role)) {
     return { error: '秘书处角色不合法' };
+  }
+  if (moduleKey === 'publicity' && !PUBLICITY_ROLES.has(role) && !ADMIN_ROLES.has(role)) {
+    return { error: '宣委角色不合法' };
   }
 
   if (orgId !== null) {

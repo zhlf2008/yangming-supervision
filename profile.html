@@ -682,8 +682,8 @@
         <div class="menu-item" onclick="viewStats()">
           <div class="menu-item-icon stats" data-icon="ChartIcon"></div>
           <div class="menu-item-content">
-            <div class="menu-item-title">我的填报记录</div>
-            <div class="menu-item-desc">查看历史填报数据</div>
+            <div class="menu-item-title" id="recordsMenuTitle">我的填报记录</div>
+            <div class="menu-item-desc" id="recordsMenuDesc">查看历史填报数据</div>
           </div>
           <span class="menu-item-arrow" data-icon="ChevronRightIcon"></span>
         </div>
@@ -822,16 +822,20 @@
     <div id="bottomNavContainer"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
-    <script src="js/utils.js?v=11"></script>
-    <script src="js/components.js?v=12"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=14"></script>
     <script>
       var activeSystem = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
-      if (activeSystem === 'secretariat' || activeSystem === 'study') {
+      if (activeSystem === 'secretariat' || activeSystem === 'study' || activeSystem === 'publicity') {
         renderModuleBottomNav(activeSystem, 'profile');
       } else if (activeSystem === 'portal') {
         renderPortalBottomNav('profile');
       } else {
         renderBottomNav('profile');
+      }
+      if (activeSystem === 'publicity') {
+        document.getElementById('recordsMenuTitle').textContent = '宣发工作台';
+        document.getElementById('recordsMenuDesc').textContent = '查看优秀作业收集进度与卡片';
       }
     </script>
     <script>
@@ -1310,11 +1314,15 @@
 
       function viewStats() {
         var system = typeof getActiveSystem === 'function' ? getActiveSystem() : 'supervision';
+        if (system === 'publicity') {
+          window.location.href = withFrom('publicity-dashboard.html');
+          return;
+        }
         window.location.href = withFrom('my-records.html?system=' + encodeURIComponent(system));
       }
 
       function showAbout() {
-        alert('阳明心学督察管理系统\n版本：v1.0.0\n\n基于阳明心学教育理念\n打造智能化督察管理体系');
+        alert('阳明心学班级管理平台\n版本：v1.0.0\n\n基于阳明心学教育理念\n支持督察、秘书处、晨读与宣委协同管理');
       }
 
       // ========== 帮助与反馈 ==========
