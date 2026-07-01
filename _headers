@@ -6,16 +6,16 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-Frame-Options: SAMEORIGIN
 
-# HTML: 短缓存，快速获取更新
+# HTML: 每次校验，避免先显示旧页面再后台更新
 /*.html
-  Cache-Control: public, max-age=60, stale-while-revalidate=86400
+  Cache-Control: no-cache, must-revalidate
 
-# JS / CSS: 长缓存（文件名无 hash 但变更频率低）
+# JS / CSS: 当前未使用内容哈希，必须校验版本
 /js/*
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: no-cache, must-revalidate
 
 /css/*
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: no-cache, must-revalidate
 
 # SDK 文件（偶尔更新，缓存 1 天）
 /lib/*

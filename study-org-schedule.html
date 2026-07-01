@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>学委 - 组织日程</title>
-    <link rel="stylesheet" href="css/common.css?v=5" />
+    <link rel="stylesheet" href="css/common.css?v=9" />
     <style>
       .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
       .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -48,11 +48,26 @@
       .content-title { font-size: 15px; font-weight: 700; color: var(--ink-dark); margin-bottom: 6px; }
       .content-line { color: var(--ink-light); font-size: 13px; line-height: 1.6; }
       .content-source { margin-top: 8px; font-size: 12px; color: var(--ink-muted); }
-      .course-stack { display: grid; gap: 8px; min-width: 0; flex: 1; }
+      .course-content-area { display: block; }
+      .course-content-toolbar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+      .course-stack { display: grid; gap: 8px; min-width: 0; width: 100%; }
       .course-summary { padding: 0; border-left: 3px solid var(--gold); background: var(--bg-primary); border-radius: 0 8px 8px 0; overflow: hidden; }
-      .course-summary summary { position: relative; list-style: none; cursor: pointer; min-height: 46px; padding: 10px 48px 10px 12px; }
+      .course-summary summary { display: flex; align-items: center; gap: 10px; position: relative; list-style: none; cursor: pointer; min-height: 46px; padding: 10px 12px; }
       .course-summary summary::-webkit-details-marker { display: none; }
-      .course-detail-body { padding: 0 12px 12px; border-top: 1px solid var(--border); }
+      .course-summary-copy { min-width: 0; flex: 1; }
+      .course-summary-copy .content-title,
+      .course-summary-copy .content-line { display: block; }
+      .course-summary .details-runtime-icon { margin-left: auto; }
+      .course-detail-collapse {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition: grid-template-rows .24s ease, opacity .18s ease;
+      }
+      details.course-summary:not([open]) > .course-detail-collapse { display: grid; }
+      .course-summary[open] > .course-detail-collapse { grid-template-rows: 1fr; opacity: 1; }
+      .course-detail-body { min-height: 0; overflow: hidden; }
+      .course-detail-inner { padding: 0 12px 12px; border-top: 1px solid var(--border); }
       .course-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 9px 0; color: var(--ink-muted); font-size: 12px; }
       .ebook-link { color: var(--vermillion); font-weight: 600; text-decoration: none; }
       .course-summary .content-title { margin-bottom: 3px; }
@@ -63,11 +78,49 @@
       .course-editor-head-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
       .course-editor-index { min-width: 0; font-weight: 700; color: var(--ink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .course-editor-toggle { width: 30px; height: 30px; display: flex; align-items:center; justify-content:center; border: 1px solid var(--border); border-radius: 7px; background-color: var(--bg-card); }
-      .course-editor-body { padding: 12px; border-top: 1px solid var(--border); }
+      .course-editor-toggle .details-runtime-icon { margin: 0; transition: transform .24s ease; }
+      .course-editor-item[open] .course-editor-toggle .details-runtime-icon { transform: rotate(90deg); }
+      .course-editor-collapse {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition: grid-template-rows .24s ease, opacity .18s ease;
+      }
+      details.course-editor-item:not([open]) > .course-editor-collapse { display: grid; }
+      .course-editor-item[open] > .course-editor-collapse { grid-template-rows: 1fr; opacity: 1; }
+      .course-editor-body { min-height: 0; overflow: hidden; }
+      .course-editor-body-inner { padding: 12px; border-top: 1px solid var(--border); }
       .course-picker { position: relative; }
       .course-picker-trigger { width: 100%; min-height: 40px; padding: 8px 34px 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--ink-dark); text-align: left; cursor: pointer; position: relative; }
-      .course-picker-panel { display: none; margin-top: 6px; max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); }
-      .course-picker-panel.open { display: block; }
+      .course-picker-trigger .details-runtime-icon {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        margin: 0;
+        transform: translateY(-50%);
+        transition: transform .24s ease;
+      }
+      .course-picker-trigger.expanded .details-runtime-icon {
+        transform: translateY(-50%) rotate(90deg);
+      }
+      .course-picker-panel {
+        display: block;
+        max-height: 0;
+        margin-top: 0;
+        overflow: hidden;
+        border: 0 solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-card);
+        opacity: 0;
+        transition: max-height .24s ease, opacity .18s ease, margin-top .24s ease, border-width .24s ease;
+      }
+      .course-picker-panel.open {
+        max-height: 300px;
+        margin-top: 6px;
+        overflow-y: auto;
+        border-width: 1px;
+        opacity: 1;
+      }
       .course-group { border-bottom: 1px solid var(--border); }
       .course-group:last-child { border-bottom: 0; }
       .course-group > summary { position: relative; min-height: 40px; padding: 9px 42px 9px 11px; cursor: pointer; list-style: none; font-weight: 700; color: var(--ink-dark); background: var(--bg-primary); }
@@ -81,7 +134,28 @@
       .allocation-slot { display: grid; grid-template-columns: minmax(82px, 110px) minmax(130px, 1fr); align-items: center; gap: 8px; min-height: 44px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
       .allocation-role { min-width: 0; font-weight: 700; color: var(--ink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .allocation-control { min-width: 0; }
-      .allocation-control select { width: 100%; min-height: 34px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg-card); padding: 5px 8px; color: var(--ink-dark); }
+      .select-control { position: relative; display: block; min-width: 0; }
+      .select-control select {
+        width: 100%;
+        min-height: 34px;
+        appearance: none;
+        -webkit-appearance: none;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: var(--bg-card);
+        padding: 5px 34px 5px 9px;
+        color: var(--ink-dark);
+      }
+      .select-chevron {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        width: 16px;
+        height: 16px;
+        transform: translateY(-50%);
+        color: var(--ink-muted);
+        pointer-events: none;
+      }
       .allocation-result { grid-column: 1 / -1; margin-top: -2px; color: var(--green); font-size: 11px; line-height: 1.4; }
       .week-roster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       .week-roster-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 42px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
@@ -268,7 +342,10 @@
         <input type="hidden" id="peopleTargetOrg" />
         <div class="form-item">
           <label class="form-label">秘书处人员名单</label>
-          <select class="form-select" id="peoplePersonSelect"></select>
+          <span class="select-control">
+            <select class="form-select" id="peoplePersonSelect"></select>
+            <span class="select-chevron" data-icon="ChevronDownIcon" aria-hidden="true"></span>
+          </span>
         </div>
         <div class="modal-actions">
           <button class="btn btn-cancel" onclick="closePeopleModal()">取消</button>
@@ -301,9 +378,9 @@
 
     <div id="bottomNavContainer"></div>
 
-    <script src="js/supabase-config.js?v=9"></script>
-    <script src="js/utils.js?v=9"></script>
-    <script src="js/components.js?v=9"></script>
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=11"></script>
+    <script src="js/components.js?v=12"></script>
     <script src="js/study-workflow.js?v=9"></script>
     <script>
       var schedulePageParams = new URLSearchParams(location.search);
@@ -473,7 +550,7 @@
           ? (selectedGroup ? selectedGroup.title + ' / ' : '') + getCourseChapterLabel(selectedCourse, selectedIndex < 0 ? 0 : selectedIndex)
           : '选择课程章节';
         var html = '<div class="course-picker">' +
-          '<button type="button" class="course-picker-trigger" onclick="toggleCoursePicker(' + index + ')">' + escapeHtml(triggerText) + '</button>' +
+          '<button type="button" class="course-picker-trigger" aria-expanded="false" onclick="toggleCoursePicker(' + index + ')">' + escapeHtml(triggerText) + '</button>' +
           '<div class="course-picker-panel" id="coursePicker_' + index + '">' +
           '<button type="button" class="course-chapter-option' + (!item.course_id ? ' selected' : '') + '" onclick="chooseCourse(' + index + ',null)">不引用课程</button>';
         courseGroups.forEach(function(group) {
@@ -493,7 +570,13 @@
 
       function toggleCoursePicker(index) {
         var panel = document.getElementById('coursePicker_' + index);
-        if (panel) panel.classList.toggle('open');
+        if (!panel) return;
+        var isOpen = panel.classList.toggle('open');
+        var trigger = panel.previousElementSibling;
+        if (trigger) {
+          trigger.classList.toggle('expanded', isOpen);
+          trigger.setAttribute('aria-expanded', String(isOpen));
+        }
       }
 
       function chooseCourse(index, courseId) {
@@ -975,7 +1058,10 @@
           html += '<span class="scope-tag ' + schedule.scope_level + '">' + escapeHtml(getScheduleTypeLabel(schedule)) + '</span>';
           html += isReadonlySchedule ? '</div><div class="schedule-body">' : '</summary><div class="schedule-body">';
           if (scheduleView === 'course') {
-            html += '<div class="toolbar course-content-area">';
+            html += '<div class="course-content-area">';
+            if (canEditContent) {
+              html += '<div class="course-content-toolbar"><button class="btn btn-secondary btn-sm content-edit-action" onclick="showContentModal(' + schedule.id + ')">编辑内容</button></div>';
+            }
             html += '<div class="course-stack">';
             if (!resolvedItems.length) {
               html += '<div class="empty-state" style="padding:8px 0;text-align:left;">未设置课程</div>';
@@ -983,10 +1069,10 @@
               resolvedItems.forEach(function(item, index) {
                 var heading = item.course_group_title || item.title || '未命名课程';
                 var subheading = item.chapter_title || item.theme || '';
-                html += '<details class="course-summary"' + (index === 0 ? ' open' : '') + '><summary>' +
-                  '<div class="content-title">课程 ' + (index + 1) + ' · ' + escapeHtml(heading) + '</div>' +
-                  (subheading ? '<div class="content-line">' + escapeHtml(subheading) + '</div>' : '') +
-                  '</summary><div class="course-detail-body">';
+                html += '<details class="course-summary"' + (index === 0 ? ' open' : '') + '><summary><span class="course-summary-copy">' +
+                  '<span class="content-title">课程 ' + (index + 1) + ' · ' + escapeHtml(heading) + '</span>' +
+                  (subheading ? '<span class="content-line">' + escapeHtml(subheading) + '</span>' : '') +
+                  '</span></summary><div class="course-detail-collapse"><div class="course-detail-body"><div class="course-detail-inner">';
                 html += '<div class="course-meta">' +
                   (item.theme ? '<span>主题：' + escapeHtml(item.theme) + '</span>' : '') +
                   (item.paper_pages ? '<span>页码：' + escapeHtml(item.paper_pages) + '</span>' : '') +
@@ -996,11 +1082,10 @@
                   '</div>';
                 if (item.content) html += '<div class="content-line">' + escapeHtml(item.content) + '</div>';
                 if (item.question) html += '<div class="content-line muted">思考题：' + escapeHtml(item.question) + '</div>';
-                html += '<div class="content-source">内容来源：' + escapeHtml(item.source_org_name || '本组织') + '</div></div></details>';
+                html += '<div class="content-source">内容来源：' + escapeHtml(item.source_org_name || '本组织') + '</div></div></div></div></details>';
               });
             }
             html += '</div>';
-            if (canEditContent) html += '<button class="btn btn-secondary btn-sm content-edit-action" onclick="showContentModal(' + schedule.id + ')">编辑内容</button>';
             html += '</div>';
           } else if (scheduleView === 'week') {
             html += renderGroupWeekRoster(dayDemands);
@@ -1081,9 +1166,9 @@
               var localAssigned = localDemand ? (peopleByDemand[Number(localDemand.id)] || []) : [];
               html += '<div class="allocation-slot">' +
                 '<div class="allocation-role">' + escapeHtml(position.role_name) + '</div>' +
-                '<div class="allocation-control"><select onchange="assignDirectGroupPersonSlot(' + schedule.id + ',' + position.id + ',' + slot + ',this.value)" ' + (!canManageDemand ? 'disabled' : '') + '>' +
+                '<div class="allocation-control"><span class="select-control"><select onchange="assignDirectGroupPersonSlot(' + schedule.id + ',' + position.id + ',' + slot + ',this.value)" ' + (!canManageDemand ? 'disabled' : '') + '>' +
                 buildPersonOptions(selectedMembers, localAssigned.length ? localAssigned[0].person_id : '') +
-                '</select></div>' +
+                '</select>' + appIcon('ChevronDownIcon', 'select-chevron') + '</span></div>' +
                 (localAssigned.length ? '<div class="allocation-result">已落位：' + escapeHtml(localAssigned[0].person_name_snapshot) + '</div>' : '') +
                 '</div>';
             }
@@ -1123,9 +1208,9 @@
             var selectedPersonId = assigned.length ? assigned[0].person_id : '';
             html += '<div class="allocation-slot">' +
               '<div class="allocation-role">' + escapeHtml((position && position.role_name) || demand.role_name || '未命名岗位') + '</div>' +
-              '<div class="allocation-control"><select onchange="assignPersonSlot(' + demand.id + ',' + selectedOrgId + ',this.value)" ' + (!canManageDemand ? 'disabled' : '') + '>' +
+              '<div class="allocation-control"><span class="select-control"><select onchange="assignPersonSlot(' + demand.id + ',' + selectedOrgId + ',this.value)" ' + (!canManageDemand ? 'disabled' : '') + '>' +
               buildPersonOptions(selectedMembers, selectedPersonId) +
-              '</select></div>' +
+              '</select>' + appIcon('ChevronDownIcon', 'select-chevron') + '</span></div>' +
               (assigned.length ? '<div class="allocation-result">已落位：' + escapeHtml(assigned[0].person_name_snapshot) + '</div>' : '') +
               '</div>';
           });
@@ -1152,10 +1237,10 @@
         var names = currentDemand ? getAssignedNamesForDemand(currentDemand.id) : [];
         return '<div class="allocation-slot">' +
           '<div class="allocation-role">' + escapeHtml(position.role_name || '未命名岗位') + '</div>' +
-          '<div class="allocation-control"><select onchange="assignDemandSlot(' + schedule.id + ',' + Number(position.id || 0) + ',' + slot + ',' +
+          '<div class="allocation-control"><span class="select-control"><select onchange="assignDemandSlot(' + schedule.id + ',' + Number(position.id || 0) + ',' + slot + ',' +
           (parentId || 'null') + ',this.value)" ' + (!canManageDemand ? 'disabled' : '') + '>' +
           buildOrgOptions(targets, selectedTarget, placeholder) +
-          '</select></div>' +
+          '</select>' + appIcon('ChevronDownIcon', 'select-chevron') + '</span></div>' +
           (names.length ? '<div class="allocation-result">已落位：' + escapeHtml(names.join('、')) + '</div>' : '') +
           '</div>';
       }
@@ -1236,12 +1321,12 @@
           return '<details class="course-editor-item"' + (item.expanded !== false ? ' open' : '') + ' ontoggle="setCourseEditorExpanded(' + index + ',this.open)">' +
             '<summary class="course-editor-summary"><span class="course-editor-index">课程 ' + (index + 1) + ' · ' + escapeHtml(summaryTitle) + '</span>' +
             '<span class="course-editor-head-actions"><button type="button" class="btn btn-danger btn-sm" onclick="event.preventDefault();event.stopPropagation();removeCourseEditorItem(' + index + ')">删除</button><span class="course-editor-toggle" aria-hidden="true"></span></span></summary>' +
-            '<div class="course-editor-body">' +
+            '<div class="course-editor-collapse"><div class="course-editor-body"><div class="course-editor-body-inner">' +
             '<div class="form-item"><label class="form-label">引用课程</label>' + renderCoursePicker(index, item) + '</div>' +
             '<div class="form-item"><label class="form-label">标题</label><input class="form-input" value="' + escapeHtml(item.title) + '" oninput="updateCourseEditorItem(' + index + ',\'title\',this.value)" /></div>' +
             '<div class="form-item"><label class="form-label">学习内容</label><textarea class="form-textarea" style="min-height:70px;" oninput="updateCourseEditorItem(' + index + ',\'content\',this.value)">' + escapeHtml(item.content) + '</textarea></div>' +
             '<div class="form-item"><label class="form-label">思考题</label><textarea class="form-textarea" style="min-height:60px;" oninput="updateCourseEditorItem(' + index + ',\'question\',this.value)">' + escapeHtml(item.question) + '</textarea></div>' +
-            '</div></details>';
+            '</div></div></div></details>';
         }).join('');
       }
 

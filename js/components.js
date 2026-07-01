@@ -666,7 +666,7 @@ document.addEventListener('click', function (event) {
   if (document.querySelector('script[data-app-icon-runtime]')) return;
   var script = document.createElement('script');
   script.type = 'module';
-  script.src = 'js/icon-runtime.js?v=1';
+  script.src = 'js/icon-runtime.js?v=3';
   script.dataset.appIconRuntime = 'true';
   document.head.appendChild(script);
 })();

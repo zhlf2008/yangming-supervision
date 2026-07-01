@@ -210,7 +210,31 @@ body::before {
 .page-title { font-family: 'STSong','SimSun','Noto Serif SC',serif; font-size: 22px; flex: 1; color: var(--ink-dark); }
 .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; color: var(--ink-dark); font-size: 0; line-height: 1; flex-shrink: 0; }
 .back-btn:active { background: var(--border); }
+.back-btn::before {
+  content: none !important;
+  background-image: none !important;
+}
+
+/* Module dashboards place the return control below the centered title. */
+.header > .module-switch {
+  margin: 12px auto 0 -20px;
+}
+
+.header > .module-switch-wrap {
+  margin: 12px 0 0 -20px;
+  text-align: left;
+}
+
+.module-switch-wrap > .module-switch {
+  margin: 0;
+}
+
 .app-icon, [data-icon] { display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
+.back-btn[data-icon] { display: flex; }
+.back-btn[data-icon] > svg {
+  width: 20px;
+  height: 20px;
+}
 [data-icon] > svg { width: 1em; height: 1em; display: block; }
 .section { background: rgba(255, 255, 255, 0.92); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
 .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -530,6 +554,20 @@ a.back-btn {
 [data-icon] > svg {
   width: 1em;
   height: 1em;
+}
+
+/*
+ * better-icons exports preserve upstream fill attributes. Lucide is an
+ * outline set, so normalize those paths back to strokes instead of rendering
+ * them as heavy solid blocks.
+ */
+[data-icon] svg [fill='currentColor'] {
+  fill: none;
+}
+
+[data-icon] svg {
+  overflow: visible;
+  stroke-width: 1.8;
 }
 
 .datepicker-runtime-icon,

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>学委 - 学委管理</title>
-    <link rel="stylesheet" href="css/common.css?v=5" />
+    <link rel="stylesheet" href="css/common.css?v=9" />
     <style>
       :root {
         --manager-ink: var(--ink-dark);
@@ -16,8 +16,12 @@
         --manager-gold: var(--gold);
       }
       body { color: var(--manager-ink); }
-      .manager-shell { max-width: 760px; }
-      .manager-header { padding-bottom: 12px; }
+      .manager-shell { max-width: 480px; }
+      .manager-header {
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 18px;
+      }
       .manager-header .page-title { font-size: 22px; }
       .semester-line { color: var(--ink-muted); font-size: 12px; white-space: nowrap; }
       .level-bar {
@@ -25,31 +29,46 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 4px 4px 12px;
-        margin-bottom: 2px;
+        padding: 0 4px 12px;
+        margin-bottom: 0;
       }
-      .level-title { font-family: 'STSong', 'SimSun', serif; font-size: 17px; font-weight: 700; }
+      .level-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'STSong', 'SimSun', serif;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .level-title::before {
+        content: '';
+        width: 3px;
+        height: 18px;
+        border-radius: 2px;
+        background: var(--manager-red);
+      }
       .level-count { color: var(--ink-muted); font-size: 12px; }
       .org-card-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: 1fr;
+        gap: 10px;
       }
       .org-card {
         width: 100%;
-        min-height: 104px;
+        min-height: 88px;
         display: grid;
-        grid-template-columns: 46px minmax(0, 1fr) 28px;
+        grid-template-columns: 40px minmax(0, 1fr) 24px;
         align-items: center;
         gap: 12px;
-        padding: 16px;
+        padding: 14px 16px;
         border: 1px solid var(--manager-line);
-        border-radius: var(--radius);
+        border-left: 3px solid var(--manager-red);
+        border-radius: 8px;
         background: var(--manager-paper);
         color: inherit;
         text-align: left;
         cursor: pointer;
-        box-shadow: 0 2px 12px var(--shadow);
+        box-shadow: 0 1px 7px rgba(45, 45, 45, 0.06);
         transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
       }
       .org-card:hover {
@@ -58,27 +77,45 @@
         box-shadow: 0 7px 18px rgba(45, 45, 45, 0.09);
       }
       .org-mark {
-        width: 46px;
-        height: 46px;
-        display: grid;
-        place-items: center;
-        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
         background: var(--manager-red-soft);
         color: var(--manager-red);
-        font-family: 'STSong', 'SimSun', serif;
-        font-size: 19px;
-        font-weight: 700;
       }
+      .org-mark svg {
+        width: 20px;
+        height: 20px;
+      }
+      .org-card.class-card { border-left-color: var(--manager-green); }
+      .org-card.group-card { border-left-color: var(--manager-gold); }
       .org-card.class-card .org-mark { background: #e7f0ec; color: var(--manager-green); }
       .org-card.group-card .org-mark { background: #f3ede2; color: var(--manager-gold); }
       .org-card-name {
         font-family: 'STSong', 'SimSun', serif;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
         line-height: 1.4;
         overflow-wrap: anywhere;
       }
-      .org-card-meta { color: var(--ink-muted); font-size: 12px; margin-top: 5px; }
+      .org-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--ink-muted);
+        font-size: 12px;
+        margin-top: 5px;
+      }
+      .org-level-tag {
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: var(--bg-primary);
+        color: var(--ink-light);
+        font-size: 10px;
+      }
       .org-card-arrow { width: 22px; height: 22px; color: var(--ink-muted); }
       .empty-panel { padding: 52px 12px; text-align: center; color: var(--ink-muted); }
       .list-parent-card {
@@ -215,7 +252,7 @@
       .feature-frame.ready { opacity: 1; pointer-events: auto; }
       .notice-editor {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: 1fr;
         gap: 18px;
       }
       .notice-controls, .notice-preview {
@@ -265,7 +302,6 @@
         overflow-wrap: anywhere;
       }
       @media (max-width: 720px) {
-        .org-card-grid { grid-template-columns: 1fr; }
         .detail-main { grid-template-columns: 46px minmax(0, 1fr) 46px; gap: 8px; padding: 18px 10px; }
         .direction-btn { width: 44px; height: 58px; }
         .direction-btn svg { width: 26px; height: 26px; }
@@ -297,9 +333,9 @@
 
     <div id="bottomNavContainer"></div>
 
-    <script src="js/supabase-config.js?v=9"></script>
-    <script src="js/utils.js?v=9"></script>
-    <script src="js/components.js?v=9"></script>
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=11"></script>
+    <script src="js/components.js?v=12"></script>
     <script src="js/study-workflow.js?v=9"></script>
     <script>
       renderModuleBottomNav('study', 'management');
@@ -419,10 +455,11 @@
         var cards = orgs.map(function (org) {
           var count = getChildCount(org);
           var cardClass = org.level === '班级' ? ' class-card' : (org.level === '小组' ? ' group-card' : '');
+          var cardIcon = org.level === '大班' ? 'BuildingIcon' : (org.level === '班级' ? 'UsersIcon' : 'UserIcon');
           var meta = org.level === '小组' ? '进入小组设置' : count + ' 个' + (org.level === '大班' ? '班级' : '小组');
           return '<button class="org-card' + cardClass + '" type="button" onclick="openOrg(' + org.id + ')">' +
-            '<span class="org-mark">' + escapeHtml(org.name.charAt(0)) + '</span>' +
-            '<span><span class="org-card-name">' + escapeHtml(org.name) + '</span><span class="org-card-meta">' + meta + '</span></span>' +
+            '<span class="org-mark" data-icon="' + cardIcon + '" aria-hidden="true"></span>' +
+            '<span><span class="org-card-name">' + escapeHtml(org.name) + '</span><span class="org-card-meta"><span class="org-level-tag">' + escapeHtml(org.level) + '</span><span>' + meta + '</span></span></span>' +
             appIcon('ChevronRightIcon', 'org-card-arrow') +
           '</button>';
         }).join('');

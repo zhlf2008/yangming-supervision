@@ -4,7 +4,7 @@
 //    部署命令: supabase functions deploy admin-user
 //
 //  版本号：修改此文件后递增此值（同时也会刷新 utils.js、components.js 的缓存）
-var APP_CACHE_VERSION = '9';
+var APP_CACHE_VERSION = '10';
 
 const SUPABASE_URL = 'https://tuoyue.space/supabase';
 const SUPABASE_ANON_KEY = 'sb_publishable_EpIHYcBxeuhS4eCHGaUk9w_ZVYN1Jn_';

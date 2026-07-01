@@ -19,7 +19,7 @@
       })();
     </script>
     <link rel="preconnect" href="https://tuoyue.space" />
-    <link rel="stylesheet" href="css/common.css?v=5" />
+    <link rel="stylesheet" href="css/common.css?v=9" />
     <style>
       .page-header {
         display: flex;
@@ -550,7 +550,7 @@
       <!-- Organization Selector (three-level cascade) -->
       <div class="section" id="orgSelectorSection" style="display: none">
         <div class="section-title">
-          <span class="section-icon"></span>
+          <span class="section-icon" data-icon="BuildingIcon"></span>
           选择填报小组
         </div>
         <div class="org-cascade">
@@ -610,9 +610,9 @@
     <!-- Bottom Nav -->
     <div id="bottomNavContainer"></div>
 
-    <script src="js/supabase-config.js?v=7"></script>
-    <script src="js/utils.js?v=7"></script>
-    <script src="js/components.js?v=7"></script>
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=11"></script>
+    <script src="js/components.js?v=12"></script>
     <script>
       renderBottomNav('attendance');
     </script>
@@ -1160,7 +1160,7 @@
           html +=
             '<div class="section">' +
             '<div class="section-title" id="attSectionTitle">' +
-            '<span class="section-icon 考勤"></span>' +
+            '<span class="section-icon 考勤" data-icon="ClipboardCheckIcon"></span>' +
             '上线率' +
             (attLocked ? ' <span style="font-size:11px; color:var(--vermillion);"> 已超截止时间</span>' : '') +
             '</div>';
@@ -1240,7 +1240,7 @@
             html +=
               '<div class="section">' +
               '<div class="section-title hw-section-title">' +
-              '<span class="section-icon 作业"></span>' +
+              '<span class="section-icon 作业" data-icon="FileEditIcon"></span>' +
               (type.type_name || '作业率') +
               (lockedTypeIds.has(type.id) ? ' <span style="font-size:11px; color:var(--vermillion);"> 已超截止时间</span>' : '') +
               '</div>';
