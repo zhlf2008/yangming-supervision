@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>优秀作业卡片制作 - 宣委管理</title>
+    <title>优秀作业宣发制作 - 宣委管理</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/publicity-long-poster.css?v=1" />
     <style>
       .page-header {
         display: flex;
@@ -277,8 +278,7 @@
         border: 0;
         background:
           linear-gradient(115deg, transparent 0 62%, var(--card-wash) 62% 100%),
-          radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.5), transparent 34%),
-          var(--card-bg);
+          radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.5), transparent 34%), var(--card-bg);
         color: var(--card-text);
         box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
       }
@@ -594,7 +594,7 @@
     <main class="container">
       <header class="page-header">
         <a class="back-btn" href="publicity-dashboard.html" aria-label="返回宣委管理首页"></a>
-        <h1 class="page-title">优秀作业卡片制作</h1>
+        <h1 class="page-title">优秀作业宣发制作</h1>
       </header>
 
       <div class="header-card">
@@ -628,10 +628,26 @@
       <section class="section" id="orgSelectorSection">
         <div class="section-title">
           <span class="section-icon" data-icon="BuildingIcon"></span>
-          选择制卡小组
+          选择宣发范围
+        </div>
+        <div class="publish-scope-row">
+          <span class="publish-scope-label">生成范围</span>
+          <div class="publish-scope-switch" role="group" aria-label="宣发范围">
+            <button
+              class="publish-scope-btn active"
+              id="scopeGroupBtn"
+              type="button"
+              onclick="setPublishScope('group')"
+            >
+              当前小组
+            </button>
+            <button class="publish-scope-btn" id="scopeClassBtn" type="button" onclick="setPublishScope('class')">
+              整个班级
+            </button>
+          </div>
         </div>
         <div class="org-cascade">
-          <div class="org-group">
+          <div class="org-group" id="groupSelectWrap">
             <label class="org-label" for="bigClassSelect">大班</label>
             <select class="org-select" id="bigClassSelect" onchange="onBigClassChange(this.value)">
               <option>识别中...</option>
@@ -665,7 +681,12 @@
           <div class="setting-row">
             <span class="setting-label">主题风格</span>
             <div class="theme-swatches" aria-label="卡片主题">
-              <button class="theme-swatch active" data-theme="vermillion" aria-label="朱红" onclick="setTheme('vermillion')"></button>
+              <button
+                class="theme-swatch active"
+                data-theme="vermillion"
+                aria-label="朱红"
+                onclick="setTheme('vermillion')"
+              ></button>
               <button class="theme-swatch" data-theme="ink" aria-label="墨色" onclick="setTheme('ink')"></button>
               <button class="theme-swatch" data-theme="jade" aria-label="青玉" onclick="setTheme('jade')"></button>
               <button class="theme-swatch" data-theme="paper" aria-label="宣纸" onclick="setTheme('paper')"></button>
@@ -689,7 +710,13 @@
         <div class="editor-fields" id="editorFields" hidden>
           <label>
             <span class="field-label">主标题</span>
-            <input class="field-control" id="cardTitleInput" maxlength="32" value="今日优秀作业" oninput="updatePreview()" />
+            <input
+              class="field-control"
+              id="cardTitleInput"
+              maxlength="32"
+              value="今日优秀作业"
+              oninput="updatePreview()"
+            />
           </label>
           <label>
             <span class="field-label">副标题</span>
@@ -697,13 +724,23 @@
           </label>
           <label class="field-wide">
             <span class="field-label">开篇</span>
-            <textarea class="field-control" id="cardIntroInput" maxlength="160" oninput="updatePreview()">在文字里照见思考，在坚持中积蓄成长。</textarea>
+            <textarea class="field-control" id="cardIntroInput" maxlength="160" oninput="updatePreview()">
+在文字里照见思考，在坚持中积蓄成长。</textarea
+            >
           </label>
           <label class="field-wide">
             <span class="field-label">寄语</span>
-            <textarea class="field-control" id="cardClosingInput" maxlength="120" oninput="updatePreview()">知行合一，日日精进。</textarea>
+            <textarea class="field-control" id="cardClosingInput" maxlength="120" oninput="updatePreview()">
+知行合一，日日精进。</textarea
+            >
           </label>
         </div>
+
+        <section class="highlight-panel" aria-labelledby="highlightPanelTitle">
+          <div class="highlight-panel-title" id="highlightPanelTitle">从原文选择金句</div>
+          <div class="highlight-panel-note">金句只允许选择原文中的完整句子；留空时，长图直接展示原文，不生成摘要。</div>
+          <div class="highlight-list" id="highlightList"></div>
+        </section>
 
         <div class="preview-label">成品预览</div>
         <div class="preview-shell">
@@ -731,15 +768,53 @@
         </div>
       </section>
 
+      <section class="long-poster-workbench" id="longPosterSection" hidden>
+        <div class="long-poster-head">
+          <div class="long-poster-title">
+            <span class="section-icon" data-icon="FileEditIcon"></span>
+            <span id="longPosterTitle">优秀作业完整长图</span>
+          </div>
+          <span class="long-poster-meta" id="longPosterMeta">原文呈现</span>
+        </div>
+        <div class="long-poster-help" id="longPosterHelp">
+          长图包含封面、完整原文和封底；导出宽度为 1080px。班级模式可同时生成每个小组的独立长图。
+        </div>
+        <div class="long-poster-actions">
+          <button
+            class="action-btn ready"
+            id="downloadLongPosterBtn"
+            type="button"
+            onclick="downloadCurrentLongPoster()"
+          >
+            <span data-icon="DownloadIcon"></span><span id="downloadLongPosterLabel">导出小组长图</span>
+          </button>
+          <button
+            class="action-btn primary"
+            id="generateGroupPostersBtn"
+            type="button"
+            onclick="generateAllGroupPosters()"
+            hidden
+          >
+            <span data-icon="FileEditIcon"></span><span>生成各小组长图</span>
+          </button>
+        </div>
+        <div class="long-poster-preview-frame">
+          <div class="long-poster-preview" id="longPosterPreview"></div>
+        </div>
+        <div class="poster-export-gallery" id="posterExportGallery" hidden></div>
+      </section>
+
       <div class="empty-panel" id="emptyPanel">正在加载优秀作业...</div>
     </main>
 
     <div id="bottomNavContainer"></div>
+    <div class="poster-render-host" id="posterRenderHost" aria-hidden="true"></div>
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=15"></script>
     <script src="js/excellent-homework.js?v=2"></script>
+    <script src="js/publicity-long-poster.js?v=1"></script>
     <script>
       renderModuleBottomNav('publicity', 'cards');
 
@@ -747,11 +822,15 @@
       var currentUser = null;
       var accessibleGroups = [];
       var publicitySchedules = [];
+      var publishScope = 'group';
+      var currentClass = null;
       var currentGroup = null;
       var currentSchedule = null;
       var currentEntries = [];
       var currentCard = null;
       var selectedEntryIds = [];
+      var highlightTexts = {};
+      var currentPosterGroups = [];
       var cardTheme = 'vermillion';
       var cardLayout = 'collection';
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -821,9 +900,7 @@
               .limit(1);
             if (assignmentResult.error) throw assignmentResult.error;
             var assignment = (assignmentResult.data || [])[0];
-            var assignedGroup = assignment
-              ? ExcellentHomework.getOrg(orgs, assignment.org_id)
-              : null;
+            var assignedGroup = assignment ? ExcellentHomework.getOrg(orgs, assignment.org_id) : null;
             if (assignedGroup && assignedGroup.level === '小组') return assignedGroup;
           }
         }
@@ -910,10 +987,9 @@
           return;
         }
         var classOrg = ExcellentHomework.getOrg(publicityContext.orgs, defaultGroup.parent_id);
-        var bigClass = classOrg
-          ? ExcellentHomework.getOrg(publicityContext.orgs, classOrg.parent_id)
-          : null;
+        var bigClass = classOrg ? ExcellentHomework.getOrg(publicityContext.orgs, classOrg.parent_id) : null;
         if (!classOrg || !bigClass) return;
+        currentClass = classOrg;
         bigClassSelect.value = String(bigClass.id);
         renderOptions(classSelect, getClassesForBigClass(bigClass.id), '请选择');
         classSelect.value = String(classOrg.id);
@@ -922,7 +998,37 @@
         renderCurrentPath(defaultGroup);
       }
 
+      async function setPublishScope(scope) {
+        publishScope = scope === 'class' ? 'class' : 'group';
+        document.getElementById('scopeGroupBtn').classList.toggle('active', publishScope === 'group');
+        document.getElementById('scopeClassBtn').classList.toggle('active', publishScope === 'class');
+        document.getElementById('groupSelectWrap').classList.toggle('scope-hidden', publishScope === 'class');
+        document.getElementById('posterExportGallery').hidden = true;
+
+        if (publishScope === 'class') {
+          var classId = document.getElementById('classSelect').value || (currentClass ? currentClass.id : '');
+          if (!classId) {
+            showEmpty('请选择需要生成长图的班级');
+            return;
+          }
+          try {
+            await loadCurrentClass(classId);
+          } catch (error) {
+            showEmpty('班级优秀作业加载失败：' + (error.message || error));
+          }
+          return;
+        }
+
+        var groupId = document.getElementById('groupSelect').value || (currentGroup ? currentGroup.id : '');
+        if (!groupId) {
+          showEmpty('请选择需要生成长图的小组');
+          return;
+        }
+        await onGroupChange(groupId);
+      }
+
       async function onBigClassChange(bigClassId) {
+        currentClass = null;
         currentGroup = null;
         renderCurrentPath(null);
         var classes = bigClassId ? getClassesForBigClass(bigClassId) : [];
@@ -933,16 +1039,29 @@
           classSelect.value = String(classes[0].id);
           await onClassChange(classes[0].id);
         } else {
-          showEmpty('请选择班级和小组');
+          showEmpty('请选择班级');
         }
       }
 
       async function onClassChange(classId) {
+        currentClass = classId ? ExcellentHomework.getOrg(publicityContext.orgs, classId) : null;
         currentGroup = null;
-        renderCurrentPath(null);
+        renderCurrentPath(null, currentClass);
         var groups = classId ? getGroupsForClass(classId) : [];
         var groupSelect = document.getElementById('groupSelect');
         renderOptions(groupSelect, groups, '请选择');
+        if (publishScope === 'class') {
+          if (currentClass) {
+            try {
+              await loadCurrentClass(classId);
+            } catch (error) {
+              showEmpty('班级优秀作业加载失败：' + (error.message || error));
+            }
+          } else {
+            showEmpty('请选择需要生成长图的班级');
+          }
+          return;
+        }
         if (groups.length === 1) {
           groupSelect.value = String(groups[0].id);
           await onGroupChange(groups[0].id);
@@ -956,6 +1075,7 @@
           accessibleGroups.find(function (group) {
             return Number(group.id) === Number(groupId);
           }) || null;
+        currentClass = currentGroup ? ExcellentHomework.getOrg(publicityContext.orgs, currentGroup.parent_id) : null;
         renderCurrentPath(currentGroup);
         if (!currentGroup) {
           showEmpty('请选择小组查看优秀作业卡片');
@@ -969,16 +1089,82 @@
         }
       }
 
-      function renderCurrentPath(group) {
-        var classOrg = group
-          ? ExcellentHomework.getOrg(publicityContext.orgs, group.parent_id)
-          : null;
-        var bigClass = classOrg
-          ? ExcellentHomework.getOrg(publicityContext.orgs, classOrg.parent_id)
-          : null;
+      function renderCurrentPath(group, classOverride) {
+        var classOrg =
+          classOverride || (group ? ExcellentHomework.getOrg(publicityContext.orgs, group.parent_id) : null);
+        var bigClass = classOrg ? ExcellentHomework.getOrg(publicityContext.orgs, classOrg.parent_id) : null;
         document.getElementById('bigClassName').textContent = bigClass ? bigClass.name : '--';
         document.getElementById('className').textContent = classOrg ? classOrg.name : '--';
-        document.getElementById('groupName').textContent = group ? group.name : '--';
+        document.getElementById('groupName').textContent = group
+          ? group.name
+          : publishScope === 'class' && classOrg
+            ? '全部小组'
+            : '--';
+      }
+
+      async function loadCurrentClass(classId) {
+        currentClass = ExcellentHomework.getOrg(publicityContext.orgs, classId);
+        if (!currentClass) {
+          showEmpty('未找到所选班级');
+          return;
+        }
+        var groups = getGroupsForClass(currentClass.id);
+        renderCurrentPath(null, currentClass);
+        if (!groups.length) {
+          showEmpty('当前班级没有可查看的小组');
+          return;
+        }
+
+        var dabanId = ExcellentHomework.getDabanId(publicityContext.orgs, groups[0].id);
+        currentSchedule =
+          publicitySchedules.find(function (schedule) {
+            return schedule.schedule_date === getToday() && Number(schedule.org_id) === Number(dabanId);
+          }) || null;
+        var groupIds = groups.map(function (group) {
+          return Number(group.id);
+        });
+        var entries = currentSchedule ? await ExcellentHomework.loadEntries(currentSchedule.id, groupIds) : [];
+        highlightTexts = {};
+
+        if (currentSchedule) {
+          var cardsResult = await window.db
+            .from('publicity_homework_cards')
+            .select('id,org_id')
+            .eq('schedule_id', currentSchedule.id)
+            .in('org_id', groupIds);
+          if (cardsResult.error) throw cardsResult.error;
+          var cardIds = (cardsResult.data || []).map(function (card) {
+            return Number(card.id);
+          });
+          if (cardIds.length) {
+            var highlightsResult = await window.db
+              .from('publicity_homework_card_items')
+              .select('entry_id,highlight_text')
+              .in('card_id', cardIds);
+            if (highlightsResult.error) throw highlightsResult.error;
+            (highlightsResult.data || []).forEach(function (item) {
+              if (item.highlight_text) {
+                highlightTexts[Number(item.entry_id)] = item.highlight_text;
+              }
+            });
+          }
+        }
+
+        currentPosterGroups = groups.map(function (group) {
+          return {
+            id: group.id,
+            name: group.name,
+            entries: entries
+              .filter(function (entry) {
+                return Number(entry.org_id) === Number(group.id);
+              })
+              .slice(0, 3)
+              .map(withHighlight)
+          };
+        });
+        document.getElementById('editorSection').hidden = true;
+        document.getElementById('emptyPanel').style.display = 'none';
+        renderLongPoster();
       }
 
       async function loadCurrentGroup() {
@@ -988,15 +1174,22 @@
           publicitySchedules.find(function (schedule) {
             return schedule.schedule_date === getToday() && Number(schedule.org_id) === Number(dabanId);
           }) || null;
-        currentEntries = currentSchedule
-          ? await ExcellentHomework.loadEntries(currentSchedule.id, [groupId])
-          : [];
+        currentEntries = currentSchedule ? await ExcellentHomework.loadEntries(currentSchedule.id, [groupId]) : [];
         currentCard = null;
+        highlightTexts = {};
         selectedEntryIds = currentEntries.slice(0, 3).map(function (entry) {
           return Number(entry.id);
         });
         await loadCardEditor();
         renderWorkbench();
+        currentPosterGroups = [
+          {
+            id: currentGroup.id,
+            name: currentGroup.name,
+            entries: getSelectedEntriesWithHighlights()
+          }
+        ];
+        renderLongPoster();
       }
 
       async function loadCardEditor() {
@@ -1012,10 +1205,16 @@
           if (currentCard) {
             var itemResult = await window.db
               .from('publicity_homework_card_items')
-              .select('entry_id,sort_order')
+              .select('entry_id,sort_order,highlight_text')
               .eq('card_id', currentCard.id)
               .order('sort_order');
             if (itemResult.error) throw itemResult.error;
+            highlightTexts = {};
+            (itemResult.data || []).forEach(function (item) {
+              if (item.highlight_text) {
+                highlightTexts[Number(item.entry_id)] = item.highlight_text;
+              }
+            });
             selectedEntryIds = (itemResult.data || [])
               .map(function (item) {
                 return Number(item.entry_id);
@@ -1038,9 +1237,7 @@
         document.getElementById('cardIntroInput').value = card
           ? card.intro_text
           : '在文字里照见思考，在坚持中积蓄成长。';
-        document.getElementById('cardClosingInput').value = card
-          ? card.closing_text
-          : '知行合一，日日精进。';
+        document.getElementById('cardClosingInput').value = card ? card.closing_text : '知行合一，日日精进。';
         setTheme(card ? card.theme : 'vermillion');
         setLayout(card ? card.layout : 'collection');
       }
@@ -1048,9 +1245,9 @@
       function renderWorkbench() {
         document.getElementById('editorSection').hidden = false;
         document.getElementById('emptyPanel').style.display = 'none';
-        document.getElementById('workbenchTitle').textContent =
-          currentGroup.name + ' · 优秀作业卡片';
+        document.getElementById('workbenchTitle').textContent = currentGroup.name + ' · 优秀作业卡片';
         renderCardStatus(currentCard ? currentCard.status : '');
+        renderHighlightFields();
         updatePreview();
       }
 
@@ -1060,9 +1257,7 @@
       }
 
       function setTheme(theme) {
-        cardTheme = ['vermillion', 'ink', 'jade', 'paper'].indexOf(theme) >= 0
-          ? theme
-          : 'vermillion';
+        cardTheme = ['vermillion', 'ink', 'jade', 'paper'].indexOf(theme) >= 0 ? theme : 'vermillion';
         document.querySelectorAll('.theme-swatch').forEach(function (button) {
           button.classList.toggle('active', button.dataset.theme === cardTheme);
         });
@@ -1073,7 +1268,18 @@
         cardLayout = layout === 'single' ? 'single' : 'collection';
         document.getElementById('layoutSingle').classList.toggle('active', cardLayout === 'single');
         document.getElementById('layoutCollection').classList.toggle('active', cardLayout === 'collection');
+        renderHighlightFields();
         updatePreview();
+        if (publishScope === 'group' && currentGroup) {
+          currentPosterGroups = [
+            {
+              id: currentGroup.id,
+              name: currentGroup.name,
+              entries: getSelectedEntriesWithHighlights()
+            }
+          ];
+          renderLongPoster();
+        }
       }
 
       function getSelectedEntries() {
@@ -1087,18 +1293,105 @@
         return cardLayout === 'single' ? selected.slice(0, 1) : selected.slice(0, 3);
       }
 
+      function withHighlight(entry) {
+        return Object.assign({}, entry, {
+          highlight_text: highlightTexts[Number(entry.id)] || ''
+        });
+      }
+
+      function getSelectedEntriesWithHighlights() {
+        return getSelectedEntries().map(withHighlight);
+      }
+
+      function splitOriginalSentences(content) {
+        var matches = String(content || '').match(/[^。！？!?；;\n]+[。！？!?；;]?/g) || [];
+        return matches
+          .map(function (sentence) {
+            return sentence.trim();
+          })
+          .filter(function (sentence, index, list) {
+            return sentence.length >= 4 && sentence.length <= 500 && list.indexOf(sentence) === index;
+          });
+      }
+
+      function renderHighlightFields() {
+        var list = document.getElementById('highlightList');
+        var selected = getSelectedEntries();
+        if (!selected.length) {
+          list.innerHTML = '<div class="highlight-panel-note">当前没有可选择金句的优秀作业。</div>';
+          return;
+        }
+        list.innerHTML = selected
+          .map(function (entry) {
+            var sentences = splitOriginalSentences(entry.content);
+            var selectedValue = highlightTexts[Number(entry.id)] || '';
+            var options =
+              '<option value="">不显示金句，仅展示原文</option>' +
+              sentences
+                .map(function (sentence) {
+                  return (
+                    '<option value="' +
+                    escapeHtml(sentence) +
+                    '"' +
+                    (sentence === selectedValue ? ' selected' : '') +
+                    '>' +
+                    escapeHtml(sentence) +
+                    '</option>'
+                  );
+                })
+                .join('');
+            return (
+              '<div class="highlight-item">' +
+              '<div class="highlight-item-head"><span class="highlight-person">' +
+              escapeHtml(entry.person_name_snapshot) +
+              '</span><span class="highlight-count">' +
+              sentences.length +
+              ' 个原文句子</span></div>' +
+              '<select class="highlight-select" data-highlight-entry="' +
+              entry.id +
+              '" onchange="setHighlightText(' +
+              entry.id +
+              ', this.value)">' +
+              options +
+              '</select></div>'
+            );
+          })
+          .join('');
+      }
+
+      function setHighlightText(entryId, value) {
+        var entry = currentEntries.find(function (item) {
+          return Number(item.id) === Number(entryId);
+        });
+        var highlight = String(value || '').trim();
+        if (highlight && (!entry || String(entry.content || '').indexOf(highlight) === -1)) {
+          showToast('金句必须来自对应作业原文', 'error');
+          renderHighlightFields();
+          return;
+        }
+        if (highlight) {
+          highlightTexts[Number(entryId)] = highlight;
+        } else {
+          delete highlightTexts[Number(entryId)];
+        }
+        if (publishScope === 'group' && currentGroup) {
+          currentPosterGroups = [
+            {
+              id: currentGroup.id,
+              name: currentGroup.name,
+              entries: getSelectedEntriesWithHighlights()
+            }
+          ];
+          renderLongPoster();
+        }
+      }
+
       function updatePreview() {
         var card = document.getElementById('publicityCard');
         if (!card || !currentGroup) return;
         var selected = getSelectedEntries();
         var entryCount = Math.max(selected.length, 1);
-        card.className =
-          'publicity-card theme-' +
-          cardTheme +
-          ' layout-' +
-          cardLayout +
-          ' entries-' +
-          entryCount;
+        card.className = 'publicity-card theme-' + cardTheme + ' layout-' + cardLayout + ' entries-' + entryCount;
         card.style.setProperty('--entry-count', entryCount);
         var entriesHtml = selected.length
           ? selected
@@ -1152,8 +1445,7 @@
       function renderCardStatus(status) {
         var badge = document.getElementById('cardStatus');
         var entryCount = currentEntries.length;
-        badge.className =
-          'status-badge' + (status === 'ready' || status === 'published' ? ' ready' : '');
+        badge.className = 'status-badge' + (status === 'ready' || status === 'published' ? ' ready' : '');
         badge.textContent =
           status === 'ready'
             ? '可发布'
@@ -1171,9 +1463,7 @@
           return;
         }
         var button =
-          status === 'ready'
-            ? document.getElementById('markReadyBtn')
-            : document.getElementById('saveDraftBtn');
+          status === 'ready' ? document.getElementById('markReadyBtn') : document.getElementById('saveDraftBtn');
         button.disabled = true;
         try {
           var payload = {
@@ -1207,12 +1497,14 @@
             return {
               card_id: currentCard.id,
               entry_id: entry.id,
-              sort_order: index + 1
+              sort_order: index + 1,
+              highlight_text: highlightTexts[Number(entry.id)] || null
             };
           });
           var itemResult = await window.db.from('publicity_homework_card_items').insert(itemRows);
           if (itemResult.error) throw itemResult.error;
           renderCardStatus(status);
+          renderLongPoster();
           showToast(status === 'ready' ? '卡片已标记为可发布' : '草稿已保存', 'success');
         } catch (error) {
           showToast('保存失败：' + (error.message || error), 'error');
@@ -1259,6 +1551,180 @@
         }
       }
 
+      function getCurrentClassName() {
+        return currentClass && currentClass.name ? currentClass.name : '未命名班级';
+      }
+
+      function getLongPosterOptions(scope, groups) {
+        return {
+          scope: scope,
+          className: getCurrentClassName(),
+          date: currentSchedule && currentSchedule.schedule_date ? currentSchedule.schedule_date : getToday(),
+          groups: groups
+        };
+      }
+
+      function renderLongPoster() {
+        var section = document.getElementById('longPosterSection');
+        var preview = document.getElementById('longPosterPreview');
+        if (!currentPosterGroups.length || !window.PublicityLongPoster) {
+          section.hidden = true;
+          return;
+        }
+        var entryCount = currentPosterGroups.reduce(function (count, group) {
+          return count + (group.entries || []).length;
+        }, 0);
+        var scope = publishScope === 'class' ? 'class' : 'group';
+        PublicityLongPoster.mount(preview, getLongPosterOptions(scope, currentPosterGroups));
+        document.getElementById('longPosterTitle').textContent =
+          scope === 'class'
+            ? getCurrentClassName() + ' · 班级完整长图'
+            : (currentGroup ? currentGroup.name : '当前小组') + ' · 小组完整长图';
+        document.getElementById('longPosterMeta').textContent =
+          scope === 'class' ? currentPosterGroups.length + '组 · ' + entryCount + '篇' : entryCount + '篇原文';
+        document.getElementById('downloadLongPosterLabel').textContent =
+          scope === 'class' ? '导出班级完整长图' : '导出当前小组长图';
+        document.getElementById('generateGroupPostersBtn').hidden = scope !== 'class';
+        document.getElementById('longPosterHelp').textContent =
+          scope === 'class'
+            ? '当前预览包含班级封面、全部小组原文和班级封底；也可批量生成每个小组各自的独立长图。'
+            : '当前预览包含小组封面、3篇优秀作业原文和小组封底；金句只取自上方选择的原文句子。';
+        section.hidden = false;
+        document.getElementById('emptyPanel').style.display = 'none';
+        if (window.renderAppIcons) window.renderAppIcons(section);
+      }
+
+      function cleanFileName(name) {
+        return String(name || '优秀作业').replace(/[\\/:*?"<>|]/g, '_');
+      }
+
+      async function renderLongPosterCanvas(element) {
+        await loadHtml2Canvas();
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        await new Promise(function (resolve) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(resolve);
+          });
+        });
+        var height = Math.max(element.scrollHeight, element.offsetHeight);
+        var scale = Math.min(3, Math.floor((30000 / Math.max(height, 1)) * 10) / 10);
+        if (scale < 1) {
+          throw new Error('长图内容超过浏览器单图上限，请减少单篇字数后重试');
+        }
+        return html2canvas(element, {
+          scale: scale,
+          backgroundColor: '#eee8dc',
+          useCORS: true,
+          allowTaint: false,
+          logging: false
+        });
+      }
+
+      function canvasToJpegBlob(canvas) {
+        return new Promise(function (resolve) {
+          if (!canvas.toBlob) {
+            resolve(null);
+            return;
+          }
+          canvas.toBlob(resolve, 'image/jpeg', 0.94);
+        });
+      }
+
+      function triggerBlobDownload(blob, fileName) {
+        if (!blob) return false;
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.download = fileName;
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 2000);
+        return true;
+      }
+
+      function addPosterGalleryItem(title, dataUrl, fileName) {
+        var gallery = document.getElementById('posterExportGallery');
+        var card = document.createElement('article');
+        card.className = 'poster-export-card';
+        card.innerHTML =
+          '<h3>' +
+          escapeHtml(title) +
+          '</h3><img alt="' +
+          escapeHtml(title) +
+          '" src="' +
+          dataUrl +
+          '"><a download="' +
+          escapeHtml(fileName) +
+          '" href="' +
+          dataUrl +
+          '">下载这张长图</a>';
+        gallery.appendChild(card);
+        gallery.hidden = false;
+      }
+
+      async function downloadCurrentLongPoster() {
+        var button = document.getElementById('downloadLongPosterBtn');
+        var poster = document.querySelector('#longPosterPreview .editorial-long-poster');
+        if (!poster) return showToast('暂无可导出的长图', 'error');
+        button.disabled = true;
+        try {
+          var canvas = await renderLongPosterCanvas(poster);
+          var scopeName =
+            publishScope === 'class'
+              ? getCurrentClassName()
+              : getCurrentClassName() + '_' + (currentGroup ? currentGroup.name : '小组');
+          var fileName = cleanFileName(scopeName + '_优秀作业_' + getToday()) + '.jpg';
+          var blob = await canvasToJpegBlob(canvas);
+          var isMobile = /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
+          if (!isMobile && triggerBlobDownload(blob, fileName)) {
+            showToast('完整长图已导出', 'success');
+            return;
+          }
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+          var gallery = document.getElementById('posterExportGallery');
+          gallery.innerHTML = '';
+          addPosterGalleryItem(scopeName + ' · 完整长图', dataUrl, fileName);
+          showToast('长图已生成，请长按图片保存', 'success');
+        } catch (error) {
+          showToast('长图导出失败：' + (error.message || error), 'error');
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      async function generateAllGroupPosters() {
+        if (publishScope !== 'class' || !currentPosterGroups.length) return;
+        var button = document.getElementById('generateGroupPostersBtn');
+        var gallery = document.getElementById('posterExportGallery');
+        var host = document.getElementById('posterRenderHost');
+        button.disabled = true;
+        gallery.innerHTML = '';
+        gallery.hidden = true;
+        try {
+          for (var i = 0; i < currentPosterGroups.length; i += 1) {
+            var group = currentPosterGroups[i];
+            host.innerHTML = '';
+            var poster = PublicityLongPoster.create(getLongPosterOptions('group', [group]));
+            host.appendChild(poster);
+            var canvas = await renderLongPosterCanvas(poster);
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+            var fileName = cleanFileName(getCurrentClassName() + '_' + group.name + '_优秀作业_' + getToday()) + '.jpg';
+            addPosterGalleryItem(getCurrentClassName() + ' · ' + group.name, dataUrl, fileName);
+          }
+          gallery.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          showToast('已生成 ' + currentPosterGroups.length + ' 张小组长图', 'success');
+        } catch (error) {
+          showToast('批量生成失败：' + (error.message || error), 'error');
+        } finally {
+          host.innerHTML = '';
+          button.disabled = false;
+        }
+      }
+
       async function downloadCard() {
         var button = document.getElementById('downloadCardBtn');
         button.disabled = true;
@@ -1279,8 +1745,7 @@
             }
             canvas.toBlob(resolve, 'image/png');
           });
-          var isMobileBrowser =
-            /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
+          var isMobileBrowser = /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
           if (isMobileBrowser && blob && window.File && navigator.share && navigator.canShare) {
             var file = new File([blob], fileName, { type: 'image/png' });
             if (navigator.canShare({ files: [file] })) {
@@ -1347,6 +1812,7 @@
 
       function showEmpty(message) {
         document.getElementById('editorSection').hidden = true;
+        document.getElementById('longPosterSection').hidden = true;
         var panel = document.getElementById('emptyPanel');
         panel.textContent = message;
         panel.style.display = '';

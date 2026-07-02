@@ -58,6 +58,7 @@
 | 050 | `20260701162053_sync_committee_module_memberships.sql` | 生活委、组织委职务与模块权限自动同步 | 2026-07-02 |
 | 051 | `20260701162235_backfill_entry_form_next_birthday.sql` | 对齐进班申请“下次生日”字段并回填历史数据 | 2026-07-02 |
 | 052 | `20260701162413_entry_form_source_org.sql` | 保留公开进班申请来源班级供生活委按组织范围关怀 | 2026-07-02 |
+| 053 | `20260702140722_add_homework_highlight_text.sql` | 为优秀作业宣发卡片条目增加可选原文金句 | 2026-07-02 |
 | fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断
