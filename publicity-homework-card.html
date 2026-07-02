@@ -253,133 +253,255 @@
         font-weight: 600;
       }
       .preview-shell {
-        padding: 14px;
-        border-radius: 10px;
-        background: #ece9e4;
+        padding: 12px;
+        border-radius: 12px;
+        background: #24231f;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
       }
       .publicity-card {
-        --card-bg: #fffaf7;
-        --card-accent: #b83b3f;
-        --card-secondary: #c89955;
-        --card-text: #2f2c2a;
-        --card-line: #ead3ca;
-        --card-muted: #756b66;
+        --card-bg: #f2ede3;
+        --card-accent: #791f2a;
+        --card-secondary: #a64b3f;
+        --card-text: #25231f;
+        --card-line: rgba(37, 35, 31, 0.18);
+        --card-muted: #716c63;
+        --card-wash: rgba(121, 31, 42, 0.045);
         position: relative;
         display: flex;
+        isolation: isolate;
         width: 100%;
         aspect-ratio: 3 / 4;
         flex-direction: column;
         overflow: hidden;
-        padding: 28px 25px 23px;
-        border: 1px solid var(--card-line);
-        background: var(--card-bg);
+        padding: 25px 24px 20px;
+        border: 0;
+        background:
+          linear-gradient(115deg, transparent 0 62%, var(--card-wash) 62% 100%),
+          radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.5), transparent 34%),
+          var(--card-bg);
         color: var(--card-text);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
+      }
+      .publicity-card::before {
+        position: absolute;
+        z-index: -1;
+        top: -15px;
+        right: -9px;
+        color: var(--card-accent);
+        content: '知';
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 132px;
+        font-weight: 700;
+        line-height: 1;
+        opacity: 0.035;
+        pointer-events: none;
+      }
+      .publicity-card::after {
+        position: absolute;
+        z-index: 3;
+        border: 1px solid var(--card-line);
+        content: '';
+        inset: 8px;
+        pointer-events: none;
       }
       .publicity-card.theme-ink {
-        --card-bg: #f4f3ef;
-        --card-accent: #303b44;
-        --card-secondary: #a44a3f;
-        --card-text: #23282c;
-        --card-line: #cfd2d3;
-        --card-muted: #62696d;
+        --card-bg: #20221f;
+        --card-accent: #f0ece2;
+        --card-secondary: #c05244;
+        --card-text: #e8e4da;
+        --card-line: rgba(240, 236, 226, 0.2);
+        --card-muted: #aaa79f;
+        --card-wash: rgba(255, 255, 255, 0.025);
       }
       .publicity-card.theme-jade {
-        --card-bg: #f3f8f5;
-        --card-accent: #2e6b5f;
-        --card-secondary: #b38b4a;
-        --card-text: #25342f;
-        --card-line: #cbded7;
-        --card-muted: #61736c;
+        --card-bg: #e7ede8;
+        --card-accent: #174c43;
+        --card-secondary: #a64b3f;
+        --card-text: #20322d;
+        --card-line: rgba(23, 76, 67, 0.2);
+        --card-muted: #66756f;
+        --card-wash: rgba(23, 76, 67, 0.045);
       }
       .publicity-card.theme-paper {
-        --card-bg: #fffdf7;
-        --card-accent: #7b4e32;
-        --card-secondary: #b53c3c;
-        --card-text: #342b25;
-        --card-line: #e1d5c8;
-        --card-muted: #76685e;
+        --card-bg: #eadfc9;
+        --card-accent: #282621;
+        --card-secondary: #92352f;
+        --card-text: #282621;
+        --card-line: rgba(40, 38, 33, 0.2);
+        --card-muted: #6d665a;
+        --card-wash: rgba(146, 53, 47, 0.045);
       }
       .card-brand {
         display: flex;
         align-items: center;
-        gap: 8px;
+        justify-content: space-between;
+        gap: 12px;
         color: var(--card-accent);
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
+        letter-spacing: 0.16em;
       }
       .card-brand::before {
         content: '';
-        width: 24px;
-        height: 2px;
+        width: 7px;
+        height: 7px;
+        flex: 0 0 7px;
         background: var(--card-secondary);
       }
+      .card-brand-main {
+        flex: 1;
+      }
+      .card-brand-en {
+        color: var(--card-muted);
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 6px;
+        font-weight: 400;
+        letter-spacing: 0.13em;
+        white-space: nowrap;
+      }
       .card-title {
-        margin-top: 17px;
+        max-width: 88%;
+        margin-top: 15px;
         color: var(--card-accent);
         font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
-        font-size: 27px;
-        line-height: 1.2;
+        font-size: 29px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        line-height: 1.13;
       }
       .card-subtitle {
-        margin-top: 7px;
+        margin-top: 6px;
         color: var(--card-muted);
-        font-size: 11px;
+        font-size: 9px;
+        letter-spacing: 0.08em;
       }
       .card-intro {
-        margin-top: 14px;
-        padding-top: 12px;
+        position: relative;
+        margin-top: 13px;
+        padding: 10px 0 9px 15px;
         border-top: 1px solid var(--card-line);
-        font-size: 11px;
+        border-bottom: 1px solid var(--card-line);
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 10px;
         line-height: 1.55;
+      }
+      .card-intro::before {
+        position: absolute;
+        top: 7px;
+        left: 0;
+        color: var(--card-secondary);
+        content: '“';
+        font-family: Georgia, serif;
+        font-size: 20px;
+        line-height: 1;
       }
       .card-entries {
         display: grid;
         flex: 1;
-        align-content: center;
-        gap: 11px;
+        grid-template-rows: repeat(var(--entry-count, 1), minmax(0, 1fr));
         min-height: 0;
-        margin-top: 11px;
+        overflow: hidden;
       }
       .card-entry {
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        gap: 9px;
         min-height: 0;
-        padding-left: 11px;
-        border-left: 2px solid var(--card-secondary);
+        overflow: hidden;
+        padding: 10px 0 9px;
+        border-bottom: 1px solid var(--card-line);
+      }
+      .card-entry-index {
+        padding-top: 1px;
+        color: var(--card-secondary);
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 8px;
+        font-style: italic;
+        letter-spacing: 0.04em;
+      }
+      .card-entry-body {
+        min-width: 0;
+        overflow: hidden;
+      }
+      .card-entry-meta {
+        display: flex;
+        min-width: 0;
+        align-items: baseline;
+        gap: 6px;
       }
       .card-entry-name {
         color: var(--card-accent);
-        font-size: 11px;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 10px;
         font-weight: 700;
+      }
+      .card-entry-group {
+        overflow: hidden;
+        color: var(--card-muted);
+        font-size: 7px;
+        letter-spacing: 0.06em;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .card-entry-text {
         display: -webkit-box;
-        margin-top: 4px;
+        margin-top: 3px;
         overflow: hidden;
-        font-size: 12px;
-        line-height: 1.5;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 10px;
+        letter-spacing: 0.015em;
+        line-height: 1.58;
+        text-align: justify;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 3;
       }
+      .publicity-card.entries-1 .card-entry {
+        padding-top: 14px;
+      }
       .publicity-card.layout-single .card-entry-text {
-        font-size: 15px;
-        line-height: 1.75;
-        -webkit-line-clamp: 9;
+        margin-top: 8px;
+        font-size: 13px;
+        line-height: 1.8;
+        -webkit-line-clamp: 10;
+      }
+      .publicity-card.layout-single .card-entry-name {
+        font-size: 12px;
+      }
+      .publicity-card.entries-2 .card-entry-text {
+        -webkit-line-clamp: 5;
       }
       .card-footer {
         display: flex;
-        align-items: flex-end;
+        min-height: 30px;
+        align-items: center;
         justify-content: space-between;
         gap: 14px;
-        padding-top: 11px;
-        border-top: 1px solid var(--card-line);
-        font-size: 10px;
+        padding-top: 9px;
+        font-size: 8px;
       }
       .card-footer-copy {
-        max-width: 74%;
-        line-height: 1.45;
+        max-width: 68%;
+        color: var(--card-muted);
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        line-height: 1.4;
+      }
+      .card-folio {
+        display: flex;
+        flex-shrink: 0;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .card-folio span {
+        color: var(--card-muted);
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 5px;
+        letter-spacing: 0.12em;
       }
       .card-date {
         flex-shrink: 0;
         color: var(--card-accent);
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 12px;
         font-weight: 700;
       }
       .action-bar {
@@ -460,10 +582,10 @@
           grid-column: auto;
         }
         .publicity-card {
-          padding: 22px 19px 18px;
+          padding: 22px 20px 18px;
         }
         .card-title {
-          font-size: 24px;
+          font-size: 26px;
         }
       }
     </style>
@@ -968,28 +1090,43 @@
       function updatePreview() {
         var card = document.getElementById('publicityCard');
         if (!card || !currentGroup) return;
-        card.className = 'publicity-card theme-' + cardTheme + ' layout-' + cardLayout;
         var selected = getSelectedEntries();
+        var entryCount = Math.max(selected.length, 1);
+        card.className =
+          'publicity-card theme-' +
+          cardTheme +
+          ' layout-' +
+          cardLayout +
+          ' entries-' +
+          entryCount;
+        card.style.setProperty('--entry-count', entryCount);
         var entriesHtml = selected.length
           ? selected
-              .map(function (entry) {
+              .map(function (entry, index) {
                 return (
-                  '<div class="card-entry">' +
-                  '<div class="card-entry-name">' +
-                  escapeHtml(entry.person_name_snapshot + ' · ' + currentGroup.name) +
-                  '</div>' +
+                  '<article class="card-entry">' +
+                  '<span class="card-entry-index">0' +
+                  (index + 1) +
+                  '</span>' +
+                  '<div class="card-entry-body">' +
+                  '<div class="card-entry-meta"><span class="card-entry-name">' +
+                  escapeHtml(entry.person_name_snapshot) +
+                  '</span><span class="card-entry-group">' +
+                  escapeHtml(currentGroup.name) +
+                  '</span></div>' +
                   '<div class="card-entry-text">' +
                   escapeHtml(entry.content) +
-                  '</div>' +
-                  '</div>'
+                  '</div></div></article>'
                 );
               })
               .join('')
-          : '<div class="card-entry"><div class="card-entry-name">' +
+          : '<article class="card-entry"><span class="card-entry-index">01</span>' +
+            '<div class="card-entry-body"><div class="card-entry-meta"><span class="card-entry-name">' +
             escapeHtml(currentGroup.name) +
-            '</div><div class="card-entry-text">本组今天尚未提交优秀作业</div></div>';
+            '</span></div><div class="card-entry-text">本组今天尚未提交优秀作业</div></div></article>';
         card.innerHTML =
-          '<div class="card-brand">阳明心学 · 优秀作业</div>' +
+          '<div class="card-brand"><span class="card-brand-main">阳明心学 · 优秀作业</span>' +
+          '<span class="card-brand-en">THE PRACTICE NOTES</span></div>' +
           '<h3 class="card-title">' +
           escapeHtml(document.getElementById('cardTitleInput').value || '今日优秀作业') +
           '</h3>' +
@@ -1006,9 +1143,9 @@
           '<span class="card-footer-copy">' +
           escapeHtml(document.getElementById('cardClosingInput').value || '') +
           '</span>' +
-          '<span class="card-date">' +
+          '<span class="card-folio"><span>DAILY ARCHIVE</span><strong class="card-date">' +
           escapeHtml(ExcellentHomework.formatShortDate(getToday())) +
-          '</span>' +
+          '</strong></span>' +
           '</footer>';
       }
 
