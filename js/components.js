@@ -82,7 +82,7 @@ function renderPortalBottomNav(activePage) {
     { key: 'home', href: 'portal.html', icon: 'HomeIcon', label: '首页' },
     { key: 'supervision', href: 'index.html', icon: 'ClipboardCheckIcon', label: '督察' },
     { key: 'secretariat', href: 'secretariat-dashboard.html', icon: 'BuildingIcon', label: '秘书处' },
-    { key: 'study', href: 'study-dashboard.html', icon: 'BookOpenIcon', label: '晨读' },
+    { key: 'study', href: 'study-dashboard.html', icon: 'BookOpenIcon', label: '学委' },
     { key: 'profile', href: 'profile.html?system=portal', icon: 'UserIcon', label: '我的' }
   ];
 
