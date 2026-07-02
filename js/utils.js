@@ -56,7 +56,7 @@ function withFrom(url) {
   if (from) {
     // 子系统首页：始终返回平台首页（portal.html），不受 ?from= 参数影响
     // 这些页面是 portal.html 中各子系统卡片的入口
-    var SUBSYSTEM_HOMES = ['index', 'secretariat-dashboard', 'study-dashboard', 'publicity-dashboard', 'life-committee-dashboard', 'organization-dashboard'];
+    var SUBSYSTEM_HOMES = ['index', 'secretariat-dashboard', 'study-dashboard', 'publicity-dashboard', 'birthday-care-dashboard', 'organization-dashboard'];
     var currentPage = getCurrentPageName().replace('.html', '').replace('.htm', '');
     var isSubHome = SUBSYSTEM_HOMES.indexOf(currentPage) !== -1;
 

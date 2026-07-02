@@ -133,8 +133,8 @@ function renderModuleBottomNav(systemKey, activePage) {
       { key: 'profile', href: 'profile.html?system=publicity', icon: 'UserIcon', label: '我的' }
     ],
     life: [
-      { key: 'home', href: 'life-committee-dashboard.html', icon: 'HomeIcon', label: '首页' },
-      { key: 'birthday', href: 'life-committee-dashboard.html', icon: 'CakeSliceIcon', label: '生日关怀' },
+      { key: 'home', href: 'birthday-care-dashboard.html', icon: 'HomeIcon', label: '首页' },
+      { key: 'birthday', href: 'birthday-care-dashboard.html', icon: 'CakeSliceIcon', label: '生日关怀' },
       { key: 'profile', href: 'profile.html?system=life', icon: 'UserIcon', label: '我的' }
     ],
     organization: [
