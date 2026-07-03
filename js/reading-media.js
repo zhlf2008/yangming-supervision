@@ -4,6 +4,10 @@
 
 var ReadingMedia = (function () {
   var BUCKET = 'reading-media';
+  var IMAGE_MAX_EDGE = 2000;
+  var IMAGE_QUALITY = 0.82;
+  var MAX_SOURCE_FILE_SIZE = 40 * 1024 * 1024;
+  var MAX_UPLOAD_FILE_SIZE = 15 * 1024 * 1024;
   var SCOPE_LABELS = { 大班: '大班共读', 班级: '班级共读', 小组: '小组共读' };
   var WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
 
@@ -310,23 +314,120 @@ var ReadingMedia = (function () {
     });
   }
 
+  function getCompressedFileName(fileName, mimeType) {
+    var extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+    var name = String(fileName || 'reading-photo').replace(/\.[^.]+$/, '');
+    return name + '.' + extension;
+  }
+
+  function canvasToBlob(canvas, mimeType, quality) {
+    return new Promise(function (resolve) {
+      if (!canvas.toBlob) {
+        resolve(null);
+        return;
+      }
+      canvas.toBlob(resolve, mimeType, quality);
+    });
+  }
+
+  async function compressImageFile(file) {
+    var originalInfo = {
+      file: file,
+      originalSize: file.size || 0,
+      uploadedSize: file.size || 0,
+      compressed: false,
+      width: null,
+      height: null
+    };
+    var objectUrl = URL.createObjectURL(file);
+    try {
+      var image = await new Promise(function (resolve, reject) {
+        var source = new Image();
+        source.onload = function () {
+          resolve(source);
+        };
+        source.onerror = function () {
+          reject(new Error('图片读取失败'));
+        };
+        source.src = objectUrl;
+      });
+      var sourceWidth = image.naturalWidth || image.width;
+      var sourceHeight = image.naturalHeight || image.height;
+      if (!sourceWidth || !sourceHeight) return originalInfo;
+
+      var scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(sourceWidth, sourceHeight));
+      var targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+      var targetHeight = Math.max(1, Math.round(sourceHeight * scale));
+      originalInfo.width = sourceWidth;
+      originalInfo.height = sourceHeight;
+
+      var canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      var context = canvas.getContext('2d', { alpha: file.type === 'image/png' });
+      if (!context) return originalInfo;
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+      var outputType =
+        file.type === 'image/png' ? 'image/png' : file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+      var blob = await canvasToBlob(canvas, outputType, IMAGE_QUALITY);
+      if (!blob || !blob.size || blob.size >= file.size) return originalInfo;
+
+      var compressedName = getCompressedFileName(file.name, blob.type || outputType);
+      var compressedFile;
+      try {
+        compressedFile = new File([blob], compressedName, {
+          type: blob.type || outputType,
+          lastModified: file.lastModified || Date.now()
+        });
+      } catch (_error) {
+        compressedFile = blob;
+        compressedFile.name = compressedName;
+        compressedFile.lastModified = file.lastModified || Date.now();
+      }
+      return {
+        file: compressedFile,
+        originalSize: file.size || 0,
+        uploadedSize: compressedFile.size || 0,
+        compressed: true,
+        width: targetWidth,
+        height: targetHeight
+      };
+    } catch (_error) {
+      return originalInfo;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
   async function uploadAsset(context, schedule, file, target, caption, sortOrder) {
     var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!file || allowedTypes.indexOf(String(file.type || '').toLowerCase()) === -1) {
       throw new Error('仅支持 JPG、PNG 或 WebP 图片');
     }
-    if (file.size > 15 * 1024 * 1024) {
-      throw new Error('单张图片不能超过 15MB');
+    if (file.size > MAX_SOURCE_FILE_SIZE) {
+      throw new Error('单张原图不能超过 40MB');
     }
 
-    var objectName = uniqueFileName(file);
+    var compression = await compressImageFile(file);
+    var uploadFile = compression.file;
+    if (uploadFile.size > MAX_UPLOAD_FILE_SIZE) {
+      throw new Error('图片压缩后仍超过 15MB，请先在设备中缩小');
+    }
+
+    var objectName = uniqueFileName(uploadFile);
     var sourceOrgId = Number(target.source_org_id || target.org_id || schedule.org_id);
     var storagePath = context.semesterId + '/' + sourceOrgId + '/' + schedule.id + '/' + objectName;
-    var dimensions = await getImageDimensions(file);
-    var uploadResult = await window.db.storage.from(BUCKET).upload(storagePath, file, {
+    var dimensions =
+      compression.width && compression.height
+        ? { width: compression.width, height: compression.height }
+        : await getImageDimensions(uploadFile);
+    var uploadResult = await window.db.storage.from(BUCKET).upload(storagePath, uploadFile, {
       cacheControl: '3600',
       upsert: false,
-      contentType: file.type || 'image/jpeg'
+      contentType: uploadFile.type || 'image/jpeg'
     });
     if (uploadResult.error) throw uploadResult.error;
 
@@ -343,8 +444,8 @@ var ReadingMedia = (function () {
       caption: caption || '',
       storage_path: storagePath,
       file_name: file.name || objectName,
-      mime_type: file.type || 'image/jpeg',
-      file_size: file.size || 0,
+      mime_type: uploadFile.type || 'image/jpeg',
+      file_size: uploadFile.size || 0,
       image_width: dimensions.width,
       image_height: dimensions.height,
       sort_order: sortOrder || 0,
@@ -355,7 +456,13 @@ var ReadingMedia = (function () {
       await window.db.storage.from(BUCKET).remove([storagePath]);
       throw insertResult.error;
     }
-    return insertResult.data;
+    return Object.assign({}, insertResult.data, {
+      upload_info: {
+        original_size: compression.originalSize,
+        uploaded_size: compression.uploadedSize,
+        compressed: compression.compressed
+      }
+    });
   }
 
   async function deleteAsset(asset) {
@@ -375,6 +482,8 @@ var ReadingMedia = (function () {
 
   return {
     BUCKET: BUCKET,
+    IMAGE_MAX_EDGE: IMAGE_MAX_EDGE,
+    IMAGE_QUALITY: IMAGE_QUALITY,
     numberOrNull: numberOrNull,
     getScopeLabel: getScopeLabel,
     getWeekday: getWeekday,
@@ -389,6 +498,7 @@ var ReadingMedia = (function () {
     findScheduleForSourceOrg: findScheduleForSourceOrg,
     loadSignedUrls: loadSignedUrls,
     loadScheduleBundle: loadScheduleBundle,
+    compressImageFile: compressImageFile,
     uploadAsset: uploadAsset,
     deleteAsset: deleteAsset,
     getDefaultTitle: getDefaultTitle,
