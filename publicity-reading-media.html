@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>共读影像制作 - 宣委管理</title>
+    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/reading-media.css?v=1" />
+    <link rel="stylesheet" href="css/publicity-reading-poster.css?v=1" />
+  </head>
+  <body class="app-loading">
+    <main class="container reading-page">
+      <header class="page-header reading-header">
+        <a class="back-btn" href="publicity-dashboard.html" aria-label="返回宣委管理首页"></a>
+        <div class="reading-header-copy">
+          <h1 class="page-title">每日共读影像</h1>
+          <p>直接调用学委日程、岗位、姓名和原始照片，自动生成对应规模的宣传长图。</p>
+        </div>
+      </header>
+
+      <section class="reading-toolbar" aria-label="选择日期">
+        <div class="reading-field">
+          <label for="readingDate">共读日期</label>
+          <input class="reading-input" id="readingDate" type="date" onchange="loadDailyTasks()" />
+        </div>
+        <button class="reading-btn" type="button" onclick="goToday()">回到今天</button>
+      </section>
+
+      <section>
+        <div class="reading-section-head">
+          <div>
+            <h2 class="reading-section-title">待制作任务</h2>
+            <p class="reading-section-note">版式由共读类型决定，照片数量会继续影响内部网格。</p>
+          </div>
+        </div>
+        <div class="reading-task-list" id="taskList">
+          <div class="reading-empty">正在读取当天共读影像...</div>
+        </div>
+      </section>
+
+      <section class="reading-panel poster-workbench" id="editorPanel" hidden>
+        <div class="reading-section-head">
+          <div>
+            <h2 class="reading-section-title" id="editorTitle">长图设置</h2>
+            <p class="reading-section-note" id="editorMeta"></p>
+          </div>
+          <span class="task-scope" id="editorScope">自动版式</span>
+        </div>
+
+        <div class="poster-editor-grid">
+          <div class="reading-field">
+            <label for="posterTitle">封面标题</label>
+            <input class="reading-input" id="posterTitle" maxlength="40" oninput="updatePosterPreview()" />
+          </div>
+          <div class="reading-field">
+            <label for="posterSubtitle">共读类型</label>
+            <input class="reading-input" id="posterSubtitle" maxlength="30" oninput="updatePosterPreview()" />
+          </div>
+          <div class="reading-field">
+            <label for="participantCount">实际参与人数（选填）</label>
+            <input
+              class="reading-input"
+              id="participantCount"
+              type="number"
+              min="0"
+              max="9999"
+              placeholder="未填写时不显示"
+              oninput="updatePosterPreview()"
+            />
+          </div>
+          <div class="reading-field wide">
+            <label for="closingText">封底文字</label>
+            <input class="reading-input" id="closingText" maxlength="100" oninput="updatePosterPreview()" />
+          </div>
+        </div>
+
+        <div class="poster-actions">
+          <button class="reading-btn primary" id="saveDraftButton" type="button" onclick="savePoster('draft')">
+            <span data-icon="SaveIcon"></span><span>保存草稿</span>
+          </button>
+          <button class="reading-btn" id="readyButton" type="button" onclick="savePoster('ready')">
+            <span data-icon="CheckIcon"></span><span>标记可发布</span>
+          </button>
+          <button class="reading-btn vermillion" id="exportButton" type="button" onclick="exportPoster()">
+            <span data-icon="DownloadIcon"></span><span>导出当前长图</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="reading-panel" id="assetEditorPanel" hidden>
+        <div class="reading-section-head">
+          <div>
+            <h2 class="reading-section-title">照片与取景</h2>
+            <p class="reading-section-note">可指定封面、岗位人物或全员画面；裁切只保存位置参数，不会修改原图。</p>
+          </div>
+        </div>
+        <div class="poster-asset-list" id="posterAssetList"></div>
+      </section>
+
+      <section class="reading-panel" id="previewPanel" hidden>
+        <div class="reading-section-head">
+          <div>
+            <h2 class="reading-section-title">长图预览</h2>
+            <p class="reading-section-note">实际导出宽度为1080px，预览已按当前屏幕缩放。</p>
+          </div>
+        </div>
+        <div class="poster-preview-shell" id="posterPreviewShell">
+          <div class="poster-preview-stage" id="posterPreviewStage"></div>
+        </div>
+        <div class="export-result" id="exportResult" hidden></div>
+      </section>
+    </main>
+
+    <div id="bottomNavContainer"></div>
+    <div class="poster-render-host" id="posterRenderHost" aria-hidden="true"></div>
+
+    <div class="crop-modal" id="cropModal" hidden>
+      <div class="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="cropTitle">
+        <div class="crop-dialog-head">
+          <div>
+            <h2 id="cropTitle">调整照片取景</h2>
+            <p class="reading-section-note" id="cropSubtitle"></p>
+          </div>
+          <button class="crop-close" type="button" aria-label="关闭裁切" onclick="closeCropEditor()">×</button>
+        </div>
+        <div class="crop-stage" id="cropStage">
+          <img id="cropImage" alt="照片裁切预览" />
+        </div>
+        <div class="crop-control">
+          <label for="cropX"><span>水平位置</span><span id="cropXValue">50%</span></label>
+          <input id="cropX" type="range" min="0" max="100" step="1" oninput="updateCropPreview()" />
+        </div>
+        <div class="crop-control">
+          <label for="cropY"><span>垂直位置</span><span id="cropYValue">50%</span></label>
+          <input id="cropY" type="range" min="0" max="100" step="1" oninput="updateCropPreview()" />
+        </div>
+        <div class="crop-control">
+          <label for="cropZoom"><span>缩放</span><span id="cropZoomValue">1.0×</span></label>
+          <input id="cropZoom" type="range" min="1" max="4" step="0.05" oninput="updateCropPreview()" />
+        </div>
+        <div class="crop-actions">
+          <button class="reading-btn" type="button" onclick="rotateCrop()">旋转90°</button>
+          <button class="reading-btn" type="button" onclick="resetCrop()">重置</button>
+          <button class="reading-btn primary" id="applyCropButton" type="button" onclick="applyCrop()">应用裁切</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=16"></script>
+    <script src="js/reading-media.js?v=1"></script>
+    <script src="js/publicity-reading-poster.js?v=1"></script>
+    <script>
+      renderModuleBottomNav('publicity', 'media');
+
+      var publicityReadingContext = null;
+      var dailySchedules = [];
+      var dailyAssetCounts = {};
+      var selectedSchedule = null;
+      var selectedBundle = null;
+      var currentPoster = null;
+      var currentItems = [];
+      var cropItem = null;
+      var cropRotation = 0;
+      var cropDrag = null;
+
+      async function init() {
+        await waitForDb();
+        await refreshCurrentUser();
+        if (!checkLogin()) return;
+        if (!(await guardModuleAccess('publicity'))) return;
+
+        try {
+          publicityReadingContext = await ReadingMedia.loadContext('publicity');
+          document.getElementById('readingDate').value = getToday();
+          bindCropDrag();
+          await loadDailyTasks();
+          window.addEventListener('resize', fitPosterPreview);
+        } catch (error) {
+          showToast('晨读影像加载失败：' + (error.message || error), 'error');
+          renderTaskEmpty('暂时无法读取共读影像');
+        }
+      }
+
+      function goToday() {
+        document.getElementById('readingDate').value = getToday();
+        loadDailyTasks();
+      }
+
+      async function loadDailyTasks() {
+        var date = document.getElementById('readingDate').value || getToday();
+        selectedSchedule = null;
+        selectedBundle = null;
+        currentPoster = null;
+        currentItems = [];
+        ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
+          document.getElementById(id).hidden = true;
+        });
+        document.getElementById('taskList').innerHTML = '<div class="reading-empty">正在读取当天共读影像...</div>';
+
+        try {
+          dailySchedules = await ReadingMedia.loadSchedules(publicityReadingContext, date);
+          dailyAssetCounts = {};
+          var ids = dailySchedules.map(function (schedule) {
+            return Number(schedule.id);
+          });
+          if (ids.length) {
+            var assetResult = await window.db
+              .from('study_reading_media_assets')
+              .select('id,schedule_instance_id')
+              .in('schedule_instance_id', ids);
+            if (assetResult.error) throw assetResult.error;
+            (assetResult.data || []).forEach(function (asset) {
+              var key = Number(asset.schedule_instance_id);
+              dailyAssetCounts[key] = (dailyAssetCounts[key] || 0) + 1;
+            });
+          }
+          renderTaskList();
+          if (dailySchedules.length === 1) await selectSchedule(dailySchedules[0].id);
+        } catch (error) {
+          renderTaskEmpty('任务加载失败：' + (error.message || error));
+        }
+      }
+
+      function renderTaskEmpty(message) {
+        document.getElementById('taskList').innerHTML = '<div class="reading-empty">' + escapeHtml(message) + '</div>';
+      }
+
+      function renderTaskList() {
+        if (!dailySchedules.length) {
+          renderTaskEmpty('当天没有宣委权限范围内的共读日程');
+          return;
+        }
+        document.getElementById('taskList').innerHTML = dailySchedules
+          .map(function (schedule) {
+            var org = publicityReadingContext.orgMap[Number(schedule.org_id)];
+            var count = dailyAssetCounts[Number(schedule.id)] || 0;
+            return (
+              '<article class="reading-task-card" id="task-' +
+              schedule.id +
+              '" onclick="selectSchedule(' +
+              schedule.id +
+              ')"><div class="task-card-head"><span class="task-scope">' +
+              escapeHtml(ReadingMedia.getScopeLabel(schedule.scope_level)) +
+              '</span><span class="task-count">' +
+              (count ? count + ' 张可用' : '待上传') +
+              '</span></div><h3 class="task-org">' +
+              escapeHtml((org && org.name) || '未命名组织') +
+              '</h3><div class="task-path">' +
+              escapeHtml(ReadingMedia.getOrgPath(schedule.org_id, publicityReadingContext.orgMap)) +
+              '</div><div class="task-meta">' +
+              escapeHtml(ReadingMedia.formatDisplayDate(schedule.schedule_date)) +
+              ' · 自动使用' +
+              escapeHtml(ReadingMedia.getScopeLabel(schedule.scope_level)) +
+              '版式</div></article>'
+            );
+          })
+          .join('');
+      }
+
+      async function selectSchedule(scheduleId) {
+        selectedSchedule =
+          dailySchedules.find(function (schedule) {
+            return Number(schedule.id) === Number(scheduleId);
+          }) || null;
+        if (!selectedSchedule) return;
+        document.querySelectorAll('.reading-task-card').forEach(function (card) {
+          card.classList.toggle('active', card.id === 'task-' + selectedSchedule.id);
+        });
+        try {
+          selectedBundle = await ReadingMedia.loadScheduleBundle(selectedSchedule);
+          if (!selectedBundle.assets.length) {
+            ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
+              document.getElementById(id).hidden = true;
+            });
+            showToast('该任务还没有上传照片', 'error');
+            return;
+          }
+          await loadPosterState();
+          renderWorkbench();
+          document.getElementById('editorPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (error) {
+          showToast('制作任务加载失败：' + (error.message || error), 'error');
+        }
+      }
+
+      async function loadPosterState() {
+        var posterResult = await window.db
+          .from('publicity_reading_posters')
+          .select('*')
+          .eq('schedule_instance_id', selectedSchedule.id)
+          .eq('org_id', selectedSchedule.org_id)
+          .maybeSingle();
+        if (posterResult.error) throw posterResult.error;
+        var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+        currentPoster = posterResult.data || {
+          id: null,
+          semester_id: publicityReadingContext.semesterId,
+          schedule_instance_id: Number(selectedSchedule.id),
+          org_id: Number(selectedSchedule.org_id),
+          title: ReadingMedia.getDefaultTitle(selectedSchedule, org, selectedBundle.readingType),
+          subtitle: ReadingMedia.getDefaultSubtitle(selectedSchedule, selectedBundle.readingType),
+          closing_text: '在共读中照见彼此，在践行中抵达良知。',
+          participant_count: null,
+          layout_style: 'auto',
+          status: 'draft'
+        };
+
+        var savedItems = [];
+        if (currentPoster.id) {
+          var itemResult = await window.db
+            .from('publicity_reading_poster_items')
+            .select('*')
+            .eq('poster_id', currentPoster.id)
+            .order('sort_order')
+            .order('id');
+          if (itemResult.error) throw itemResult.error;
+          savedItems = itemResult.data || [];
+        }
+        var savedMap = {};
+        savedItems.forEach(function (item) {
+          savedMap[Number(item.asset_id)] = item;
+        });
+        var hasFeature = savedItems.some(function (item) {
+          return item.slot_kind === 'feature';
+        });
+        var firstOverview = selectedBundle.assets.find(function (asset) {
+          return asset.asset_kind === 'overview';
+        });
+        var featureAssetId = hasFeature ? null : Number((firstOverview || selectedBundle.assets[0]).id);
+
+        currentItems = selectedBundle.assets.map(function (asset, index) {
+          var saved = savedMap[Number(asset.id)];
+          if (saved) return Object.assign({}, saved, { asset: asset });
+          var slotKind =
+            Number(asset.id) === featureAssetId
+              ? 'feature'
+              : asset.asset_kind === 'role'
+                ? 'role'
+                : asset.asset_kind === 'overview'
+                  ? 'overview'
+                  : 'moment';
+          return {
+            id: null,
+            poster_id: currentPoster.id,
+            asset_id: Number(asset.id),
+            asset: asset,
+            slot_kind: slotKind,
+            sort_order: index,
+            crop_x: 50,
+            crop_y: 50,
+            crop_zoom: 1,
+            rotation: 0,
+            is_visible: true
+          };
+        });
+      }
+
+      function renderWorkbench() {
+        var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+        document.getElementById('editorTitle').textContent = ((org && org.name) || '当前组织') + ' · 晨读长图';
+        document.getElementById('editorMeta').textContent =
+          ReadingMedia.formatDisplayDate(selectedSchedule.schedule_date) +
+          ' · ' +
+          ReadingMedia.getWeekday(selectedSchedule.schedule_date);
+        document.getElementById('editorScope').textContent =
+          ReadingMedia.getScopeLabel(selectedSchedule.scope_level) + '自动版式';
+        document.getElementById('posterTitle').value = currentPoster.title || '';
+        document.getElementById('posterSubtitle').value = currentPoster.subtitle || '';
+        document.getElementById('participantCount').value =
+          currentPoster.participant_count === null ? '' : currentPoster.participant_count;
+        document.getElementById('closingText').value = currentPoster.closing_text || '';
+        ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
+          document.getElementById(id).hidden = false;
+        });
+        document.getElementById('exportResult').hidden = true;
+        renderAssetEditor();
+        updatePosterPreview();
+      }
+
+      function getItemLabel(item) {
+        var asset = item.asset;
+        if (asset.asset_kind === 'role') {
+          return (asset.role_name_snapshot || '岗位') + ' · ' + (asset.person_name_snapshot || '未命名人员');
+        }
+        if (asset.asset_kind === 'overview') return '全员画面';
+        if (asset.asset_kind === 'moment') return '现场花絮';
+        return '其他素材';
+      }
+
+      function renderAssetEditor() {
+        document.getElementById('posterAssetList').innerHTML = currentItems
+          .map(function (item) {
+            return (
+              '<article class="poster-asset-row"><img alt="' +
+              escapeHtml(getItemLabel(item)) +
+              '" src="' +
+              escapeHtml(item.asset.signed_url) +
+              '"><div class="poster-asset-copy"><strong>' +
+              escapeHtml(getItemLabel(item)) +
+              '</strong><span>' +
+              escapeHtml(item.asset.caption || item.asset.file_name || '原始图片') +
+              '</span></div><div class="poster-asset-controls">' +
+              '<label class="visibility-toggle"><input type="checkbox" ' +
+              (item.is_visible === false ? '' : 'checked') +
+              ' onchange="toggleItemVisibility(' +
+              item.asset_id +
+              ',this.checked)">显示</label>' +
+              '<select aria-label="版面位置" onchange="changeItemSlot(' +
+              item.asset_id +
+              ',this.value)">' +
+              slotOption('feature', '封面主图', item.slot_kind) +
+              slotOption('role', '岗位人物', item.slot_kind) +
+              slotOption('overview', '全员画面', item.slot_kind) +
+              slotOption('moment', '现场花絮', item.slot_kind) +
+              '</select><button class="reading-btn" type="button" onclick="openCropEditor(' +
+              item.asset_id +
+              ')">裁切</button></div></article>'
+            );
+          })
+          .join('');
+      }
+
+      function slotOption(value, label, current) {
+        return '<option value="' + value + '"' + (value === current ? ' selected' : '') + '>' + label + '</option>';
+      }
+
+      function getPosterDraft() {
+        return Object.assign({}, currentPoster, {
+          title: document.getElementById('posterTitle').value.trim(),
+          subtitle: document.getElementById('posterSubtitle').value.trim(),
+          participant_count: ReadingMedia.numberOrNull(document.getElementById('participantCount').value),
+          closing_text: document.getElementById('closingText').value.trim()
+        });
+      }
+
+      function updatePosterPreview() {
+        if (!selectedSchedule || !selectedBundle) return;
+        currentPoster = getPosterDraft();
+        var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+        var stage = document.getElementById('posterPreviewStage');
+        stage.innerHTML = '';
+        stage.appendChild(
+          PublicityReadingPoster.create({
+            schedule: selectedSchedule,
+            org: org,
+            orgPath: ReadingMedia.getOrgPath(selectedSchedule.org_id, publicityReadingContext.orgMap),
+            readingType: selectedBundle.readingType,
+            poster: currentPoster,
+            items: currentItems
+          })
+        );
+        requestAnimationFrame(fitPosterPreview);
+        stage.querySelectorAll('img').forEach(function (image) {
+          if (!image.complete) image.addEventListener('load', fitPosterPreview, { once: true });
+        });
+      }
+
+      function fitPosterPreview() {
+        var shell = document.getElementById('posterPreviewShell');
+        var stage = document.getElementById('posterPreviewStage');
+        var poster = stage && stage.firstElementChild;
+        if (!shell || !stage || !poster) return;
+        var scale = Math.min(1, shell.clientWidth / 1080);
+        stage.style.transform = 'scale(' + scale + ')';
+        shell.style.height = Math.ceil(poster.offsetHeight * scale) + 'px';
+      }
+
+      function changeItemSlot(assetId, slotKind) {
+        var item = findItem(assetId);
+        if (!item) return;
+        if (slotKind === 'feature') {
+          currentItems.forEach(function (candidate) {
+            if (candidate !== item && candidate.slot_kind === 'feature') {
+              candidate.slot_kind =
+                candidate.asset.asset_kind === 'role'
+                  ? 'role'
+                  : candidate.asset.asset_kind === 'overview'
+                    ? 'overview'
+                    : 'moment';
+            }
+          });
+        }
+        item.slot_kind = slotKind;
+        renderAssetEditor();
+        updatePosterPreview();
+      }
+
+      function toggleItemVisibility(assetId, checked) {
+        var item = findItem(assetId);
+        if (!item) return;
+        item.is_visible = !!checked;
+        updatePosterPreview();
+      }
+
+      function findItem(assetId) {
+        return currentItems.find(function (item) {
+          return Number(item.asset_id) === Number(assetId);
+        });
+      }
+
+      async function ensurePoster(status) {
+        currentPoster = getPosterDraft();
+        var payload = {
+          semester_id: publicityReadingContext.semesterId,
+          schedule_instance_id: Number(selectedSchedule.id),
+          org_id: Number(selectedSchedule.org_id),
+          title: currentPoster.title,
+          subtitle: currentPoster.subtitle,
+          participant_count: currentPoster.participant_count,
+          closing_text: currentPoster.closing_text,
+          layout_style: 'auto',
+          status: status || currentPoster.status || 'draft',
+          updated_by: publicityReadingContext.user.id
+        };
+        var result;
+        if (currentPoster.id) {
+          result = await window.db
+            .from('publicity_reading_posters')
+            .update(payload)
+            .eq('id', currentPoster.id)
+            .select('*')
+            .single();
+        } else {
+          payload.created_by = publicityReadingContext.user.id;
+          result = await window.db.from('publicity_reading_posters').insert(payload).select('*').single();
+        }
+        if (result.error) throw result.error;
+        currentPoster = result.data;
+        return currentPoster;
+      }
+
+      async function persistItems(items) {
+        var rows = (items || currentItems).map(function (item) {
+          return {
+            poster_id: Number(currentPoster.id),
+            asset_id: Number(item.asset_id),
+            slot_kind: item.slot_kind,
+            sort_order: item.sort_order || 0,
+            crop_x: Number(item.crop_x || 50),
+            crop_y: Number(item.crop_y || 50),
+            crop_zoom: Number(item.crop_zoom || 1),
+            rotation: Number(item.rotation || 0),
+            is_visible: item.is_visible !== false
+          };
+        });
+        if (!rows.length) return;
+        var result = await window.db
+          .from('publicity_reading_poster_items')
+          .upsert(rows, { onConflict: 'poster_id,asset_id' })
+          .select('*');
+        if (result.error) throw result.error;
+        var savedMap = {};
+        (result.data || []).forEach(function (saved) {
+          savedMap[Number(saved.asset_id)] = saved;
+        });
+        currentItems = currentItems.map(function (item) {
+          var saved = savedMap[Number(item.asset_id)];
+          return saved ? Object.assign({}, item, saved, { asset: item.asset }) : item;
+        });
+      }
+
+      async function savePoster(status, silent) {
+        var buttons = [document.getElementById('saveDraftButton'), document.getElementById('readyButton')];
+        buttons.forEach(function (button) {
+          button.disabled = true;
+        });
+        try {
+          await ensurePoster(status);
+          await persistItems();
+          if (!silent) {
+            showToast(status === 'ready' ? '已标记为可发布' : '晨读长图草稿已保存', 'success');
+          }
+          return true;
+        } catch (error) {
+          showToast('保存失败：' + (error.message || error), 'error');
+          return false;
+        } finally {
+          buttons.forEach(function (button) {
+            button.disabled = false;
+          });
+        }
+      }
+
+      function openCropEditor(assetId) {
+        cropItem = findItem(assetId);
+        if (!cropItem) return;
+        cropRotation = Number(cropItem.rotation || 0);
+        document.getElementById('cropSubtitle').textContent = getItemLabel(cropItem);
+        document.getElementById('cropImage').src = cropItem.asset.signed_url;
+        document.getElementById('cropX').value = Number(cropItem.crop_x || 50);
+        document.getElementById('cropY').value = Number(cropItem.crop_y || 50);
+        document.getElementById('cropZoom').value = Number(cropItem.crop_zoom || 1);
+        document.getElementById('cropModal').hidden = false;
+        document.body.style.overflow = 'hidden';
+        updateCropPreview();
+      }
+
+      function closeCropEditor() {
+        document.getElementById('cropModal').hidden = true;
+        document.body.style.overflow = '';
+        cropItem = null;
+        cropDrag = null;
+      }
+
+      function updateCropPreview() {
+        var x = Number(document.getElementById('cropX').value);
+        var y = Number(document.getElementById('cropY').value);
+        var zoom = Number(document.getElementById('cropZoom').value);
+        var image = document.getElementById('cropImage');
+        image.style.objectPosition = x + '% ' + y + '%';
+        image.style.transform = 'scale(' + zoom + ') rotate(' + cropRotation + 'deg)';
+        document.getElementById('cropXValue').textContent = Math.round(x) + '%';
+        document.getElementById('cropYValue').textContent = Math.round(y) + '%';
+        document.getElementById('cropZoomValue').textContent = zoom.toFixed(2) + '×';
+      }
+
+      function rotateCrop() {
+        cropRotation = (cropRotation + 90) % 360;
+        updateCropPreview();
+      }
+
+      function resetCrop() {
+        document.getElementById('cropX').value = 50;
+        document.getElementById('cropY').value = 50;
+        document.getElementById('cropZoom').value = 1;
+        cropRotation = 0;
+        updateCropPreview();
+      }
+
+      async function applyCrop() {
+        if (!cropItem) return;
+        var button = document.getElementById('applyCropButton');
+        button.disabled = true;
+        cropItem.crop_x = Number(document.getElementById('cropX').value);
+        cropItem.crop_y = Number(document.getElementById('cropY').value);
+        cropItem.crop_zoom = Number(document.getElementById('cropZoom').value);
+        cropItem.rotation = cropRotation;
+        try {
+          await ensurePoster(currentPoster.status || 'draft');
+          await persistItems([cropItem]);
+          closeCropEditor();
+          updatePosterPreview();
+          showToast('裁切位置已保存，原图未修改', 'success');
+        } catch (error) {
+          showToast('裁切保存失败：' + (error.message || error), 'error');
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function bindCropDrag() {
+        var stage = document.getElementById('cropStage');
+        stage.addEventListener('pointerdown', function (event) {
+          cropDrag = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            cropX: Number(document.getElementById('cropX').value),
+            cropY: Number(document.getElementById('cropY').value)
+          };
+          stage.setPointerCapture(event.pointerId);
+        });
+        stage.addEventListener('pointermove', function (event) {
+          if (!cropDrag || cropDrag.pointerId !== event.pointerId) return;
+          var rect = stage.getBoundingClientRect();
+          var nextX = Math.max(
+            0,
+            Math.min(100, cropDrag.cropX - ((event.clientX - cropDrag.startX) / rect.width) * 100)
+          );
+          var nextY = Math.max(
+            0,
+            Math.min(100, cropDrag.cropY - ((event.clientY - cropDrag.startY) / rect.height) * 100)
+          );
+          document.getElementById('cropX').value = nextX;
+          document.getElementById('cropY').value = nextY;
+          updateCropPreview();
+        });
+        function endDrag(event) {
+          if (cropDrag && cropDrag.pointerId === event.pointerId) cropDrag = null;
+        }
+        stage.addEventListener('pointerup', endDrag);
+        stage.addEventListener('pointercancel', endDrag);
+      }
+
+      function isMobileBrowser() {
+        return /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
+      }
+
+      async function exportPoster() {
+        var button = document.getElementById('exportButton');
+        button.disabled = true;
+        try {
+          if (!(await savePoster(currentPoster.status || 'draft', true))) return;
+          await loadHtml2Canvas();
+          var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+          var host = document.getElementById('posterRenderHost');
+          host.innerHTML = '';
+          var poster = PublicityReadingPoster.create({
+            schedule: selectedSchedule,
+            org: org,
+            orgPath: ReadingMedia.getOrgPath(selectedSchedule.org_id, publicityReadingContext.orgMap),
+            readingType: selectedBundle.readingType,
+            poster: currentPoster,
+            items: currentItems
+          });
+          host.appendChild(poster);
+          await waitForImages(poster);
+          if (document.fonts && document.fonts.ready) await document.fonts.ready;
+          var height = Math.max(poster.scrollHeight, poster.offsetHeight);
+          var scale = Math.min(2.5, Math.floor((30000 / Math.max(height, 1)) * 10) / 10);
+          if (scale < 1) throw new Error('长图内容过长，请隐藏部分重复照片后再导出');
+          var canvas = await html2canvas(poster, {
+            scale: scale,
+            backgroundColor: '#f5f0e6',
+            useCORS: true,
+            allowTaint: false,
+            logging: false
+          });
+          var fileName =
+            cleanFileName(((org && org.name) || '共读') + '_晨读影像_' + selectedSchedule.schedule_date) + '.jpg';
+          var result = document.getElementById('exportResult');
+          if (!isMobileBrowser()) {
+            var blob = await canvasToBlob(canvas);
+            if (blob) {
+              triggerDownload(blob, fileName);
+              showToast('晨读长图已导出', 'success');
+              return;
+            }
+          }
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+          result.innerHTML =
+            '<img alt="晨读长图导出结果" src="' + dataUrl + '"><p>请长按上方图片，选择“保存图片”或“发送给朋友”。</p>';
+          result.hidden = false;
+          result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          showToast('长图已生成，请长按图片保存或转发', 'success');
+        } catch (error) {
+          showToast('长图导出失败：' + (error.message || error), 'error');
+        } finally {
+          document.getElementById('posterRenderHost').innerHTML = '';
+          button.disabled = false;
+        }
+      }
+
+      function cleanFileName(value) {
+        return String(value || '晨读影像').replace(/[\\/:*?"<>|]/g, '_');
+      }
+
+      function waitForImages(root) {
+        return Promise.all(
+          Array.from(root.querySelectorAll('img')).map(function (image) {
+            if (image.complete && image.naturalWidth) return Promise.resolve();
+            return new Promise(function (resolve, reject) {
+              image.addEventListener('load', resolve, { once: true });
+              image.addEventListener(
+                'error',
+                function () {
+                  reject(new Error('部分照片读取失败，请刷新页面后重试'));
+                },
+                { once: true }
+              );
+            });
+          })
+        );
+      }
+
+      function canvasToBlob(canvas) {
+        return new Promise(function (resolve) {
+          canvas.toBlob(resolve, 'image/jpeg', 0.94);
+        });
+      }
+
+      function triggerDownload(blob, fileName) {
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 2000);
+      }
+
+      function loadHtml2Canvas() {
+        if (typeof html2canvas === 'function') return Promise.resolve();
+        return new Promise(function (resolve, reject) {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          script.dataset.html2canvas = 'true';
+          script.onload = resolve;
+          script.onerror = function () {
+            reject(new Error('图片导出组件加载失败，请检查网络'));
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      init().finally(function () {
+        document.body.classList.remove('app-loading');
+      });
+    </script>
+  </body>
+</html>
