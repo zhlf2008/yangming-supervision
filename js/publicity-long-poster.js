@@ -26,9 +26,12 @@
     return highlight && content.indexOf(highlight) !== -1 ? highlight : '';
   }
 
-  function renderEntry(entry, groupIndex, entryIndex) {
+  function renderEntry(entry, groupIndex, entryIndex, scope) {
     var highlight = safeHighlight(entry);
-    var indexText = String(groupIndex + 1).padStart(2, '0') + ' — ' + String(entryIndex + 1).padStart(2, '0');
+    var indexText =
+      scope === 'group'
+        ? String(entryIndex + 1).padStart(2, '0')
+        : String(groupIndex + 1).padStart(2, '0') + ' — ' + String(entryIndex + 1).padStart(2, '0');
     return (
       '<article class="elp-entry">' +
       '<div class="elp-entry-side">' +
@@ -50,12 +53,12 @@
     );
   }
 
-  function renderGroup(group, groupIndex, totalGroups) {
+  function renderGroup(group, groupIndex, totalGroups, scope) {
     var entries = (group.entries || []).slice(0, 3);
     var entriesHtml = entries.length
       ? entries
           .map(function (entry, entryIndex) {
-            return renderEntry(entry, groupIndex, entryIndex);
+            return renderEntry(entry, groupIndex, entryIndex, scope);
           })
           .join('')
       : '<div class="elp-entry"><div class="elp-entry-side"><div class="elp-entry-index">--</div></div>' +
@@ -70,9 +73,7 @@
       html(watermark) +
       '</div>' +
       '<header class="elp-group-head">' +
-      '<div class="elp-group-no">' +
-      String(groupIndex + 1).padStart(2, '0') +
-      '</div>' +
+      (scope === 'class' ? '<div class="elp-group-no">' + String(groupIndex + 1).padStart(2, '0') + '</div>' : '') +
       '<div><div class="elp-group-kicker">GROUP · SELECTED WORKS</div>' +
       '<h2 class="elp-group-name">' +
       html(group.name || '未命名小组') +
@@ -85,9 +86,9 @@
       '<footer class="elp-group-foot"><span>' +
       html(group.name || '小组') +
       ' · 优秀作业选录</span><span>' +
-      String(groupIndex + 1).padStart(2, '0') +
-      ' / ' +
-      String(totalGroups).padStart(2, '0') +
+      (scope === 'class'
+        ? String(groupIndex + 1).padStart(2, '0') + ' / ' + String(totalGroups).padStart(2, '0')
+        : entries.length + ' 篇') +
       '</span></footer>' +
       '</section>'
     );
@@ -110,7 +111,7 @@
         : '<b>' + groups.length + '</b> 个小组 <i>·</i> <b>' + entryTotal + '</b> 篇优秀作业';
     var groupHtml = groups
       .map(function (group, index) {
-        return renderGroup(group, index, groups.length);
+        return renderGroup(group, index, groups.length, scope);
       })
       .join('');
 
@@ -140,8 +141,8 @@
       '</div></div></div>' +
       '<div class="elp-hero-bottom"><div class="elp-hero-desc">' +
       (scope === 'class'
-        ? '班级优秀作业完整选录<br />原文呈现 · 按组编排'
-        : '小组优秀作业完整选录<br />封面 · 原文 · 封底') +
+        ? '众思汇流，知行相照<br />记录每一份真切体悟'
+        : '一组一章，见字见心<br />记录今日的思考与践行') +
       '</div><div class="elp-summary"><span>本期收录</span><strong>' +
       summary +
       '</strong></div></div></header>' +

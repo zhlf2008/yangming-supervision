@@ -238,6 +238,19 @@
   text-decoration: none;
 }
 
+.poster-save-hint {
+  padding: 11px 12px;
+  margin-top: 9px;
+  border: 1px solid rgba(121, 35, 43, 0.18);
+  border-radius: 7px;
+  background: #f8f1ed;
+  color: #76242d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.55;
+  text-align: center;
+}
+
 .poster-render-host {
   position: fixed;
   z-index: -9999;
@@ -473,6 +486,10 @@
   gap: 9px;
   align-items: end;
   margin-bottom: 17px;
+}
+
+.editorial-long-poster.scope-group .elp-group-head {
+  grid-template-columns: 1fr auto;
 }
 
 .elp-group-no {

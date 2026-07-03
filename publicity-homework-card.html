@@ -647,7 +647,7 @@
           </div>
         </div>
         <div class="org-cascade">
-          <div class="org-group" id="groupSelectWrap">
+          <div class="org-group">
             <label class="org-label" for="bigClassSelect">大班</label>
             <select class="org-select" id="bigClassSelect" onchange="onBigClassChange(this.value)">
               <option>识别中...</option>
@@ -659,7 +659,7 @@
               <option>识别中...</option>
             </select>
           </div>
-          <div class="org-group">
+          <div class="org-group" id="groupSelectWrap">
             <label class="org-label" for="groupSelect">小组</label>
             <select class="org-select" id="groupSelect" onchange="onGroupChange(this.value)">
               <option>识别中...</option>
@@ -672,99 +672,26 @@
         <div class="workbench-head">
           <div class="workbench-title">
             <span class="section-icon" data-icon="FileEditIcon"></span>
-            <span id="workbenchTitle">优秀作业卡片</span>
+            <span id="workbenchTitle">优秀作业金句设置</span>
           </div>
           <span class="status-badge" id="cardStatus">待填报</span>
         </div>
 
-        <div class="settings-toolbar">
-          <div class="setting-row">
-            <span class="setting-label">主题风格</span>
-            <div class="theme-swatches" aria-label="卡片主题">
-              <button
-                class="theme-swatch active"
-                data-theme="vermillion"
-                aria-label="朱红"
-                onclick="setTheme('vermillion')"
-              ></button>
-              <button class="theme-swatch" data-theme="ink" aria-label="墨色" onclick="setTheme('ink')"></button>
-              <button class="theme-swatch" data-theme="jade" aria-label="青玉" onclick="setTheme('jade')"></button>
-              <button class="theme-swatch" data-theme="paper" aria-label="宣纸" onclick="setTheme('paper')"></button>
-            </div>
-          </div>
-          <div class="setting-row">
-            <span class="setting-label">内容版式</span>
-            <div class="segmented" aria-label="卡片版式">
-              <button class="segment-btn" id="layoutSingle" onclick="setLayout('single')">单篇</button>
-              <button class="segment-btn active" id="layoutCollection" onclick="setLayout('collection')">三篇</button>
-            </div>
-          </div>
-          <div class="setting-row">
-            <span class="setting-label">文案设置</span>
-            <button class="tool-btn" type="button" onclick="toggleEditorFields()">
-              <span data-icon="FileEditIcon"></span><span>编辑标题与寄语</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="editor-fields" id="editorFields" hidden>
-          <label>
-            <span class="field-label">主标题</span>
-            <input
-              class="field-control"
-              id="cardTitleInput"
-              maxlength="32"
-              value="今日优秀作业"
-              oninput="updatePreview()"
-            />
-          </label>
-          <label>
-            <span class="field-label">副标题</span>
-            <input class="field-control" id="cardSubtitleInput" maxlength="48" oninput="updatePreview()" />
-          </label>
-          <label class="field-wide">
-            <span class="field-label">开篇</span>
-            <textarea class="field-control" id="cardIntroInput" maxlength="160" oninput="updatePreview()">
-在文字里照见思考，在坚持中积蓄成长。</textarea
-            >
-          </label>
-          <label class="field-wide">
-            <span class="field-label">寄语</span>
-            <textarea class="field-control" id="cardClosingInput" maxlength="120" oninput="updatePreview()">
-知行合一，日日精进。</textarea
-            >
-          </label>
-        </div>
-
         <section class="highlight-panel" aria-labelledby="highlightPanelTitle">
           <div class="highlight-panel-title" id="highlightPanelTitle">从原文选择金句</div>
-          <div class="highlight-panel-note">金句只允许选择原文中的完整句子；留空时，长图直接展示原文，不生成摘要。</div>
+          <div class="highlight-panel-note">
+            金句只允许选择原文中的完整句子；留空时长图直接展示原文。选择完成后请保存金句。
+          </div>
           <div class="highlight-list" id="highlightList"></div>
         </section>
 
-        <div class="preview-label">成品预览</div>
-        <div class="preview-shell">
-          <article class="publicity-card theme-vermillion layout-collection" id="publicityCard"></article>
-        </div>
-
         <div class="action-bar">
           <button class="action-btn primary" id="saveDraftBtn" onclick="saveCard('draft')">
-            <span data-icon="SaveIcon"></span><span>保存草稿</span>
+            <span data-icon="SaveIcon"></span><span>保存金句</span>
           </button>
           <button class="action-btn ready" id="markReadyBtn" onclick="saveCard('ready')">
             <span data-icon="CheckIcon"></span><span>标记可发布</span>
           </button>
-          <button class="action-btn" onclick="copyCardText()">
-            <span data-icon="LinkIcon"></span><span>复制文案</span>
-          </button>
-          <button class="action-btn" id="downloadCardBtn" onclick="downloadCard()">
-            <span data-icon="DownloadIcon"></span><span>导出图片</span>
-          </button>
-        </div>
-
-        <div class="export-preview-panel" id="exportPreviewPanel" hidden>
-          <img id="exportPreviewImage" alt="优秀作业宣发卡片" />
-          <div class="export-preview-hint">手机端可长按图片保存或转发。</div>
         </div>
       </section>
 
@@ -831,8 +758,6 @@
       var selectedEntryIds = [];
       var highlightTexts = {};
       var currentPosterGroups = [];
-      var cardTheme = 'vermillion';
-      var cardLayout = 'collection';
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       async function init() {
@@ -1215,71 +1140,16 @@
                 highlightTexts[Number(item.entry_id)] = item.highlight_text;
               }
             });
-            selectedEntryIds = (itemResult.data || [])
-              .map(function (item) {
-                return Number(item.entry_id);
-              })
-              .filter(function (id) {
-                return currentEntries.some(function (entry) {
-                  return Number(entry.id) === id;
-                });
-              });
           }
         }
-        setEditorValues(currentCard);
-      }
-
-      function setEditorValues(card) {
-        document.getElementById('cardTitleInput').value = card ? card.title : '今日优秀作业';
-        document.getElementById('cardSubtitleInput').value = card
-          ? card.subtitle
-          : currentGroup.name + ' · ' + ExcellentHomework.formatDate(getToday(), false);
-        document.getElementById('cardIntroInput').value = card
-          ? card.intro_text
-          : '在文字里照见思考，在坚持中积蓄成长。';
-        document.getElementById('cardClosingInput').value = card ? card.closing_text : '知行合一，日日精进。';
-        setTheme(card ? card.theme : 'vermillion');
-        setLayout(card ? card.layout : 'collection');
       }
 
       function renderWorkbench() {
         document.getElementById('editorSection').hidden = false;
         document.getElementById('emptyPanel').style.display = 'none';
-        document.getElementById('workbenchTitle').textContent = currentGroup.name + ' · 优秀作业卡片';
+        document.getElementById('workbenchTitle').textContent = currentGroup.name + ' · 金句设置';
         renderCardStatus(currentCard ? currentCard.status : '');
         renderHighlightFields();
-        updatePreview();
-      }
-
-      function toggleEditorFields() {
-        var fields = document.getElementById('editorFields');
-        fields.hidden = !fields.hidden;
-      }
-
-      function setTheme(theme) {
-        cardTheme = ['vermillion', 'ink', 'jade', 'paper'].indexOf(theme) >= 0 ? theme : 'vermillion';
-        document.querySelectorAll('.theme-swatch').forEach(function (button) {
-          button.classList.toggle('active', button.dataset.theme === cardTheme);
-        });
-        updatePreview();
-      }
-
-      function setLayout(layout) {
-        cardLayout = layout === 'single' ? 'single' : 'collection';
-        document.getElementById('layoutSingle').classList.toggle('active', cardLayout === 'single');
-        document.getElementById('layoutCollection').classList.toggle('active', cardLayout === 'collection');
-        renderHighlightFields();
-        updatePreview();
-        if (publishScope === 'group' && currentGroup) {
-          currentPosterGroups = [
-            {
-              id: currentGroup.id,
-              name: currentGroup.name,
-              entries: getSelectedEntriesWithHighlights()
-            }
-          ];
-          renderLongPoster();
-        }
       }
 
       function getSelectedEntries() {
@@ -1290,7 +1160,7 @@
             });
           })
           .filter(Boolean);
-        return cardLayout === 'single' ? selected.slice(0, 1) : selected.slice(0, 3);
+        return selected.slice(0, 3);
       }
 
       function withHighlight(entry) {
@@ -1386,62 +1256,6 @@
         }
       }
 
-      function updatePreview() {
-        var card = document.getElementById('publicityCard');
-        if (!card || !currentGroup) return;
-        var selected = getSelectedEntries();
-        var entryCount = Math.max(selected.length, 1);
-        card.className = 'publicity-card theme-' + cardTheme + ' layout-' + cardLayout + ' entries-' + entryCount;
-        card.style.setProperty('--entry-count', entryCount);
-        var entriesHtml = selected.length
-          ? selected
-              .map(function (entry, index) {
-                return (
-                  '<article class="card-entry">' +
-                  '<span class="card-entry-index">0' +
-                  (index + 1) +
-                  '</span>' +
-                  '<div class="card-entry-body">' +
-                  '<div class="card-entry-meta"><span class="card-entry-name">' +
-                  escapeHtml(entry.person_name_snapshot) +
-                  '</span><span class="card-entry-group">' +
-                  escapeHtml(currentGroup.name) +
-                  '</span></div>' +
-                  '<div class="card-entry-text">' +
-                  escapeHtml(entry.content) +
-                  '</div></div></article>'
-                );
-              })
-              .join('')
-          : '<article class="card-entry"><span class="card-entry-index">01</span>' +
-            '<div class="card-entry-body"><div class="card-entry-meta"><span class="card-entry-name">' +
-            escapeHtml(currentGroup.name) +
-            '</span></div><div class="card-entry-text">本组今天尚未提交优秀作业</div></div></article>';
-        card.innerHTML =
-          '<div class="card-brand"><span class="card-brand-main">阳明心学 · 优秀作业</span>' +
-          '<span class="card-brand-en">THE PRACTICE NOTES</span></div>' +
-          '<h3 class="card-title">' +
-          escapeHtml(document.getElementById('cardTitleInput').value || '今日优秀作业') +
-          '</h3>' +
-          '<div class="card-subtitle">' +
-          escapeHtml(document.getElementById('cardSubtitleInput').value || currentGroup.name) +
-          '</div>' +
-          '<div class="card-intro">' +
-          escapeHtml(document.getElementById('cardIntroInput').value || '') +
-          '</div>' +
-          '<div class="card-entries">' +
-          entriesHtml +
-          '</div>' +
-          '<footer class="card-footer">' +
-          '<span class="card-footer-copy">' +
-          escapeHtml(document.getElementById('cardClosingInput').value || '') +
-          '</span>' +
-          '<span class="card-folio"><span>DAILY ARCHIVE</span><strong class="card-date">' +
-          escapeHtml(ExcellentHomework.formatShortDate(getToday())) +
-          '</strong></span>' +
-          '</footer>';
-      }
-
       function renderCardStatus(status) {
         var badge = document.getElementById('cardStatus');
         var entryCount = currentEntries.length;
@@ -1470,12 +1284,12 @@
             semester_id: publicityContext.semesterId,
             schedule_id: Number(currentSchedule.id),
             org_id: Number(currentGroup.id),
-            title: document.getElementById('cardTitleInput').value.trim() || '今日优秀作业',
-            subtitle: document.getElementById('cardSubtitleInput').value.trim(),
-            intro_text: document.getElementById('cardIntroInput').value.trim(),
-            closing_text: document.getElementById('cardClosingInput').value.trim(),
-            theme: cardTheme,
-            layout: cardLayout,
+            title: currentGroup.name + '优秀作业',
+            subtitle: getCurrentClassName() + ' · ' + ExcellentHomework.formatDate(getToday(), false),
+            intro_text: '',
+            closing_text: '知行合一，日日精进。',
+            theme: 'vermillion',
+            layout: 'collection',
             status: status,
             created_by: currentCard ? currentCard.created_by : publicityContext.profile.id,
             updated_by: publicityContext.profile.id,
@@ -1505,49 +1319,11 @@
           if (itemResult.error) throw itemResult.error;
           renderCardStatus(status);
           renderLongPoster();
-          showToast(status === 'ready' ? '卡片已标记为可发布' : '草稿已保存', 'success');
+          showToast(status === 'ready' ? '已保存金句并标记为可发布' : '金句已保存', 'success');
         } catch (error) {
           showToast('保存失败：' + (error.message || error), 'error');
         } finally {
           button.disabled = false;
-        }
-      }
-
-      function getCardText() {
-        return [
-          document.getElementById('cardTitleInput').value.trim() || '今日优秀作业',
-          document.getElementById('cardSubtitleInput').value.trim(),
-          document.getElementById('cardIntroInput').value.trim(),
-          getSelectedEntries()
-            .map(function (entry) {
-              return entry.person_name_snapshot + ' · ' + currentGroup.name + '\n' + entry.content;
-            })
-            .join('\n\n'),
-          document.getElementById('cardClosingInput').value.trim()
-        ]
-          .filter(Boolean)
-          .join('\n\n');
-      }
-
-      async function copyCardText() {
-        var text = getCardText();
-        try {
-          if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('clipboard unavailable');
-          await navigator.clipboard.writeText(text);
-          showToast('宣发文案已复制', 'success');
-        } catch (error) {
-          var input = document.createElement('textarea');
-          input.value = text;
-          input.setAttribute('readonly', '');
-          input.style.cssText = 'position:fixed;left:-9999px;top:0;';
-          document.body.appendChild(input);
-          input.select();
-          var copied = false;
-          try {
-            copied = document.execCommand('copy');
-          } catch (fallbackError) {}
-          input.remove();
-          showToast(copied ? '宣发文案已复制' : '复制失败，请重试', copied ? 'success' : 'error');
         }
       }
 
@@ -1582,13 +1358,19 @@
             : (currentGroup ? currentGroup.name : '当前小组') + ' · 小组完整长图';
         document.getElementById('longPosterMeta').textContent =
           scope === 'class' ? currentPosterGroups.length + '组 · ' + entryCount + '篇' : entryCount + '篇原文';
-        document.getElementById('downloadLongPosterLabel').textContent =
-          scope === 'class' ? '导出班级完整长图' : '导出当前小组长图';
+        document.getElementById('downloadLongPosterLabel').textContent = isWechatBrowser()
+          ? scope === 'class'
+            ? '生成班级长图图片'
+            : '生成当前小组图片'
+          : scope === 'class'
+            ? '导出班级完整长图'
+            : '导出当前小组长图';
         document.getElementById('generateGroupPostersBtn').hidden = scope !== 'class';
         document.getElementById('longPosterHelp').textContent =
-          scope === 'class'
+          (scope === 'class'
             ? '当前预览包含班级封面、全部小组原文和班级封底；也可批量生成每个小组各自的独立长图。'
-            : '当前预览包含小组封面、3篇优秀作业原文和小组封底；金句只取自上方选择的原文句子。';
+            : '当前预览包含小组封面、3篇优秀作业原文和小组封底；金句只取自上方选择的原文句子。') +
+          (isWechatBrowser() ? ' 微信内生成后，请长按图片选择“保存图片”或“发送给朋友”。' : '');
         section.hidden = false;
         document.getElementById('emptyPanel').style.display = 'none';
         if (window.renderAppIcons) window.renderAppIcons(section);
@@ -1596,6 +1378,14 @@
 
       function cleanFileName(name) {
         return String(name || '优秀作业').replace(/[\\/:*?"<>|]/g, '_');
+      }
+
+      function isWechatBrowser() {
+        return /MicroMessenger/i.test(navigator.userAgent || '');
+      }
+
+      function isMobileBrowser() {
+        return /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
       }
 
       async function renderLongPosterCanvas(element) {
@@ -1650,18 +1440,11 @@
         var gallery = document.getElementById('posterExportGallery');
         var card = document.createElement('article');
         card.className = 'poster-export-card';
+        var saveAction = isMobileBrowser()
+          ? '<div class="poster-save-hint">请长按上方图片，选择“保存图片”或“发送给朋友”</div>'
+          : '<a download="' + escapeHtml(fileName) + '" href="' + dataUrl + '">下载这张长图</a>';
         card.innerHTML =
-          '<h3>' +
-          escapeHtml(title) +
-          '</h3><img alt="' +
-          escapeHtml(title) +
-          '" src="' +
-          dataUrl +
-          '"><a download="' +
-          escapeHtml(fileName) +
-          '" href="' +
-          dataUrl +
-          '">下载这张长图</a>';
+          '<h3>' + escapeHtml(title) + '</h3><img alt="' + escapeHtml(title) + '" src="' + dataUrl + '">' + saveAction;
         gallery.appendChild(card);
         gallery.hidden = false;
       }
@@ -1679,8 +1462,7 @@
               : getCurrentClassName() + '_' + (currentGroup ? currentGroup.name : '小组');
           var fileName = cleanFileName(scopeName + '_优秀作业_' + getToday()) + '.jpg';
           var blob = await canvasToJpegBlob(canvas);
-          var isMobile = /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
-          if (!isMobile && triggerBlobDownload(blob, fileName)) {
+          if (!isMobileBrowser() && triggerBlobDownload(blob, fileName)) {
             showToast('完整长图已导出', 'success');
             return;
           }
@@ -1688,7 +1470,8 @@
           var gallery = document.getElementById('posterExportGallery');
           gallery.innerHTML = '';
           addPosterGalleryItem(scopeName + ' · 完整长图', dataUrl, fileName);
-          showToast('长图已生成，请长按图片保存', 'success');
+          gallery.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          showToast('长图已生成，请长按图片保存或转发', 'success');
         } catch (error) {
           showToast('长图导出失败：' + (error.message || error), 'error');
         } finally {
@@ -1721,65 +1504,6 @@
           showToast('批量生成失败：' + (error.message || error), 'error');
         } finally {
           host.innerHTML = '';
-          button.disabled = false;
-        }
-      }
-
-      async function downloadCard() {
-        var button = document.getElementById('downloadCardBtn');
-        button.disabled = true;
-        try {
-          await loadHtml2Canvas();
-          if (document.fonts && document.fonts.ready) await document.fonts.ready;
-          var canvas = await html2canvas(document.getElementById('publicityCard'), {
-            scale: 3,
-            backgroundColor: null,
-            useCORS: true,
-            allowTaint: false
-          });
-          var fileName = '优秀作业_' + currentGroup.name + '_' + getToday() + '.png';
-          var blob = await new Promise(function (resolve) {
-            if (!canvas.toBlob) {
-              resolve(null);
-              return;
-            }
-            canvas.toBlob(resolve, 'image/png');
-          });
-          var isMobileBrowser = /Android|iPhone|iPad|iPod|MicroMessenger/i.test(navigator.userAgent || '');
-          if (isMobileBrowser && blob && window.File && navigator.share && navigator.canShare) {
-            var file = new File([blob], fileName, { type: 'image/png' });
-            if (navigator.canShare({ files: [file] })) {
-              try {
-                await navigator.share({ files: [file], title: '优秀作业宣发卡片' });
-                return;
-              } catch (shareError) {
-                if (shareError && shareError.name === 'AbortError') return;
-              }
-            }
-          }
-          if (isMobileBrowser) {
-            document.getElementById('exportPreviewImage').src = canvas.toDataURL('image/png');
-            document.getElementById('exportPreviewPanel').hidden = false;
-            showToast('请长按下方图片保存或转发', 'success');
-            return;
-          }
-          var link = document.createElement('a');
-          var objectUrl = blob ? URL.createObjectURL(blob) : '';
-          link.download = fileName;
-          link.href = objectUrl || canvas.toDataURL('image/png');
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          if (objectUrl) {
-            setTimeout(function () {
-              URL.revokeObjectURL(objectUrl);
-            }, 1000);
-          }
-          showToast('卡片已导出', 'success');
-        } catch (error) {
-          showToast('导出失败：' + (error.message || error), 'error');
-        } finally {
           button.disabled = false;
         }
       }
