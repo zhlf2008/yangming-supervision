@@ -6,87 +6,349 @@
     <title>共读影像提交 - 学委管理</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <link rel="stylesheet" href="css/reading-media.css?v=1" />
+    <style>
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .page-title {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .header-card {
+        padding: 16px 18px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .header-body {
+        display: flex;
+        gap: 16px;
+      }
+      .header-col {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .header-col + .header-col {
+        padding-left: 16px;
+        border-left: 1px solid var(--border);
+      }
+      .header-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .header-label {
+        width: 42px;
+        flex-shrink: 0;
+        color: var(--ink-muted);
+        font-size: 12px;
+      }
+      .header-value {
+        overflow: hidden;
+        color: var(--ink-dark);
+        font-size: 13px;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .header-value.date {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+      }
+      .section {
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .section-icon {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--gold-light);
+      }
+      .task-card {
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .task-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 16px;
+      }
+      .task-heading {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 9px;
+      }
+      .task-icon {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--gold-light);
+        color: var(--vermillion);
+      }
+      .task-name {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .task-path {
+        margin-top: 3px;
+        color: var(--ink-muted);
+        font-size: 11px;
+      }
+      .status-tag {
+        flex-shrink: 0;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: var(--gold-light);
+        color: #8a5d2e;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .status-tag.complete {
+        background: var(--green-light);
+        color: var(--green);
+      }
+      .reading-type-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 13px 14px;
+        margin-bottom: 4px;
+        border-radius: 10px;
+        background: #f8f4ed;
+      }
+      .reading-type-label {
+        color: var(--ink-muted);
+        font-size: 12px;
+      }
+      .reading-type-value {
+        color: #28685d;
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .media-slot-list {
+        margin-top: 14px;
+        border-top: 1px solid #f1eeea;
+      }
+      .media-slot {
+        padding: 15px 0;
+        border-bottom: 1px solid #f1eeea;
+      }
+      .media-slot-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .slot-role {
+        color: var(--ink-muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .slot-person {
+        color: var(--ink-dark);
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .slot-count {
+        color: var(--ink-muted);
+        font-size: 11px;
+      }
+      .slot-upload {
+        position: relative;
+        display: flex;
+        min-height: 82px;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 14px;
+        overflow: hidden;
+        border: 1px dashed #cfbda5;
+        border-radius: 10px;
+        background: #fcfaf6;
+        color: #765432;
+        cursor: pointer;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .slot-upload input {
+        position: absolute;
+        inset: 0;
+        cursor: pointer;
+        opacity: 0;
+      }
+      .slot-upload-note {
+        display: block;
+        margin-top: 4px;
+        color: var(--ink-muted);
+        font-size: 10px;
+        font-weight: 400;
+      }
+      .slot-assets {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 9px;
+      }
+      .slot-asset {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 4 / 3;
+        border-radius: 8px;
+        background: #eeeae4;
+      }
+      .slot-asset img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .slot-asset button {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 24px;
+        height: 24px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(28, 31, 30, 0.76);
+        color: #fff;
+        cursor: pointer;
+        font-size: 15px;
+        line-height: 1;
+      }
+      .attendee-slot {
+        padding: 16px;
+        margin-top: 18px;
+        border-radius: 12px;
+        background: #eef5f2;
+      }
+      .attendee-slot .slot-upload {
+        border-color: #9dbbb3;
+        background: #f7fbf9;
+        color: #28685d;
+      }
+      .empty-panel {
+        padding: 42px 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        color: var(--ink-muted);
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      @media (max-width: 390px) {
+        .container {
+          padding-inline: 12px;
+        }
+        .slot-assets {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
   </head>
   <body class="app-loading">
-    <main class="container reading-page">
-      <header class="page-header reading-header">
+    <main class="container">
+      <header class="page-header">
         <a class="back-btn" href="study-dashboard.html" aria-label="返回学委管理首页"></a>
-        <div class="reading-header-copy">
-          <h1 class="page-title">共读影像提交</h1>
-          <p>上传原始照片和会议截图，岗位、姓名与共读类型直接读取当天排班。</p>
-        </div>
+        <h1 class="page-title">共读影像提交</h1>
       </header>
 
-      <section class="reading-toolbar" aria-label="选择日期">
-        <div class="reading-field">
-          <label for="readingDate">共读日期</label>
-          <input class="reading-input" id="readingDate" type="date" onchange="loadDailyTasks()" />
-        </div>
-        <button class="reading-btn" type="button" onclick="goToday()">回到今天</button>
-      </section>
-
-      <section>
-        <div class="reading-section-head">
-          <div>
-            <h2 class="reading-section-title">当天共读任务</h2>
-            <p class="reading-section-note">选择对应组织后提交素材；系统始终保存原图。</p>
+      <div class="header-card">
+        <div class="semester-wrap" id="semesterName"></div>
+        <div class="header-body">
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">日期</span><span class="header-value date" id="currentDate">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">星期</span><span class="header-value" id="currentWeekday">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">提交人</span><span class="header-value" id="reporterName">--</span>
+            </div>
+          </div>
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">大班</span><span class="header-value" id="bigClassName">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">班级</span><span class="header-value" id="className">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">小组</span><span class="header-value" id="groupName">--</span>
+            </div>
           </div>
         </div>
-        <div class="reading-task-list" id="taskList">
-          <div class="reading-empty">正在读取当天共读安排...</div>
-        </div>
-      </section>
+      </div>
 
-      <section class="reading-panel" id="uploadPanel" hidden>
-        <div class="reading-section-head">
-          <div>
-            <h2 class="reading-section-title" id="uploadTitle">提交晨读影像</h2>
-            <p class="reading-section-note" id="uploadMeta"></p>
+      <section class="section" id="orgSelectorSection">
+        <div class="section-title">
+          <span class="section-icon" data-icon="BuildingIcon"></span>
+          选择提交小组
+        </div>
+        <div class="org-cascade">
+          <div class="org-group">
+            <label class="org-label" for="bigClassSelect">大班</label>
+            <select class="org-select" id="bigClassSelect" onchange="onBigClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
           </div>
-          <span class="task-scope" id="uploadScope">共读</span>
-        </div>
-
-        <div class="assignment-strip" id="assignmentStrip"></div>
-
-        <div class="upload-grid">
-          <div class="reading-field">
-            <label for="assetTarget">照片内容</label>
-            <select class="reading-select" id="assetTarget"></select>
+          <div class="org-group">
+            <label class="org-label" for="classSelect">班级</label>
+            <select class="org-select" id="classSelect" onchange="onClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
           </div>
-          <div class="reading-field">
-            <label for="assetCaption">补充说明（选填）</label>
-            <input class="reading-input" id="assetCaption" maxlength="80" placeholder="例如：共读开场、全班合影" />
+          <div class="org-group">
+            <label class="org-label" for="groupSelect">小组</label>
+            <select class="org-select" id="groupSelect" onchange="onGroupChange(this.value)">
+              <option>识别中...</option>
+            </select>
           </div>
-        </div>
-
-        <div class="upload-help">
-          请直接上传原图，不必提前裁切。宣委制作长图时会按小组、班级或大班版式重新取景，原图不会被覆盖。
-        </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 14px">
-          <label class="reading-btn primary upload-file" style="flex: 1">
-            <span data-icon="ImagesIcon"></span>
-            <span id="uploadButtonLabel">选择并上传照片</span>
-            <input
-              id="assetFiles"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              onchange="uploadSelectedFiles(this.files)"
-            />
-          </label>
         </div>
       </section>
 
-      <section class="reading-panel" id="assetPanel" hidden>
-        <div class="reading-section-head">
-          <div>
-            <h2 class="reading-section-title">已提交素材</h2>
-            <p class="reading-section-note" id="assetSummary">共 0 张</p>
-          </div>
-        </div>
-        <div class="asset-grid" id="assetGrid"></div>
-      </section>
+      <section id="taskContainer"></section>
+      <div class="empty-panel" id="emptyPanel">正在加载今日共读安排...</div>
     </main>
 
     <div id="bottomNavContainer"></div>
@@ -94,185 +356,377 @@
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=16"></script>
-    <script src="js/reading-media.js?v=1"></script>
+    <script src="js/reading-media.js?v=2"></script>
     <script>
       renderModuleBottomNav('study', 'media');
 
       var readingContext = null;
+      var currentUser = null;
+      var accessibleGroups = [];
       var dailySchedules = [];
-      var dailyAssetCounts = {};
-      var selectedSchedule = null;
-      var selectedBundle = null;
+      var currentGroup = null;
+      var currentSchedule = null;
+      var currentBundle = null;
       var isUploading = false;
+      var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       async function init() {
         await waitForDb();
         await refreshCurrentUser();
-        if (!checkLogin()) return;
+        currentUser = checkLogin();
+        if (!currentUser) return;
         if (!(await guardModuleAccess('study'))) return;
 
         try {
           readingContext = await ReadingMedia.loadContext('study');
-          document.getElementById('readingDate').value = getToday();
-          await loadDailyTasks();
-        } catch (error) {
-          showToast('共读影像加载失败：' + (error.message || error), 'error');
-          renderTaskEmpty('暂时无法读取共读安排');
-        }
-      }
-
-      function goToday() {
-        document.getElementById('readingDate').value = getToday();
-        loadDailyTasks();
-      }
-
-      async function loadDailyTasks() {
-        var date = document.getElementById('readingDate').value || getToday();
-        selectedSchedule = null;
-        selectedBundle = null;
-        document.getElementById('uploadPanel').hidden = true;
-        document.getElementById('assetPanel').hidden = true;
-        document.getElementById('taskList').innerHTML = '<div class="reading-empty">正在读取当天共读安排...</div>';
-
-        try {
-          dailySchedules = await ReadingMedia.loadSchedules(readingContext, date);
-          dailyAssetCounts = {};
-          var ids = dailySchedules.map(function (schedule) {
-            return Number(schedule.id);
-          });
-          if (ids.length) {
-            var assetResult = await window.db
-              .from('study_reading_media_assets')
-              .select('id,schedule_instance_id')
-              .in('schedule_instance_id', ids);
-            if (assetResult.error) throw assetResult.error;
-            (assetResult.data || []).forEach(function (asset) {
-              var key = Number(asset.schedule_instance_id);
-              dailyAssetCounts[key] = (dailyAssetCounts[key] || 0) + 1;
-            });
+          var semesterResult = await window.db
+            .from('semesters')
+            .select('semester_name')
+            .eq('id', readingContext.semesterId)
+            .single();
+          setCurrentSemester(
+            'semesterName',
+            semesterResult.data ? semesterResult.data.semester_name : '当前学期',
+            'tag-lg'
+          );
+          renderTodayInfo();
+          accessibleGroups = getAccessibleGroups();
+          if (!accessibleGroups.length) {
+            renderOrganizationSelector(null);
+            showEmpty('当前账号在本学期没有可提交影像的下属小组');
+            return;
           }
-          renderTaskList();
-          if (dailySchedules.length === 1) await selectSchedule(dailySchedules[0].id);
+          dailySchedules = await ReadingMedia.loadSchedules(readingContext, getToday());
+          var detectedGroup = await resolveCurrentUserGroup();
+          currentGroup =
+            accessibleGroups.find(function (group) {
+              return detectedGroup && Number(group.id) === Number(detectedGroup.id);
+            }) || accessibleGroups[0];
+          renderOrganizationSelector(currentGroup);
+          await loadCurrentGroup();
         } catch (error) {
-          renderTaskEmpty('共读安排加载失败：' + (error.message || error));
+          showEmpty('加载失败：' + (error.message || error));
         }
       }
 
-      function renderTaskEmpty(message) {
-        document.getElementById('taskList').innerHTML = '<div class="reading-empty">' + escapeHtml(message) + '</div>';
+      function renderTodayInfo() {
+        document.getElementById('currentDate').textContent = getToday();
+        document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
+        document.getElementById('reporterName').textContent = currentUser.name || '未知';
       }
 
-      function renderTaskList() {
-        if (!dailySchedules.length) {
-          renderTaskEmpty('当天没有可提交的共读日程');
+      function getAccessibleGroups() {
+        return (readingContext.orgs || [])
+          .filter(function (org) {
+            return org.level === '小组' && ReadingMedia.canAccessOrg(readingContext, org.id);
+          })
+          .sort(function (a, b) {
+            return (
+              (a.sort_order || 0) - (b.sort_order || 0) ||
+              String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN')
+            );
+          });
+      }
+
+      async function resolveCurrentUserGroup() {
+        if (currentUser.phone) {
+          var personResult = await window.db.from('people').select('id').eq('phone', currentUser.phone).maybeSingle();
+          if (personResult.error) throw personResult.error;
+          if (personResult.data) {
+            var assignmentResult = await window.db
+              .from('person_org_assignments')
+              .select('org_id,sort_order')
+              .eq('semester_id', readingContext.semesterId)
+              .eq('person_id', personResult.data.id)
+              .eq('org_level', '小组')
+              .eq('status', 'active')
+              .order('sort_order')
+              .limit(1);
+            if (assignmentResult.error) throw assignmentResult.error;
+            var assignment = (assignmentResult.data || [])[0];
+            var assignedGroup = assignment ? readingContext.orgMap[Number(assignment.org_id)] : null;
+            if (assignedGroup && assignedGroup.level === '小组') return assignedGroup;
+          }
+        }
+        return (
+          (readingContext.memberships || [])
+            .map(function (membership) {
+              return readingContext.orgMap[Number(membership.org_id)];
+            })
+            .find(function (org) {
+              return org && org.level === '小组';
+            }) || null
+        );
+      }
+
+      function uniqueOrgs(orgs) {
+        var seen = {};
+        return orgs.filter(function (org) {
+          if (!org || seen[org.id]) return false;
+          seen[org.id] = true;
+          return true;
+        });
+      }
+
+      function getClassesForBigClass(bigClassId) {
+        return uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = readingContext.orgMap[Number(group.parent_id)];
+            return classOrg && Number(classOrg.parent_id) === Number(bigClassId) ? classOrg : null;
+          })
+        );
+      }
+
+      function getGroupsForClass(classId) {
+        return accessibleGroups.filter(function (group) {
+          return Number(group.parent_id) === Number(classId);
+        });
+      }
+
+      function renderOptions(select, orgs, placeholder) {
+        select.innerHTML =
+          (orgs.length === 1 ? '' : '<option value="">' + placeholder + '</option>') +
+          orgs
+            .map(function (org) {
+              return '<option value="' + org.id + '">' + escapeHtml(org.name) + '</option>';
+            })
+            .join('');
+      }
+
+      function renderOrganizationSelector(defaultGroup) {
+        var bigClassSelect = document.getElementById('bigClassSelect');
+        var classSelect = document.getElementById('classSelect');
+        var groupSelect = document.getElementById('groupSelect');
+        var bigClasses = uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = readingContext.orgMap[Number(group.parent_id)];
+            return classOrg ? readingContext.orgMap[Number(classOrg.parent_id)] : null;
+          })
+        );
+        renderOptions(bigClassSelect, bigClasses, '请选择');
+        if (!defaultGroup) {
+          classSelect.innerHTML = '<option value="">--</option>';
+          groupSelect.innerHTML = '<option value="">--</option>';
+          renderCurrentPath(null);
           return;
         }
-        document.getElementById('taskList').innerHTML = dailySchedules
-          .map(function (schedule) {
-            var org = readingContext.orgMap[Number(schedule.org_id)];
-            var count = dailyAssetCounts[Number(schedule.id)] || 0;
-            return (
-              '<article class="reading-task-card" id="task-' +
-              schedule.id +
-              '" onclick="selectSchedule(' +
-              schedule.id +
-              ')">' +
-              '<div class="task-card-head"><span class="task-scope">' +
-              escapeHtml(ReadingMedia.getScopeLabel(schedule.scope_level)) +
-              '</span><span class="task-count">' +
-              count +
-              ' 张素材</span></div>' +
-              '<h3 class="task-org">' +
-              escapeHtml((org && org.name) || '未命名组织') +
-              '</h3>' +
-              '<div class="task-path">' +
-              escapeHtml(ReadingMedia.getOrgPath(schedule.org_id, readingContext.orgMap)) +
-              '</div>' +
-              '<div class="task-meta">' +
-              escapeHtml(ReadingMedia.formatDisplayDate(schedule.schedule_date)) +
-              ' · ' +
-              escapeHtml(ReadingMedia.getWeekday(schedule.schedule_date)) +
-              '</div></article>'
-            );
-          })
-          .join('');
+        var classOrg = readingContext.orgMap[Number(defaultGroup.parent_id)];
+        var bigClass = classOrg ? readingContext.orgMap[Number(classOrg.parent_id)] : null;
+        if (!classOrg || !bigClass) return;
+        bigClassSelect.value = String(bigClass.id);
+        var classes = getClassesForBigClass(bigClass.id);
+        renderOptions(classSelect, classes, '请选择');
+        classSelect.value = String(classOrg.id);
+        var groups = getGroupsForClass(classOrg.id);
+        renderOptions(groupSelect, groups, '请选择');
+        groupSelect.value = String(defaultGroup.id);
+        renderCurrentPath(defaultGroup);
       }
 
-      async function selectSchedule(scheduleId) {
-        selectedSchedule =
-          dailySchedules.find(function (schedule) {
-            return Number(schedule.id) === Number(scheduleId);
-          }) || null;
-        if (!selectedSchedule) return;
-
-        document.querySelectorAll('.reading-task-card').forEach(function (card) {
-          card.classList.toggle('active', card.id === 'task-' + selectedSchedule.id);
-        });
-        document.getElementById('uploadPanel').hidden = false;
-        document.getElementById('assetPanel').hidden = false;
-        document.getElementById('assignmentStrip').innerHTML = '<span class="assignment-chip">正在读取岗位...</span>';
-        document.getElementById('assetGrid').innerHTML =
-          '<div class="reading-empty" style="grid-column: 1 / -1">正在读取素材...</div>';
-
-        try {
-          selectedBundle = await ReadingMedia.loadScheduleBundle(selectedSchedule);
-          renderUploadPanel();
-          renderAssets();
-          document.getElementById('uploadPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } catch (error) {
-          showToast('任务加载失败：' + (error.message || error), 'error');
+      async function onBigClassChange(bigClassId) {
+        currentGroup = null;
+        currentSchedule = null;
+        currentBundle = null;
+        renderCurrentPath(null);
+        document.getElementById('taskContainer').innerHTML = '';
+        var classes = bigClassId ? getClassesForBigClass(bigClassId) : [];
+        var classSelect = document.getElementById('classSelect');
+        var groupSelect = document.getElementById('groupSelect');
+        renderOptions(classSelect, classes, '请选择');
+        groupSelect.innerHTML = '<option value="">请选择</option>';
+        if (classes.length === 1) {
+          classSelect.value = String(classes[0].id);
+          await onClassChange(classes[0].id);
+        } else {
+          showEmpty('请选择班级和小组');
         }
       }
 
-      function renderUploadPanel() {
-        var org = readingContext.orgMap[Number(selectedSchedule.org_id)];
-        var readingTypeName =
-          (selectedBundle.readingType && selectedBundle.readingType.type_name) ||
-          ReadingMedia.getScopeLabel(selectedSchedule.scope_level);
-        document.getElementById('uploadTitle').textContent = ((org && org.name) || '当前组织') + ' · 晨读影像';
-        document.getElementById('uploadMeta').textContent =
-          ReadingMedia.formatDisplayDate(selectedSchedule.schedule_date) +
-          ' · ' +
-          ReadingMedia.getWeekday(selectedSchedule.schedule_date);
-        document.getElementById('uploadScope').textContent = readingTypeName;
-
-        var assignments = selectedBundle.assignments || [];
-        document.getElementById('assignmentStrip').innerHTML = assignments.length
-          ? assignments
-              .map(function (assignment) {
-                return (
-                  '<span class="assignment-chip">' +
-                  escapeHtml(assignment.role_name) +
-                  ' · <strong>' +
-                  escapeHtml(assignment.person_name) +
-                  '</strong></span>'
-                );
-              })
-              .join('')
-          : '<span class="assignment-chip">当天尚未完成人员落位，可先上传全员画面或花絮</span>';
-
-        var targetOptions = [
-          '<option value="overview">全员画面</option>',
-          '<option value="moment">现场花絮</option>',
-          '<option value="other">其他素材</option>'
-        ];
-        assignments.forEach(function (assignment) {
-          targetOptions.push(
-            '<option value="assignment:' +
-              assignment.assignment_person_id +
-              '">' +
-              escapeHtml(assignment.role_name + ' · ' + assignment.person_name) +
-              '</option>'
-          );
-        });
-        document.getElementById('assetTarget').innerHTML = targetOptions.join('');
+      async function onClassChange(classId) {
+        currentGroup = null;
+        currentSchedule = null;
+        currentBundle = null;
+        renderCurrentPath(null);
+        document.getElementById('taskContainer').innerHTML = '';
+        var groups = classId ? getGroupsForClass(classId) : [];
+        var groupSelect = document.getElementById('groupSelect');
+        renderOptions(groupSelect, groups, '请选择');
+        if (groups.length === 1) {
+          groupSelect.value = String(groups[0].id);
+          await onGroupChange(groups[0].id);
+        } else {
+          showEmpty('请选择小组后提交今日共读影像');
+        }
       }
 
-      function resolveUploadTarget() {
-        var value = document.getElementById('assetTarget').value;
-        if (value.indexOf('assignment:') === 0) {
-          var assignmentId = Number(value.split(':')[1]);
-          var assignment = (selectedBundle.assignments || []).find(function (item) {
+      async function onGroupChange(groupId) {
+        currentGroup =
+          accessibleGroups.find(function (group) {
+            return Number(group.id) === Number(groupId);
+          }) || null;
+        renderCurrentPath(currentGroup);
+        if (!currentGroup) {
+          showEmpty('请选择小组后提交今日共读影像');
+          return;
+        }
+        showEmpty('正在加载该小组今日共读安排...');
+        try {
+          await loadCurrentGroup();
+        } catch (error) {
+          showEmpty('共读影像加载失败：' + (error.message || error));
+        }
+      }
+
+      function renderCurrentPath(group) {
+        var classOrg = group ? readingContext.orgMap[Number(group.parent_id)] : null;
+        var bigClass = classOrg ? readingContext.orgMap[Number(classOrg.parent_id)] : null;
+        document.getElementById('bigClassName').textContent = bigClass ? bigClass.name : '--';
+        document.getElementById('className').textContent = classOrg ? classOrg.name : '--';
+        document.getElementById('groupName').textContent = group ? group.name : '--';
+      }
+
+      async function loadCurrentGroup() {
+        currentSchedule = ReadingMedia.findScheduleForSourceOrg(dailySchedules, currentGroup, readingContext.orgMap);
+        if (!currentSchedule) {
+          document.getElementById('taskContainer').innerHTML = '';
+          showEmpty('该小组今天没有共读日程，无需提交影像');
+          return;
+        }
+        currentBundle = await ReadingMedia.loadScheduleBundle(currentSchedule, currentGroup.id);
+        renderTaskCard();
+      }
+
+      function showEmpty(message) {
+        document.getElementById('taskContainer').innerHTML = '';
+        var panel = document.getElementById('emptyPanel');
+        panel.textContent = message;
+        panel.hidden = false;
+      }
+
+      function hideEmpty() {
+        document.getElementById('emptyPanel').hidden = true;
+      }
+
+      function getAssignmentAssets(assignmentId) {
+        return (currentBundle.assets || []).filter(function (asset) {
+          return Number(asset.assignment_person_id) === Number(assignmentId);
+        });
+      }
+
+      function getAttendeeAssets() {
+        return (currentBundle.assets || []).filter(function (asset) {
+          return asset.asset_kind === 'overview' && !asset.assignment_person_id;
+        });
+      }
+
+      function renderTaskCard() {
+        hideEmpty();
+        var assignments = currentBundle.assignments || [];
+        var attendeeAssets = getAttendeeAssets();
+        var filledAssignments = assignments.filter(function (assignment) {
+          return getAssignmentAssets(assignment.assignment_person_id).length > 0;
+        }).length;
+        var complete = filledAssignments === assignments.length && attendeeAssets.length > 0;
+        var totalSlots = assignments.length + 1;
+        var completedSlots = filledAssignments + (attendeeAssets.length ? 1 : 0);
+        var readingTypeName =
+          (currentBundle.readingType && currentBundle.readingType.type_name) ||
+          ReadingMedia.getScopeLabel(currentSchedule.scope_level);
+        var rows = assignments.length
+          ? assignments
+              .map(function (assignment) {
+                return renderAssignmentSlot(assignment);
+              })
+              .join('')
+          : '<div class="reading-empty" style="margin-top:14px">今日岗位尚未完成人员落位，可先上传参会人员画面。</div>';
+
+        document.getElementById('taskContainer').innerHTML =
+          '<article class="task-card"><div class="task-card-head"><div class="task-heading">' +
+          '<span class="task-icon" data-icon="ImagesIcon"></span><div><div class="task-name">今日共读影像</div>' +
+          '<div class="task-path">' +
+          escapeHtml(ReadingMedia.getOrgPath(currentGroup.id, readingContext.orgMap)) +
+          '</div></div></div><span class="status-tag' +
+          (complete ? ' complete' : '') +
+          '">' +
+          (complete ? '已完成' : '已上传 ' + completedSlots + '/' + totalSlots + ' 项') +
+          '</span></div><div class="reading-type-card"><span class="reading-type-label">当日共读类型</span>' +
+          '<strong class="reading-type-value">' +
+          escapeHtml(readingTypeName) +
+          '</strong></div><div class="media-slot-list">' +
+          rows +
+          '</div>' +
+          renderAttendeeSlot(attendeeAssets) +
+          '</article>';
+      }
+
+      function renderAssignmentSlot(assignment) {
+        var assets = getAssignmentAssets(assignment.assignment_person_id);
+        var key = 'assignment-' + assignment.assignment_person_id;
+        return (
+          '<section class="media-slot"><div class="media-slot-head"><div><span class="slot-role">' +
+          escapeHtml(assignment.role_name) +
+          '</span><span class="slot-person"> · ' +
+          escapeHtml(assignment.person_name) +
+          '</span></div><span class="slot-count">' +
+          assets.length +
+          ' 张</span></div>' +
+          renderUploadBox(key, '上传' + assignment.role_name + '照片') +
+          renderSlotAssets(assets) +
+          '</section>'
+        );
+      }
+
+      function renderAttendeeSlot(assets) {
+        return (
+          '<section class="attendee-slot"><div class="media-slot-head"><div><span class="slot-role">参会人员</span>' +
+          '<span class="slot-person"> · 全员画面</span></div><span class="slot-count">' +
+          assets.length +
+          ' 张</span></div>' +
+          renderUploadBox('attendees', '上传参会人员照片') +
+          renderSlotAssets(assets) +
+          '</section>'
+        );
+      }
+
+      function renderUploadBox(key, label) {
+        return (
+          '<label class="slot-upload"><span data-icon="ImagesIcon"></span><span id="upload-label-' +
+          key +
+          '">' +
+          escapeHtml(label) +
+          '<small class="slot-upload-note">支持一次选择多张 JPG、PNG 或 WebP 原图</small></span>' +
+          '<input type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="uploadSlotFiles(this.files,\'' +
+          key +
+          '\')"></label>'
+        );
+      }
+
+      function renderSlotAssets(assets) {
+        if (!assets.length) return '';
+        return (
+          '<div class="slot-assets">' +
+          assets
+            .map(function (asset) {
+              return (
+                '<div class="slot-asset"><img alt="' +
+                escapeHtml(asset.file_name || '共读影像') +
+                '" src="' +
+                escapeHtml(asset.signed_url) +
+                '"><button type="button" aria-label="删除照片" onclick="removeAsset(' +
+                asset.id +
+                ')">×</button></div>'
+              );
+            })
+            .join('') +
+          '</div>'
+        );
+      }
+
+      function resolveSlotTarget(key) {
+        if (key === 'attendees') return { kind: 'overview', source_org_id: currentGroup.id };
+        if (key.indexOf('assignment-') === 0) {
+          var assignmentId = Number(key.replace('assignment-', ''));
+          var assignment = (currentBundle.assignments || []).find(function (item) {
             return Number(item.assignment_person_id) === assignmentId;
           });
           if (assignment) {
@@ -281,106 +735,53 @@
               demand_id: assignment.demand_id,
               assignment_person_id: assignment.assignment_person_id,
               role_name: assignment.role_name,
-              person_name: assignment.person_name
+              person_name: assignment.person_name,
+              source_org_id: currentGroup.id
             };
           }
         }
-        return { kind: value || 'other' };
+        return null;
       }
 
-      async function uploadSelectedFiles(fileList) {
+      async function uploadSlotFiles(fileList, key) {
         var files = Array.from(fileList || []);
-        if (!files.length || !selectedSchedule || isUploading) return;
+        var target = resolveSlotTarget(key);
+        if (!files.length || !target || !currentSchedule || isUploading) return;
         isUploading = true;
-        var label = document.getElementById('uploadButtonLabel');
-        var target = resolveUploadTarget();
-        var caption = document.getElementById('assetCaption').value.trim();
-        var uploaded = 0;
+        var label = document.getElementById('upload-label-' + key);
         try {
           for (var i = 0; i < files.length; i += 1) {
-            label.textContent = '正在上传 ' + (i + 1) + '/' + files.length;
+            label.firstChild.textContent = '正在上传 ' + (i + 1) + '/' + files.length;
             await ReadingMedia.uploadAsset(
               readingContext,
-              selectedSchedule,
+              currentSchedule,
               files[i],
               target,
-              caption,
-              selectedBundle.assets.length + i
+              '',
+              currentBundle.assets.length + i
             );
-            uploaded += 1;
           }
-          selectedBundle = await ReadingMedia.loadScheduleBundle(selectedSchedule);
-          dailyAssetCounts[Number(selectedSchedule.id)] = selectedBundle.assets.length;
-          renderTaskList();
-          document.getElementById('task-' + selectedSchedule.id).classList.add('active');
-          renderAssets();
-          document.getElementById('assetCaption').value = '';
-          showToast('已上传 ' + uploaded + ' 张原图', 'success');
+          currentBundle = await ReadingMedia.loadScheduleBundle(currentSchedule, currentGroup.id);
+          renderTaskCard();
+          showToast('照片已上传并自动保存', 'success');
         } catch (error) {
           showToast('上传失败：' + (error.message || error), 'error');
+          renderTaskCard();
         } finally {
           isUploading = false;
-          label.textContent = '选择并上传照片';
-          document.getElementById('assetFiles').value = '';
         }
-      }
-
-      function getAssetKindLabel(asset) {
-        if (asset.asset_kind === 'role') return asset.role_name_snapshot || '岗位人物';
-        if (asset.asset_kind === 'overview') return '全员画面';
-        if (asset.asset_kind === 'moment') return '现场花絮';
-        return '其他素材';
-      }
-
-      function renderAssets() {
-        var assets = (selectedBundle && selectedBundle.assets) || [];
-        document.getElementById('assetSummary').textContent = '共 ' + assets.length + ' 张，宣委端会直接调用这些原图';
-        if (!assets.length) {
-          document.getElementById('assetGrid').innerHTML =
-            '<div class="reading-empty" style="grid-column: 1 / -1">还没有素材，请上传当天的原始照片或会议截图。</div>';
-          return;
-        }
-        document.getElementById('assetGrid').innerHTML = assets
-          .map(function (asset) {
-            var title =
-              asset.asset_kind === 'role'
-                ? (asset.role_name_snapshot || '岗位') + ' · ' + (asset.person_name_snapshot || '未命名人员')
-                : getAssetKindLabel(asset);
-            return (
-              '<article class="asset-card">' +
-              '<div class="asset-thumb"><img alt="' +
-              escapeHtml(title) +
-              '" src="' +
-              escapeHtml(asset.signed_url) +
-              '"><span class="asset-kind">' +
-              escapeHtml(getAssetKindLabel(asset)) +
-              '</span></div>' +
-              '<div class="asset-card-body"><div class="asset-card-title">' +
-              escapeHtml(title) +
-              '</div><div class="asset-card-subtitle">' +
-              escapeHtml(asset.caption || asset.file_name || '原始图片') +
-              '</div><div class="asset-card-actions">' +
-              '<button class="asset-delete" type="button" onclick="removeAsset(' +
-              asset.id +
-              ')">删除</button></div></div></article>'
-            );
-          })
-          .join('');
       }
 
       async function removeAsset(assetId) {
-        var asset = (selectedBundle.assets || []).find(function (item) {
+        var asset = (currentBundle.assets || []).find(function (item) {
           return Number(item.id) === Number(assetId);
         });
         if (!asset) return;
         if (!(await showConfirm('确定删除这张原始照片吗？宣委端也将不再显示。'))) return;
         try {
           await ReadingMedia.deleteAsset(asset);
-          selectedBundle = await ReadingMedia.loadScheduleBundle(selectedSchedule);
-          dailyAssetCounts[Number(selectedSchedule.id)] = selectedBundle.assets.length;
-          renderTaskList();
-          document.getElementById('task-' + selectedSchedule.id).classList.add('active');
-          renderAssets();
+          currentBundle = await ReadingMedia.loadScheduleBundle(currentSchedule, currentGroup.id);
+          renderTaskCard();
           showToast('照片已删除', 'success');
         } catch (error) {
           showToast('删除失败：' + (error.message || error), 'error');

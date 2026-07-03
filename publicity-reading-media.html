@@ -7,36 +7,167 @@
     <link rel="stylesheet" href="css/common.css?v=9" />
     <link rel="stylesheet" href="css/reading-media.css?v=1" />
     <link rel="stylesheet" href="css/publicity-reading-poster.css?v=1" />
+    <style>
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .page-title {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .header-card {
+        padding: 16px 18px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .header-body {
+        display: flex;
+        gap: 16px;
+      }
+      .header-col {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .header-col + .header-col {
+        padding-left: 16px;
+        border-left: 1px solid var(--border);
+      }
+      .header-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .header-label {
+        width: 42px;
+        flex-shrink: 0;
+        color: var(--ink-muted);
+        font-size: 12px;
+      }
+      .header-value {
+        overflow: hidden;
+        color: var(--ink-dark);
+        font-size: 13px;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .header-value.date {
+        font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+      }
+      .section {
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        box-shadow: 0 2px 12px var(--shadow);
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .section-icon {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--gold-light);
+      }
+      .empty-panel {
+        padding: 42px 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-card);
+        color: var(--ink-muted);
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      @media (max-width: 390px) {
+        .container {
+          padding-inline: 12px;
+        }
+      }
+    </style>
   </head>
   <body class="app-loading">
-    <main class="container reading-page">
-      <header class="page-header reading-header">
+    <main class="container">
+      <header class="page-header">
         <a class="back-btn" href="publicity-dashboard.html" aria-label="返回宣委管理首页"></a>
-        <div class="reading-header-copy">
-          <h1 class="page-title">每日共读影像</h1>
-          <p>直接调用学委日程、岗位、姓名和原始照片，自动生成对应规模的宣传长图。</p>
-        </div>
+        <h1 class="page-title">每日共读影像</h1>
       </header>
 
-      <section class="reading-toolbar" aria-label="选择日期">
-        <div class="reading-field">
-          <label for="readingDate">共读日期</label>
-          <input class="reading-input" id="readingDate" type="date" onchange="loadDailyTasks()" />
-        </div>
-        <button class="reading-btn" type="button" onclick="goToday()">回到今天</button>
-      </section>
-
-      <section>
-        <div class="reading-section-head">
-          <div>
-            <h2 class="reading-section-title">待制作任务</h2>
-            <p class="reading-section-note">版式由共读类型决定，照片数量会继续影响内部网格。</p>
+      <div class="header-card">
+        <div class="semester-wrap" id="semesterName"></div>
+        <div class="header-body">
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">日期</span><span class="header-value date" id="currentDate">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">星期</span><span class="header-value" id="currentWeekday">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">制作人</span><span class="header-value" id="operatorName">--</span>
+            </div>
+          </div>
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">大班</span><span class="header-value" id="bigClassName">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">班级</span><span class="header-value" id="className">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">小组</span><span class="header-value" id="groupName">--</span>
+            </div>
           </div>
         </div>
-        <div class="reading-task-list" id="taskList">
-          <div class="reading-empty">正在读取当天共读影像...</div>
+      </div>
+
+      <section class="section" id="orgSelectorSection">
+        <div class="section-title">
+          <span class="section-icon" data-icon="BuildingIcon"></span>
+          选择制作小组
+        </div>
+        <div class="org-cascade">
+          <div class="org-group">
+            <label class="org-label" for="bigClassSelect">大班</label>
+            <select class="org-select" id="bigClassSelect" onchange="onBigClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="classSelect">班级</label>
+            <select class="org-select" id="classSelect" onchange="onClassChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="groupSelect">小组</label>
+            <select class="org-select" id="groupSelect" onchange="onGroupChange(this.value)">
+              <option>识别中...</option>
+            </select>
+          </div>
         </div>
       </section>
+
+      <div class="empty-panel" id="emptyPanel">正在加载今日共读影像...</div>
 
       <section class="reading-panel poster-workbench" id="editorPanel" hidden>
         <div class="reading-section-head">
@@ -149,14 +280,16 @@
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=16"></script>
-    <script src="js/reading-media.js?v=1"></script>
+    <script src="js/reading-media.js?v=2"></script>
     <script src="js/publicity-reading-poster.js?v=1"></script>
     <script>
       renderModuleBottomNav('publicity', 'media');
 
       var publicityReadingContext = null;
+      var currentUser = null;
+      var accessibleGroups = [];
       var dailySchedules = [];
-      var dailyAssetCounts = {};
+      var currentGroup = null;
       var selectedSchedule = null;
       var selectedBundle = null;
       var currentPoster = null;
@@ -164,32 +297,221 @@
       var cropItem = null;
       var cropRotation = 0;
       var cropDrag = null;
+      var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       async function init() {
         await waitForDb();
         await refreshCurrentUser();
-        if (!checkLogin()) return;
+        currentUser = checkLogin();
+        if (!currentUser) return;
         if (!(await guardModuleAccess('publicity'))) return;
 
         try {
           publicityReadingContext = await ReadingMedia.loadContext('publicity');
-          document.getElementById('readingDate').value = getToday();
+          var semesterResult = await window.db
+            .from('semesters')
+            .select('semester_name')
+            .eq('id', publicityReadingContext.semesterId)
+            .single();
+          setCurrentSemester(
+            'semesterName',
+            semesterResult.data ? semesterResult.data.semester_name : '当前学期',
+            'tag-lg'
+          );
+          renderTodayInfo();
+          accessibleGroups = getAccessibleGroups();
+          if (!accessibleGroups.length) {
+            renderOrganizationSelector(null);
+            showEmpty('当前账号在本学期没有可制作影像的下属小组');
+            return;
+          }
+          dailySchedules = await ReadingMedia.loadSchedules(publicityReadingContext, getToday());
+          var detectedGroup = await resolveCurrentUserGroup();
+          currentGroup =
+            accessibleGroups.find(function (group) {
+              return detectedGroup && Number(group.id) === Number(detectedGroup.id);
+            }) || accessibleGroups[0];
+          renderOrganizationSelector(currentGroup);
           bindCropDrag();
-          await loadDailyTasks();
+          await loadCurrentGroup();
           window.addEventListener('resize', fitPosterPreview);
         } catch (error) {
-          showToast('晨读影像加载失败：' + (error.message || error), 'error');
-          renderTaskEmpty('暂时无法读取共读影像');
+          showEmpty('晨读影像加载失败：' + (error.message || error));
         }
       }
 
-      function goToday() {
-        document.getElementById('readingDate').value = getToday();
-        loadDailyTasks();
+      function renderTodayInfo() {
+        document.getElementById('currentDate').textContent = getToday();
+        document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
+        document.getElementById('operatorName').textContent = currentUser.name || '未知';
       }
 
-      async function loadDailyTasks() {
-        var date = document.getElementById('readingDate').value || getToday();
+      function getAccessibleGroups() {
+        return (publicityReadingContext.orgs || [])
+          .filter(function (org) {
+            return org.level === '小组' && ReadingMedia.canAccessOrg(publicityReadingContext, org.id);
+          })
+          .sort(function (a, b) {
+            return (
+              (a.sort_order || 0) - (b.sort_order || 0) ||
+              String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN')
+            );
+          });
+      }
+
+      async function resolveCurrentUserGroup() {
+        if (currentUser.phone) {
+          var personResult = await window.db.from('people').select('id').eq('phone', currentUser.phone).maybeSingle();
+          if (personResult.error) throw personResult.error;
+          if (personResult.data) {
+            var assignmentResult = await window.db
+              .from('person_org_assignments')
+              .select('org_id,sort_order')
+              .eq('semester_id', publicityReadingContext.semesterId)
+              .eq('person_id', personResult.data.id)
+              .eq('org_level', '小组')
+              .eq('status', 'active')
+              .order('sort_order')
+              .limit(1);
+            if (assignmentResult.error) throw assignmentResult.error;
+            var assignment = (assignmentResult.data || [])[0];
+            var assignedGroup = assignment ? publicityReadingContext.orgMap[Number(assignment.org_id)] : null;
+            if (assignedGroup && assignedGroup.level === '小组') return assignedGroup;
+          }
+        }
+        return (
+          (publicityReadingContext.memberships || [])
+            .map(function (membership) {
+              return publicityReadingContext.orgMap[Number(membership.org_id)];
+            })
+            .find(function (org) {
+              return org && org.level === '小组';
+            }) || null
+        );
+      }
+
+      function uniqueOrgs(orgs) {
+        var seen = {};
+        return orgs.filter(function (org) {
+          if (!org || seen[org.id]) return false;
+          seen[org.id] = true;
+          return true;
+        });
+      }
+
+      function getClassesForBigClass(bigClassId) {
+        return uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = publicityReadingContext.orgMap[Number(group.parent_id)];
+            return classOrg && Number(classOrg.parent_id) === Number(bigClassId) ? classOrg : null;
+          })
+        );
+      }
+
+      function getGroupsForClass(classId) {
+        return accessibleGroups.filter(function (group) {
+          return Number(group.parent_id) === Number(classId);
+        });
+      }
+
+      function renderOptions(select, orgs, placeholder) {
+        select.innerHTML =
+          (orgs.length === 1 ? '' : '<option value="">' + placeholder + '</option>') +
+          orgs
+            .map(function (org) {
+              return '<option value="' + org.id + '">' + escapeHtml(org.name) + '</option>';
+            })
+            .join('');
+      }
+
+      function renderOrganizationSelector(defaultGroup) {
+        var bigClassSelect = document.getElementById('bigClassSelect');
+        var classSelect = document.getElementById('classSelect');
+        var groupSelect = document.getElementById('groupSelect');
+        var bigClasses = uniqueOrgs(
+          accessibleGroups.map(function (group) {
+            var classOrg = publicityReadingContext.orgMap[Number(group.parent_id)];
+            return classOrg ? publicityReadingContext.orgMap[Number(classOrg.parent_id)] : null;
+          })
+        );
+        renderOptions(bigClassSelect, bigClasses, '请选择');
+        if (!defaultGroup) {
+          classSelect.innerHTML = '<option value="">--</option>';
+          groupSelect.innerHTML = '<option value="">--</option>';
+          renderCurrentPath(null);
+          return;
+        }
+        var classOrg = publicityReadingContext.orgMap[Number(defaultGroup.parent_id)];
+        var bigClass = classOrg ? publicityReadingContext.orgMap[Number(classOrg.parent_id)] : null;
+        if (!classOrg || !bigClass) return;
+        bigClassSelect.value = String(bigClass.id);
+        var classes = getClassesForBigClass(bigClass.id);
+        renderOptions(classSelect, classes, '请选择');
+        classSelect.value = String(classOrg.id);
+        var groups = getGroupsForClass(classOrg.id);
+        renderOptions(groupSelect, groups, '请选择');
+        groupSelect.value = String(defaultGroup.id);
+        renderCurrentPath(defaultGroup);
+      }
+
+      async function onBigClassChange(bigClassId) {
+        resetWorkbench();
+        renderCurrentPath(null);
+        var classes = bigClassId ? getClassesForBigClass(bigClassId) : [];
+        var classSelect = document.getElementById('classSelect');
+        var groupSelect = document.getElementById('groupSelect');
+        renderOptions(classSelect, classes, '请选择');
+        groupSelect.innerHTML = '<option value="">请选择</option>';
+        if (classes.length === 1) {
+          classSelect.value = String(classes[0].id);
+          await onClassChange(classes[0].id);
+        } else {
+          showEmpty('请选择班级和小组');
+        }
+      }
+
+      async function onClassChange(classId) {
+        resetWorkbench();
+        renderCurrentPath(null);
+        var groups = classId ? getGroupsForClass(classId) : [];
+        var groupSelect = document.getElementById('groupSelect');
+        renderOptions(groupSelect, groups, '请选择');
+        if (groups.length === 1) {
+          groupSelect.value = String(groups[0].id);
+          await onGroupChange(groups[0].id);
+        } else {
+          showEmpty('请选择小组后制作今日共读影像');
+        }
+      }
+
+      async function onGroupChange(groupId) {
+        currentGroup =
+          accessibleGroups.find(function (group) {
+            return Number(group.id) === Number(groupId);
+          }) || null;
+        renderCurrentPath(currentGroup);
+        if (!currentGroup) {
+          showEmpty('请选择小组后制作今日共读影像');
+          return;
+        }
+        showEmpty('正在加载该小组今日共读影像...');
+        try {
+          await loadCurrentGroup();
+        } catch (error) {
+          showEmpty('共读影像加载失败：' + (error.message || error));
+        }
+      }
+
+      function renderCurrentPath(group) {
+        var classOrg = group ? publicityReadingContext.orgMap[Number(group.parent_id)] : null;
+        var bigClass = classOrg ? publicityReadingContext.orgMap[Number(classOrg.parent_id)] : null;
+        document.getElementById('bigClassName').textContent = bigClass ? bigClass.name : '--';
+        document.getElementById('className').textContent = classOrg ? classOrg.name : '--';
+        document.getElementById('groupName').textContent = group ? group.name : '--';
+      }
+
+      function resetWorkbench() {
+        currentGroup = null;
         selectedSchedule = null;
         selectedBundle = null;
         currentPoster = null;
@@ -197,92 +519,39 @@
         ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
           document.getElementById(id).hidden = true;
         });
-        document.getElementById('taskList').innerHTML = '<div class="reading-empty">正在读取当天共读影像...</div>';
-
-        try {
-          dailySchedules = await ReadingMedia.loadSchedules(publicityReadingContext, date);
-          dailyAssetCounts = {};
-          var ids = dailySchedules.map(function (schedule) {
-            return Number(schedule.id);
-          });
-          if (ids.length) {
-            var assetResult = await window.db
-              .from('study_reading_media_assets')
-              .select('id,schedule_instance_id')
-              .in('schedule_instance_id', ids);
-            if (assetResult.error) throw assetResult.error;
-            (assetResult.data || []).forEach(function (asset) {
-              var key = Number(asset.schedule_instance_id);
-              dailyAssetCounts[key] = (dailyAssetCounts[key] || 0) + 1;
-            });
-          }
-          renderTaskList();
-          if (dailySchedules.length === 1) await selectSchedule(dailySchedules[0].id);
-        } catch (error) {
-          renderTaskEmpty('任务加载失败：' + (error.message || error));
-        }
       }
 
-      function renderTaskEmpty(message) {
-        document.getElementById('taskList').innerHTML = '<div class="reading-empty">' + escapeHtml(message) + '</div>';
+      function showEmpty(message) {
+        ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
+          document.getElementById(id).hidden = true;
+        });
+        var panel = document.getElementById('emptyPanel');
+        panel.textContent = message;
+        panel.hidden = false;
       }
 
-      function renderTaskList() {
-        if (!dailySchedules.length) {
-          renderTaskEmpty('当天没有宣委权限范围内的共读日程');
+      function hideEmpty() {
+        document.getElementById('emptyPanel').hidden = true;
+      }
+
+      async function loadCurrentGroup() {
+        selectedSchedule = ReadingMedia.findScheduleForSourceOrg(
+          dailySchedules,
+          currentGroup,
+          publicityReadingContext.orgMap
+        );
+        if (!selectedSchedule) {
+          showEmpty('该小组今天没有共读日程');
           return;
         }
-        document.getElementById('taskList').innerHTML = dailySchedules
-          .map(function (schedule) {
-            var org = publicityReadingContext.orgMap[Number(schedule.org_id)];
-            var count = dailyAssetCounts[Number(schedule.id)] || 0;
-            return (
-              '<article class="reading-task-card" id="task-' +
-              schedule.id +
-              '" onclick="selectSchedule(' +
-              schedule.id +
-              ')"><div class="task-card-head"><span class="task-scope">' +
-              escapeHtml(ReadingMedia.getScopeLabel(schedule.scope_level)) +
-              '</span><span class="task-count">' +
-              (count ? count + ' 张可用' : '待上传') +
-              '</span></div><h3 class="task-org">' +
-              escapeHtml((org && org.name) || '未命名组织') +
-              '</h3><div class="task-path">' +
-              escapeHtml(ReadingMedia.getOrgPath(schedule.org_id, publicityReadingContext.orgMap)) +
-              '</div><div class="task-meta">' +
-              escapeHtml(ReadingMedia.formatDisplayDate(schedule.schedule_date)) +
-              ' · 自动使用' +
-              escapeHtml(ReadingMedia.getScopeLabel(schedule.scope_level)) +
-              '版式</div></article>'
-            );
-          })
-          .join('');
-      }
-
-      async function selectSchedule(scheduleId) {
-        selectedSchedule =
-          dailySchedules.find(function (schedule) {
-            return Number(schedule.id) === Number(scheduleId);
-          }) || null;
-        if (!selectedSchedule) return;
-        document.querySelectorAll('.reading-task-card').forEach(function (card) {
-          card.classList.toggle('active', card.id === 'task-' + selectedSchedule.id);
-        });
-        try {
-          selectedBundle = await ReadingMedia.loadScheduleBundle(selectedSchedule);
-          if (!selectedBundle.assets.length) {
-            ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
-              document.getElementById(id).hidden = true;
-            });
-            showToast('该任务还没有上传照片', 'error');
-            return;
-          }
-          await loadPosterState();
-          renderWorkbench();
-          document.getElementById('editorPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } catch (error) {
-          showToast('制作任务加载失败：' + (error.message || error), 'error');
+        selectedBundle = await ReadingMedia.loadScheduleBundle(selectedSchedule, currentGroup.id);
+        if (!selectedBundle.assets.length) {
+          showEmpty('该小组尚未提交今日共读照片');
+          return;
         }
+        await loadPosterState();
+        hideEmpty();
+        renderWorkbench();
       }
 
       async function loadPosterState() {
@@ -290,15 +559,16 @@
           .from('publicity_reading_posters')
           .select('*')
           .eq('schedule_instance_id', selectedSchedule.id)
-          .eq('org_id', selectedSchedule.org_id)
+          .eq('source_org_id', currentGroup.id)
           .maybeSingle();
         if (posterResult.error) throw posterResult.error;
-        var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+        var org = currentGroup;
         currentPoster = posterResult.data || {
           id: null,
           semester_id: publicityReadingContext.semesterId,
           schedule_instance_id: Number(selectedSchedule.id),
           org_id: Number(selectedSchedule.org_id),
+          source_org_id: Number(currentGroup.id),
           title: ReadingMedia.getDefaultTitle(selectedSchedule, org, selectedBundle.readingType),
           subtitle: ReadingMedia.getDefaultSubtitle(selectedSchedule, selectedBundle.readingType),
           closing_text: '在共读中照见彼此，在践行中抵达良知。',
@@ -358,7 +628,7 @@
       }
 
       function renderWorkbench() {
-        var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+        var org = currentGroup;
         document.getElementById('editorTitle').textContent = ((org && org.name) || '当前组织') + ' · 晨读长图';
         document.getElementById('editorMeta').textContent =
           ReadingMedia.formatDisplayDate(selectedSchedule.schedule_date) +
@@ -438,14 +708,14 @@
       function updatePosterPreview() {
         if (!selectedSchedule || !selectedBundle) return;
         currentPoster = getPosterDraft();
-        var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+        var org = currentGroup;
         var stage = document.getElementById('posterPreviewStage');
         stage.innerHTML = '';
         stage.appendChild(
           PublicityReadingPoster.create({
             schedule: selectedSchedule,
             org: org,
-            orgPath: ReadingMedia.getOrgPath(selectedSchedule.org_id, publicityReadingContext.orgMap),
+            orgPath: ReadingMedia.getOrgPath(currentGroup.id, publicityReadingContext.orgMap),
             readingType: selectedBundle.readingType,
             poster: currentPoster,
             items: currentItems
@@ -506,6 +776,7 @@
           semester_id: publicityReadingContext.semesterId,
           schedule_instance_id: Number(selectedSchedule.id),
           org_id: Number(selectedSchedule.org_id),
+          source_org_id: Number(currentGroup.id),
           title: currentPoster.title,
           subtitle: currentPoster.subtitle,
           participant_count: currentPoster.participant_count,
@@ -694,13 +965,13 @@
         try {
           if (!(await savePoster(currentPoster.status || 'draft', true))) return;
           await loadHtml2Canvas();
-          var org = publicityReadingContext.orgMap[Number(selectedSchedule.org_id)];
+          var org = currentGroup;
           var host = document.getElementById('posterRenderHost');
           host.innerHTML = '';
           var poster = PublicityReadingPoster.create({
             schedule: selectedSchedule,
             org: org,
-            orgPath: ReadingMedia.getOrgPath(selectedSchedule.org_id, publicityReadingContext.orgMap),
+            orgPath: ReadingMedia.getOrgPath(currentGroup.id, publicityReadingContext.orgMap),
             readingType: selectedBundle.readingType,
             poster: currentPoster,
             items: currentItems

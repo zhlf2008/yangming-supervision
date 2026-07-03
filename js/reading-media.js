@@ -65,6 +65,16 @@ var ReadingMedia = (function () {
     });
   }
 
+  function canAccessRelatedOrg(context, orgId) {
+    if (canAccessOrg(context, orgId)) return true;
+    if (!context || context.isPlatformAdmin || context.hasGlobalAccess) return true;
+    return context.membershipOrgIds.some(function (membershipOrgId) {
+      return getOrgChain(membershipOrgId, context.orgMap).some(function (org) {
+        return Number(org.id) === Number(orgId);
+      });
+    });
+  }
+
   async function loadContext(moduleKey) {
     var user = getCurrentUser();
     var semesterId = await getCurrentSemesterId();
@@ -127,8 +137,40 @@ var ReadingMedia = (function () {
       .order('org_id');
     if (result.error) throw result.error;
     return (result.data || []).filter(function (schedule) {
-      return canAccessOrg(context, schedule.org_id);
+      return canAccessRelatedOrg(context, schedule.org_id);
     });
+  }
+
+  function findScheduleForSourceOrg(schedules, sourceOrg, orgMap) {
+    if (!sourceOrg) return null;
+    var classOrg = orgMap[Number(sourceOrg.parent_id)];
+    var bigClass = classOrg ? orgMap[Number(classOrg.parent_id)] : null;
+    var candidateOrgIds = [sourceOrg.id, classOrg && classOrg.id, bigClass && bigClass.id].filter(Boolean);
+    var referenceSchedule = null;
+    candidateOrgIds.some(function (orgId) {
+      referenceSchedule =
+        (schedules || []).find(function (schedule) {
+          return Number(schedule.org_id) === Number(orgId);
+        }) || null;
+      return !!referenceSchedule;
+    });
+    if (!referenceSchedule) return null;
+
+    var scheduleOrgId = sourceOrg.id;
+    if (referenceSchedule.scope_level === '班级' && classOrg) {
+      scheduleOrgId = classOrg.id;
+    } else if (referenceSchedule.scope_level === '大班' && bigClass) {
+      scheduleOrgId = bigClass.id;
+    }
+    return (
+      (schedules || []).find(function (schedule) {
+        return (
+          Number(schedule.org_id) === Number(scheduleOrgId) &&
+          schedule.scope_level === referenceSchedule.scope_level &&
+          Number(schedule.reading_type_id) === Number(referenceSchedule.reading_type_id)
+        );
+      }) || null
+    );
   }
 
   async function loadSignedUrls(assets) {
@@ -148,7 +190,7 @@ var ReadingMedia = (function () {
     });
   }
 
-  async function loadScheduleBundle(schedule) {
+  async function loadScheduleBundle(schedule, sourceOrgId) {
     var typePromise = schedule.reading_type_id
       ? window.db
           .from('study_reading_types')
@@ -168,15 +210,16 @@ var ReadingMedia = (function () {
       .eq('schedule_instance_id', schedule.id)
       .order('slot_index')
       .order('role_name');
-    var assetsPromise = window.db
+    var assetsQuery = window.db
       .from('study_reading_media_assets')
       .select('*')
       .eq('schedule_instance_id', schedule.id)
       .eq('org_id', schedule.org_id)
       .order('sort_order')
       .order('id');
+    if (sourceOrgId) assetsQuery = assetsQuery.eq('source_org_id', sourceOrgId);
 
-    var results = await Promise.all([typePromise, contentPromise, demandsPromise, assetsPromise]);
+    var results = await Promise.all([typePromise, contentPromise, demandsPromise, assetsQuery]);
     results.forEach(function (result) {
       if (result.error) throw result.error;
     });
@@ -216,6 +259,11 @@ var ReadingMedia = (function () {
         });
       });
     });
+    if (sourceOrgId) {
+      assignments = assignments.filter(function (assignment) {
+        return Number(assignment.org_id) === Number(sourceOrgId);
+      });
+    }
 
     return {
       schedule: schedule,
@@ -272,7 +320,8 @@ var ReadingMedia = (function () {
     }
 
     var objectName = uniqueFileName(file);
-    var storagePath = context.semesterId + '/' + schedule.org_id + '/' + schedule.id + '/' + objectName;
+    var sourceOrgId = Number(target.source_org_id || target.org_id || schedule.org_id);
+    var storagePath = context.semesterId + '/' + sourceOrgId + '/' + schedule.id + '/' + objectName;
     var dimensions = await getImageDimensions(file);
     var uploadResult = await window.db.storage.from(BUCKET).upload(storagePath, file, {
       cacheControl: '3600',
@@ -285,6 +334,7 @@ var ReadingMedia = (function () {
       semester_id: context.semesterId,
       schedule_instance_id: Number(schedule.id),
       org_id: Number(schedule.org_id),
+      source_org_id: sourceOrgId,
       asset_kind: target.kind || 'other',
       demand_id: target.demand_id || null,
       assignment_person_id: target.assignment_person_id || null,
@@ -333,8 +383,10 @@ var ReadingMedia = (function () {
     getOrgChain: getOrgChain,
     getOrgPath: getOrgPath,
     canAccessOrg: canAccessOrg,
+    canAccessRelatedOrg: canAccessRelatedOrg,
     loadContext: loadContext,
     loadSchedules: loadSchedules,
+    findScheduleForSourceOrg: findScheduleForSourceOrg,
     loadSignedUrls: loadSignedUrls,
     loadScheduleBundle: loadScheduleBundle,
     uploadAsset: uploadAsset,
