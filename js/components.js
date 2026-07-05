@@ -126,12 +126,14 @@ function renderModuleBottomNav(systemKey, activePage) {
       { key: 'management', href: 'study-committee-management.html', icon: 'CalendarIcon', label: '晨读' },
       { key: 'media', href: 'study-reading-media.html', icon: 'ImagesIcon', label: '影像' },
       { key: 'homework', href: 'study-excellent-homework.html', icon: 'TrophyIcon', label: '作业' },
+      { key: 'summary', href: 'study-excellent-homework-summary.html', icon: 'ChartIcon', label: '汇总' },
       { key: 'profile', href: 'profile.html?system=study', icon: 'UserIcon', label: '我的' }
     ],
     publicity: [
       { key: 'home', href: 'publicity-dashboard.html', icon: 'HomeIcon', label: '首页' },
       { key: 'cards', href: 'publicity-homework-card.html', icon: 'FileEditIcon', label: '作业卡' },
       { key: 'media', href: 'publicity-reading-media.html', icon: 'ImagesIcon', label: '晨读' },
+      { key: 'summary', href: 'publicity-summary.html', icon: 'ChartIcon', label: '汇总' },
       { key: 'profile', href: 'profile.html?system=publicity', icon: 'UserIcon', label: '我的' }
     ],
     life: [

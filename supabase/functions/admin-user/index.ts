@@ -41,10 +41,10 @@ async function getCurrentSemesterId() {
   return data?.id || null;
 }
 
-const SECRETARIAT_ACCOUNT_MANAGER_ROLES = ['管理员', '秘书处'];
+const SECRETARIAT_ACCOUNT_MANAGER_ROLES = ['管理员', '秘书处', '大班管理员'];
 const NON_ADMIN_MANAGEABLE_MODULES = new Set(['supervision', 'study', 'secretariat', 'publicity']);
 const STUDY_ROLES = new Set(['学委', '副学委']);
-const SECRETARIAT_ROLES = new Set(['秘书处']);
+const SECRETARIAT_ROLES = new Set(['秘书处', '大班管理员']);
 const PUBLICITY_ROLES = new Set(['宣委', '副宣委', '总宣委', '副总宣委']);
 const SUPERVISION_ROLE_LEVEL = {
   '大班总督': '大班',
@@ -238,7 +238,7 @@ async function validateModuleMembershipInput(params, caller) {
     if (!NON_ADMIN_MANAGEABLE_MODULES.has(moduleKey)) {
       return { error: '只有平台管理员可以管理该模块权限' };
     }
-    if (ADMIN_ROLES.has(role)) {
+    if (ADMIN_ROLES.has(role) || (moduleKey === 'secretariat' && role === '大班管理员')) {
       return { error: '只有平台管理员可以分配管理员权限' };
     }
   }
@@ -267,9 +267,14 @@ async function validateModuleMembershipInput(params, caller) {
     if (expectedLevel && org.level !== expectedLevel) {
       return { error: role + ' 必须绑定' + expectedLevel + '组织' };
     }
+    if (moduleKey === 'secretariat' && role === '大班管理员' && org.level !== '大班') {
+      return { error: '大班管理员必须绑定大班组织' };
+    }
     if (!caller.isAdmin && !(await canCallerManageOrganization(caller, semesterId, orgId))) {
       return { error: '无权管理该组织的模块权限' };
     }
+  } else if (moduleKey === 'secretariat' && role === '大班管理员') {
+    return { error: '大班管理员必须绑定大班组织' };
   } else if (!caller.isAdmin) {
     return { error: '非平台管理员分配模块权限时必须绑定组织' };
   }
@@ -544,7 +549,10 @@ Deno.serve(async (req) => {
           if (!NON_ADMIN_MANAGEABLE_MODULES.has(membership.module_key)) {
             return jsonResponse({ error: '只有平台管理员可以移除该模块权限' }, headers, 403);
           }
-          if (ADMIN_ROLES.has(membership.role)) {
+          if (
+            ADMIN_ROLES.has(membership.role) ||
+            (membership.module_key === 'secretariat' && membership.role === '大班管理员')
+          ) {
             return jsonResponse({ error: '只有平台管理员可以移除管理员权限' }, headers, 403);
           }
           if (!membership.org_id ||

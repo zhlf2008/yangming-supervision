@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>宣委汇总 - 宣委管理</title>
+    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/weekly-summary.css?v=1" />
+  </head>
+  <body class="app-loading" data-summary-mode="publicity">
+    <main class="container">
+      <header class="page-header">
+        <a class="back-btn" href="publicity-dashboard.html" aria-label="返回宣委管理首页"></a>
+        <h1 class="page-title">宣委汇总</h1>
+      </header>
+
+      <div class="header-card">
+        <div class="semester-wrap" id="semesterName"></div>
+        <div class="header-body">
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">日期</span><span class="header-value date" id="currentDate">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">周期</span><span class="header-value" id="currentWeekday">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">查看人</span><span class="header-value" id="reporterName">--</span>
+            </div>
+          </div>
+          <div class="header-col">
+            <div class="header-row">
+              <span class="header-label">大班</span><span class="header-value" id="bigClassName">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">班级</span><span class="header-value" id="className">--</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">小组</span><span class="header-value" id="groupName">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="summary-section" id="orgSelectorSection">
+        <div class="section-title">
+          <span class="section-icon" data-icon="BuildingIcon"></span>
+          选择汇总小组
+        </div>
+        <div class="org-cascade">
+          <div class="org-group">
+            <label class="org-label" for="bigClassSelect">大班</label>
+            <select class="org-select" id="bigClassSelect">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="classSelect">班级</label>
+            <select class="org-select" id="classSelect">
+              <option>识别中...</option>
+            </select>
+          </div>
+          <div class="org-group">
+            <label class="org-label" for="groupSelect">小组</label>
+            <select class="org-select" id="groupSelect">
+              <option>识别中...</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="summary-section week-section" aria-labelledby="weekRange">
+        <div class="week-toolbar">
+          <div class="week-switcher">
+            <button class="week-nav-btn" id="previousWeekBtn" type="button" aria-label="上一周">
+              <span data-icon="ChevronLeftIcon"></span>
+            </button>
+            <div class="week-center">
+              <div class="week-range" id="weekRange">--</div>
+              <div class="week-caption">周一至周日 · 点击日程查看全部内容</div>
+            </div>
+            <button class="week-nav-btn" id="nextWeekBtn" type="button" aria-label="下一周">
+              <span data-icon="ChevronRightIcon"></span>
+            </button>
+          </div>
+          <div class="week-actions">
+            <span class="week-summary-text" id="weekSummaryText">正在加载...</span>
+            <button class="today-btn" id="currentWeekBtn" type="button">回到本周</button>
+          </div>
+        </div>
+        <div class="schedule-list" id="scheduleList">
+          <div class="week-loading">正在加载周日程...</div>
+        </div>
+      </section>
+    </main>
+
+    <div class="detail-overlay" id="detailOverlay" aria-hidden="true">
+      <aside class="detail-drawer" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+        <div class="detail-head">
+          <div class="detail-heading">
+            <div class="detail-title" id="detailTitle">日程详情</div>
+            <div class="detail-subtitle" id="detailSubtitle"></div>
+          </div>
+          <button class="detail-close" id="detailCloseBtn" type="button" aria-label="关闭详情">×</button>
+        </div>
+        <div class="detail-body" id="detailBody"></div>
+      </aside>
+    </div>
+
+    <div id="bottomNavContainer"></div>
+
+    <script src="js/supabase-config.js?v=11"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/components.js?v=17"></script>
+    <script src="js/excellent-homework.js?v=2"></script>
+    <script src="js/reading-media.js?v=2"></script>
+    <script src="js/weekly-summary.js?v=1"></script>
+  </body>
+</html>
