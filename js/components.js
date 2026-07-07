@@ -302,7 +302,7 @@ function _initSelector(containerId) {
           selectableGroupIds.add(g.id);
         });
     }
-  } else if (role === '大班总督' || role === '大班副督') {
+  } else if (role === '大班总督' || role === '大班副督' || role === '大班管理员') {
     if (userOrgId) {
       getAllChildOrgs(userOrgId, orgs)
         .filter(function (o) {

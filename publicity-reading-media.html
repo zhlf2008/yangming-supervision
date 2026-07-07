@@ -6,7 +6,7 @@
     <title>共读影像制作 - 宣委管理</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <link rel="stylesheet" href="css/reading-media.css?v=1" />
-    <link rel="stylesheet" href="css/publicity-reading-poster.css?v=1" />
+    <link rel="stylesheet" href="css/publicity-reading-poster.css?v=7" />
     <style>
       .page-header {
         display: flex;
@@ -257,17 +257,26 @@
         <div class="crop-stage" id="cropStage">
           <img id="cropImage" alt="照片裁切预览" />
         </div>
+        <div class="crop-readout" id="cropReadout">水平 50% · 垂直 50% · 缩放 1.00×</div>
         <div class="crop-control">
-          <label for="cropX"><span>水平位置</span><span id="cropXValue">50%</span></label>
-          <input id="cropX" type="range" min="0" max="100" step="1" oninput="updateCropPreview()" />
+          <input id="cropX" type="hidden" value="50" />
         </div>
         <div class="crop-control">
-          <label for="cropY"><span>垂直位置</span><span id="cropYValue">50%</span></label>
-          <input id="cropY" type="range" min="0" max="100" step="1" oninput="updateCropPreview()" />
+          <input id="cropY" type="hidden" value="50" />
         </div>
         <div class="crop-control">
-          <label for="cropZoom"><span>缩放</span><span id="cropZoomValue">1.0×</span></label>
-          <input id="cropZoom" type="range" min="1" max="4" step="0.05" oninput="updateCropPreview()" />
+          <input id="cropZoom" type="hidden" value="1" />
+        </div>
+        <div class="crop-gamepad" aria-label="裁切手柄控件">
+          <button class="zoom-out" type="button" onclick="adjustCropZoom(-0.05)"><span>−</span><small>缩放</small></button>
+          <button class="up" type="button" data-crop-edge="top" onclick="selectCropEdge('top')"><span>↑</span><small>上边</small></button>
+          <button class="zoom-in" type="button" onclick="adjustCropZoom(0.05)"><span>＋</span><small>缩放</small></button>
+          <button class="left" type="button" data-crop-edge="left" onclick="selectCropEdge('left')"><span>←</span><small>左边</small></button>
+          <div class="crop-gamepad-status" id="cropEdgeStatus">上边</div>
+          <button class="right" type="button" data-crop-edge="right" onclick="selectCropEdge('right')"><span>→</span><small>右边</small></button>
+          <button class="minus" type="button" onclick="adjustCropEdge(-1)"><span>−</span><small>1px</small></button>
+          <button class="down" type="button" data-crop-edge="bottom" onclick="selectCropEdge('bottom')"><span>↓</span><small>下边</small></button>
+          <button class="plus" type="button" onclick="adjustCropEdge(1)"><span>＋</span><small>1px</small></button>
         </div>
         <div class="crop-actions">
           <button class="reading-btn" type="button" onclick="rotateCrop()">旋转90°</button>
@@ -281,7 +290,7 @@
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=17"></script>
     <script src="js/reading-media.js?v=3"></script>
-    <script src="js/publicity-reading-poster.js?v=1"></script>
+    <script src="js/publicity-reading-poster.js?v=7"></script>
     <script>
       renderModuleBottomNav('publicity', 'media');
 
@@ -297,6 +306,8 @@
       var cropItem = null;
       var cropRotation = 0;
       var cropDrag = null;
+      var cropActiveEdge = 'top';
+      var cropFrame = null;
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       async function init() {
@@ -333,6 +344,7 @@
             }) || accessibleGroups[0];
           renderOrganizationSelector(currentGroup);
           bindCropDrag();
+          bindCropHoldControls();
           await loadCurrentGroup();
           window.addEventListener('resize', fitPosterPreview);
         } catch (error) {
@@ -592,17 +604,16 @@
         savedItems.forEach(function (item) {
           savedMap[Number(item.asset_id)] = item;
         });
-        var hasFeature = savedItems.some(function (item) {
-          return item.slot_kind === 'feature';
-        });
-        var firstOverview = selectedBundle.assets.find(function (asset) {
-          return asset.asset_kind === 'overview';
-        });
-        var featureAssetId = hasFeature ? null : Number((firstOverview || selectedBundle.assets[0]).id);
+        var featureAssetId = null;
 
         currentItems = selectedBundle.assets.map(function (asset, index) {
           var saved = savedMap[Number(asset.id)];
-          if (saved) return Object.assign({}, saved, { asset: asset });
+          if (saved) {
+            return Object.assign({}, saved, {
+              asset: asset,
+              slot_kind: asset.asset_kind === 'overview' && saved.slot_kind === 'feature' ? 'overview' : saved.slot_kind
+            });
+          }
           var slotKind =
             Number(asset.id) === featureAssetId
               ? 'feature'
@@ -680,7 +691,7 @@
               '<select aria-label="版面位置" onchange="changeItemSlot(' +
               item.asset_id +
               ',this.value)">' +
-              slotOption('feature', '封面主图', item.slot_kind) +
+              (item.asset.asset_kind === 'overview' ? '' : slotOption('feature', '封面主图', item.slot_kind)) +
               slotOption('role', '岗位人物', item.slot_kind) +
               slotOption('overview', '全员画面', item.slot_kind) +
               slotOption('moment', '现场花絮', item.slot_kind) +
@@ -740,6 +751,9 @@
       function changeItemSlot(assetId, slotKind) {
         var item = findItem(assetId);
         if (!item) return;
+        if (slotKind === 'feature' && item.asset.asset_kind === 'overview') {
+          slotKind = 'overview';
+        }
         if (slotKind === 'feature') {
           currentItems.forEach(function (candidate) {
             if (candidate !== item && candidate.slot_kind === 'feature') {
@@ -859,13 +873,23 @@
         if (!cropItem) return;
         cropRotation = Number(cropItem.rotation || 0);
         document.getElementById('cropSubtitle').textContent = getItemLabel(cropItem);
-        document.getElementById('cropImage').src = cropItem.asset.signed_url;
+        var cropImage = document.getElementById('cropImage');
+        var cropStage = document.getElementById('cropStage');
+        ['--crop-left', '--crop-top', '--crop-width', '--crop-height'].forEach(function (property) {
+          cropStage.style.removeProperty(property);
+        });
+        cropFrame = null;
+        document.getElementById('cropReadout').textContent = '正在读取照片尺寸...';
+        cropImage.onload = updateCropPreview;
+        cropImage.src = cropItem.asset.signed_url;
+        cropImage.classList.add('fit-contain');
         document.getElementById('cropX').value = Number(cropItem.crop_x || 50);
         document.getElementById('cropY').value = Number(cropItem.crop_y || 50);
         document.getElementById('cropZoom').value = Number(cropItem.crop_zoom || 1);
         document.getElementById('cropModal').hidden = false;
         document.body.style.overflow = 'hidden';
-        updateCropPreview();
+        selectCropEdge(cropActiveEdge || 'top');
+        if (cropImage.complete && cropImage.naturalWidth) updateCropPreview();
       }
 
       function closeCropEditor() {
@@ -873,22 +897,196 @@
         document.body.style.overflow = '';
         cropItem = null;
         cropDrag = null;
+        cropFrame = null;
       }
 
       function updateCropPreview() {
+        if (!cropItem) return;
         var x = Number(document.getElementById('cropX').value);
         var y = Number(document.getElementById('cropY').value);
         var zoom = Number(document.getElementById('cropZoom').value);
         var image = document.getElementById('cropImage');
+        if (!image.naturalWidth) {
+          document.getElementById('cropReadout').textContent = '正在读取照片尺寸...';
+          return;
+        }
         image.style.objectPosition = x + '% ' + y + '%';
+        image.style.transformOrigin = x + '% ' + y + '%';
         image.style.transform = 'scale(' + zoom + ') rotate(' + cropRotation + 'deg)';
-        document.getElementById('cropXValue').textContent = Math.round(x) + '%';
-        document.getElementById('cropYValue').textContent = Math.round(y) + '%';
-        document.getElementById('cropZoomValue').textContent = zoom.toFixed(2) + '×';
+        ensureCropFrameFromImage(x, y, zoom);
+        renderCropFrame();
+        document.getElementById('cropReadout').textContent =
+          '照片 ' +
+          formatCropPercent(x) +
+          ' / ' +
+          formatCropPercent(y) +
+          ' · 缩放 ' +
+          zoom.toFixed(2) +
+          '× · ' +
+          getCropEdgeLabel(cropActiveEdge);
+      }
+
+      function ensureCropFrameFromImage(x, y, zoom) {
+        if (cropFrame) return;
+        var imageRect = getRenderedCropImageRect();
+        if (!imageRect.width || !imageRect.height) return;
+        var size = getDefaultCropFrameSize(imageRect, zoom);
+        var centerX = imageRect.left + (imageRect.width * clampCropValue(x)) / 100;
+        var centerY = imageRect.top + (imageRect.height * clampCropValue(y)) / 100;
+        cropFrame = {
+          left: centerX - size.width / 2,
+          top: centerY - size.height / 2,
+          right: centerX + size.width / 2,
+          bottom: centerY + size.height / 2
+        };
+        clampCropFrameToImage();
+      }
+
+      function getDefaultCropFrameSize(imageRect, zoom) {
+        var frameAspect = getCropFrameAspect();
+        var availableWidth = imageRect.width * 0.84;
+        var availableHeight = imageRect.height * 0.84;
+        var frameWidth = availableWidth;
+        var frameHeight = frameWidth / frameAspect;
+        if (frameHeight > availableHeight) {
+          frameHeight = availableHeight;
+          frameWidth = frameHeight * frameAspect;
+        }
+        var safeZoom = clampCropZoom(zoom || 1);
+        frameWidth = frameWidth / safeZoom;
+        frameHeight = frameHeight / safeZoom;
+        frameWidth = Math.min(frameWidth, imageRect.width);
+        frameHeight = Math.min(frameHeight, imageRect.height);
+        return { width: Math.max(42, frameWidth), height: Math.max(42, frameHeight) };
+      }
+
+      function renderCropFrame() {
+        if (!cropFrame) return;
+        var stage = document.getElementById('cropStage');
+        clampCropFrameToImage();
+        var frameWidth = cropFrame.right - cropFrame.left;
+        var frameHeight = cropFrame.bottom - cropFrame.top;
+        stage.style.setProperty('--crop-left', cropFrame.left + 'px');
+        stage.style.setProperty('--crop-top', cropFrame.top + 'px');
+        stage.style.setProperty('--crop-width', frameWidth + 'px');
+        stage.style.setProperty('--crop-height', frameHeight + 'px');
+      }
+
+      function clampCropFrameToImage() {
+        if (!cropFrame) return;
+        var imageRect = getRenderedCropImageRect();
+        var minSize = 42;
+        cropFrame.left = Math.max(imageRect.left, Math.min(cropFrame.left, imageRect.left + imageRect.width - minSize));
+        cropFrame.top = Math.max(imageRect.top, Math.min(cropFrame.top, imageRect.top + imageRect.height - minSize));
+        cropFrame.right = Math.max(cropFrame.left + minSize, Math.min(cropFrame.right, imageRect.left + imageRect.width));
+        cropFrame.bottom = Math.max(cropFrame.top + minSize, Math.min(cropFrame.bottom, imageRect.top + imageRect.height));
+      }
+
+      function getRenderedCropImageRect() {
+        var stage = document.getElementById('cropStage');
+        var image = document.getElementById('cropImage');
+        var stageRect = stage.getBoundingClientRect();
+        var naturalWidth = image.naturalWidth || stageRect.width;
+        var naturalHeight = image.naturalHeight || stageRect.height;
+        var rotated = Math.abs(cropRotation % 180) === 90;
+        var imageWidth = rotated ? naturalHeight : naturalWidth;
+        var imageHeight = rotated ? naturalWidth : naturalHeight;
+        var imageAspect = imageWidth / Math.max(1, imageHeight);
+        var stageAspect = stageRect.width / Math.max(1, stageRect.height);
+        var width;
+        var height;
+        if (stageAspect > imageAspect) {
+          height = stageRect.height;
+          width = height * imageAspect;
+        } else {
+          width = stageRect.width;
+          height = width / imageAspect;
+        }
+        return {
+          left: (stageRect.width - width) / 2,
+          top: (stageRect.height - height) / 2,
+          width: width,
+          height: height
+        };
+      }
+
+      function getCropFrameAspect() {
+        if (!cropItem) return 4 / 3;
+        if (cropItem.slot_kind === 'feature') return 16 / 8.3;
+        if (cropItem.asset.asset_kind === 'overview' || cropItem.slot_kind === 'overview') return 16 / 8.6;
+        return 4 / 3;
+      }
+
+      function formatCropPercent(value) {
+        return Math.round(Number(value) * 10) / 10 + '%';
+      }
+
+      function clampCropValue(value) {
+        return Math.max(0, Math.min(100, Number(value)));
+      }
+
+      function clampCropZoom(value) {
+        return Math.max(1, Math.min(4, Number(value)));
+      }
+
+      function selectCropEdge(edge) {
+        cropActiveEdge = edge || 'top';
+        document.getElementById('cropEdgeStatus').textContent = getCropEdgeLabel(cropActiveEdge) + ' · 1px';
+        document.querySelectorAll('[data-crop-edge]').forEach(function (button) {
+          button.classList.toggle('active', button.dataset.cropEdge === cropActiveEdge);
+        });
+      }
+
+      function getCropEdgeLabel(edge) {
+        return (
+          {
+            top: '上边',
+            right: '右边',
+            bottom: '下边',
+            left: '左边'
+          }[edge] || '上边'
+        );
+      }
+
+      function getCropPixelStep(edge) {
+        var rect = getRenderedCropImageRect();
+        var size = edge === 'left' || edge === 'right' ? rect.width : rect.height;
+        return 100 / Math.max(1, size || 1);
+      }
+
+      function adjustCropEdge(pixelDelta) {
+        var edge = cropActiveEdge || 'top';
+        ensureCropFrameFromImage(
+          Number(document.getElementById('cropX').value),
+          Number(document.getElementById('cropY').value),
+          Number(document.getElementById('cropZoom').value)
+        );
+        if (!cropFrame) return;
+        var delta = Number(pixelDelta || 0);
+        if (edge === 'top') cropFrame.top -= delta;
+        if (edge === 'bottom') cropFrame.bottom += delta;
+        if (edge === 'left') cropFrame.left -= delta;
+        if (edge === 'right') cropFrame.right += delta;
+        renderCropFrame();
+        document.getElementById('cropReadout').textContent =
+          '取景框 · ' +
+          getCropEdgeLabel(edge) +
+          ' ' +
+          Math.round(cropFrame.right - cropFrame.left) +
+          '×' +
+          Math.round(cropFrame.bottom - cropFrame.top);
+      }
+
+      function adjustCropZoom(delta) {
+        var zoomInput = document.getElementById('cropZoom');
+        zoomInput.value = clampCropZoom(Number(zoomInput.value) + Number(delta || 0)).toFixed(2);
+        updateCropPreview();
       }
 
       function rotateCrop() {
         cropRotation = (cropRotation + 90) % 360;
+        document.getElementById('cropX').value = 50;
+        document.getElementById('cropY').value = 50;
         updateCropPreview();
       }
 
@@ -897,6 +1095,7 @@
         document.getElementById('cropY').value = 50;
         document.getElementById('cropZoom').value = 1;
         cropRotation = 0;
+        cropFrame = null;
         updateCropPreview();
       }
 
@@ -904,6 +1103,7 @@
         if (!cropItem) return;
         var button = document.getElementById('applyCropButton');
         button.disabled = true;
+        syncCropValuesFromFrame();
         cropItem.crop_x = Number(document.getElementById('cropX').value);
         cropItem.crop_y = Number(document.getElementById('cropY').value);
         cropItem.crop_zoom = Number(document.getElementById('cropZoom').value);
@@ -921,6 +1121,21 @@
         }
       }
 
+      function syncCropValuesFromFrame() {
+        if (!cropFrame) return;
+        clampCropFrameToImage();
+        var imageRect = getRenderedCropImageRect();
+        var frameWidth = cropFrame.right - cropFrame.left;
+        var frameHeight = cropFrame.bottom - cropFrame.top;
+        var centerX = cropFrame.left + frameWidth / 2;
+        var centerY = cropFrame.top + frameHeight / 2;
+        var baseSize = getDefaultCropFrameSize(imageRect, 1);
+        var zoom = Math.max(baseSize.width / Math.max(1, frameWidth), baseSize.height / Math.max(1, frameHeight));
+        document.getElementById('cropX').value = clampCropValue(((centerX - imageRect.left) / Math.max(1, imageRect.width)) * 100);
+        document.getElementById('cropY').value = clampCropValue(((centerY - imageRect.top) / Math.max(1, imageRect.height)) * 100);
+        document.getElementById('cropZoom').value = clampCropZoom(zoom).toFixed(2);
+      }
+
       function bindCropDrag() {
         var stage = document.getElementById('cropStage');
         stage.addEventListener('pointerdown', function (event) {
@@ -935,7 +1150,7 @@
         });
         stage.addEventListener('pointermove', function (event) {
           if (!cropDrag || cropDrag.pointerId !== event.pointerId) return;
-          var rect = stage.getBoundingClientRect();
+          var rect = getRenderedCropImageRect();
           var nextX = Math.max(
             0,
             Math.min(100, cropDrag.cropX - ((event.clientX - cropDrag.startX) / rect.width) * 100)
@@ -953,6 +1168,32 @@
         }
         stage.addEventListener('pointerup', endDrag);
         stage.addEventListener('pointercancel', endDrag);
+      }
+
+      function bindCropHoldControls() {
+        document.querySelectorAll('.crop-gamepad .minus,.crop-gamepad .plus').forEach(function (button) {
+          var holdTimer = null;
+          var repeatTimer = null;
+          function stopHold() {
+            clearTimeout(holdTimer);
+            clearInterval(repeatTimer);
+            holdTimer = null;
+            repeatTimer = null;
+          }
+          button.addEventListener('pointerdown', function () {
+            stopHold();
+            var delta = button.classList.contains('plus') ? 1 : -1;
+            holdTimer = setTimeout(function () {
+              adjustCropEdge(delta);
+              repeatTimer = setInterval(function () {
+                adjustCropEdge(delta);
+              }, 80);
+            }, 280);
+          });
+          ['pointerup', 'pointerleave', 'pointercancel', 'lostpointercapture'].forEach(function (eventName) {
+            button.addEventListener(eventName, stopHold);
+          });
+        });
       }
 
       function isMobileBrowser() {

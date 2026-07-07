@@ -347,6 +347,8 @@
       var currentMembersByGroup = {};
       var currentEntries = [];
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      var homeworkDraftValues = {};
+      var homeworkLastFocus = null;
 
       async function init() {
         await waitForDb();
@@ -596,6 +598,7 @@
       }
 
       function renderGroup() {
+        rememberActiveHomeworkField();
         var container = document.getElementById('groupList');
         var group = currentGroup;
         var entries = currentEntries.filter(function (entry) {
@@ -652,10 +655,19 @@
           '</div>' +
           '</article>';
         document.getElementById('emptyPanel').style.display = 'none';
+        restoreHomeworkFocusSoon();
       }
 
       function renderHomeworkRow(group, slot, entry) {
         var members = currentMembersByGroup[Number(group.id)] || [];
+        var memberId = 'member-' + group.id + '-' + slot;
+        var contentId = 'content-' + group.id + '-' + slot;
+        var selectedPersonId = homeworkDraftValues[memberId] != null
+          ? Number(homeworkDraftValues[memberId] || 0)
+          : Number(entry.person_id || 0);
+        var contentValue = homeworkDraftValues[contentId] != null
+          ? homeworkDraftValues[contentId]
+          : entry.content || '';
         var options =
           '<option value="">选择成员</option>' +
           members
@@ -664,7 +676,7 @@
                 '<option value="' +
                 member.id +
                 '"' +
-                (Number(entry.person_id) === Number(member.id) ? ' selected' : '') +
+                (Number(selectedPersonId) === Number(member.id) ? ' selected' : '') +
                 '>' +
                 escapeHtml(member.name) +
                 '</option>'
@@ -681,26 +693,20 @@
           '">优秀作业 ' +
           slot +
           '</label>' +
-          '<select class="field-control member-select" id="member-' +
-          group.id +
-          '-' +
-          slot +
+          '<select class="field-control member-select homework-field" id="' +
+          memberId +
           '">' +
           options +
           '</select>' +
           '</div>' +
           '<div>' +
-          '<label class="slot-label" for="content-' +
-          group.id +
-          '-' +
-          slot +
+          '<label class="slot-label" for="' +
+          contentId +
           '">作业内容</label>' +
-          '<textarea class="homework-content" id="content-' +
-          group.id +
-          '-' +
-          slot +
+          '<textarea class="homework-content homework-field" id="' +
+          contentId +
           '" maxlength="4000" placeholder="输入优秀作业内容">' +
-          escapeHtml(entry.content || '') +
+          escapeHtml(contentValue) +
           '</textarea>' +
           '</div>' +
           '</div>'
@@ -758,6 +764,7 @@
             'study'
           );
           currentEntries = await ExcellentHomework.loadEntries(scheduleId, [Number(groupId)]);
+          clearHomeworkDraftsForGroup(groupId);
           renderGroup();
         } catch (error) {
           showToast('提交失败：' + (error.message || error), 'error');
@@ -767,11 +774,95 @@
       }
 
       function showEmpty(message) {
+        homeworkLastFocus = null;
         document.getElementById('groupList').innerHTML = '';
         var panel = document.getElementById('emptyPanel');
         panel.textContent = message;
         panel.style.display = '';
       }
+
+      function isHomeworkField(element) {
+        return !!(
+          element &&
+          element.id &&
+          /^(content|member)-\d+-[1-3]$/.test(element.id)
+        );
+      }
+
+      function rememberHomeworkField(element) {
+        if (!isHomeworkField(element)) return;
+        homeworkDraftValues[element.id] = element.value;
+        homeworkLastFocus = {
+          id: element.id,
+          start: typeof element.selectionStart === 'number' ? element.selectionStart : null,
+          end: typeof element.selectionEnd === 'number' ? element.selectionEnd : null
+        };
+      }
+
+      function rememberActiveHomeworkField() {
+        rememberHomeworkField(document.activeElement);
+      }
+
+      function restoreHomeworkFocusSoon() {
+        if (!homeworkLastFocus || !homeworkLastFocus.id) return;
+        window.setTimeout(function () {
+          var element = document.getElementById(homeworkLastFocus.id);
+          if (!element) return;
+          try {
+            element.focus({ preventScroll: true });
+          } catch (error) {
+            element.focus();
+          }
+          if (
+            element.tagName === 'TEXTAREA' &&
+            typeof element.setSelectionRange === 'function' &&
+            homeworkLastFocus.start !== null
+          ) {
+            var valueLength = element.value.length;
+            var start = Math.min(homeworkLastFocus.start, valueLength);
+            var end = Math.min(homeworkLastFocus.end == null ? start : homeworkLastFocus.end, valueLength);
+            element.setSelectionRange(start, end);
+          }
+        }, 0);
+      }
+
+      function clearHomeworkDraftsForGroup(groupId) {
+        [1, 2, 3].forEach(function (slot) {
+          delete homeworkDraftValues['member-' + groupId + '-' + slot];
+          delete homeworkDraftValues['content-' + groupId + '-' + slot];
+        });
+      }
+
+      document.addEventListener('focusin', function (event) {
+        rememberHomeworkField(event.target);
+      }, true);
+      document.addEventListener('input', function (event) {
+        rememberHomeworkField(event.target);
+      }, true);
+      document.addEventListener('change', function (event) {
+        rememberHomeworkField(event.target);
+      }, true);
+      document.addEventListener('keyup', function (event) {
+        rememberHomeworkField(event.target);
+      }, true);
+      document.addEventListener('mouseup', function (event) {
+        rememberHomeworkField(event.target);
+      }, true);
+      document.addEventListener('touchend', function (event) {
+        window.setTimeout(function () {
+          rememberHomeworkField(event.target);
+        }, 0);
+      }, true);
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+          rememberActiveHomeworkField();
+        } else {
+          restoreHomeworkFocusSoon();
+        }
+      });
+      window.addEventListener('pageshow', function () {
+        restoreHomeworkFocusSoon();
+      });
 
       init().finally(function () {
         document.body.classList.remove('app-loading');

@@ -265,6 +265,99 @@
         background: #f7fbf9;
         color: #28685d;
       }
+      .manual-slot {
+        padding: 16px;
+        margin-top: 14px;
+        border: 1px solid #eadcc7;
+        border-radius: 12px;
+        background: #fffaf2;
+      }
+      .manual-row-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 12px;
+      }
+      .manual-row {
+        padding: 12px;
+        border: 1px solid #efe1cd;
+        border-radius: 10px;
+        background: #fffdf8;
+      }
+      .manual-row-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(150px, 1.2fr) auto;
+        align-items: end;
+        gap: 10px;
+      }
+      .manual-field {
+        min-width: 0;
+      }
+      .manual-label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--ink-muted);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .manual-input {
+        width: 100%;
+        height: 40px;
+        padding: 0 11px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink-dark);
+        font: inherit;
+        font-size: 13px;
+      }
+      .manual-input:focus {
+        border-color: var(--gold);
+        outline: 2px solid rgba(212, 165, 116, 0.16);
+      }
+      .manual-help {
+        margin-top: 8px;
+        color: var(--ink-muted);
+        font-size: 11px;
+        line-height: 1.55;
+      }
+      .manual-slot .slot-upload {
+        min-height: 40px;
+        padding: 9px 10px;
+        border-color: #d8ba8d;
+        background: #fffdf8;
+      }
+      .manual-slot .slot-upload-note {
+        display: none;
+      }
+      .manual-remove-btn,
+      .manual-add-btn {
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink-muted);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .manual-remove-btn {
+        width: 42px;
+        color: var(--vermillion);
+      }
+      .manual-add-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        margin-top: 12px;
+        color: #765432;
+        border-style: dashed;
+        background: #fffdf8;
+      }
       .empty-panel {
         padding: 42px 18px;
         border: 1px solid var(--border);
@@ -281,6 +374,12 @@
         }
         .slot-assets {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .manual-row-form {
+          grid-template-columns: 1fr;
+        }
+        .manual-remove-btn {
+          width: 100%;
         }
       }
     </style>
@@ -368,6 +467,8 @@
       var currentSchedule = null;
       var currentBundle = null;
       var isUploading = false;
+      var manualRows = [{ id: 1, roleName: '', personName: '' }];
+      var manualRowSeq = 1;
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       async function init() {
@@ -619,16 +720,85 @@
         });
       }
 
+      function getManualPersonAssets() {
+        return (currentBundle.assets || []).filter(function (asset) {
+          return asset.asset_kind === 'role' && !asset.assignment_person_id;
+        });
+      }
+
+      function normalizeManualRowKey(roleName, personName) {
+        return String(roleName || '').trim() + '|' + String(personName || '').trim();
+      }
+
+      function syncManualRowsFromDom() {
+        manualRows = manualRows.map(function (row) {
+          var roleInput = document.getElementById('manualRoleName-' + row.id);
+          var personInput = document.getElementById('manualPersonName-' + row.id);
+          return {
+            id: row.id,
+            roleName: roleInput ? roleInput.value.trim() : row.roleName || '',
+            personName: personInput ? personInput.value.trim() : row.personName || ''
+          };
+        });
+      }
+
+      function buildManualRows(assets) {
+        syncManualRowsFromDom();
+        var rows = [];
+        var usedIds = {};
+        var groups = {};
+        (assets || []).forEach(function (asset) {
+          var roleName = asset.role_name_snapshot || '岗位';
+          var personName = asset.person_name_snapshot || '未命名人员';
+          var key = normalizeManualRowKey(roleName, personName);
+          if (!groups[key]) groups[key] = { roleName: roleName, personName: personName, assets: [] };
+          groups[key].assets.push(asset);
+        });
+        Object.keys(groups).forEach(function (key) {
+          var group = groups[key];
+          var matched = manualRows.find(function (row) {
+            return normalizeManualRowKey(row.roleName, row.personName) === key;
+          });
+          var id = matched ? matched.id : ++manualRowSeq;
+          usedIds[id] = true;
+          rows.push({
+            id: id,
+            roleName: group.roleName,
+            personName: group.personName,
+            assets: group.assets
+          });
+        });
+        manualRows.forEach(function (row) {
+          if (usedIds[row.id]) return;
+          rows.push({
+            id: row.id,
+            roleName: row.roleName || '',
+            personName: row.personName || '',
+            assets: []
+          });
+        });
+        if (!rows.length || !rows.some(function (row) { return !row.roleName && !row.personName && !row.assets.length; })) {
+          rows.push({ id: ++manualRowSeq, roleName: '', personName: '', assets: [] });
+        }
+        manualRows = rows.map(function (row) {
+          return { id: row.id, roleName: row.roleName, personName: row.personName };
+        });
+        return rows;
+      }
+
       function renderTaskCard() {
         hideEmpty();
         var assignments = currentBundle.assignments || [];
         var attendeeAssets = getAttendeeAssets();
+        var manualAssets = getManualPersonAssets();
         var filledAssignments = assignments.filter(function (assignment) {
           return getAssignmentAssets(assignment.assignment_person_id).length > 0;
         }).length;
-        var complete = filledAssignments === assignments.length && attendeeAssets.length > 0;
-        var totalSlots = assignments.length + 1;
-        var completedSlots = filledAssignments + (attendeeAssets.length ? 1 : 0);
+        var hasPersonMedia = filledAssignments > 0 || manualAssets.length > 0;
+        var complete = assignments.length
+          ? filledAssignments === assignments.length && attendeeAssets.length > 0
+          : hasPersonMedia || attendeeAssets.length > 0;
+        var completedSlots = filledAssignments + (attendeeAssets.length ? 1 : 0) + (manualAssets.length ? 1 : 0);
         var readingTypeName =
           (currentBundle.readingType && currentBundle.readingType.type_name) ||
           ReadingMedia.getScopeLabel(currentSchedule.scope_level);
@@ -648,13 +818,14 @@
           '</div></div></div><span class="status-tag' +
           (complete ? ' complete' : '') +
           '">' +
-          (complete ? '已完成' : '已上传 ' + completedSlots + '/' + totalSlots + ' 项') +
+          (complete ? '已完成' : '已上传 ' + completedSlots + ' 项') +
           '</span></div><div class="reading-type-card"><span class="reading-type-label">当日共读类型</span>' +
           '<strong class="reading-type-value">' +
           escapeHtml(readingTypeName) +
           '</strong></div><div class="media-slot-list">' +
           rows +
           '</div>' +
+          renderManualPersonSlot(manualAssets) +
           renderAttendeeSlot(attendeeAssets) +
           '</article>';
       }
@@ -688,6 +859,52 @@
         );
       }
 
+      function renderManualPersonSlot(assets) {
+        var rows = buildManualRows(assets);
+        return (
+          '<section class="manual-slot"><div class="media-slot-head"><div><span class="slot-role">单人画面</span>' +
+          '<span class="slot-person"> · 手动录入岗位和姓名</span></div><span class="slot-count">' +
+          assets.length +
+          ' 张</span></div>' +
+          '<div class="manual-row-list">' +
+          rows.map(renderManualPersonRow).join('') +
+          '</div>' +
+          '<button class="manual-add-btn" type="button" onclick="addManualPersonRow()">＋ 添加单人画面</button>' +
+          '<div class="manual-help">适用于今日岗位/人员还没落位的情况；每行填写岗位和姓名后上传，宣委素材会显示为“岗位 · 姓名”。</div>' +
+          '</section>'
+        );
+      }
+
+      function escapeAttr(value) {
+        return escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      function renderManualPersonRow(row) {
+        var key = 'manual-person-' + row.id;
+        var canRemove = manualRows.length > 1 && !(row.assets && row.assets.length);
+        return (
+          '<div class="manual-row" id="manualRow-' + row.id + '">' +
+          '<div class="manual-row-form">' +
+          '<div class="manual-field"><label class="manual-label" for="manualRoleName-' + row.id + '">岗位</label>' +
+          '<input class="manual-input" id="manualRoleName-' + row.id + '" maxlength="40" value="' +
+          escapeAttr(row.roleName || '') +
+          '" placeholder="如：主持人、分享人" oninput="syncManualRowsFromDom()" /></div>' +
+          '<div class="manual-field"><label class="manual-label" for="manualPersonName-' + row.id + '">姓名</label>' +
+          '<input class="manual-input" id="manualPersonName-' + row.id + '" maxlength="40" value="' +
+          escapeAttr(row.personName || '') +
+          '" placeholder="请输入姓名" oninput="syncManualRowsFromDom()" /></div>' +
+          '<div class="manual-field">' +
+          renderUploadBox(key, '上传画面') +
+          '</div>' +
+          '<button class="manual-remove-btn" type="button" ' +
+          (canRemove ? 'onclick="removeManualPersonRow(' + row.id + ')"' : 'disabled') +
+          ' aria-label="删除该行">×</button>' +
+          '</div>' +
+          renderSlotAssets(row.assets || []) +
+          '</div>'
+        );
+      }
+
       function renderUploadBox(key, label) {
         return (
           '<label class="slot-upload"><span data-icon="ImagesIcon"></span><span id="upload-label-' +
@@ -699,6 +916,21 @@
           key +
           '\')"></label>'
         );
+      }
+
+      function addManualPersonRow() {
+        syncManualRowsFromDom();
+        manualRows.push({ id: ++manualRowSeq, roleName: '', personName: '' });
+        renderTaskCard();
+      }
+
+      function removeManualPersonRow(rowId) {
+        syncManualRowsFromDom();
+        manualRows = manualRows.filter(function (row) {
+          return Number(row.id) !== Number(rowId);
+        });
+        if (!manualRows.length) manualRows.push({ id: ++manualRowSeq, roleName: '', personName: '' });
+        renderTaskCard();
       }
 
       function renderSlotAssets(assets) {
@@ -724,6 +956,26 @@
 
       function resolveSlotTarget(key) {
         if (key === 'attendees') return { kind: 'overview', source_org_id: currentGroup.id };
+        if (key.indexOf('manual-person-') === 0) {
+          var rowId = Number(key.replace('manual-person-', ''));
+          var roleName = document.getElementById('manualRoleName-' + rowId)
+            ? document.getElementById('manualRoleName-' + rowId).value.trim()
+            : '';
+          var personName = document.getElementById('manualPersonName-' + rowId)
+            ? document.getElementById('manualPersonName-' + rowId).value.trim()
+            : '';
+          if (!roleName || !personName) {
+            showToast('请先填写岗位和姓名，再上传画面', 'error');
+            return null;
+          }
+          syncManualRowsFromDom();
+          return {
+            kind: 'role',
+            role_name: roleName,
+            person_name: personName,
+            source_org_id: currentGroup.id
+          };
+        }
         if (key.indexOf('assignment-') === 0) {
           var assignmentId = Number(key.replace('assignment-', ''));
           var assignment = (currentBundle.assignments || []).find(function (item) {

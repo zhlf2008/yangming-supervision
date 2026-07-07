@@ -30,7 +30,21 @@ var PublicityReadingPoster = (function () {
     var y = Math.max(0, Math.min(100, number(item.crop_y, 50)));
     var zoom = Math.max(1, Math.min(4, number(item.crop_zoom, 1)));
     var rotation = [0, 90, 180, 270].indexOf(number(item.rotation, 0)) !== -1 ? number(item.rotation, 0) : 0;
-    return 'object-position:' + x + '% ' + y + '%;transform:scale(' + zoom + ') rotate(' + rotation + 'deg)';
+    return (
+      'object-position:' +
+      x +
+      '% ' +
+      y +
+      '%;transform-origin:' +
+      x +
+      '% ' +
+      y +
+      '%;transform:scale(' +
+      zoom +
+      ') rotate(' +
+      rotation +
+      'deg)'
+    );
   }
 
   function imageFigure(item, className, showLabel) {
@@ -49,7 +63,14 @@ var PublicityReadingPoster = (function () {
       '" style="' +
       getCropStyle(item) +
       '"></div>';
-    if (showLabel) {
+    if (showLabel && className.indexOf('prp-role-card') !== -1) {
+      figure +=
+        '<figcaption class="prp-role-caption"><div><strong>' +
+        prpHtml(name || '未命名人员') +
+        '</strong><span>' +
+        prpHtml(label || '焦点人物') +
+        '</span></div></figcaption>';
+    } else if (showLabel) {
       figure +=
         '<figcaption><span>' +
         prpHtml(label || '共读瞬间') +
@@ -74,22 +95,17 @@ var PublicityReadingPoster = (function () {
         return number(a.sort_order, 0) - number(b.sort_order, 0);
       });
 
-    var feature =
-      items.find(function (item) {
-        return getItemSlot(item) === 'feature';
-      }) ||
-      items.find(function (item) {
-        return getItemSlot(item) === 'overview';
-      }) ||
-      items[0];
+    var feature = items.find(function (item) {
+      return getItemSlot(item) === 'feature' && getItemAsset(item).asset_kind !== 'overview';
+    });
     var rest = items.filter(function (item) {
       return item !== feature;
     });
     var roles = rest.filter(function (item) {
-      return getItemSlot(item) === 'role';
+      return getItemSlot(item) === 'role' || getItemAsset(item).asset_kind === 'role';
     });
     var overviews = rest.filter(function (item) {
-      return getItemSlot(item) === 'overview';
+      return getItemSlot(item) === 'overview' || getItemAsset(item).asset_kind === 'overview';
     });
     var moments = rest.filter(function (item) {
       var slot = getItemSlot(item);
@@ -108,8 +124,6 @@ var PublicityReadingPoster = (function () {
     var weekday = ReadingMedia.getWeekday(schedule.schedule_date);
     var displayDate = ReadingMedia.formatDisplayDate(schedule.schedule_date);
     var closing = poster.closing_text || '在共读中照见彼此，在践行中抵达良知。';
-    var roleCount = roles.length + (feature && getItemSlot(feature) === 'role' ? 1 : 0);
-
     var markup =
       '<article class="publicity-reading-poster prp-' +
       scopeClass +
@@ -137,23 +151,20 @@ var PublicityReadingPoster = (function () {
         '</strong></div></div>';
     }
 
-    markup +=
-      '<div class="prp-stat-row">' +
-      (participantCount ? '<div><strong>' + participantCount + '</strong><span>参与人数</span></div>' : '') +
-      '<div><strong>' +
-      items.length +
-      '</strong><span>影像记录</span></div><div><strong>' +
-      roleCount +
-      '</strong><span>岗位人物</span></div></div></header>';
+    if (participantCount) {
+      markup += '<div class="prp-stat-row"><div><strong>' + participantCount + '</strong><span>参与人数</span></div></div>';
+    }
+
+    markup += '</header>';
 
     if (roles.length) {
       markup +=
         '<section class="prp-section prp-role-section"><div class="prp-section-kicker">ROLES</div>' +
-        '<div class="prp-section-heading"><h2>今日共读人物</h2><p>每一个岗位，都是共读得以发生的支点。</p></div>' +
+        '<div class="prp-section-heading"><h2>今日焦点人物</h2><p>每一个岗位，都是共读得以发生的支点。</p></div>' +
         '<div class="prp-role-grid">' +
         roles
-          .map(function (item) {
-            return imageFigure(item, 'prp-role-card', true);
+          .map(function (item, index) {
+            return imageFigure(item, 'prp-role-card prp-role-card-' + ((index % 4) + 1), true);
           })
           .join('') +
         '</div></section>';
@@ -166,7 +177,9 @@ var PublicityReadingPoster = (function () {
         prpHtml(scopeClass === 'large' ? '同心共读' : '共读现场') +
         '</h2><p>' +
         prpHtml(scopeClass === 'large' ? '以大班为舟，同向而行。' : '在同一段文字里相遇，在彼此回应中生长。') +
-        '</p></div><div class="prp-overview-grid">' +
+        '</p></div><div class="prp-overview-grid ' +
+        (overviews.length >= 4 ? 'prp-overview-grid-two' : 'prp-overview-grid-single') +
+        '">' +
         overviews
           .map(function (item) {
             return imageFigure(item, 'prp-overview-card', false);
