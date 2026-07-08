@@ -28,7 +28,18 @@ var PublicityReadingPoster = (function () {
   function getCropStyle(item) {
     var x = Math.max(0, Math.min(100, number(item.crop_x, 50)));
     var y = Math.max(0, Math.min(100, number(item.crop_y, 50)));
-    var zoom = Math.max(1, Math.min(4, number(item.crop_zoom, 1)));
+    var zoom = Math.max(0.2, Math.min(4, number(item.crop_zoom, 1)));
+    if (item.crop_frame) {
+      var frame = item.crop_frame;
+      var left = Math.max(0, Math.min(100, number(frame.left, 0)));
+      var top = Math.max(0, Math.min(100, number(frame.top, 0)));
+      var right = Math.max(left + 1, Math.min(100, number(frame.right, 100)));
+      var bottom = Math.max(top + 1, Math.min(100, number(frame.bottom, 100)));
+      var frameZoom = Math.max(100 / Math.max(1, right - left), 100 / Math.max(1, bottom - top));
+      x = (left + right) / 2;
+      y = (top + bottom) / 2;
+      zoom = zoom < 1 && Math.abs(frameZoom - 1) < 0.01 ? zoom : Math.max(zoom, frameZoom);
+    }
     var rotation = [0, 90, 180, 270].indexOf(number(item.rotation, 0)) !== -1 ? number(item.rotation, 0) : 0;
     return (
       'object-position:' +
@@ -47,15 +58,26 @@ var PublicityReadingPoster = (function () {
     );
   }
 
+  function hasCrop(item) {
+    return (
+      Math.abs(number(item.crop_x, 50) - 50) > 0.05 ||
+      Math.abs(number(item.crop_y, 50) - 50) > 0.05 ||
+      Math.abs(number(item.crop_zoom, 1) - 1) > 0.01 ||
+      number(item.rotation, 0) !== 0 ||
+      !!item.crop_frame
+    );
+  }
+
   function imageFigure(item, className, showLabel) {
     var asset = getItemAsset(item);
     var label = asset.role_name_snapshot || '';
     var name = asset.person_name_snapshot || '';
     var caption = asset.caption || '';
     var title = label && name ? label + ' · ' + name : caption || '共读影像';
+    var figureClass = className + (hasCrop(item) ? ' prp-has-crop' : '');
     var figure =
       '<figure class="' +
-      className +
+      figureClass +
       '"><div class="prp-image-frame"><img crossorigin="anonymous" alt="' +
       prpHtml(title) +
       '" src="' +

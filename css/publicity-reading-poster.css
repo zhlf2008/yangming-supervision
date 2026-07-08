@@ -416,6 +416,16 @@
   border-bottom: 8px solid #203e38;
 }
 
+.prp-cover::before {
+  position: absolute;
+  right: 64px;
+  bottom: -8px;
+  left: 64px;
+  height: 1px;
+  background: rgba(244, 223, 186, 0.72);
+  content: '';
+}
+
 .prp-cover::after {
   position: absolute;
   content: '';
@@ -643,6 +653,17 @@
   object-fit: contain;
 }
 
+.prp-role-card.prp-has-crop .prp-image-frame {
+  aspect-ratio: 4 / 3;
+}
+
+.prp-role-card.prp-has-crop .prp-image-frame img,
+.prp-overview-card.prp-has-crop .prp-image-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .prp-role-card figcaption {
   position: relative;
   z-index: 1;
@@ -754,6 +775,14 @@
   aspect-ratio: auto;
 }
 
+.prp-overview-card.prp-has-crop .prp-image-frame {
+  aspect-ratio: 16 / 8.6;
+}
+
+.prp-overview-grid-two .prp-overview-card.prp-has-crop .prp-image-frame {
+  aspect-ratio: 4 / 3;
+}
+
 .prp-overview-card .prp-image-frame img {
   height: auto;
   object-fit: contain;
@@ -777,7 +806,15 @@
 
 .prp-footer {
   padding: 76px 72px 60px;
-  background: #203e38;
+  border-top: 8px solid #a33035;
+  background:
+    linear-gradient(90deg, rgba(244, 223, 186, 0.08) 0 1px, transparent 1px 100%),
+    radial-gradient(circle at 14% 12%, rgba(216, 183, 126, 0.18), transparent 28%),
+    #203e38;
+  background-size:
+    18px 100%,
+    auto,
+    auto;
   color: #fff;
 }
 

@@ -6,7 +6,7 @@
     <title>共读影像制作 - 宣委管理</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <link rel="stylesheet" href="css/reading-media.css?v=1" />
-    <link rel="stylesheet" href="css/publicity-reading-poster.css?v=7" />
+    <link rel="stylesheet" href="css/publicity-reading-poster.css?v=8" />
     <style>
       .page-header {
         display: flex;
@@ -290,7 +290,7 @@
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=17"></script>
     <script src="js/reading-media.js?v=3"></script>
-    <script src="js/publicity-reading-poster.js?v=7"></script>
+    <script src="js/publicity-reading-poster.js?v=8"></script>
     <script>
       renderModuleBottomNav('publicity', 'media');
 
@@ -308,6 +308,7 @@
       var cropDrag = null;
       var cropActiveEdge = 'top';
       var cropFrame = null;
+      var cropFrameDirty = false;
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
       async function init() {
@@ -609,10 +610,10 @@
         currentItems = selectedBundle.assets.map(function (asset, index) {
           var saved = savedMap[Number(asset.id)];
           if (saved) {
-            return Object.assign({}, saved, {
+            return mergeStoredCropState(Object.assign({}, saved, {
               asset: asset,
               slot_kind: asset.asset_kind === 'overview' && saved.slot_kind === 'feature' ? 'overview' : saved.slot_kind
-            });
+            }));
           }
           var slotKind =
             Number(asset.id) === featureAssetId
@@ -622,7 +623,7 @@
                 : asset.asset_kind === 'overview'
                   ? 'overview'
                   : 'moment';
-          return {
+          return mergeStoredCropState({
             id: null,
             poster_id: currentPoster.id,
             asset_id: Number(asset.id),
@@ -634,7 +635,7 @@
             crop_zoom: 1,
             rotation: 0,
             is_visible: true
-          };
+          });
         });
       }
 
@@ -784,6 +785,48 @@
         });
       }
 
+      function getCropStateKey(item) {
+        if (!selectedSchedule || !currentGroup || !item) return '';
+        return [
+          'publicity-reading-crop',
+          publicityReadingContext.semesterId,
+          selectedSchedule.id,
+          currentGroup.id,
+          item.asset_id || (item.asset && item.asset.id)
+        ].join(':');
+      }
+
+      function getStoredCropState(item) {
+        try {
+          var raw = localStorage.getItem(getCropStateKey(item));
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function mergeStoredCropState(item) {
+        var stored = getStoredCropState(item);
+        return stored ? Object.assign({}, item, stored) : item;
+      }
+
+      function saveStoredCropState(item) {
+        try {
+          localStorage.setItem(
+            getCropStateKey(item),
+            JSON.stringify({
+              crop_x: Number(item.crop_x || 50),
+              crop_y: Number(item.crop_y || 50),
+              crop_zoom: Number(item.crop_zoom || 1),
+              rotation: Number(item.rotation || 0),
+              crop_frame: item.crop_frame || null
+            })
+          );
+        } catch (error) {
+          // 本地缓存失败不影响数据库保存
+        }
+      }
+
       async function ensurePoster(status) {
         currentPoster = getPosterDraft();
         var payload = {
@@ -825,7 +868,7 @@
             sort_order: item.sort_order || 0,
             crop_x: Number(item.crop_x || 50),
             crop_y: Number(item.crop_y || 50),
-            crop_zoom: Number(item.crop_zoom || 1),
+            crop_zoom: Math.max(1, Number(item.crop_zoom || 1)),
             rotation: Number(item.rotation || 0),
             is_visible: item.is_visible !== false
           };
@@ -842,7 +885,7 @@
         });
         currentItems = currentItems.map(function (item) {
           var saved = savedMap[Number(item.asset_id)];
-          return saved ? Object.assign({}, item, saved, { asset: item.asset }) : item;
+          return mergeStoredCropState(saved ? Object.assign({}, item, saved, { asset: item.asset }) : item);
         });
       }
 
@@ -879,8 +922,12 @@
           cropStage.style.removeProperty(property);
         });
         cropFrame = null;
+        cropFrameDirty = false;
         document.getElementById('cropReadout').textContent = '正在读取照片尺寸...';
-        cropImage.onload = updateCropPreview;
+        cropImage.onload = function () {
+          restoreCropFrameFromItem();
+          updateCropPreview();
+        };
         cropImage.src = cropItem.asset.signed_url;
         cropImage.classList.add('fit-contain');
         document.getElementById('cropX').value = Number(cropItem.crop_x || 50);
@@ -889,7 +936,10 @@
         document.getElementById('cropModal').hidden = false;
         document.body.style.overflow = 'hidden';
         selectCropEdge(cropActiveEdge || 'top');
-        if (cropImage.complete && cropImage.naturalWidth) updateCropPreview();
+        if (cropImage.complete && cropImage.naturalWidth) {
+          restoreCropFrameFromItem();
+          updateCropPreview();
+        }
       }
 
       function closeCropEditor() {
@@ -898,6 +948,13 @@
         cropItem = null;
         cropDrag = null;
         cropFrame = null;
+        cropFrameDirty = false;
+      }
+
+      function restoreCropFrameFromItem() {
+        cropFrame = null;
+        if (!cropItem || !cropItem.crop_frame) return;
+        setCropFrameFromRatios(cropItem.crop_frame);
       }
 
       function updateCropPreview() {
@@ -943,15 +1000,8 @@
       }
 
       function getDefaultCropFrameSize(imageRect, zoom) {
-        var frameAspect = getCropFrameAspect();
-        var availableWidth = imageRect.width * 0.84;
-        var availableHeight = imageRect.height * 0.84;
-        var frameWidth = availableWidth;
-        var frameHeight = frameWidth / frameAspect;
-        if (frameHeight > availableHeight) {
-          frameHeight = availableHeight;
-          frameWidth = frameHeight * frameAspect;
-        }
+        var frameWidth = imageRect.width;
+        var frameHeight = imageRect.height;
         var safeZoom = clampCropZoom(zoom || 1);
         frameWidth = frameWidth / safeZoom;
         frameHeight = frameHeight / safeZoom;
@@ -970,6 +1020,30 @@
         stage.style.setProperty('--crop-top', cropFrame.top + 'px');
         stage.style.setProperty('--crop-width', frameWidth + 'px');
         stage.style.setProperty('--crop-height', frameHeight + 'px');
+      }
+
+      function setCropFrameFromRatios(frame) {
+        var imageRect = getRenderedCropImageRect();
+        if (!imageRect.width || !imageRect.height || !frame) return;
+        cropFrame = {
+          left: imageRect.left + (imageRect.width * clampCropValue(frame.left)) / 100,
+          top: imageRect.top + (imageRect.height * clampCropValue(frame.top)) / 100,
+          right: imageRect.left + (imageRect.width * clampCropValue(frame.right)) / 100,
+          bottom: imageRect.top + (imageRect.height * clampCropValue(frame.bottom)) / 100
+        };
+        clampCropFrameToImage();
+      }
+
+      function getCropFrameRatios() {
+        if (!cropFrame) return null;
+        clampCropFrameToImage();
+        var imageRect = getRenderedCropImageRect();
+        return {
+          left: clampCropValue(((cropFrame.left - imageRect.left) / Math.max(1, imageRect.width)) * 100),
+          top: clampCropValue(((cropFrame.top - imageRect.top) / Math.max(1, imageRect.height)) * 100),
+          right: clampCropValue(((cropFrame.right - imageRect.left) / Math.max(1, imageRect.width)) * 100),
+          bottom: clampCropValue(((cropFrame.bottom - imageRect.top) / Math.max(1, imageRect.height)) * 100)
+        };
       }
 
       function clampCropFrameToImage() {
@@ -1026,7 +1100,7 @@
       }
 
       function clampCropZoom(value) {
-        return Math.max(1, Math.min(4, Number(value)));
+        return Math.max(0.2, Math.min(4, Number(value)));
       }
 
       function selectCropEdge(edge) {
@@ -1067,6 +1141,7 @@
         if (edge === 'bottom') cropFrame.bottom += delta;
         if (edge === 'left') cropFrame.left -= delta;
         if (edge === 'right') cropFrame.right += delta;
+        cropFrameDirty = true;
         renderCropFrame();
         document.getElementById('cropReadout').textContent =
           '取景框 · ' +
@@ -1096,6 +1171,7 @@
         document.getElementById('cropZoom').value = 1;
         cropRotation = 0;
         cropFrame = null;
+        cropFrameDirty = false;
         updateCropPreview();
       }
 
@@ -1108,9 +1184,19 @@
         cropItem.crop_y = Number(document.getElementById('cropY').value);
         cropItem.crop_zoom = Number(document.getElementById('cropZoom').value);
         cropItem.rotation = cropRotation;
+        cropItem.crop_frame = getCropFrameRatios();
+        saveStoredCropState(cropItem);
         try {
           await ensurePoster(currentPoster.status || 'draft');
           await persistItems([cropItem]);
+          var freshItem = findItem(cropItem.asset_id);
+          if (freshItem) {
+            freshItem.crop_x = cropItem.crop_x;
+            freshItem.crop_y = cropItem.crop_y;
+            freshItem.crop_zoom = cropItem.crop_zoom;
+            freshItem.rotation = cropItem.rotation;
+            freshItem.crop_frame = cropItem.crop_frame;
+          }
           closeCropEditor();
           updatePosterPreview();
           showToast('裁切位置已保存，原图未修改', 'success');
@@ -1130,7 +1216,9 @@
         var centerX = cropFrame.left + frameWidth / 2;
         var centerY = cropFrame.top + frameHeight / 2;
         var baseSize = getDefaultCropFrameSize(imageRect, 1);
-        var zoom = Math.max(baseSize.width / Math.max(1, frameWidth), baseSize.height / Math.max(1, frameHeight));
+        var frameZoom = Math.max(baseSize.width / Math.max(1, frameWidth), baseSize.height / Math.max(1, frameHeight));
+        var currentZoom = Number(document.getElementById('cropZoom').value || 1);
+        var zoom = cropFrameDirty ? Math.max(currentZoom, frameZoom) : currentZoom;
         document.getElementById('cropX').value = clampCropValue(((centerX - imageRect.left) / Math.max(1, imageRect.width)) * 100);
         document.getElementById('cropY').value = clampCropValue(((centerY - imageRect.top) / Math.max(1, imageRect.height)) * 100);
         document.getElementById('cropZoom').value = clampCropZoom(zoom).toFixed(2);
