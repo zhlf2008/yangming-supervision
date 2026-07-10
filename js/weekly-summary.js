@@ -617,6 +617,7 @@
       }
       document.getElementById('detailBody').innerHTML =
         detailHtml || '<div class="detail-empty">该日程暂无已提交内容</div>';
+      bindPublicityContentCards(record);
       if (window.renderIcons) window.renderIcons(document.getElementById('detailBody'));
     } catch (error) {
       document.getElementById('detailBody').innerHTML =
@@ -644,6 +645,19 @@
       isPublicity && record.card && record.card.subtitle
         ? '<div class="detail-note">' + escapeHtml(record.card.subtitle) + '</div>'
         : '';
+    if (isPublicity) {
+      return renderPublicityContentCard({
+        kind: 'homework',
+        icon: 'TrophyIcon',
+        title: title,
+        status: status,
+        description: record.entries.length
+          ? '已收录 ' + record.entries.length + ' 篇优秀作业，进入后可编辑卡片内容与版式。'
+          : '暂未收录优秀作业，进入制作页后可继续完善。',
+        action: record.card ? '继续制作优秀作业卡片' : '制作优秀作业卡片',
+        scheduleId: record.homeworkSchedule.id
+      });
+    }
     var entriesHtml = record.entries.length
       ? '<div class="homework-entry-list">' +
         record.entries
@@ -699,37 +713,45 @@
       record.poster && record.poster.title
         ? record.poster.title
         : (bundle.readingType && bundle.readingType.type_name) || '每日共读影像';
-    var mediaHtml = assets.length
-      ? '<div class="media-grid">' +
-        assets
-          .map(function (asset) {
-            return (
-              '<article class="media-card"><img src="' +
-              escapeHtml(asset.signed_url || '') +
-              '" alt="' +
-              escapeHtml(getAssetTitle(asset)) +
-              '" loading="lazy"><div class="media-copy"><div class="media-title">' +
-              escapeHtml(getAssetTitle(asset)) +
-              '</div><div class="media-caption">' +
-              escapeHtml(asset.caption || asset.file_name || '原始影像') +
-              '</div></div></article>'
-            );
-          })
-          .join('') +
-        '</div>'
-      : '<div class="detail-empty">该日程暂未提交共读影像</div>';
-    return (
-      '<section class="detail-section"><div class="detail-section-head"><div class="detail-section-name">' +
-      '<span data-icon="ImagesIcon"></span><span>' +
-      escapeHtml(title) +
-      '</span></div><span class="detail-status ' +
-      status.className +
-      '">' +
-      status.text +
-      '</span></div>' +
-      mediaHtml +
-      '</section>'
-    );
+    return renderPublicityContentCard({
+      kind: 'reading',
+      icon: 'ImagesIcon',
+      title: title,
+      status: status,
+      description: assets.length
+        ? '已汇集 ' + assets.length + ' 张晨读影像，进入后可编排海报与裁切画面。'
+        : '暂未提交晨读影像，进入制作页后可继续补充。',
+      action: record.poster ? '继续制作每日共读影像' : '制作每日共读影像',
+      scheduleId: record.readingSchedule.id
+    });
+  }
+
+  function renderPublicityContentCard(item) {
+    return '<button class="production-content-card ' + escapeHtml(item.kind) + '" type="button" data-editor-kind="' +
+      escapeHtml(item.kind) + '" data-schedule-id="' + Number(item.scheduleId) + '"><span class="production-card-icon" data-icon="' +
+      escapeHtml(item.icon) + '"></span><span class="production-card-copy"><span class="production-card-top"><strong>' +
+      escapeHtml(item.title) + '</strong><span class="detail-status ' + item.status.className + '">' +
+      escapeHtml(item.status.text) + '</span></span><span>' + escapeHtml(item.description) +
+      '</span></span><span class="production-card-action">' + escapeHtml(item.action) +
+      '<span data-icon="ChevronRightIcon"></span></span></button>';
+  }
+
+  function bindPublicityContentCards(record) {
+    if (!isPublicity) return;
+    document.querySelectorAll('.production-content-card[data-editor-kind]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        var kind = this.getAttribute('data-editor-kind');
+        var scheduleId = this.getAttribute('data-schedule-id');
+        var target = kind === 'reading' ? 'publicity-reading-media.html' : 'publicity-homework-card.html';
+        var query = new URLSearchParams({
+          from: 'publicity-summary',
+          date: record.dateString,
+          group_id: String(currentGroup.id),
+          schedule_id: String(scheduleId)
+        });
+        location.href = target + '?' + query.toString();
+      });
+    });
   }
 
   function closeDetail() {

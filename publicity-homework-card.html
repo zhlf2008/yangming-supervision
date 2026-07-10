@@ -759,6 +759,12 @@
       var highlightTexts = {};
       var currentPosterGroups = [];
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      var homeworkPageParams = new URLSearchParams(location.search);
+      var requestedGroupId = Number(homeworkPageParams.get('group_id')) || null;
+      var requestedScheduleId = Number(homeworkPageParams.get('schedule_id')) || null;
+      var requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(homeworkPageParams.get('date') || '')
+        ? homeworkPageParams.get('date')
+        : getToday();
 
       async function init() {
         await waitForDb();
@@ -791,6 +797,7 @@
           }
           var detectedGroup = await resolveCurrentUserGroup();
           currentGroup =
+            accessibleGroups.find(function (group) { return Number(group.id) === requestedGroupId; }) ||
             accessibleGroups.find(function (group) {
               return detectedGroup && Number(group.id) === Number(detectedGroup.id);
             }) || accessibleGroups[0];
@@ -802,9 +809,8 @@
       }
 
       function renderTodayInfo() {
-        var today = getToday();
-        document.getElementById('currentDate').textContent = today;
-        document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
+        document.getElementById('currentDate').textContent = requestedDate;
+        document.getElementById('currentWeekday').textContent = weekDays[new Date(requestedDate + 'T00:00:00').getDay()];
         document.getElementById('operatorName').textContent = currentUser.name || '未知';
       }
 
@@ -1043,7 +1049,9 @@
         var dabanId = ExcellentHomework.getDabanId(publicityContext.orgs, groups[0].id);
         currentSchedule =
           publicitySchedules.find(function (schedule) {
-            return schedule.schedule_date === getToday() && Number(schedule.org_id) === Number(dabanId);
+            return schedule.schedule_date === requestedDate &&
+              Number(schedule.org_id) === Number(dabanId) &&
+              (!requestedScheduleId || Number(schedule.id) === requestedScheduleId);
           }) || null;
         var groupIds = groups.map(function (group) {
           return Number(group.id);
@@ -1097,7 +1105,9 @@
         var dabanId = ExcellentHomework.getDabanId(publicityContext.orgs, groupId);
         currentSchedule =
           publicitySchedules.find(function (schedule) {
-            return schedule.schedule_date === getToday() && Number(schedule.org_id) === Number(dabanId);
+            return schedule.schedule_date === requestedDate &&
+              Number(schedule.org_id) === Number(dabanId) &&
+              (!requestedScheduleId || Number(schedule.id) === requestedScheduleId);
           }) || null;
         currentEntries = currentSchedule ? await ExcellentHomework.loadEntries(currentSchedule.id, [groupId]) : [];
         currentCard = null;
@@ -1285,7 +1295,7 @@
             schedule_id: Number(currentSchedule.id),
             org_id: Number(currentGroup.id),
             title: currentGroup.name + '优秀作业',
-            subtitle: getCurrentClassName() + ' · ' + ExcellentHomework.formatDate(getToday(), false),
+            subtitle: getCurrentClassName() + ' · ' + ExcellentHomework.formatDate(requestedDate, false),
             intro_text: '',
             closing_text: '知行合一，日日精进。',
             theme: 'vermillion',
@@ -1335,7 +1345,7 @@
         return {
           scope: scope,
           className: getCurrentClassName(),
-          date: currentSchedule && currentSchedule.schedule_date ? currentSchedule.schedule_date : getToday(),
+          date: currentSchedule && currentSchedule.schedule_date ? currentSchedule.schedule_date : requestedDate,
           groups: groups
         };
       }
@@ -1460,7 +1470,7 @@
             publishScope === 'class'
               ? getCurrentClassName()
               : getCurrentClassName() + '_' + (currentGroup ? currentGroup.name : '小组');
-          var fileName = cleanFileName(scopeName + '_优秀作业_' + getToday()) + '.jpg';
+          var fileName = cleanFileName(scopeName + '_优秀作业_' + requestedDate) + '.jpg';
           var blob = await canvasToJpegBlob(canvas);
           if (!isMobileBrowser() && triggerBlobDownload(blob, fileName)) {
             showToast('完整长图已导出', 'success');
@@ -1495,7 +1505,7 @@
             host.appendChild(poster);
             var canvas = await renderLongPosterCanvas(poster);
             var dataUrl = canvas.toDataURL('image/jpeg', 0.94);
-            var fileName = cleanFileName(getCurrentClassName() + '_' + group.name + '_优秀作业_' + getToday()) + '.jpg';
+            var fileName = cleanFileName(getCurrentClassName() + '_' + group.name + '_优秀作业_' + requestedDate) + '.jpg';
             addPosterGalleryItem(getCurrentClassName() + ' · ' + group.name, dataUrl, fileName);
           }
           gallery.scrollIntoView({ behavior: 'smooth', block: 'start' });

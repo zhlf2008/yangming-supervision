@@ -310,6 +310,12 @@
       var cropFrame = null;
       var cropFrameDirty = false;
       var weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      var readingPageParams = new URLSearchParams(location.search);
+      var requestedGroupId = Number(readingPageParams.get('group_id')) || null;
+      var requestedScheduleId = Number(readingPageParams.get('schedule_id')) || null;
+      var requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(readingPageParams.get('date') || '')
+        ? readingPageParams.get('date')
+        : getToday();
 
       async function init() {
         await waitForDb();
@@ -337,9 +343,10 @@
             showEmpty('当前账号在本学期没有可制作影像的下属小组');
             return;
           }
-          dailySchedules = await ReadingMedia.loadSchedules(publicityReadingContext, getToday());
+          dailySchedules = await ReadingMedia.loadSchedules(publicityReadingContext, requestedDate);
           var detectedGroup = await resolveCurrentUserGroup();
           currentGroup =
+            accessibleGroups.find(function (group) { return Number(group.id) === requestedGroupId; }) ||
             accessibleGroups.find(function (group) {
               return detectedGroup && Number(group.id) === Number(detectedGroup.id);
             }) || accessibleGroups[0];
@@ -354,8 +361,8 @@
       }
 
       function renderTodayInfo() {
-        document.getElementById('currentDate').textContent = getToday();
-        document.getElementById('currentWeekday').textContent = weekDays[new Date().getDay()];
+        document.getElementById('currentDate').textContent = requestedDate;
+        document.getElementById('currentWeekday').textContent = weekDays[new Date(requestedDate + 'T00:00:00').getDay()];
         document.getElementById('operatorName').textContent = currentUser.name || '未知';
       }
 
@@ -548,11 +555,16 @@
       }
 
       async function loadCurrentGroup() {
-        selectedSchedule = ReadingMedia.findScheduleForSourceOrg(
-          dailySchedules,
-          currentGroup,
-          publicityReadingContext.orgMap
-        );
+        selectedSchedule = requestedScheduleId
+          ? dailySchedules.find(function(schedule) { return Number(schedule.id) === requestedScheduleId; }) || null
+          : null;
+        if (!selectedSchedule) {
+          selectedSchedule = ReadingMedia.findScheduleForSourceOrg(
+            dailySchedules,
+            currentGroup,
+            publicityReadingContext.orgMap
+          );
+        }
         if (!selectedSchedule) {
           showEmpty('该小组今天没有共读日程');
           return;
