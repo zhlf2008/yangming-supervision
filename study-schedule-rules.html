@@ -55,13 +55,14 @@
       .type-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
       .type-scope-note { font-size: 12px; color: var(--ink-muted); }
       .role-setting-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-      .role-setting-header, .role-setting-row { display: grid; grid-template-columns: minmax(96px, 138px) 98px 52px 40px; align-items: center; justify-content: start; gap: 8px; }
+      .role-setting-header, .role-setting-row { display: grid; grid-template-columns: minmax(92px, 1fr) 96px minmax(122px, 150px) 52px 40px; align-items: center; justify-content: start; gap: 8px; }
       .role-setting-header { min-height: 34px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--bg-primary); color: var(--ink-muted); font-size: 11px; font-weight: 600; }
       .role-setting-header span:not(:first-child) { text-align: center; }
       .role-setting-row { min-height: 54px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
       .role-setting-row:last-child { border-bottom: 0; }
       .role-setting-name { width: 100%; min-width: 0; min-height: 34px; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; font-weight: 600; color: var(--ink-dark); background: transparent; }
       .role-setting-name:focus { border-color: var(--border); background: var(--bg-card); outline: none; }
+      .role-assignment-scope { width: 100%; min-width: 0; min-height: 34px; padding: 6px 28px 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--ink-dark); font-size: 12px; }
       .count-stepper { display: grid; grid-template-columns: 28px 40px 28px; width: 96px; height: 32px; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--bg-card); }
       .count-stepper button { border: 0; background: var(--bg-primary); color: var(--ink-dark); cursor: pointer; font-size: 18px; }
       .count-stepper input { width: 40px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; background: var(--bg-card); color: var(--ink-dark); pointer-events: none; }
@@ -132,7 +133,7 @@
         .reading-type-tabs { display:flex; gap:5px; overflow-x:auto; scrollbar-width:thin; }
         .reading-type-tab { width:auto; min-width:max-content; }
         .type-sidebar .btn { width:auto !important; margin-top:0 !important; }
-        .role-setting-header, .role-setting-row { grid-template-columns:minmax(76px,1fr) 88px 42px 34px; gap:4px; }
+        .role-setting-header, .role-setting-row { grid-template-columns:minmax(68px,1fr) 86px minmax(100px,1fr) 42px 34px; gap:4px; }
         .role-setting-header, .role-setting-row { padding-left:6px; padding-right:6px; }
         .count-stepper { grid-template-columns:25px 36px 25px; width:86px; }
         .count-stepper input { width:36px; }
@@ -297,7 +298,7 @@
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=17"></script>
-    <script src="js/study-workflow.js?v=9"></script>
+    <script src="js/study-workflow.js?v=11"></script>
     <script>
       var rulePageParams = new URLSearchParams(location.search);
       var ruleEmbedded = rulePageParams.get('embedded') === '1';
@@ -435,6 +436,18 @@
         return readingTypes.filter(function(type) { return type.is_active !== false; });
       }
 
+      function getPositionAssignmentScope(position) {
+        var scope = position && position.assignment_scope;
+        return ['manual', 'organizer', 'all_participants'].indexOf(scope) !== -1 ? scope : 'manual';
+      }
+
+      function buildAssignmentScopeOptions(selectedScope) {
+        var scope = getPositionAssignmentScope({ assignment_scope: selectedScope });
+        return '<option value="manual"' + (scope === 'manual' ? ' selected' : '') + '>逐项分配</option>' +
+          '<option value="organizer"' + (scope === 'organizer' ? ' selected' : '') + '>承办组织安排</option>' +
+          '<option value="all_participants"' + (scope === 'all_participants' ? ' selected' : '') + '>全体参与组织安排</option>';
+      }
+
       function renderTypeList() {
         var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
         document.getElementById('selectedTypeScope').textContent = selectedType
@@ -453,8 +466,8 @@
           container.innerHTML = '<div class="empty-state">该类型暂无岗位，点击下方按钮添加。</div>';
           return;
         }
-        container.innerHTML = '<div class="role-setting-list">' +
-          '<div class="role-setting-header" aria-hidden="true"><span>岗位</span><span>人数</span><span>开关</span><span>删除</span></div>' +
+        container.innerHTML = '<div class="type-scope-note" style="margin:0 0 8px;line-height:1.55;">承办组织安排：在日程中选定承办班级/小组后自动落给该组织；全体参与组织安排：为每个参与班级/小组生成相同名额。</div><div class="role-setting-list">' +
+          '<div class="role-setting-header" aria-hidden="true"><span>岗位</span><span>人数</span><span>安排范围</span><span>开关</span><span>删除</span></div>' +
           typePositions.map(function(position, index) {
           return '<div class="role-setting-row">' +
             '<input class="role-setting-name" value="' + escapeHtml(position.role_name || '') + '" placeholder="岗位名称" oninput="updateTypePosition(' + index + ',\'role_name\',this.value)" />' +
@@ -463,6 +476,9 @@
             '<input type="text" inputmode="numeric" readonly value="' + position.required_count + '" aria-label="岗位人数" />' +
             '<button onclick="stepPositionCount(' + index + ',1)" aria-label="增加人数">+</button>' +
             '</div>' +
+            '<select class="role-assignment-scope" aria-label="岗位安排范围" onchange="updateTypePosition(' + index + ',\'assignment_scope\',this.value)">' +
+            buildAssignmentScopeOptions(position.assignment_scope) +
+            '</select>' +
             '<button class="pill-switch ' + (position.is_enabled ? 'on' : 'off') + '" onclick="toggleTypePosition(' + index + ')" aria-label="' +
             (position.is_enabled ? '关闭岗位' : '启用岗位') + '"></button>' +
             '<button class="icon-danger" onclick="removeTypePosition(' + index + ')" aria-label="删除岗位">×</button>' +
@@ -534,6 +550,7 @@
           reading_type_id: selectedReadingTypeId,
           role_name: '',
           required_count: 1,
+          assignment_scope: 'all_participants',
           is_enabled: true,
           sort_order: (typePositions.length + 1) * 10
         });
@@ -584,6 +601,7 @@
               reading_type_id: selectedReadingTypeId,
               role_name: String(position.role_name).trim(),
               required_count: Math.max(1, Number(position.required_count) || 1),
+              assignment_scope: getPositionAssignmentScope(position),
               is_enabled: position.is_enabled !== false,
               sort_order: (i + 1) * 10,
               updated_at: new Date().toISOString()

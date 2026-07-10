@@ -62,6 +62,7 @@
 | 054 | `20260703073311_reading_media_workflow.sql` | 每日共读影像：原图上传、岗位关联、宣委非破坏裁切与三类长图 | 2026-07-03 |
 | 055 | `20260703131127_reading_media_source_org.sql` | 共读影像按来源小组归集，并支持班级/大班日程岗位上传 | 2026-07-03 |
 | 056 | `20260703212711_reading_media_poster_item_source_rls.sql` | 晨读长图素材按来源小组授权宣委查看与编排 | 2026-07-03 |
+| 057 | `20260710195000_study_role_assignment_scope.sql` | 共读岗位承担范围与日程承办组织 | 2026-07-10 |
 | fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断

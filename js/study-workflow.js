@@ -150,7 +150,10 @@ var StudyWorkflow = (function () {
     if (fullStudyAccess) {
       manageableOrgIds = (orgs || []).map(function (org) { return Number(org.id); });
     } else if (primaryOrgId) {
-      manageableOrgIds = swfGetDescendantIds(primaryOrgId, orgs, true);
+      // 下级组织可管理；所属路径上的上级组织仅用于查看规则、日程来源和已下发任务。
+      manageableOrgIds = swfGetDescendantIds(primaryOrgId, orgs, true)
+        .concat(swfGetAncestorIds(primaryOrgId, orgs))
+        .filter(function(id, index, values) { return values.indexOf(id) === index; });
     }
 
     return {
@@ -373,18 +376,18 @@ var StudyWorkflow = (function () {
     if (!org) return [];
     if (org.level === '大班') {
       return swfSortOrgs((orgs || []).filter(function (item) {
-        return item.level === '班级' && Number(item.parent_id) === Number(org.id);
+        return item.level === '班级' && item.is_active !== false && Number(item.parent_id) === Number(org.id);
       }));
     }
     if (org.level === '班级') {
       return swfSortOrgs((orgs || []).filter(function (item) {
-        return item.level === '小组' && Number(item.parent_id) === Number(org.id);
+        return item.level === '小组' && item.is_active !== false && Number(item.parent_id) === Number(org.id);
       }));
     }
     if (org.level === '小组') {
       var clsId = org.parent_id;
       return swfSortOrgs((orgs || []).filter(function (item) {
-        return item.level === '小组' && Number(item.parent_id) === Number(clsId);
+        return item.level === '小组' && item.is_active !== false && Number(item.parent_id) === Number(clsId);
       }));
     }
     return [];

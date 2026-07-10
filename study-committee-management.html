@@ -148,6 +148,12 @@
       .list-parent-name { display: block; color: var(--ink-dark); font-family: 'STSong', 'SimSun', serif; font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
       .list-parent-path { display: block; margin-top: 3px; color: var(--ink-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .list-parent-arrow { width: 22px; height: 22px; color: var(--ink-muted); }
+      .org-breadcrumbs { display: flex; align-items: center; gap: 5px; min-width: 0; margin: 0 2px 12px; color: var(--ink-muted); font-size: 12px; overflow-x: auto; scrollbar-width: none; }
+      .org-breadcrumbs::-webkit-scrollbar { display: none; }
+      .breadcrumb-item { flex: 0 0 auto; max-width: 138px; overflow: hidden; border: 0; padding: 3px 2px; background: transparent; color: inherit; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+      .breadcrumb-item:hover { color: var(--manager-red); }
+      .breadcrumb-item.current { color: var(--ink-dark); font-weight: 700; cursor: default; }
+      .breadcrumb-separator { flex: 0 0 auto; color: var(--border); }
 
       .detail-card {
         position: relative;
@@ -203,7 +209,6 @@
       .direction-placeholder { width: 52px; height: 62px; }
       .detail-tabs {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
         border-top: 1px solid var(--manager-line);
         background: var(--bg-primary);
       }
@@ -336,7 +341,7 @@
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=17"></script>
-    <script src="js/study-workflow.js?v=9"></script>
+    <script src="js/study-workflow.js?v=11"></script>
     <script>
       renderModuleBottomNav('study', 'management');
 
@@ -349,28 +354,56 @@
       var listLevel = '大班';
       var listParentId = null;
       var params = new URLSearchParams(location.search);
-      var FEATURE_BUILD = '20260630-4';
+      var FEATURE_BUILD = '20260710-8';
+      var applyingHistoryState = false;
 
       var TAB_CONFIG = {
         '大班': [
           { key: 'rules', label: '规则' },
           { key: 'course', label: '课程' },
-          { key: 'schedule', label: '排班' },
+          { key: 'schedule', label: '岗位' },
           { key: 'notice', label: '通知' }
         ],
         '班级': [
-          { key: 'push', label: '推送' },
           { key: 'course', label: '课程' },
-          { key: 'schedule', label: '排班' },
+          { key: 'schedule', label: '岗位' },
           { key: 'notice', label: '通知' }
         ],
         '小组': [
-          { key: 'week', label: '周表' },
+          { key: 'week', label: '日程' },
           { key: 'course', label: '课程' },
-          { key: 'schedule', label: '排班' },
+          { key: 'schedule', label: '岗位' },
           { key: 'notice', label: '通知' }
         ]
       };
+
+      function updateRoute(options) {
+        if (applyingHistoryState) return;
+        var opts = options || {};
+        var url = new URL(location.href);
+        if (opts.orgId) {
+          url.searchParams.set('org_id', String(opts.orgId));
+          url.searchParams.set('tab', opts.tab || currentTab || 'schedule');
+        } else {
+          url.searchParams.delete('org_id');
+          url.searchParams.delete('tab');
+        }
+        var state = { orgId: opts.orgId || null, tab: opts.tab || null };
+        if (opts.replace) history.replaceState(state, '', url.pathname + url.search);
+        else history.pushState(state, '', url.pathname + url.search);
+      }
+
+      function renderBreadcrumbs(org) {
+        var ancestors = org ? StudyWorkflow.getAncestors(org.id, allOrgs) : [];
+        var items = ['<button class="breadcrumb-item" type="button" onclick="renderOrgList(\'大班\',null)">全部大班</button>'];
+        ancestors.forEach(function(item, index) {
+          items.push('<span class="breadcrumb-separator">/</span>');
+          var isCurrent = index === ancestors.length - 1;
+          items.push('<button class="breadcrumb-item' + (isCurrent ? ' current' : '') + '" type="button" ' +
+            (isCurrent ? 'aria-current="page"' : 'onclick="openOrg(' + item.id + ')"') + '>' + escapeHtml(item.name) + '</button>');
+        });
+        return '<nav class="org-breadcrumbs" aria-label="组织路径">' + items.join('') + '</nav>';
+      }
 
       async function init() {
         await waitForDb();
@@ -407,14 +440,15 @@
         studyContext = await StudyWorkflow.loadContext(currentSemesterId, allOrgs);
 
         var requestedOrg = Number(params.get('org_id')) || null;
+        var requestedTab = params.get('tab') || 'schedule';
         if (requestedOrg) {
           var org = StudyWorkflow.getOrg(allOrgs, requestedOrg);
           if (org && StudyWorkflow.canViewOrg(studyContext, org.id)) {
-            openOrg(org.id);
+            openOrg(org.id, { tab: requestedTab, replace: true });
             return;
           }
         }
-        renderOrgList('大班', null);
+        renderOrgList('大班', null, { replace: true });
       }
 
       function getVisibleChildren(level, parentId) {
@@ -437,7 +471,7 @@
         }).length;
       }
 
-      function renderOrgList(level, parentId) {
+      function renderOrgList(level, parentId, options) {
         currentOrg = null;
         listLevel = level;
         listParentId = parentId;
@@ -467,17 +501,21 @@
           parentCard +
           '<div class="level-bar"><div class="level-title">' + level + '列表</div><div class="level-count">' + orgs.length + ' 个组织</div></div>' +
           (cards ? '<div class="org-card-grid">' + cards + '</div>' : '<div class="empty-panel">暂无可管理的' + level + '</div>');
+        updateRoute({ replace: options && options.replace });
       }
 
-      function openOrg(orgId) {
+      function openOrg(orgId, options) {
         var org = StudyWorkflow.getOrg(allOrgs, orgId);
         if (!org || !StudyWorkflow.canViewOrg(studyContext, org.id)) {
           showToast('无权查看该组织', 'error');
           return;
         }
         currentOrg = org;
-        currentTab = 'schedule';
+        var tabs = TAB_CONFIG[org.level] || [];
+        var preferredTab = options && options.tab;
+        currentTab = tabs.some(function(tab) { return tab.key === preferredTab; }) ? preferredTab : 'schedule';
         renderOrgDetail();
+        updateRoute({ orgId: org.id, tab: currentTab, replace: options && options.replace });
       }
 
       function getParentOrg(org) {
@@ -486,12 +524,7 @@
 
       function goUp() {
         if (!currentOrg) return;
-        var parent = getParentOrg(currentOrg);
-        if (parent) {
-          openOrg(parent.id);
-        } else {
-          renderOrgList('大班', null);
-        }
+        renderOrgList(currentOrg.level, currentOrg.parent_id || null);
       }
 
       function openChildren() {
@@ -514,13 +547,14 @@
         }).join('');
 
         document.getElementById('managerContent').innerHTML =
+          renderBreadcrumbs(currentOrg) +
           '<section class="detail-card">' +
             '<div class="detail-main' + (canForward ? '' : ' no-forward') + '">' +
               leftButton +
               '<div class="detail-copy"><span class="detail-level">' + currentOrg.level + '</span><h2 class="detail-name">' + escapeHtml(currentOrg.name) + '</h2><div class="detail-path">' + escapeHtml(StudyWorkflow.getOrgPath(currentOrg.id, allOrgs)) + '</div></div>' +
               rightButton +
             '</div>' +
-            '<div class="detail-tabs" role="tablist">' + tabHtml + '</div>' +
+            '<div class="detail-tabs" role="tablist" style="grid-template-columns:repeat(' + tabs.length + ',minmax(0,1fr))">' + tabHtml + '</div>' +
           '</section>' +
           '<section class="feature-area" id="featureArea"></section>';
         renderFeature();
@@ -532,7 +566,21 @@
           button.classList.toggle('active', button.getAttribute('data-tab-key') === currentTab);
         });
         renderFeature();
+        updateRoute({ orgId: currentOrg && currentOrg.id, tab: currentTab });
       }
+
+      window.addEventListener('popstate', function() {
+        if (!allOrgs.length || !studyContext) return;
+        var route = new URLSearchParams(location.search);
+        var orgId = Number(route.get('org_id')) || null;
+        applyingHistoryState = true;
+        if (orgId && StudyWorkflow.getOrg(allOrgs, orgId) && StudyWorkflow.canViewOrg(studyContext, orgId)) {
+          openOrg(orgId, { tab: route.get('tab') || 'schedule', replace: true });
+        } else {
+          renderOrgList('大班', null, { replace: true });
+        }
+        applyingHistoryState = false;
+      });
 
       function renderFeature() {
         var area = document.getElementById('featureArea');
