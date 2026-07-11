@@ -25,22 +25,48 @@ var PublicityReadingPoster = (function () {
     return 'moment';
   }
 
-  function getCropStyle(item) {
+  function getCropFrame(item) {
+    if (!item || !item.crop_frame) return null;
+    var frame = item.crop_frame;
+    var left = Math.max(0, Math.min(100, number(frame.left, 0)));
+    var top = Math.max(0, Math.min(100, number(frame.top, 0)));
+    var right = Math.max(left + 1, Math.min(100, number(frame.right, 100)));
+    var bottom = Math.max(top + 1, Math.min(100, number(frame.bottom, 100)));
+    return {
+      left: left,
+      top: top,
+      right: right,
+      bottom: bottom,
+      width: right - left,
+      height: bottom - top
+    };
+  }
+
+  function getRotation(item) {
+    var rotation = number(item && item.rotation, 0);
+    return [0, 90, 180, 270].indexOf(rotation) !== -1 ? rotation : 0;
+  }
+
+  function getCropStyle(item, cropFrame) {
     var x = Math.max(0, Math.min(100, number(item.crop_x, 50)));
     var y = Math.max(0, Math.min(100, number(item.crop_y, 50)));
     var zoom = Math.max(0.2, Math.min(4, number(item.crop_zoom, 1)));
-    if (item.crop_frame) {
-      var frame = item.crop_frame;
-      var left = Math.max(0, Math.min(100, number(frame.left, 0)));
-      var top = Math.max(0, Math.min(100, number(frame.top, 0)));
-      var right = Math.max(left + 1, Math.min(100, number(frame.right, 100)));
-      var bottom = Math.max(top + 1, Math.min(100, number(frame.bottom, 100)));
-      var frameZoom = Math.max(100 / Math.max(1, right - left), 100 / Math.max(1, bottom - top));
-      x = (left + right) / 2;
-      y = (top + bottom) / 2;
-      zoom = zoom < 1 && Math.abs(frameZoom - 1) < 0.01 ? zoom : Math.max(zoom, frameZoom);
+    var rotation = getRotation(item);
+    if (cropFrame) {
+      // 取景框已保存为相对原图的坐标。直接按坐标放置原图，避免再用固定
+      // 比例的 object-fit 容器二次裁切，导致导出的宽高与取景框不一致。
+      return (
+        'width:' +
+        10000 / cropFrame.width +
+        '%;height:auto;max-width:none;left:' +
+        (-100 * cropFrame.left) / cropFrame.width +
+        '%;top:' +
+        (-100 * cropFrame.top) / cropFrame.height +
+        '%;transform-origin:center;transform:rotate(' +
+        rotation +
+        'deg)'
+      );
     }
-    var rotation = [0, 90, 180, 270].indexOf(number(item.rotation, 0)) !== -1 ? number(item.rotation, 0) : 0;
     return (
       'object-position:' +
       x +
@@ -70,20 +96,31 @@ var PublicityReadingPoster = (function () {
 
   function imageFigure(item, className, showLabel) {
     var asset = getItemAsset(item);
-    var label = asset.role_name_snapshot || '';
-    var name = asset.person_name_snapshot || '';
+    var label = item.role_name_override || asset.role_name_snapshot || '';
+    var name = item.person_name_override || asset.person_name_snapshot || '';
     var caption = asset.caption || '';
     var title = label && name ? label + ' · ' + name : caption || '共读影像';
+    var cropFrame = getCropFrame(item);
     var figureClass = className + (hasCrop(item) ? ' prp-has-crop' : '');
+    var frameClass = 'prp-image-frame' + (cropFrame ? ' prp-crop-frame' : '');
+    var frameStyle = cropFrame
+      ? ' style="--prp-crop-width:' + cropFrame.width + ';--prp-crop-height:' + cropFrame.height + ';"'
+      : '';
     var figure =
       '<figure class="' +
       figureClass +
-      '"><div class="prp-image-frame"><img crossorigin="anonymous" alt="' +
+      '"><div class="' +
+      frameClass +
+      '"' +
+      frameStyle +
+      '><img crossorigin="anonymous" alt="' +
       prpHtml(title) +
       '" src="' +
       prpHtml(asset.signed_url) +
+      '" data-rotation="' +
+      getRotation(item) +
       '" style="' +
-      getCropStyle(item) +
+      getCropStyle(item, cropFrame) +
       '"></div>';
     if (showLabel && className.indexOf('prp-role-card') !== -1) {
       figure +=
@@ -101,6 +138,34 @@ var PublicityReadingPoster = (function () {
         '</strong></figcaption>';
     }
     return figure + '</figure>';
+  }
+
+  function syncCropFrameAspect(frame) {
+    var image = frame.querySelector('img');
+    if (!image || !image.naturalWidth || !image.naturalHeight) return;
+    var cropWidth = Math.max(1, number(frame.style.getPropertyValue('--prp-crop-width'), 100));
+    var cropHeight = Math.max(1, number(frame.style.getPropertyValue('--prp-crop-height'), 100));
+    var rotation = getRotation({ rotation: image.dataset.rotation });
+    var sourceWidth = image.naturalWidth;
+    var sourceHeight = image.naturalHeight;
+    if (rotation === 90 || rotation === 270) {
+      var temporary = sourceWidth;
+      sourceWidth = sourceHeight;
+      sourceHeight = temporary;
+    }
+    frame.style.aspectRatio = (sourceWidth * cropWidth) / (sourceHeight * cropHeight) + ' / 1';
+  }
+
+  function bindCropFrameAspects(root) {
+    root.querySelectorAll('.prp-crop-frame').forEach(function (frame) {
+      var image = frame.querySelector('img');
+      if (!image) return;
+      var sync = function () {
+        syncCropFrameAspect(frame);
+      };
+      if (image.complete) sync();
+      else image.addEventListener('load', sync, { once: true });
+    });
   }
 
   function createReadingPoster(options) {
@@ -124,14 +189,13 @@ var PublicityReadingPoster = (function () {
       return item !== feature;
     });
     var roles = rest.filter(function (item) {
-      return getItemSlot(item) === 'role' || getItemAsset(item).asset_kind === 'role';
+      return getItemSlot(item) === 'role';
     });
     var overviews = rest.filter(function (item) {
-      return getItemSlot(item) === 'overview' || getItemAsset(item).asset_kind === 'overview';
+      return getItemSlot(item) === 'overview';
     });
     var moments = rest.filter(function (item) {
-      var slot = getItemSlot(item);
-      return slot === 'moment' || slot === 'auto';
+      return getItemSlot(item) === 'moment';
     });
     var scopeClass =
       {
@@ -234,12 +298,15 @@ var PublicityReadingPoster = (function () {
 
     var wrapper = document.createElement('div');
     wrapper.innerHTML = markup;
-    return wrapper.firstElementChild;
+    var posterElement = wrapper.firstElementChild;
+    bindCropFrameAspects(posterElement);
+    return posterElement;
   }
 
   return {
     create: createReadingPoster,
     getCropStyle: getCropStyle,
+    getCropFrame: getCropFrame,
     getItemSlot: getItemSlot
   };
 })();
