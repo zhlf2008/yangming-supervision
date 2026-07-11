@@ -6,7 +6,7 @@
     <title>共读影像制作 - 宣委管理</title>
     <link rel="stylesheet" href="css/common.css?v=9" />
     <link rel="stylesheet" href="css/reading-media.css?v=1" />
-    <link rel="stylesheet" href="css/publicity-reading-poster.css?v=20" />
+    <link rel="stylesheet" href="css/publicity-reading-poster.css?v=23" />
     <style>
       .page-header {
         display: flex;
@@ -230,6 +230,15 @@
             <span data-icon="DownloadIcon"></span><span>导出当前长图</span>
           </button>
         </div>
+        <div class="poster-style-toolbar" aria-label="长图样式设置">
+          <label for="posterLayoutStyle"><span>版式</span><select id="posterLayoutStyle" onchange="setPosterLayoutStyle(this.value)"><option value="editorial">书院纪实</option><option value="compact">清雅留白</option><option value="panorama">朱红画报</option></select></label>
+          <label for="posterCoverMode"><span>封面</span><select id="posterCoverMode" onchange="setPosterStyleOption('cover_mode',this.value)"><option value="text">纯文字</option><option value="image">指定图片</option></select></label>
+          <label for="posterAccentColor"><span>主色</span><select id="posterAccentColor" onchange="setPosterStyleOption('accent_color',this.value)"><option value="vermillion">朱砂</option><option value="jade">黛青</option><option value="ink">墨色</option><option value="gold">赭金</option></select></label>
+          <label for="posterTitleScale"><span>标题</span><select id="posterTitleScale" onchange="setPosterStyleOption('title_scale',this.value)"><option value="small">精巧</option><option value="medium">标准</option><option value="large">醒目</option></select></label>
+          <label for="posterPhotoRadius"><span>圆角</span><select id="posterPhotoRadius" onchange="setPosterStyleOption('photo_radius',this.value)"><option value="0">直角</option><option value="12">轻圆角</option><option value="24">大圆角</option></select></label>
+          <label for="posterSectionSpacing"><span>间距</span><select id="posterSectionSpacing" onchange="setPosterStyleOption('section_spacing',this.value)"><option value="compact">紧凑</option><option value="normal">标准</option><option value="airy">舒展</option></select></label>
+        </div>
+        <p class="poster-style-note" id="coverModeNote"></p>
         <div class="poster-preview-shell" id="posterPreviewShell">
           <div class="poster-preview-stage" id="posterPreviewStage"></div>
         </div>
@@ -285,7 +294,7 @@
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=17"></script>
     <script src="js/reading-media.js?v=3"></script>
-    <script src="js/publicity-reading-poster.js?v=11"></script>
+    <script src="js/publicity-reading-poster.js?v=14"></script>
     <script>
       renderModuleBottomNav('publicity', 'media');
 
@@ -297,6 +306,7 @@
       var selectedSchedule = null;
       var selectedBundle = null;
       var currentPoster = null;
+      var posterStyleDraft = null;
       var currentItems = [];
       var legacyCropFrameItems = [];
       var cropItem = null;
@@ -317,6 +327,14 @@
       var requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(readingPageParams.get('date') || '')
         ? readingPageParams.get('date')
         : getToday();
+      var posterStyleDefaults = {
+        layout_style: 'editorial',
+        cover_mode: 'text',
+        accent_color: 'vermillion',
+        title_scale: 'medium',
+        photo_radius: 0,
+        section_spacing: 'normal'
+      };
 
       async function init() {
         await waitForDb();
@@ -536,6 +554,7 @@
         selectedSchedule = null;
         selectedBundle = null;
         currentPoster = null;
+        posterStyleDraft = null;
         currentItems = [];
         legacyCropFrameItems = [];
         ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
@@ -601,7 +620,14 @@
           subtitle: ReadingMedia.getDefaultSubtitle(selectedSchedule, selectedBundle.readingType),
           closing_text: '在共读中照见彼此，在践行中抵达良知。',
           participant_count: null,
-          layout_style: 'auto',
+          layout_style: posterStyleDefaults.layout_style,
+          style_config: {
+            cover_mode: posterStyleDefaults.cover_mode,
+            accent_color: posterStyleDefaults.accent_color,
+            title_scale: posterStyleDefaults.title_scale,
+            photo_radius: posterStyleDefaults.photo_radius,
+            section_spacing: posterStyleDefaults.section_spacing
+          },
           status: 'draft'
         };
 
@@ -674,6 +700,94 @@
         }
       }
 
+      function normalizePosterStyle(poster) {
+        var source = poster && poster.style_config && typeof poster.style_config === 'object'
+          ? poster.style_config
+          : {};
+        var layoutStyle = ['editorial', 'compact', 'panorama'].indexOf(poster && poster.layout_style) !== -1
+          ? poster.layout_style
+          : posterStyleDefaults.layout_style;
+        var coverMode = ['text', 'image'].indexOf(source.cover_mode) !== -1
+          ? source.cover_mode
+          : hasFeatureItem()
+            ? 'image'
+            : posterStyleDefaults.cover_mode;
+        var accentColor = ['vermillion', 'jade', 'ink', 'gold'].indexOf(source.accent_color) !== -1
+          ? source.accent_color
+          : posterStyleDefaults.accent_color;
+        var titleScale = ['small', 'medium', 'large'].indexOf(source.title_scale) !== -1
+          ? source.title_scale
+          : posterStyleDefaults.title_scale;
+        var photoRadius = [0, 12, 24].indexOf(Number(source.photo_radius)) !== -1
+          ? Number(source.photo_radius)
+          : posterStyleDefaults.photo_radius;
+        var sectionSpacing = ['compact', 'normal', 'airy'].indexOf(source.section_spacing) !== -1
+          ? source.section_spacing
+          : posterStyleDefaults.section_spacing;
+        return {
+          layout_style: layoutStyle,
+          cover_mode: coverMode,
+          accent_color: accentColor,
+          title_scale: titleScale,
+          photo_radius: photoRadius,
+          section_spacing: sectionSpacing
+        };
+      }
+
+      function hasFeatureItem() {
+        return currentItems.some(function (item) {
+          return item.is_visible !== false && item.slot_kind === 'feature';
+        });
+      }
+
+      function renderStyleEditor() {
+        if (!posterStyleDraft) posterStyleDraft = normalizePosterStyle(currentPoster);
+        document.getElementById('posterLayoutStyle').value = posterStyleDraft.layout_style;
+        document.getElementById('posterCoverMode').value = posterStyleDraft.cover_mode;
+        document.getElementById('posterAccentColor').value = posterStyleDraft.accent_color;
+        document.getElementById('posterTitleScale').value = posterStyleDraft.title_scale;
+        document.getElementById('posterPhotoRadius').value = String(posterStyleDraft.photo_radius);
+        document.getElementById('posterSectionSpacing').value = posterStyleDraft.section_spacing;
+        var note = document.getElementById('coverModeNote');
+        if (posterStyleDraft.cover_mode === 'image') {
+          note.textContent = hasFeatureItem()
+            ? '当前使用图片设置中指定的封面主图。'
+            : '请在图片设置中把一张照片的位置设为“封面主图”。未指定前仍显示纯文字封面。';
+        } else {
+          note.textContent = '';
+        }
+      }
+
+      function setPosterLayoutStyle(layoutStyle) {
+        if (['editorial', 'compact', 'panorama'].indexOf(layoutStyle) === -1) return;
+        if (!posterStyleDraft) posterStyleDraft = normalizePosterStyle(currentPoster);
+        posterStyleDraft.layout_style = layoutStyle;
+        posterStyleDraft.accent_color = {
+          editorial: 'vermillion',
+          compact: 'jade',
+          panorama: 'vermillion'
+        }[layoutStyle];
+        renderStyleEditor();
+        handlePosterFieldInput();
+      }
+
+      function setPosterStyleOption(field, value) {
+        if (!posterStyleDraft) posterStyleDraft = normalizePosterStyle(currentPoster);
+        var allowed = {
+          cover_mode: ['text', 'image'],
+          accent_color: ['vermillion', 'jade', 'ink', 'gold'],
+          title_scale: ['small', 'medium', 'large'],
+          photo_radius: [0, 12, 24],
+          section_spacing: ['compact', 'normal', 'airy']
+        };
+        if (!allowed[field]) return;
+        var normalizedValue = field === 'photo_radius' ? Number(value) : value;
+        if (allowed[field].indexOf(normalizedValue) === -1) return;
+        posterStyleDraft[field] = normalizedValue;
+        renderStyleEditor();
+        handlePosterFieldInput();
+      }
+
       function renderWorkbench() {
         var org = currentGroup;
         document.getElementById('editorTitle').textContent = '文字设置';
@@ -686,6 +800,8 @@
         document.getElementById('participantCount').value =
           currentPoster.participant_count === null ? '' : currentPoster.participant_count;
         document.getElementById('closingText').value = currentPoster.closing_text || '';
+        posterStyleDraft = normalizePosterStyle(currentPoster);
+        renderStyleEditor();
         ['editorPanel', 'assetEditorPanel', 'previewPanel'].forEach(function (id) {
           document.getElementById(id).hidden = false;
         });
@@ -764,11 +880,20 @@
       }
 
       function getPosterDraft() {
+        if (!posterStyleDraft) posterStyleDraft = normalizePosterStyle(currentPoster);
         return Object.assign({}, currentPoster, {
           title: document.getElementById('posterTitle').value.trim(),
           subtitle: document.getElementById('posterSubtitle').value.trim(),
           participant_count: ReadingMedia.numberOrNull(document.getElementById('participantCount').value),
-          closing_text: document.getElementById('closingText').value.trim()
+          closing_text: document.getElementById('closingText').value.trim(),
+          layout_style: posterStyleDraft.layout_style,
+          style_config: {
+            cover_mode: posterStyleDraft.cover_mode,
+            accent_color: posterStyleDraft.accent_color,
+            title_scale: posterStyleDraft.title_scale,
+            photo_radius: posterStyleDraft.photo_radius,
+            section_spacing: posterStyleDraft.section_spacing
+          }
         });
       }
 
@@ -829,9 +954,12 @@
                     : 'moment';
             }
           });
+          if (!posterStyleDraft) posterStyleDraft = normalizePosterStyle(currentPoster);
+          posterStyleDraft.cover_mode = 'image';
         }
         item.slot_kind = slotKind;
         renderAssetEditor();
+        renderStyleEditor();
         updatePosterPreview();
         queuePosterItemSave(item);
       }
@@ -988,7 +1116,8 @@
           subtitle: currentPoster.subtitle,
           participant_count: currentPoster.participant_count,
           closing_text: currentPoster.closing_text,
-          layout_style: 'auto',
+          layout_style: currentPoster.layout_style,
+          style_config: currentPoster.style_config,
           status: status || currentPoster.status || 'draft',
           updated_by: publicityReadingContext.user.id
         };
@@ -1006,6 +1135,7 @@
         }
         if (result.error) throw result.error;
         currentPoster = result.data;
+        posterStyleDraft = normalizePosterStyle(currentPoster);
         return currentPoster;
       }
 

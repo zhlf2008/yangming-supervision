@@ -12,6 +12,10 @@ var PublicityReadingPoster = (function () {
     return Number.isFinite(result) ? result : fallback;
   }
 
+  function allowed(value, values, fallback) {
+    return values.indexOf(value) !== -1 ? value : fallback;
+  }
+
   function getItemAsset(item) {
     return item.asset || item;
   }
@@ -182,20 +186,37 @@ var PublicityReadingPoster = (function () {
         return number(a.sort_order, 0) - number(b.sort_order, 0);
       });
 
-    var feature = items.find(function (item) {
+    var requestedFeature = items.find(function (item) {
       return getItemSlot(item) === 'feature' && getItemAsset(item).asset_kind !== 'overview';
     });
+    var styleConfig = poster.style_config && typeof poster.style_config === 'object' ? poster.style_config : {};
+    var layoutStyle = allowed(poster.layout_style, ['editorial', 'compact', 'panorama'], 'editorial');
+    var coverMode = allowed(styleConfig.cover_mode, ['text', 'image'], requestedFeature ? 'image' : 'text');
+    var accentColor = allowed(styleConfig.accent_color, ['vermillion', 'jade', 'ink', 'gold'], 'vermillion');
+    var titleScale = allowed(styleConfig.title_scale, ['small', 'medium', 'large'], 'medium');
+    var sectionSpacing = allowed(styleConfig.section_spacing, ['compact', 'normal', 'airy'], 'normal');
+    var photoRadius = allowed(number(styleConfig.photo_radius, 0), [0, 12, 24], 0);
+    var feature = coverMode === 'image' ? requestedFeature : null;
     var rest = items.filter(function (item) {
       return item !== feature;
     });
+    function getBodySlot(item) {
+      if (!feature && item === requestedFeature) {
+        var requestedAsset = getItemAsset(item);
+        if (requestedAsset.asset_kind === 'role') return 'role';
+        if (requestedAsset.asset_kind === 'overview') return 'overview';
+        return 'moment';
+      }
+      return getItemSlot(item);
+    }
     var roles = rest.filter(function (item) {
-      return getItemSlot(item) === 'role';
+      return getBodySlot(item) === 'role';
     });
     var overviews = rest.filter(function (item) {
-      return getItemSlot(item) === 'overview';
+      return getBodySlot(item) === 'overview';
     });
     var moments = rest.filter(function (item) {
-      return getItemSlot(item) === 'moment';
+      return getBodySlot(item) === 'moment';
     });
     var scopeClass =
       {
@@ -213,28 +234,56 @@ var PublicityReadingPoster = (function () {
     var markup =
       '<article class="publicity-reading-poster prp-' +
       scopeClass +
-      '">' +
-      '<header class="prp-cover"><div class="prp-brand">阳明心学 · 每日共读影像</div>' +
-      '<div class="prp-date-row"><span class="prp-date">' +
+      ' prp-style-' +
+      layoutStyle +
+      ' prp-accent-' +
+      accentColor +
+      ' prp-title-' +
+      titleScale +
+      ' prp-spacing-' +
+      sectionSpacing +
+      '" style="--poster-photo-radius:' +
+      photoRadius +
+      'px">' +
+      '<header class="prp-cover"><div class="prp-masthead">' +
+      '<div class="prp-brand"><span>阳明心学</span><strong>每日共读影像</strong></div>' +
+      '<div class="prp-issue"><span>READING JOURNAL</span><strong>' +
       prpHtml(displayDate) +
-      '</span><span class="prp-weekday">' +
-      prpHtml(weekday) +
-      '</span></div>' +
-      '<div class="prp-title-block"><div class="prp-scope">' +
-      prpHtml(subtitle) +
-      '</div><h1>' +
-      prpHtml(title) +
-      '</h1><p>' +
-      prpHtml(opts.orgPath || org.name || '') +
-      '</p></div>';
+      '</strong></div></div>';
 
     if (feature) {
       markup +=
         '<div class="prp-hero">' +
         imageFigure(feature, 'prp-hero-figure', false) +
+        '<div class="prp-hero-shade"></div><div class="prp-title-block prp-title-on-image">' +
+        '<div class="prp-date-row"><span class="prp-date">' +
+        prpHtml(displayDate) +
+        '</span><span class="prp-weekday">' +
+        prpHtml(weekday) +
+        '</span></div><div class="prp-scope">' +
+        prpHtml(subtitle) +
+        '</div><h1>' +
+        prpHtml(title) +
+        '</h1><p>' +
+        prpHtml(opts.orgPath || org.name || '') +
+        '</p></div><div class="prp-cover-seal">知行合一</div>' +
         '<div class="prp-hero-caption"><span>晨读现场</span><strong>' +
         prpHtml(getItemAsset(feature).caption || getItemAsset(feature).role_name_snapshot || '共读中的此刻') +
         '</strong></div></div>';
+    } else {
+      markup +=
+        '<div class="prp-title-panel"><div class="prp-title-block">' +
+        '<div class="prp-date-row"><span class="prp-date">' +
+        prpHtml(displayDate) +
+        '</span><span class="prp-weekday">' +
+        prpHtml(weekday) +
+        '</span></div><div class="prp-scope">' +
+        prpHtml(subtitle) +
+        '</div><h1>' +
+        prpHtml(title) +
+        '</h1><p>' +
+        prpHtml(opts.orgPath || org.name || '') +
+        '</p></div><div class="prp-cover-seal">知行合一</div></div>';
     }
 
     if (participantCount) {

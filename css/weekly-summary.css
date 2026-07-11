@@ -175,6 +175,77 @@
   cursor: pointer;
 }
 
+/* 宣委汇总沿用督察汇总的精简周次切换结构。 */
+body[data-summary-mode='publicity'] .week-toolbar {
+  padding: 14px 16px 11px;
+  background: #fff;
+}
+
+body[data-summary-mode='publicity'] .week-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+body[data-summary-mode='publicity'] .week-nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+body[data-summary-mode='publicity'] .week-nav-btn {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+
+body[data-summary-mode='publicity'] .week-nav-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+body[data-summary-mode='publicity'] .week-center {
+  min-width: 138px;
+}
+
+body[data-summary-mode='publicity'] .week-position-label {
+  color: var(--ink-dark);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+body[data-summary-mode='publicity'] .week-range {
+  margin-top: 2px;
+  color: var(--ink-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+body[data-summary-mode='publicity'] .today-btn {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 6px;
+}
+
+body[data-summary-mode='publicity'] .week-actions {
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding-top: 9px;
+  margin-top: 9px;
+  border-top: 1px solid #f0ece7;
+}
+
+body[data-summary-mode='publicity'] .week-caption {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
 .schedule-list {
   display: grid;
   gap: 0;

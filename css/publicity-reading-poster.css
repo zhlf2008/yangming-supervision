@@ -19,6 +19,53 @@
   margin-top: 14px;
 }
 
+.poster-style-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 11px 0;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.poster-style-toolbar label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.poster-style-toolbar span {
+  color: var(--ink-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.poster-style-toolbar select {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 5px 24px 5px 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink-dark);
+  font-size: 11px;
+}
+
+.poster-style-note {
+  margin-top: 7px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.poster-style-note:empty {
+  display: none;
+}
+
 .poster-preview-shell {
   overflow: hidden;
   margin-top: 16px;
@@ -731,6 +778,10 @@
 }
 
 @media (max-width: 420px) {
+  .poster-style-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .poster-asset-row {
     --asset-thumb-width: 74px;
     --asset-thumb-height: 56px;
@@ -1091,6 +1142,684 @@
   color: rgba(255, 255, 255, 0.68);
   font-size: 17px;
   letter-spacing: 1px;
+}
+
+/* 书院纪实画报：用刊头、主视觉与非均分照片建立更清晰的阅读节奏。 */
+.publicity-reading-poster {
+  --poster-ink: #211e19;
+  --poster-muted: #746b5f;
+  --poster-paper: #efe6d6;
+  --poster-paper-light: #f8f3e9;
+  --poster-vermilion: #79252d;
+  --poster-gold: #b9965b;
+  --poster-jade: #355a52;
+  background:
+    linear-gradient(90deg, rgba(62, 46, 29, 0.025) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(62, 46, 29, 0.02) 1px, transparent 1px),
+    var(--poster-paper);
+  background-size:
+    44px 44px,
+    44px 44px,
+    auto;
+  box-shadow: inset 0 0 0 1px rgba(59, 45, 29, 0.12);
+}
+
+.prp-cover {
+  padding: 34px 40px 46px;
+  border-bottom: 0;
+  background:
+    radial-gradient(circle at 82% 0%, rgba(185, 150, 91, 0.17), transparent 32%),
+    var(--poster-paper-light);
+}
+
+.prp-cover::before {
+  z-index: 0;
+  inset: 18px;
+  height: auto;
+  border: 1px solid rgba(85, 66, 42, 0.24);
+  background: transparent;
+  pointer-events: none;
+}
+
+.prp-cover::after {
+  z-index: 1;
+  top: 18px;
+  right: 40px;
+  width: 178px;
+  height: 6px;
+  background: var(--poster-vermilion);
+}
+
+.prp-masthead {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 12px 16px 24px;
+  border-bottom: 1px solid rgba(54, 44, 31, 0.42);
+}
+
+.prp-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 0;
+  background: transparent;
+  color: var(--poster-ink);
+  letter-spacing: 0;
+}
+
+.prp-brand span {
+  color: var(--poster-vermilion);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 5px;
+}
+
+.prp-brand strong {
+  font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.prp-issue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--poster-muted);
+  line-height: 1.25;
+}
+
+.prp-issue span {
+  color: var(--poster-gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.prp-issue strong {
+  margin-top: 5px;
+  font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.prp-hero {
+  z-index: 1;
+  margin-top: 28px;
+  border: 1px solid rgba(46, 36, 24, 0.5);
+  border-radius: 0;
+  background: #292722;
+  box-shadow: 0 22px 48px rgba(44, 31, 17, 0.15);
+}
+
+.prp-hero-figure .prp-image-frame {
+  height: auto;
+  aspect-ratio: 16 / 10;
+}
+
+.prp-hero-figure .prp-image-frame img {
+  object-fit: cover;
+}
+
+.prp-hero-shade {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(17, 16, 14, 0.08) 26%, rgba(18, 16, 13, 0.84) 100%),
+    linear-gradient(90deg, rgba(17, 15, 12, 0.3), transparent 64%);
+  pointer-events: none;
+}
+
+.prp-title-block {
+  position: relative;
+  z-index: 2;
+  margin-top: 0;
+}
+
+.prp-title-on-image {
+  position: absolute;
+  right: 46px;
+  bottom: 48px;
+  left: 46px;
+  max-width: 820px;
+  color: #fffaf1;
+}
+
+.prp-date-row {
+  gap: 14px;
+  margin-top: 0;
+}
+
+.prp-title-on-image .prp-date {
+  color: #e8c98f;
+  font-size: 39px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.prp-title-on-image .prp-weekday {
+  color: rgba(255, 250, 241, 0.72);
+  font-size: 19px;
+}
+
+.prp-title-on-image .prp-scope {
+  margin-top: 28px;
+  color: #e7c783;
+  font-size: 19px;
+  letter-spacing: 7px;
+}
+
+.prp-title-block h1 {
+  margin-top: 13px;
+  color: inherit;
+  font-size: 86px;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: 4px;
+}
+
+.prp-title-block p {
+  margin-top: 17px;
+  color: inherit;
+  font-size: 20px;
+  letter-spacing: 3px;
+  opacity: 0.76;
+}
+
+.prp-title-panel {
+  position: relative;
+  z-index: 1;
+  min-height: 470px;
+  padding: 70px 54px 58px;
+  margin-top: 28px;
+  border: 1px solid rgba(54, 38, 27, 0.5);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 52%),
+    var(--poster-vermilion);
+  color: #fffaf1;
+}
+
+.prp-title-panel .prp-date,
+.prp-title-panel .prp-scope {
+  color: #e8c98f;
+}
+
+.prp-title-panel .prp-weekday {
+  color: rgba(255, 250, 241, 0.72);
+}
+
+.prp-cover-seal {
+  position: absolute;
+  z-index: 3;
+  top: 28px;
+  right: 28px;
+  width: 46px;
+  padding: 11px 7px;
+  border: 1px solid rgba(255, 246, 229, 0.8);
+  background: var(--poster-vermilion);
+  color: #fff8e9;
+  font-family: 'STSong', 'SimSun', 'Noto Serif SC', serif;
+  font-size: 18px;
+  line-height: 1.12;
+  letter-spacing: 5px;
+  text-align: center;
+  writing-mode: vertical-rl;
+}
+
+.prp-title-panel .prp-cover-seal {
+  background: transparent;
+}
+
+.prp-hero-caption {
+  z-index: 3;
+  top: 28px;
+  right: auto;
+  bottom: auto;
+  left: 28px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-left: 4px solid #e8c98f;
+  background: rgba(25, 22, 18, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.prp-hero-caption span {
+  color: #e8c98f;
+  font-size: 12px;
+  letter-spacing: 3px;
+}
+
+.prp-hero-caption strong {
+  max-width: 420px;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prp-stat-row {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  border-right: 1px solid rgba(79, 62, 39, 0.22);
+  border-bottom: 1px solid rgba(79, 62, 39, 0.22);
+  border-left: 1px solid rgba(79, 62, 39, 0.22);
+  background: transparent;
+}
+
+.prp-stat-row > div {
+  justify-content: flex-end;
+  padding: 18px 25px;
+  background: rgba(255, 252, 245, 0.64);
+}
+
+.prp-stat-row strong {
+  color: var(--poster-vermilion);
+  font-size: 34px;
+}
+
+.prp-stat-row span {
+  font-size: 15px;
+  letter-spacing: 2px;
+}
+
+.prp-section {
+  padding: 62px 54px 72px;
+  border-top: 1px solid rgba(86, 66, 42, 0.14);
+}
+
+.prp-section:nth-of-type(even) {
+  background: rgba(255, 251, 242, 0.54);
+}
+
+.prp-section-kicker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--poster-vermilion);
+  font-size: 13px;
+  letter-spacing: 7px;
+}
+
+.prp-section-kicker::after {
+  width: 86px;
+  height: 1px;
+  background: var(--poster-gold);
+  content: '';
+}
+
+.prp-section-heading {
+  align-items: baseline;
+  padding-bottom: 20px;
+  margin-top: 11px;
+  border-bottom: 1px solid rgba(55, 45, 31, 0.56);
+}
+
+.prp-section-heading h2 {
+  font-size: 48px;
+  letter-spacing: 3px;
+}
+
+.prp-section-heading p {
+  max-width: 440px;
+  color: var(--poster-muted);
+  font-size: 18px;
+}
+
+.prp-role-grid {
+  gap: 22px 18px;
+  margin-top: 32px;
+}
+
+.prp-role-card {
+  counter-increment: focus-person;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.prp-role-card .prp-image-frame {
+  border: 1px solid rgba(68, 52, 33, 0.28);
+  background: #26241f;
+}
+
+.prp-role-card figcaption {
+  min-height: 72px;
+  padding: 14px 2px 8px;
+  border-top: 0;
+  border-bottom: 1px solid rgba(77, 59, 37, 0.28);
+  background: transparent;
+}
+
+.prp-role-card figcaption::before {
+  display: inline-flex;
+  width: 47px;
+  height: auto;
+  flex: 0 0 47px;
+  margin: 0 12px 0 0;
+  background: transparent;
+  color: var(--poster-vermilion);
+  content: '0' counter(focus-person);
+  font-family: Georgia, serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.prp-role-caption div {
+  flex: 1;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.prp-role-caption strong {
+  font-size: 29px;
+}
+
+.prp-role-caption span {
+  border: 1px solid var(--poster-jade);
+  background: transparent;
+  color: var(--poster-jade);
+  font-size: 12px;
+}
+
+.prp-overview-grid {
+  gap: 18px;
+  margin-top: 32px;
+  overflow: visible;
+  border: 0;
+}
+
+.prp-overview-card {
+  padding: 7px;
+  border: 1px solid rgba(75, 58, 36, 0.3);
+  background: rgba(255, 252, 246, 0.72);
+  box-shadow: 0 16px 30px rgba(48, 35, 20, 0.08);
+}
+
+.prp-overview-grid-two .prp-overview-card:first-child {
+  grid-column: 1 / -1;
+}
+
+.prp-moment-grid {
+  gap: 28px 18px;
+  margin-top: 32px;
+}
+
+.prp-small .prp-moment-card:first-child {
+  grid-column: 1 / -1;
+}
+
+.prp-small .prp-moment-card:first-child .prp-image-frame {
+  aspect-ratio: 16 / 8.5;
+}
+
+.prp-moment-card .prp-image-frame {
+  border: 1px solid rgba(72, 55, 35, 0.3);
+}
+
+.prp-moment-card figcaption {
+  padding: 14px 1px 0;
+  border-top: 0;
+  background: transparent;
+}
+
+.prp-moment-card figcaption span {
+  color: var(--poster-vermilion);
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.prp-moment-card figcaption strong {
+  font-size: 24px;
+}
+
+.prp-footer {
+  padding: 88px 72px 64px;
+  border-top: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 48%),
+    var(--poster-vermilion);
+}
+
+.prp-footer-mark {
+  color: #e2c88f;
+  font-size: 21px;
+  letter-spacing: 11px;
+}
+
+.prp-footer blockquote {
+  max-width: 850px;
+  margin: 38px 0 64px;
+  font-size: 42px;
+  line-height: 1.7;
+}
+
+.prp-footer-meta {
+  border-top-color: rgba(255, 244, 221, 0.34);
+  color: rgba(255, 247, 232, 0.68);
+}
+
+.publicity-reading-poster {
+  --poster-photo-radius: 0px;
+  --poster-title-size: 86px;
+}
+
+.prp-accent-jade {
+  --poster-vermilion: #355a52;
+  --poster-gold: #b49a67;
+  --poster-jade: #355a52;
+}
+
+.prp-accent-ink {
+  --poster-vermilion: #292722;
+  --poster-gold: #a98b59;
+  --poster-jade: #47443d;
+}
+
+.prp-accent-gold {
+  --poster-vermilion: #8b6335;
+  --poster-gold: #c39b5a;
+  --poster-jade: #6f5637;
+}
+
+.prp-title-small {
+  --poster-title-size: 72px;
+}
+
+.prp-title-medium {
+  --poster-title-size: 86px;
+}
+
+.prp-title-large {
+  --poster-title-size: 100px;
+}
+
+.prp-title-block h1 {
+  font-size: var(--poster-title-size);
+}
+
+.prp-hero,
+.prp-role-card .prp-image-frame,
+.prp-overview-card,
+.prp-overview-card .prp-image-frame,
+.prp-moment-card .prp-image-frame {
+  border-radius: var(--poster-photo-radius);
+}
+
+.prp-spacing-compact .prp-section {
+  padding-top: 42px;
+  padding-bottom: 50px;
+}
+
+.prp-spacing-compact .prp-role-grid,
+.prp-spacing-compact .prp-overview-grid,
+.prp-spacing-compact .prp-moment-grid {
+  margin-top: 22px;
+}
+
+.prp-spacing-airy .prp-section {
+  padding-top: 82px;
+  padding-bottom: 92px;
+}
+
+.prp-spacing-airy .prp-role-grid,
+.prp-spacing-airy .prp-overview-grid,
+.prp-spacing-airy .prp-moment-grid {
+  margin-top: 42px;
+}
+
+/* 清雅留白：降低底色对比，用线条和留白组织内容。 */
+.prp-style-compact {
+  background: #f7f4ec;
+  background-image: none;
+}
+
+.prp-style-compact .prp-cover {
+  padding: 36px 48px 54px;
+  background: #fbfaf5;
+}
+
+.prp-style-compact .prp-cover::after {
+  width: 96px;
+  height: 3px;
+  background: var(--poster-vermilion);
+}
+
+.prp-style-compact .prp-masthead {
+  padding-inline: 8px;
+}
+
+.prp-style-compact .prp-brand span,
+.prp-style-compact .prp-issue span {
+  color: var(--poster-vermilion);
+}
+
+.prp-style-compact .prp-title-panel {
+  min-height: 420px;
+  padding: 76px 58px 64px;
+  border-width: 5px 0 1px;
+  border-top-color: var(--poster-vermilion);
+  border-bottom-color: rgba(61, 52, 40, 0.32);
+  background: transparent;
+  color: var(--poster-ink);
+}
+
+.prp-style-compact .prp-title-panel .prp-date,
+.prp-style-compact .prp-title-panel .prp-scope {
+  color: var(--poster-vermilion);
+}
+
+.prp-style-compact .prp-title-panel .prp-weekday {
+  color: var(--poster-muted);
+}
+
+.prp-style-compact .prp-title-panel .prp-cover-seal {
+  border-color: var(--poster-vermilion);
+  background: var(--poster-vermilion);
+  color: #fff;
+}
+
+.prp-style-compact .prp-section,
+.prp-style-compact .prp-section:nth-of-type(even) {
+  border-top-color: rgba(67, 57, 43, 0.16);
+  background: transparent;
+}
+
+.prp-style-compact .prp-section-heading {
+  border-bottom-width: 1px;
+}
+
+.prp-style-compact .prp-role-card figcaption,
+.prp-style-compact .prp-moment-card figcaption {
+  border-bottom-color: rgba(67, 57, 43, 0.18);
+}
+
+.prp-style-compact .prp-footer {
+  background: var(--poster-jade);
+}
+
+/* 朱红画报：加强刊头与章节对比，适合照片较多的场次。 */
+.prp-style-panorama {
+  background-color: #eee2d1;
+}
+
+.prp-style-panorama .prp-cover {
+  padding: 30px 36px 48px;
+  background: #eadcc7;
+}
+
+.prp-style-panorama .prp-cover::before {
+  inset: 14px;
+  border-color: rgba(91, 48, 38, 0.32);
+}
+
+.prp-style-panorama .prp-cover::after {
+  display: none;
+}
+
+.prp-style-panorama .prp-masthead {
+  align-items: center;
+  padding: 20px 22px;
+  border: 0;
+  background: var(--poster-vermilion);
+}
+
+.prp-style-panorama .prp-brand,
+.prp-style-panorama .prp-brand span,
+.prp-style-panorama .prp-issue,
+.prp-style-panorama .prp-issue strong {
+  color: #fff7e9;
+}
+
+.prp-style-panorama .prp-issue span {
+  color: #e9c98f;
+}
+
+.prp-style-panorama .prp-title-panel {
+  min-height: 520px;
+  margin-top: 14px;
+  background:
+    linear-gradient(130deg, rgba(255, 255, 255, 0.08), transparent 56%),
+    var(--poster-vermilion);
+}
+
+.prp-style-panorama .prp-section-kicker {
+  padding: 7px 10px;
+  width: max-content;
+  background: var(--poster-vermilion);
+  color: #fff8e9;
+}
+
+.prp-style-panorama .prp-section-kicker::after {
+  display: none;
+}
+
+.prp-style-panorama .prp-section-heading {
+  border-bottom: 3px solid var(--poster-vermilion);
+}
+
+.prp-style-panorama .prp-role-card figcaption {
+  padding-inline: 12px;
+  background: rgba(255, 250, 241, 0.82);
+}
+
+.prp-style-panorama .prp-overview-card {
+  padding: 10px;
+  border-color: var(--poster-vermilion);
+}
+
+.prp-style-panorama .prp-footer {
+  border-top: 10px solid var(--poster-gold);
+  background: #27231e;
 }
 
 @media (min-width: 421px) and (max-width: 620px) {

@@ -152,9 +152,12 @@
   function renderWeekHeader() {
     var end = addDays(weekStart, 6);
     var range = formatWeekRange(weekStart);
+    var positionLabel = getWeekPositionLabel(weekStart);
     document.getElementById('weekRange').textContent = range;
+    var positionElement = document.getElementById('weekPositionLabel');
+    if (positionElement) positionElement.textContent = positionLabel;
     document.getElementById('currentDate').textContent = formatMonthDay(weekStart) + '—' + formatMonthDay(end);
-    document.getElementById('currentWeekday').textContent = getWeekPositionLabel(weekStart);
+    document.getElementById('currentWeekday').textContent = positionLabel;
   }
 
   async function resolveCurrentUserGroup() {
@@ -578,7 +581,7 @@
 
     document.getElementById('scheduleList').innerHTML = html;
     document.getElementById('weekSummaryText').textContent =
-      '本周 ' + availableCount + ' 个日程 · ' + contentCount + (isPublicity ? ' 项内容' : ' 篇作业');
+      getWeekPositionLabel(weekStart) + ' ' + availableCount + ' 个日程 · ' + contentCount + (isPublicity ? ' 项内容' : ' 篇作业');
     document.querySelectorAll('.schedule-item[data-date]:not(:disabled)').forEach(function (button) {
       button.addEventListener('click', function () {
         lastDetailTrigger = this;
