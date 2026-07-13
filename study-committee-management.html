@@ -341,7 +341,7 @@
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=17"></script>
-    <script src="js/study-workflow.js?v=11"></script>
+    <script src="js/study-workflow.js?v=12"></script>
     <script>
       renderModuleBottomNav('study', 'management');
 
@@ -354,7 +354,7 @@
       var listLevel = '大班';
       var listParentId = null;
       var params = new URLSearchParams(location.search);
-      var FEATURE_BUILD = '20260710-8';
+      var FEATURE_BUILD = '20260714-26';
       var applyingHistoryState = false;
 
       var TAB_CONFIG = {
@@ -365,11 +365,13 @@
           { key: 'notice', label: '通知' }
         ],
         '班级': [
+          { key: 'rules', label: '规则' },
           { key: 'course', label: '课程' },
           { key: 'schedule', label: '岗位' },
           { key: 'notice', label: '通知' }
         ],
         '小组': [
+          { key: 'rules', label: '规则' },
           { key: 'week', label: '日程' },
           { key: 'course', label: '课程' },
           { key: 'schedule', label: '岗位' },
@@ -594,7 +596,7 @@
         var title = '';
         if (currentTab === 'rules') {
           src = 'study-schedule-rules.html?embedded=1&org_id=' + currentOrg.id;
-          title = '大班规则设置';
+          title = currentOrg.level + '规则设置';
         } else if (currentTab === 'course') {
           src = 'study-org-schedule.html?embedded=1&view=course&org_id=' + currentOrg.id;
           title = '周切换课程设置';

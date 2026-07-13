@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>优秀作业汇总 - 学委管理</title>
-    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/common.css?v=10" />
     <link rel="stylesheet" href="css/weekly-summary.css?v=2" />
   </head>
   <body class="app-loading" data-summary-mode="study">
@@ -71,21 +71,9 @@
 
       <section class="summary-section week-section" aria-labelledby="weekRange">
         <div class="week-toolbar">
-          <div class="week-switcher">
-            <button class="week-nav-btn" id="previousWeekBtn" type="button" aria-label="上一周">
-              <span data-icon="ChevronLeftIcon"></span>
-            </button>
-            <div class="week-center">
-              <div class="week-range" id="weekRange">--</div>
-              <div class="week-caption">周一至周日 · 点击日程查看作业</div>
-            </div>
-            <button class="week-nav-btn" id="nextWeekBtn" type="button" aria-label="下一周">
-              <span data-icon="ChevronRightIcon"></span>
-            </button>
-          </div>
+          <div id="homeworkWeekSwitcher"></div>
           <div class="week-actions">
             <span class="week-summary-text" id="weekSummaryText">正在加载...</span>
-            <button class="today-btn" id="currentWeekBtn" type="button">回到本周</button>
           </div>
         </div>
         <div class="schedule-list" id="scheduleList">
@@ -111,7 +99,18 @@
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=17"></script>
+    <script src="js/components.js?v=18"></script>
+    <script>
+      mountWeekSwitcher('homeworkWeekSwitcher', {
+        previousId: 'previousWeekBtn',
+        nextId: 'nextWeekBtn',
+        currentId: 'currentWeekBtn',
+        labelId: 'weekPositionLabel',
+        rangeId: 'weekRange',
+        currentText: '回到本周',
+        caption: '周一至周日 · 点击日程查看作业'
+      });
+    </script>
     <script src="js/excellent-homework.js?v=2"></script>
     <script src="js/reading-media.js?v=2"></script>
     <script src="js/weekly-summary.js?v=2"></script>

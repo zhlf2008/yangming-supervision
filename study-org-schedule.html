@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>晨读安排 - 组织日程</title>
-    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/common.css?v=10" />
     <style>
       .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
       .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -18,13 +18,6 @@
       .empty-state { text-align: center; color: var(--ink-muted); padding: 24px 8px; font-size: 13px; }
       .muted { color: var(--ink-muted); }
       .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-      .date-selector { background: var(--bg-card); border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-      .date-nav { display: flex; align-items: center; gap: 12px; }
-      .date-nav-btn { width: 36px; height: 36px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-      .date-current { text-align: center; min-width: 140px; }
-      .date-week-label { font-size: 15px; font-weight: 600; color: var(--ink-dark); }
-      .date-week-range { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
-      .date-today { font-size: 12px; color: var(--vermillion); padding: 6px 12px; background: var(--vermillion-light); border-radius: 6px; cursor: pointer; border: none; }
       .scope-tag { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 62px; margin-left: auto; padding: 3px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
       .scope-tag.大班 { background: var(--vermillion-light); color: var(--vermillion); }
       .scope-tag.班级 { background: var(--green-light); color: var(--green); }
@@ -138,21 +131,32 @@
       .assignment-planner-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
       .assignment-planner-title { color: var(--ink-dark); font-size: 14px; font-weight: 700; }
       .assignment-planner-note { margin-top: 3px; color: var(--ink-muted); font-size: 12px; line-height: 1.5; }
-      .assignment-planner-control { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-      .assignment-planner-label { flex: 0 0 auto; color: var(--ink-light); font-size: 12px; font-weight: 700; }
+      .assignment-planner-control { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(188, 59, 42, .12); }
+      .assignment-planner-label { color: var(--ink-light); font-size: 12px; font-weight: 700; }
       .assignment-planner-control .select-control { flex: 1; }
-      .assignment-planner-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-      .assignment-summary-chip { padding: 4px 8px; border: 1px solid rgba(188, 59, 42, .14); border-radius: 999px; background: rgba(255, 255, 255, .72); color: var(--ink-light); font-size: 11px; }
-      .assignment-summary-chip strong { color: var(--vermillion); font-weight: 700; }
+      .assignment-planner-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+      .assignment-summary-chip { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 4px 6px; border: 1px solid rgba(188, 59, 42, .14); border-radius: 5px; background: rgba(255, 255, 255, .78); white-space: nowrap; }
+      .assignment-summary-name { flex: 0 1 auto; overflow: hidden; color: var(--ink-dark); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+      .assignment-summary-meta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; color: var(--ink-muted); font-size: 10px; white-space: nowrap; }
+      .assignment-summary-meta strong { flex: 0 0 auto; color: var(--vermillion); font-weight: 700; }
       .bulk-allocation-panel { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; padding: 12px 13px; border: 1px solid rgba(188, 59, 42, .22); border-left: 3px solid var(--vermillion); border-radius: 9px; background: linear-gradient(100deg, var(--vermillion-light), var(--bg-card) 72%); }
       .bulk-allocation-copy { min-width: 0; }
       .bulk-allocation-title { display: flex; align-items: baseline; gap: 7px; color: var(--ink-dark); font-weight: 700; }
       .bulk-allocation-title small { color: var(--ink-muted); font-size: 11px; font-weight: 500; }
       .bulk-allocation-note { margin-top: 3px; color: var(--ink-muted); font-size: 12px; line-height: 1.45; }
-      .bulk-allocation-actions { display: flex; align-items: center; justify-content: flex-end; }
-      .bulk-allocation-breakdown { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 5px; }
-      .bulk-allocation-chip { padding: 3px 7px; border-radius: 999px; background: rgba(255, 255, 255, .78); color: var(--ink-light); font-size: 11px; }
-      .bulk-allocation-chip strong { color: var(--vermillion); font-weight: 700; }
+      .bulk-allocation-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+      .bulk-allocation-breakdown { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+      .bulk-allocation-chip { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 6px 8px; border: 1px solid rgba(188, 59, 42, .12); border-radius: 6px; background: rgba(255, 255, 255, .82); color: var(--ink-light); font-size: 11px; }
+      .bulk-allocation-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .bulk-allocation-chip strong { flex: 0 0 auto; color: var(--vermillion); font-weight: 700; }
+      .bulk-allocation-toggle { display: inline-flex; align-items: center; gap: 4px; }
+      .bulk-allocation-toggle-icon { display: inline-flex; width: 15px; height: 15px; transition: transform .18s ease; }
+      .bulk-allocation-toggle-icon svg { width: 15px; height: 15px; }
+      .bulk-position-group { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .bulk-position-group.collapsed .bulk-allocation-note,
+      .bulk-position-group.collapsed .bulk-allocation-breakdown,
+      .bulk-position-group.collapsed .allocation-slot { display: none; }
+      .bulk-position-group.collapsed .bulk-allocation-toggle-icon { transform: rotate(-90deg); }
       .allocation-slot { display: grid; grid-template-columns: minmax(82px, 110px) minmax(130px, 1fr); align-items: center; gap: 8px; min-height: 44px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
       .allocation-role { min-width: 0; font-weight: 700; color: var(--ink-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .allocation-control { min-width: 0; }
@@ -183,6 +187,12 @@
       .week-roster-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 42px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
       .week-roster-role { font-weight: 700; color: var(--ink-dark); }
       .week-roster-name { color: var(--green); text-align: right; }
+      .roster-header-actions { display: flex; align-items: center; gap: 6px; }
+      .roster-toggle { display: inline-flex; align-items: center; gap: 4px; }
+      .roster-toggle-icon { display: inline-flex; width: 16px; height: 16px; transition: transform .18s ease; }
+      .roster-toggle-icon svg { width: 16px; height: 16px; }
+      #rosterSection.collapsed .roster-output { display: none; }
+      #rosterSection.collapsed .roster-toggle-icon { transform: rotate(-90deg); }
       .demand-list { margin-top: 12px; display: grid; gap: 8px; }
       .demand-item { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); }
       .demand-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
@@ -224,14 +234,13 @@
       body.view-schedule .content-edit-action { display: none !important; }
       @media (max-width: 520px) {
         .form-row { grid-template-columns: 1fr; }
-        .date-selector { align-items: stretch; flex-direction: column; }
-        .date-nav { justify-content: space-between; width: 100%; }
-        .date-current { flex: 1; }
         .allocation-grid { grid-template-columns: 1fr; }
         .bulk-allocation-panel { grid-template-columns: 1fr; gap: 8px; }
         .bulk-allocation-actions { justify-content: flex-start; }
-        .assignment-planner-control { align-items: stretch; flex-wrap: wrap; }
-        .assignment-planner-label { width: 100%; }
+        .bulk-allocation-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .bulk-position-group { grid-template-columns: 1fr; }
+        .assignment-planner-control { grid-template-columns: 1fr; align-items: stretch; }
+        .assignment-planner-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .week-roster { grid-template-columns: 1fr; }
       }
     </style>
@@ -270,20 +279,7 @@
       </section>
 
       <section class="section" id="dateSection">
-        <div class="date-selector">
-          <div class="date-nav">
-            <button class="date-nav-btn" onclick="changeWeek(-1)" aria-label="上一周"><span data-icon="ChevronLeftIcon"></span></button>
-            <span class="date-current">
-              <div class="date-week-label" id="dateWeekLabel">--</div>
-              <div class="date-week-range" id="dateWeekRange">--</div>
-            </span>
-            <button class="date-nav-btn" onclick="changeWeek(1)" aria-label="下一周"><span data-icon="ChevronRightIcon"></span></button>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="date-today" onclick="goToCurrentWeek()">本周</button>
-            <button class="btn btn-secondary btn-sm" id="rosterButton" onclick="generateRoster()">生成排班表</button>
-          </div>
-        </div>
+        <div id="orgScheduleWeekSwitcher"></div>
       </section>
 
       <section class="section" id="roleSection" style="display:none;">
@@ -297,7 +293,13 @@
       <section class="section" id="rosterSection" style="display:none;">
         <div class="section-header">
           <div class="section-title">排班表</div>
-          <button class="btn btn-sm btn-secondary" onclick="copyRoster()">复制</button>
+          <div class="roster-header-actions">
+            <button class="btn btn-sm btn-secondary" type="button" onclick="copyRoster()">复制</button>
+            <button class="btn btn-sm btn-secondary roster-toggle" id="rosterToggleButton" type="button" aria-expanded="true" onclick="toggleRoster()">
+              <span class="roster-toggle-icon" data-icon="ChevronDownIcon"></span>
+              <span id="rosterToggleText">收起</span>
+            </button>
+          </div>
         </div>
         <pre class="roster-output" id="rosterOutput"></pre>
       </section>
@@ -406,8 +408,19 @@
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=17"></script>
-    <script src="js/study-workflow.js?v=11"></script>
+    <script src="js/components.js?v=18"></script>
+    <script>
+      mountWeekSwitcher('orgScheduleWeekSwitcher', {
+        labelId: 'dateWeekLabel',
+        rangeId: 'dateWeekRange',
+        labelText: '--',
+        onPrevious: 'changeWeek(-1)',
+        onNext: 'changeWeek(1)',
+        onCurrent: 'goToCurrentWeek()',
+        actionsHtml: '<button class="btn btn-secondary btn-sm" id="rosterButton" onclick="generateRoster()">生成排班表</button>'
+      });
+    </script>
+    <script src="js/study-workflow.js?v=12"></script>
     <script>
       var schedulePageParams = new URLSearchParams(location.search);
       var scheduleEmbedded = schedulePageParams.get('embedded') === '1';
@@ -434,11 +447,13 @@
       var activeRules = [];
       var activeRulesBigClassId = null;
       var contentByScheduleId = {};
+      var semesterCourseRows = [];
       var readingTypes = [];
       var readingTypesById = {};
       var typePositionsByType = {};
       var contentEditorItems = [];
       var demands = [];
+      var incomingDemandSnapshots = {};
       var peopleByDemand = {};
       var memberCache = {};
       var selectedMembers = [];
@@ -480,7 +495,8 @@
         document.body.classList.remove('view-course', 'view-schedule', 'view-week');
         scheduleView = nextView;
         document.body.classList.add('view-' + scheduleView);
-        renderSchedules();
+        if (scheduleView === 'course') loadWeekSchedules();
+        else renderSchedules();
       }
 
       window.addEventListener('message', function(event) {
@@ -824,21 +840,37 @@
         readingTypes.forEach(function(type) { readingTypesById[Number(type.id)] = type; });
         var typeIds = readingTypes.map(function(type) { return Number(type.id); });
         if (!typeIds.length) return;
+        var configOrgIds = StudyWorkflow.getAncestorIds(selectedOrgId, orgs).map(Number);
+        if (configOrgIds.indexOf(Number(selectedBigClassId)) === -1) configOrgIds.push(Number(selectedBigClassId));
         var positionResult = await window.db
           .from('study_reading_type_positions')
           .select('*')
           .in('reading_type_id', typeIds)
-          .eq('is_enabled', true)
+          .in('org_id', configOrgIds)
           .order('sort_order')
           .order('id');
         if (positionResult.error) {
           showToast('加载共读岗位失败', 'error');
           return;
         }
+        var positionsByTypeAndOrg = {};
         (positionResult.data || []).forEach(function(position) {
           var typeId = Number(position.reading_type_id);
-          if (!typePositionsByType[typeId]) typePositionsByType[typeId] = [];
-          typePositionsByType[typeId].push(position);
+          var orgId = Number(position.org_id);
+          if (!positionsByTypeAndOrg[typeId]) positionsByTypeAndOrg[typeId] = {};
+          if (!positionsByTypeAndOrg[typeId][orgId]) positionsByTypeAndOrg[typeId][orgId] = [];
+          positionsByTypeAndOrg[typeId][orgId].push(position);
+        });
+        var selectedLevel = StudyWorkflow.getOrgLevel(selectedOrgId, orgs);
+        var selectedClassId = StudyWorkflow.getClassId(selectedOrgId, orgs);
+        readingTypes.forEach(function(type) {
+          var typeId = Number(type.id);
+          var preferredOrgId = Number(selectedBigClassId);
+          if (type.scope_level === '班级' && selectedClassId) preferredOrgId = Number(selectedClassId);
+          if (type.scope_level === '小组' && selectedLevel === '小组') preferredOrgId = Number(selectedOrgId);
+          var scoped = positionsByTypeAndOrg[typeId] || {};
+          typePositionsByType[typeId] = (scoped[preferredOrgId] || scoped[Number(selectedBigClassId)] || [])
+            .filter(function(position) { return position.is_enabled !== false; });
         });
       }
 
@@ -882,6 +914,7 @@
           .lte('schedule_date', week.end)
           .in('org_id', queryOrgIds)
           .order('schedule_date');
+        await loadSemesterCourseRows(week);
         relevantSchedules = (result.data || []).filter(scheduleMatchesActiveRule);
         visibleSchedules = relevantSchedules.filter(function (schedule) {
           return Number(schedule.org_id) === Number(selectedOrgId);
@@ -894,6 +927,25 @@
         ]);
         selectedMembers = dependentResults[2] || [];
         renderSchedules();
+      }
+
+      async function loadSemesterCourseRows(week) {
+        semesterCourseRows = [];
+        var result = await window.db
+          .from('study_semester_course_schedule')
+          .select('*')
+          .eq('semester_id', currentSemesterId)
+          .gte('schedule_date', week.start)
+          .lte('schedule_date', week.end)
+          .order('schedule_date')
+          .order('sort_order')
+          .order('id');
+        if (result.error && StudyWorkflow.isMissingSchemaError(result.error, ['study_semester_course_schedule'])) return;
+        if (result.error) {
+          showToast('加载学期课程表失败', 'error');
+          return;
+        }
+        semesterCourseRows = result.data || [];
       }
 
       async function loadActiveRules() {
@@ -964,6 +1016,14 @@
         return 'readonly';
       }
 
+      function canManageScheduleDemand(schedule, accessMode) {
+        var mode = accessMode || getScheduleAccessMode(schedule);
+        if (mode === 'allocate') {
+          return StudyWorkflow.canManageOrg(studyContext, selectedOrgId, orgs);
+        }
+        return StudyWorkflow.canManageDemand(studyContext, schedule, orgs);
+      }
+
       async function loadScheduleContent() {
         contentByScheduleId = {};
         var scheduleIds = relevantSchedules.map(function (schedule) { return Number(schedule.id); });
@@ -1020,7 +1080,68 @@
           });
         }
         var legacy = StudyWorkflow.resolveContent(schedule, orgs, relevantSchedules, {}, coursesById);
-        return legacy.title || legacy.content || legacy.question ? [legacy] : [];
+        if (legacy.title || legacy.content || legacy.question) return [legacy];
+        return semesterCourseRows.filter(function(row) {
+          return row.schedule_date === schedule.schedule_date;
+        }).map(function(row) {
+          var course = row.course_id ? coursesById[Number(row.course_id)] : null;
+          var group = course ? courseGroups.find(function(item) { return Number(item.id) === Number(course.course_id); }) : null;
+          return {
+            id: row.id,
+            course_id: row.course_id || null,
+            title: row.custom_title || (course ? course.title : ''),
+            course_group_title: group ? group.title : (course ? course.title : ''),
+            chapter_title: course ? course.chapter_title : '',
+            theme: row.custom_theme || (course ? course.theme : ''),
+            content: row.custom_content || (course ? course.study_content : ''),
+            question: row.custom_question || (course ? course.thinking_questions : ''),
+            paper_pages: row.custom_paper_pages || (course ? course.paper_pages : ''),
+            ebook_url: row.custom_ebook_url || (course ? course.ebook_url : ''),
+            source_schedule_id: null,
+            source_org_name: '学期课程表'
+          };
+        });
+      }
+
+      function getCourseDisplaySchedules() {
+        if (scheduleView !== 'course') return visibleSchedules.slice();
+        var rows = visibleSchedules.slice();
+        var existingDates = {};
+        rows.forEach(function(schedule) { existingDates[schedule.schedule_date] = true; });
+        semesterCourseRows.forEach(function(item) {
+          if (existingDates[item.schedule_date]) return;
+          existingDates[item.schedule_date] = true;
+          rows.push({
+            id: 'semester-' + item.schedule_date,
+            semester_id: currentSemesterId,
+            schedule_date: item.schedule_date,
+            scope_level: StudyWorkflow.getOrgLevel(selectedOrgId, orgs) || '小组',
+            org_id: selectedOrgId,
+            is_semester_template: true
+          });
+        });
+        var week = getWeekRange();
+        var semesterStart = currentSemester ? (currentSemester.trial_start_date || currentSemester.start_date) : null;
+        var semesterEnd = currentSemester ? currentSemester.end_date : null;
+        var cursor = new Date(week.start + 'T00:00:00');
+        for (var dayIndex = 0; dayIndex < 7; dayIndex++) {
+          var date = StudyWorkflow.dateToString(cursor);
+          if ((!semesterStart || date >= semesterStart) && (!semesterEnd || date <= semesterEnd) && !existingDates[date]) {
+            existingDates[date] = true;
+            rows.push({
+              id: 'semester-' + date,
+              semester_id: currentSemesterId,
+              schedule_date: date,
+              scope_level: StudyWorkflow.getOrgLevel(selectedOrgId, orgs) || '小组',
+              org_id: selectedOrgId,
+              is_semester_template: true
+            });
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return rows.sort(function(a, b) {
+          return String(a.schedule_date).localeCompare(String(b.schedule_date));
+        });
       }
 
       async function loadDemandsAndPeople() {
@@ -1061,18 +1182,19 @@
         var title = document.getElementById('scheduleTitle');
         var org = StudyWorkflow.getOrg(orgs, selectedOrgId);
         title.textContent = org ? org.name + '日程' : '本组织日程';
-        if (!visibleSchedules.length) {
+        var displaySchedules = getCourseDisplaySchedules();
+        if (!displaySchedules.length) {
           container.innerHTML = '<div class="empty-state">本周暂无日程。请由本大班学委在「规则设置」保存规则，系统会自动生成各级组织日程。</div>';
           return;
         }
 
         var html = '';
-        visibleSchedules.forEach(function (schedule, scheduleIndex) {
+        displaySchedules.forEach(function (schedule, scheduleIndex) {
           var weekday = StudyWorkflow.getWeekday(schedule.schedule_date);
           var resolvedItems = resolveScheduleContents(schedule);
-          var canEditContent = StudyWorkflow.canEditContent(studyContext, schedule, orgs);
-          var canManageDemand = StudyWorkflow.canManageDemand(studyContext, schedule, orgs);
+          var canEditContent = !schedule.is_semester_template && StudyWorkflow.canEditContent(studyContext, schedule, orgs);
           var accessMode = getScheduleAccessMode(schedule);
+          var canManageDemand = canManageScheduleDemand(schedule, accessMode);
           var isReadonlySchedule = scheduleView === 'schedule' && accessMode === 'readonly';
           var dayDemands = demands.filter(function (demand) { return isDemandRelevantToSchedule(demand, schedule); });
           html += isReadonlySchedule
@@ -1081,7 +1203,7 @@
           html += isReadonlySchedule ? '<div class="schedule-head">' : '<summary class="schedule-head">';
           html += '<div class="schedule-head-main"><div class="schedule-date">' + formatDateDisplay(schedule.schedule_date) + ' ' + WEEKDAY_NAMES[weekday] + '</div>';
           html += '<div class="schedule-sub">' + escapeHtml(StudyWorkflow.getOrgPath(schedule.org_id, orgs)) + '</div></div>';
-          html += '<span class="scope-tag ' + schedule.scope_level + '">' + escapeHtml(getScheduleTypeLabel(schedule)) + '</span>';
+          html += '<span class="scope-tag ' + schedule.scope_level + '">' + escapeHtml(schedule.is_semester_template ? '学期课程表' : getScheduleTypeLabel(schedule)) + '</span>';
           html += isReadonlySchedule ? '</div><div class="schedule-body">' : '</summary><div class="schedule-body">';
           if (scheduleView === 'schedule') html += renderScheduleWorkNote(schedule, dayDemands, accessMode);
           if (scheduleView === 'course') {
@@ -1129,14 +1251,40 @@
           return '<div class="schedule-work-note own">本级日程 · 你可在此设置课程、岗位与下级任务。</div>';
         }
         if (accessMode === 'allocate') {
-          var incoming = dayDemands.filter(function(demand) {
-            return !demand.parent_demand_id &&
-              Number(demand.target_org_id) === Number(selectedOrgId) &&
-              Number(demand.from_org_id) !== Number(selectedOrgId);
-          }).length;
+          var orgLevel = StudyWorkflow.getOrgLevel(selectedOrgId, orgs);
+          var positions = typePositionsByType[getScheduleReadingTypeId(schedule)] || [];
+          var incoming = getIncomingDemandsForSchedule(schedule, dayDemands, positions, orgLevel === '班级').length;
           return '<div class="schedule-work-note incoming">来自上级的岗位任务 · 已接收 ' + incoming + ' 个名额，请在本级继续安排。</div>';
         }
         return '<div class="readonly-note">上级日程来源，仅供查看；进入本级日程后可处理本级岗位。</div>';
+      }
+
+      function getIncomingDemandsForSchedule(schedule, dayDemands, positions, rootOnly) {
+        var positionIds = {};
+        var roleNames = {};
+        (positions || []).forEach(function(position) {
+          positionIds[Number(position.id)] = true;
+          roleNames[position.role_name] = true;
+        });
+        var incoming = dayDemands.filter(function(demand) {
+          if (rootOnly && demand.parent_demand_id) return false;
+          if (Number(demand.target_org_id) !== Number(selectedOrgId) ||
+              Number(demand.from_org_id) === Number(selectedOrgId)) return false;
+          if (!positions || !positions.length) return true;
+          return !!positionIds[Number(demand.type_position_id)] || !!roleNames[demand.role_name];
+        });
+        var uniqueBySlot = {};
+        incoming.forEach(function(demand) {
+          var slotKey = 'role-' + (demand.role_name || demand.type_position_id || 'unknown') + '-slot-' + (Number(demand.slot_index) || 1);
+          var existing = uniqueBySlot[slotKey];
+          var currentPriority = positionIds[Number(demand.type_position_id)] ? 1 : 0;
+          var existingPriority = existing && positionIds[Number(existing.type_position_id)] ? 1 : 0;
+          if (!existing || currentPriority > existingPriority ||
+              (currentPriority === existingPriority && Number(demand.id) > Number(existing.id))) {
+            uniqueBySlot[slotKey] = demand;
+          }
+        });
+        return Object.keys(uniqueBySlot).map(function(key) { return uniqueBySlot[key]; });
       }
 
       function renderGroupWeekRoster(dayDemands) {
@@ -1181,9 +1329,10 @@
           }
           positions.forEach(function(position) {
             if (getPositionAssignmentScope(position) !== 'manual') return;
-            if (orgLevel === '大班' && Number(position.required_count) > directTargets.length) {
-              html += renderBulkAllocationPanel(schedule, position, directTargets, dayDemands, canManageDemand);
-            }
+            var canBulkAllocate = (orgLevel === '大班' || orgLevel === '班级') && directTargets.length > 0 && Number(position.required_count) >= directTargets.length;
+            var positionHtml = canBulkAllocate
+              ? renderBulkAllocationPanel(schedule, position, directTargets, dayDemands, canManageDemand)
+              : '';
             for (var slot = 1; slot <= Number(position.required_count); slot++) {
               var rootDemand = dayDemands.find(function(demand) {
                 return !demand.parent_demand_id &&
@@ -1192,7 +1341,7 @@
                   Number(demand.type_position_id) === Number(position.id) &&
                   Number(demand.slot_index) === slot;
               });
-              html += renderOrgAllocationSlot(
+              positionHtml += renderOrgAllocationSlot(
                 schedule,
                 position,
                 slot,
@@ -1203,6 +1352,9 @@
                 canManageDemand
               );
             }
+            html += canBulkAllocate
+              ? '<div class="bulk-position-group collapsed">' + positionHtml + '</div>'
+              : positionHtml;
           });
         } else if (accessMode === 'edit' && orgLevel === '小组') {
           positions.forEach(function(position) {
@@ -1227,33 +1379,52 @@
           });
         } else if (accessMode === 'allocate' && orgLevel === '班级') {
           var groupTargets = StudyWorkflow.getDemandTargets(schedule, orgs);
-          var incomingClassDemands = dayDemands.filter(function(demand) {
-            return !demand.parent_demand_id &&
-              Number(demand.target_org_id) === Number(selectedOrgId) &&
-              Number(demand.from_org_id) !== Number(selectedOrgId);
-          });
+          var incomingClassDemands = getIncomingDemandsForSchedule(schedule, dayDemands, positions, true);
+          var incomingPositionGroups = [];
           incomingClassDemands.forEach(function(parentDemand) {
-            var position = findTypePosition(parentDemand.type_position_id);
-            var childDemand = demands.find(function(demand) {
-              return Number(demand.parent_demand_id) === Number(parentDemand.id);
+            var groupKey = parentDemand.type_position_id
+              ? 'position-' + parentDemand.type_position_id
+              : 'role-' + (parentDemand.role_name || '未命名岗位');
+            var group = incomingPositionGroups.find(function(item) { return item.key === groupKey; });
+            if (!group) {
+              group = { key: groupKey, demands: [] };
+              incomingPositionGroups.push(group);
+            }
+            group.demands.push(parentDemand);
+          });
+          incomingPositionGroups.forEach(function(group) {
+            var parentDemands = group.demands;
+            var firstParent = parentDemands[0];
+            var position = findTypePosition(firstParent.type_position_id) || {
+              id: firstParent.type_position_id,
+              role_name: firstParent.role_name
+            };
+            var canBulkIncoming = groupTargets.length > 0 && parentDemands.length >= groupTargets.length;
+            var incomingHtml = canBulkIncoming
+              ? renderIncomingBulkAllocationPanel(schedule, position, parentDemands, groupTargets, canManageDemand)
+              : '';
+            parentDemands.forEach(function(parentDemand) {
+              var childDemand = demands.find(function(demand) {
+                return Number(demand.parent_demand_id) === Number(parentDemand.id);
+              });
+              incomingHtml += renderOrgAllocationSlot(
+                schedule,
+                position,
+                Number(parentDemand.slot_index) || 1,
+                parentDemand,
+                childDemand,
+                groupTargets,
+                '选择小组',
+                canManageDemand
+              );
             });
-            html += renderOrgAllocationSlot(
-              schedule,
-              position || { id: parentDemand.type_position_id, role_name: parentDemand.role_name },
-              Number(parentDemand.slot_index) || 1,
-              parentDemand,
-              childDemand,
-              groupTargets,
-              '选择小组',
-              canManageDemand
-            );
+            html += canBulkIncoming
+              ? '<div class="bulk-position-group collapsed">' + incomingHtml + '</div>'
+              : incomingHtml;
           });
           if (!incomingClassDemands.length) html += '<div class="empty-state">上级尚未向本班级分配名额。</div>';
         } else if (accessMode === 'allocate' && orgLevel === '小组') {
-          var incomingGroupDemands = dayDemands.filter(function(demand) {
-            return Number(demand.target_org_id) === Number(selectedOrgId) &&
-              Number(demand.from_org_id) !== Number(selectedOrgId);
-          });
+          var incomingGroupDemands = getIncomingDemandsForSchedule(schedule, dayDemands, positions, false);
           incomingGroupDemands.forEach(function(demand) {
             var position = findTypePosition(demand.type_position_id);
             var assigned = peopleByDemand[Number(demand.id)] || [];
@@ -1304,7 +1475,7 @@
             return Number(demand.type_position_id) === Number(position.id);
           }).length;
           var scopeLabel = scope === 'organizer' ? '承办' : '全体';
-          return '<span class="assignment-summary-chip">' + escapeHtml(position.role_name) + ' · ' + scopeLabel + ' <strong>' + actual + '/' + expected + '</strong></span>';
+          return '<span class="assignment-summary-chip"><span class="assignment-summary-name">' + escapeHtml(position.role_name) + '</span><span class="assignment-summary-meta"><span>· ' + scopeLabel + '</span><strong>' + actual + '/' + expected + '</strong></span></span>';
         }).join('');
         var organizerControl = organizerPositions.length
           ? '<div class="assignment-planner-control"><span class="assignment-planner-label">' + targetLabel + '</span><span class="select-control"><select onchange="setScheduleOrganizer(' + schedule.id + ',this.value)" ' + (!canManageDemand ? 'disabled' : '') + '>' +
@@ -1327,6 +1498,7 @@
       }
 
       function renderBulkAllocationPanel(schedule, position, targets, dayDemands, canManageDemand) {
+        var targetLevelLabel = StudyWorkflow.getOrgLevel(selectedOrgId, orgs) === '大班' ? '班级' : '小组';
         var assignedByOrg = {};
         var assignedCount = 0;
         dayDemands.forEach(function(demand) {
@@ -1341,18 +1513,70 @@
         var total = Number(position.required_count) || 0;
         var remaining = Math.max(0, total - assignedCount);
         var breakdown = targets.map(function(target) {
-          return '<span class="bulk-allocation-chip">' + escapeHtml(target.name) + ' <strong>' + (assignedByOrg[Number(target.id)] || 0) + '</strong></span>';
+          return '<span class="bulk-allocation-chip"><span>' + escapeHtml(target.name) + '</span><strong>' + (assignedByOrg[Number(target.id)] || 0) + '</strong></span>';
         }).join('');
         var action = remaining
           ? '<button class="btn btn-primary btn-sm" type="button" onclick="bulkAssignOpenSlots(' + schedule.id + ',' + position.id + ')" ' + (!canManageDemand ? 'disabled' : '') + '>均分剩余 ' + remaining + ' 人</button>'
-          : '<span class="bulk-allocation-chip">已全部分配</span>';
+          : '<button class="btn btn-primary btn-sm" type="button" onclick="bulkAssignOpenSlots(' + schedule.id + ',' + position.id + ',true)" ' + (!canManageDemand ? 'disabled' : '') + '>重新均分 ' + total + ' 人</button>';
+        var allocationNote = remaining
+          ? '将未分配名额优先补给当前人数最少的' + targetLevelLabel + '；已手工安排的名额不会被改动。'
+          : '当前名额已全部安排，可重新均分到各' + targetLevelLabel + '；原有下级落位会被撤销。';
         return '<div class="bulk-allocation-panel">' +
           '<div class="bulk-allocation-copy"><div class="bulk-allocation-title">' + escapeHtml(position.role_name || '未命名岗位') +
-            '<small>共 ' + total + ' 人 · ' + targets.length + ' 个班级</small></div>' +
-            '<div class="bulk-allocation-note">将未分配名额优先补给当前人数最少的班级；已手工安排的名额不会被改动。</div></div>' +
-          '<div class="bulk-allocation-actions">' + action + '</div>' +
+            '<small>共 ' + total + ' 人 · ' + targets.length + ' 个' + targetLevelLabel + '</small></div>' +
+            '<div class="bulk-allocation-note">' + allocationNote + '</div></div>' +
+          '<div class="bulk-allocation-actions">' + action +
+            '<button class="btn btn-secondary btn-sm bulk-allocation-toggle" type="button" aria-expanded="false" onclick="toggleBulkAllocationDetails(this)">' +
+              appIcon('ChevronDownIcon', 'bulk-allocation-toggle-icon') + '<span>展开详情</span></button></div>' +
           '<div class="bulk-allocation-breakdown">' + breakdown + '</div>' +
         '</div>';
+      }
+
+      function renderIncomingBulkAllocationPanel(schedule, position, parentDemands, targets, canManageDemand) {
+        var parentIds = {};
+        parentDemands.forEach(function(demand) {
+          parentIds[Number(demand.id)] = true;
+          incomingDemandSnapshots[Number(demand.id)] = Object.assign({}, demand);
+        });
+        var childDemands = demands.filter(function(demand) {
+          return parentIds[Number(demand.parent_demand_id)];
+        });
+        var assignedByOrg = {};
+        childDemands.forEach(function(demand) {
+          var targetId = Number(demand.target_org_id);
+          assignedByOrg[targetId] = (assignedByOrg[targetId] || 0) + 1;
+        });
+        var total = parentDemands.length;
+        var remaining = Math.max(0, total - childDemands.length);
+        var breakdown = targets.map(function(target) {
+          return '<span class="bulk-allocation-chip"><span>' + escapeHtml(target.name) + '</span><strong>' + (assignedByOrg[Number(target.id)] || 0) + '</strong></span>';
+        }).join('');
+        var parentDemandIds = parentDemands.map(function(demand) { return Number(demand.id); });
+        var parentDemandIdArgument = '[' + parentDemandIds.join(',') + ']';
+        var action = remaining
+          ? '<button class="btn btn-primary btn-sm" type="button" onclick="bulkAssignIncomingDemands(' + schedule.id + ',' + parentDemandIdArgument + ')" ' + (!canManageDemand ? 'disabled' : '') + '>均分剩余 ' + remaining + ' 人</button>'
+          : '<button class="btn btn-primary btn-sm" type="button" onclick="bulkAssignIncomingDemands(' + schedule.id + ',' + parentDemandIdArgument + ',true)" ' + (!canManageDemand ? 'disabled' : '') + '>重新均分 ' + total + ' 人</button>';
+        var allocationNote = remaining
+          ? '将来自上级的未分配名额优先补给当前人数最少的小组；已手工下发的名额不会被改动。'
+          : '来自上级的名额已全部下发，可重新均分到各小组；原有小组落位会被撤销。';
+        return '<div class="bulk-allocation-panel">' +
+          '<div class="bulk-allocation-copy"><div class="bulk-allocation-title">' + escapeHtml(position.role_name || '未命名岗位') +
+            '<small>来自上级 · 共 ' + total + ' 人 · ' + targets.length + ' 个小组</small></div>' +
+            '<div class="bulk-allocation-note">' + allocationNote + '</div></div>' +
+          '<div class="bulk-allocation-actions">' + action +
+            '<button class="btn btn-secondary btn-sm bulk-allocation-toggle" type="button" aria-expanded="false" onclick="toggleBulkAllocationDetails(this)">' +
+              appIcon('ChevronDownIcon', 'bulk-allocation-toggle-icon') + '<span>展开详情</span></button></div>' +
+          '<div class="bulk-allocation-breakdown">' + breakdown + '</div>' +
+        '</div>';
+      }
+
+      function toggleBulkAllocationDetails(button) {
+        var group = button ? button.closest('.bulk-position-group') : null;
+        if (!group) return;
+        var collapsed = group.classList.toggle('collapsed');
+        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        var text = button.querySelector('span:last-child');
+        if (text) text.textContent = collapsed ? '展开详情' : '收起详情';
       }
 
       function findTypePosition(positionId) {
@@ -1570,7 +1794,7 @@
                 Number(demand.slot_index) === Number(slotIndex);
             });
         if (!schedule || accessMode === 'readonly' ||
-            !StudyWorkflow.canManageDemand(studyContext, schedule, orgs) ||
+            !canManageScheduleDemand(schedule, accessMode) ||
             (!parentDemand && !position)) {
           if (schedule && accessMode === 'readonly') showToast('当前层级不可编辑该共读日程', 'error');
           else showToast('未找到岗位名额或当前组织无权操作', 'error');
@@ -1614,19 +1838,20 @@
         }
       }
 
-      async function bulkAssignOpenSlots(scheduleId, positionId) {
+      async function bulkAssignOpenSlots(scheduleId, positionId, rebuildAll) {
         var schedule = getScheduleById(scheduleId);
         var position = findTypePosition(positionId);
         var orgLevel = StudyWorkflow.getOrgLevel(selectedOrgId, orgs);
         var accessMode = schedule ? getScheduleAccessMode(schedule) : 'readonly';
-        if (!schedule || !position || orgLevel !== '大班' || accessMode !== 'edit' ||
+        if (!schedule || !position || (orgLevel !== '大班' && orgLevel !== '班级') || accessMode !== 'edit' ||
             !StudyWorkflow.canManageDemand(studyContext, schedule, orgs)) {
           showToast('当前组织无权批量分配该岗位', 'error');
           return;
         }
         var targets = StudyWorkflow.getDemandTargets(schedule, orgs);
-        if (targets.length < 2) {
-          showToast('至少需要两个直属班级才能均分', 'error');
+        var targetLevelLabel = orgLevel === '大班' ? '班级' : '小组';
+        if (!targets.length) {
+          showToast('当前没有可分配的直属' + targetLevelLabel, 'error');
           return;
         }
         var existingBySlot = {};
@@ -1640,6 +1865,10 @@
           var targetId = Number(demand.target_org_id);
           allocationCount[targetId] = (allocationCount[targetId] || 0) + 1;
         });
+        if (rebuildAll) {
+          existingBySlot = {};
+          allocationCount = {};
+        }
         var openSlots = [];
         for (var slot = 1; slot <= Number(position.required_count); slot++) {
           if (!existingBySlot[slot]) openSlots.push(slot);
@@ -1648,10 +1877,9 @@
           showToast('该岗位的名额已经全部分配', 'success');
           return;
         }
-        var confirmed = await showConfirm(
-          '将把剩余 ' + openSlots.length + ' 个「' + position.role_name + '」名额均分到 ' + targets.length +
-          ' 个班级。已有手工分配保持不变，是否继续？'
-        );
+        var confirmed = await showConfirm(rebuildAll
+          ? '将撤销「' + position.role_name + '」现有分配及其下级落位，再把 ' + openSlots.length + ' 个名额均分到 ' + targets.length + ' 个' + targetLevelLabel + '，是否继续？'
+          : '将把剩余 ' + openSlots.length + ' 个「' + position.role_name + '」名额均分到 ' + targets.length + ' 个' + targetLevelLabel + '。已有手工分配保持不变，是否继续？');
         if (!confirmed) return;
 
         var nextTargetIndex = 0;
@@ -1692,23 +1920,175 @@
           };
         });
         try {
-          var result = await window.db.from('study_assignment_demands').insert(payloads);
-          if (result.error) throw result.error;
-          showToast('已均分 ' + payloads.length + ' 个「' + position.role_name + '」名额', 'success');
+          if (rebuildAll) {
+            await replaceManagedPositionDemands(schedule, [position], payloads);
+          } else {
+            var result = await window.db.from('study_assignment_demands').insert(payloads);
+            if (result.error) throw result.error;
+          }
+          showToast((rebuildAll ? '已重新均分 ' : '已均分 ') + payloads.length + ' 个「' + position.role_name + '」名额', 'success');
           await loadWeekSchedules();
         } catch (error) {
           showToast('批量分配失败：' + (error.message || '未知错误'), 'error');
         }
       }
 
+      async function bulkAssignIncomingDemands(scheduleId, parentDemandIds, rebuildAll) {
+        var schedule = getScheduleById(scheduleId);
+        var requestedParentIdList = (Array.isArray(parentDemandIds) ? parentDemandIds : [parentDemandIds])
+          .map(function(id) { return Number(id); })
+          .filter(Boolean);
+        if (!schedule) {
+          showToast('未找到对应的上级日程，请刷新后重试', 'error');
+          return;
+        }
+        var parentDemands = requestedParentIdList.map(function(demandId) {
+          return incomingDemandSnapshots[demandId] || null;
+        }).filter(Boolean);
+        var missingParentIds = requestedParentIdList.filter(function(demandId) {
+          return !incomingDemandSnapshots[demandId];
+        });
+        if (missingParentIds.length) {
+          var parentResult = await window.db
+            .from('study_assignment_demands')
+            .select('*')
+            .in('id', missingParentIds);
+          if (parentResult.error) {
+            showToast('读取上级岗位任务失败：' + (parentResult.error.message || '未知错误'), 'error');
+            return;
+          }
+          (parentResult.data || []).forEach(function(demand) {
+            incomingDemandSnapshots[Number(demand.id)] = Object.assign({}, demand);
+            parentDemands.push(demand);
+          });
+        }
+        parentDemands = parentDemands.filter(function(demand) {
+          return isDemandRelevantToSchedule(demand, schedule);
+        }).sort(function(a, b) {
+          return requestedParentIdList.indexOf(Number(a.id)) - requestedParentIdList.indexOf(Number(b.id));
+        });
+        var anchorParent = parentDemands[0] || null;
+        if (!anchorParent) {
+          showToast('上级岗位任务已变化，请刷新后重试', 'error');
+          return;
+        }
+        var receivingClassId = Number(anchorParent.target_org_id);
+        var receivingClass = StudyWorkflow.getOrg(orgs, receivingClassId);
+        parentDemands = parentDemands.filter(function(demand) {
+          return Number(demand.target_org_id) === receivingClassId;
+        });
+        if (!receivingClass || receivingClass.level !== '班级' ||
+            !StudyWorkflow.canManageOrg(studyContext, receivingClassId, orgs)) {
+          showToast('当前班级无权继续分配该上级岗位', 'error');
+          return;
+        }
+        var targets = StudyWorkflow.sortOrgs(orgs.filter(function(org) {
+          return org.level === '小组' && org.is_active !== false && Number(org.parent_id) === receivingClassId;
+        }));
+        if (!targets.length) {
+          showToast('当前没有可分配的直属小组', 'error');
+          return;
+        }
+        var childResult = await window.db
+          .from('study_assignment_demands')
+          .select('*')
+          .in('parent_demand_id', parentDemands.map(function(demand) { return Number(demand.id); }));
+        if (childResult.error) {
+          showToast('读取小组分配结果失败：' + (childResult.error.message || '未知错误'), 'error');
+          return;
+        }
+        var existingChildren = childResult.data || [];
+        var existingByParent = {};
+        var allocationCount = {};
+        existingChildren.forEach(function(demand) {
+          existingByParent[Number(demand.parent_demand_id)] = demand;
+          var targetId = Number(demand.target_org_id);
+          allocationCount[targetId] = (allocationCount[targetId] || 0) + 1;
+        });
+        if (rebuildAll) {
+          existingByParent = {};
+          allocationCount = {};
+        }
+        var openParents = parentDemands.filter(function(demand) {
+          return !existingByParent[Number(demand.id)];
+        });
+        if (!openParents.length) {
+          showToast('来自上级的该岗位名额已经全部下发', 'success');
+          return;
+        }
+        var confirmed = await showConfirm(rebuildAll
+          ? '将撤销该岗位现有的小组分配及人员落位，再把 ' + openParents.length + ' 个上级名额均分到 ' + targets.length + ' 个小组，是否继续？'
+          : '将把剩余 ' + openParents.length + ' 个上级岗位名额均分到 ' + targets.length + ' 个小组。已有手工分配保持不变，是否继续？');
+        if (!confirmed) return;
+
+        var nextTargetIndex = 0;
+        function pickLeastLoadedTarget() {
+          var lowest = Infinity;
+          targets.forEach(function(target) {
+            lowest = Math.min(lowest, allocationCount[Number(target.id)] || 0);
+          });
+          for (var offset = 0; offset < targets.length; offset++) {
+            var index = (nextTargetIndex + offset) % targets.length;
+            var target = targets[index];
+            if ((allocationCount[Number(target.id)] || 0) === lowest) {
+              nextTargetIndex = (index + 1) % targets.length;
+              return target;
+            }
+          }
+          return targets[0];
+        }
+
+        var user = getCurrentUser();
+        var payloads = openParents.map(function(parentDemand) {
+          var target = pickLeastLoadedTarget();
+          allocationCount[Number(target.id)] = (allocationCount[Number(target.id)] || 0) + 1;
+          return {
+            schedule_instance_id: Number(schedule.id),
+            from_org_id: receivingClassId,
+            target_org_id: Number(target.id),
+            target_level: StudyWorkflow.getOrgLevel(target.id, orgs),
+            demand_type: parentDemand.demand_type || 'participant',
+            role_name: parentDemand.role_name,
+            required_count: 1,
+            parent_demand_id: Number(parentDemand.id),
+            type_position_id: parentDemand.type_position_id ? Number(parentDemand.type_position_id) : null,
+            slot_index: Number(parentDemand.slot_index) || 1,
+            status: 'assigned',
+            created_by: user ? user.id : null,
+            updated_at: new Date().toISOString()
+          };
+        });
+        try {
+          if (rebuildAll && existingChildren.length) {
+            var deleted = await window.db.from('study_assignment_demands').delete().in('id', existingChildren.map(function(demand) { return demand.id; }));
+            if (deleted.error) throw deleted.error;
+          }
+          var inserted = await window.db.from('study_assignment_demands').insert(payloads);
+          if (inserted.error) throw inserted.error;
+          showToast((rebuildAll ? '已重新均分 ' : '已均分 ') + payloads.length + ' 个上级岗位名额到小组', 'success');
+          await loadWeekSchedules();
+        } catch (error) {
+          showToast('上级岗位均分失败：' + (error.message || '未知错误'), 'error');
+        }
+      }
+
       function getRootDemandsForPositions(schedule, positions) {
         var positionIds = {};
-        positions.forEach(function(position) { positionIds[Number(position.id)] = true; });
+        var roleNames = {};
+        positions.forEach(function(position) {
+          positionIds[Number(position.id)] = true;
+          roleNames[position.role_name] = true;
+        });
+        var activePositionIds = {};
+        (typePositionsByType[getScheduleReadingTypeId(schedule)] || []).forEach(function(position) {
+          activePositionIds[Number(position.id)] = true;
+        });
         return demands.filter(function(demand) {
-          return !demand.parent_demand_id &&
-            Number(demand.schedule_instance_id) === Number(schedule.id) &&
-            Number(demand.from_org_id) === Number(selectedOrgId) &&
-            positionIds[Number(demand.type_position_id)];
+          if (demand.parent_demand_id ||
+              Number(demand.schedule_instance_id) !== Number(schedule.id) ||
+              Number(demand.from_org_id) !== Number(selectedOrgId)) return false;
+          if (positionIds[Number(demand.type_position_id)]) return true;
+          return !activePositionIds[Number(demand.type_position_id)] && !!roleNames[demand.role_name];
         });
       }
 
@@ -1846,7 +2226,7 @@
             StudyWorkflow.getOrgLevel(selectedOrgId, orgs) !== '小组' ||
             getScheduleAccessMode(schedule) !== 'allocate' ||
             Number(demand.target_org_id) !== Number(selectedOrgId) ||
-            !StudyWorkflow.canManageDemand(studyContext, schedule, orgs)) {
+            !canManageScheduleDemand(schedule, 'allocate')) {
           showToast('当前小组无权为该日程落位人员', 'error');
           return;
         }
@@ -1962,7 +2342,7 @@
 
       function showDemandModal(scheduleId, parentDemandId, fixedRoleId, templateCount) {
         var schedule = getScheduleById(scheduleId);
-        if (!schedule || !StudyWorkflow.canManageDemand(studyContext, schedule, orgs)) {
+        if (!schedule || !canManageScheduleDemand(schedule, getScheduleAccessMode(schedule))) {
           showToast('当前组织无权安排该日程', 'error');
           return;
         }
@@ -2241,7 +2621,24 @@
         });
         document.getElementById('rosterOutput').textContent = lines.join('\n');
         document.getElementById('rosterSection').style.display = '';
+        setRosterCollapsed(false);
         document.getElementById('rosterSection').scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function setRosterCollapsed(collapsed) {
+        var section = document.getElementById('rosterSection');
+        var button = document.getElementById('rosterToggleButton');
+        var text = document.getElementById('rosterToggleText');
+        if (!section || !button || !text) return;
+        section.classList.toggle('collapsed', collapsed);
+        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        text.textContent = collapsed ? '展开' : '收起';
+      }
+
+      function toggleRoster() {
+        var section = document.getElementById('rosterSection');
+        if (!section) return;
+        setRosterCollapsed(!section.classList.contains('collapsed'));
       }
 
       function copyRoster() {

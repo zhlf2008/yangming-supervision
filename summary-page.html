@@ -19,7 +19,7 @@
       })();
     </script>
     <link rel="preconnect" href="https://tuoyue.space" />
-    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/common.css?v=10" />
     <style>
       body::before {
         display: none;
@@ -562,27 +562,7 @@
         <h1 class="header-title">数据汇总</h1>
       </header>
 
-      <div class="date-selector">
-        <div class="date-nav">
-          <button
-            class="date-nav-btn"
-            data-icon="ChevronLeftIcon"
-            aria-label="上一周"
-            onclick="changeWeek(-1)"
-          ></button>
-          <span class="date-current"
-            ><div class="date-week-label" id="dateWeekLabel">本周</div>
-            <div class="date-week-range" id="dateWeekRange">--</div></span
-          >
-          <button
-            class="date-nav-btn"
-            data-icon="ChevronRightIcon"
-            aria-label="下一周"
-            onclick="changeWeek(1)"
-          ></button>
-        </div>
-        <button class="date-today" onclick="goToCurrentWeek()">本周</button>
-      </div>
+      <div id="summaryWeekSwitcher"></div>
 
       <div class="summary-stats" id="summaryStats">
         <div class="summary-stat">
@@ -607,8 +587,15 @@
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=14"></script>
+    <script src="js/components.js?v=18"></script>
     <script>
+      mountWeekSwitcher('summaryWeekSwitcher', {
+        labelId: 'dateWeekLabel',
+        rangeId: 'dateWeekRange',
+        onPrevious: 'changeWeek(-1)',
+        onNext: 'changeWeek(1)',
+        onCurrent: 'goToCurrentWeek()'
+      });
       renderBottomNav('summary');
     </script>
     <script>

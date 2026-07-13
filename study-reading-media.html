@@ -260,11 +260,21 @@
         border-radius: 12px;
         background: #eef5f2;
       }
+      .cover-slot,
+      .moment-slot {
+        padding: 16px;
+        margin-top: 18px;
+        border-radius: 12px;
+      }
+      .cover-slot { background: #f7f0e3; }
+      .moment-slot { background: #f4eff7; }
       .attendee-slot .slot-upload {
         border-color: #9dbbb3;
         background: #f7fbf9;
         color: #28685d;
       }
+      .cover-slot .slot-upload { border-color: #d8ba8d; background: #fffdf8; color: #8a5b20; }
+      .moment-slot .slot-upload { border-color: #c5add0; background: #fcf9fd; color: #704c80; }
       .manual-slot {
         padding: 16px;
         margin-top: 14px;
@@ -457,7 +467,9 @@
     <script src="js/components.js?v=17"></script>
     <script src="js/reading-media.js?v=3"></script>
     <script>
-      renderModuleBottomNav('study', 'media');
+      var readingPageParams = new URLSearchParams(location.search);
+      var readingAccessModule = readingPageParams.get('module') === 'publicity' ? 'publicity' : 'study';
+      renderModuleBottomNav(readingAccessModule, 'media');
 
       var readingContext = null;
       var currentUser = null;
@@ -476,10 +488,16 @@
         await refreshCurrentUser();
         currentUser = checkLogin();
         if (!currentUser) return;
-        if (!(await guardModuleAccess('study'))) return;
+        if (!(await guardModuleAccess(readingAccessModule))) return;
+
+        if (readingAccessModule === 'publicity') {
+          document.title = '共读影像提交 - 宣委管理';
+          document.querySelector('.back-btn').href = 'publicity-dashboard.html';
+          document.querySelector('.back-btn').setAttribute('aria-label', '返回宣委管理首页');
+        }
 
         try {
-          readingContext = await ReadingMedia.loadContext('study');
+          readingContext = await ReadingMedia.loadContext(readingAccessModule);
           var semesterResult = await window.db
             .from('semesters')
             .select('semester_name')
@@ -720,6 +738,18 @@
         });
       }
 
+      function getCoverAssets() {
+        return (currentBundle.assets || []).filter(function (asset) {
+          return asset.asset_kind === 'moment' && asset.caption === '封面图';
+        });
+      }
+
+      function getMomentAssets() {
+        return (currentBundle.assets || []).filter(function (asset) {
+          return asset.asset_kind === 'moment' && asset.caption !== '封面图';
+        });
+      }
+
       function getManualPersonAssets() {
         return (currentBundle.assets || []).filter(function (asset) {
           return asset.asset_kind === 'role' && !asset.assignment_person_id;
@@ -790,6 +820,8 @@
         hideEmpty();
         var assignments = currentBundle.assignments || [];
         var attendeeAssets = getAttendeeAssets();
+        var coverAssets = getCoverAssets();
+        var momentAssets = getMomentAssets();
         var manualAssets = getManualPersonAssets();
         var filledAssignments = assignments.filter(function (assignment) {
           return getAssignmentAssets(assignment.assignment_person_id).length > 0;
@@ -826,7 +858,9 @@
           rows +
           '</div>' +
           renderManualPersonSlot(manualAssets) +
+          renderCoverSlot(coverAssets) +
           renderAttendeeSlot(attendeeAssets) +
+          renderMomentSlot(momentAssets) +
           '</article>';
       }
 
@@ -854,6 +888,30 @@
           assets.length +
           ' 张</span></div>' +
           renderUploadBox('attendees', '上传参会人员照片') +
+          renderSlotAssets(assets) +
+          '</section>'
+        );
+      }
+
+      function renderCoverSlot(assets) {
+        return (
+          '<section class="cover-slot"><div class="media-slot-head"><div><span class="slot-role">封面图</span>' +
+          '<span class="slot-person"> · 供宣委作为长图封面主图</span></div><span class="slot-count">' +
+          assets.length +
+          ' 张</span></div>' +
+          renderUploadBox('cover', '上传封面图') +
+          renderSlotAssets(assets) +
+          '</section>'
+        );
+      }
+
+      function renderMomentSlot(assets) {
+        return (
+          '<section class="moment-slot"><div class="media-slot-head"><div><span class="slot-role">花絮图</span>' +
+          '<span class="slot-person"> · 补充共读现场瞬间</span></div><span class="slot-count">' +
+          assets.length +
+          ' 张</span></div>' +
+          renderUploadBox('moments', '上传花絮图') +
           renderSlotAssets(assets) +
           '</section>'
         );
@@ -956,6 +1014,8 @@
 
       function resolveSlotTarget(key) {
         if (key === 'attendees') return { kind: 'overview', source_org_id: currentGroup.id };
+        if (key === 'cover') return { kind: 'moment', caption: '封面图', source_org_id: currentGroup.id };
+        if (key === 'moments') return { kind: 'moment', source_org_id: currentGroup.id };
         if (key.indexOf('manual-person-') === 0) {
           var rowId = Number(key.replace('manual-person-', ''));
           var roleName = document.getElementById('manualRoleName-' + rowId)
@@ -1011,7 +1071,7 @@
               currentSchedule,
               files[i],
               target,
-              '',
+              target.caption || '',
               currentBundle.assets.length + i
             );
             if (uploadedAsset.upload_info) {

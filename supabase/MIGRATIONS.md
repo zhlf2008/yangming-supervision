@@ -63,6 +63,10 @@
 | 055 | `20260703131127_reading_media_source_org.sql` | 共读影像按来源小组归集，并支持班级/大班日程岗位上传 | 2026-07-03 |
 | 056 | `20260703212711_reading_media_poster_item_source_rls.sql` | 晨读长图素材按来源小组授权宣委查看与编排 | 2026-07-03 |
 | 057 | `20260710195000_study_role_assignment_scope.sql` | 共读岗位承担范围与日程承办组织 | 2026-07-10 |
+| 058 | `20260713150000_allow_publicity_reading_media_submission.sql` | 宣委复用共读影像提交功能，并获得授权组织范围内的素材读写权限 | 2026-07-14 |
+| 059 | `20260713164404_delegate_study_position_rules.sql` | 共读类型岗位按组织下放，班级与小组可继承并覆盖大班模板 | 2026-07-14 |
+| 060 | `20260713165907_semester_course_schedule.sql` | 学期卡片维护课程表，所有组织课程页继承日期与课程内容 | 2026-07-14 |
+| 061 | `20260713170007_semester_course_schedule_indexes.sql` | 补充学期课程表课程与创建人外键索引 | 2026-07-14 |
 | fix | `20260613_001_migrate_profiles_to_people_assignments.sql` | 旧 profiles 账号同步为 people，并迁移 organization_id 到当前学期人员归属 | 2026-06-13 |
 
 ## 开发诊断

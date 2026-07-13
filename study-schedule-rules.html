@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>晨读安排 - 日程规则</title>
-    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/common.css?v=10" />
     <style>
       .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
       .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -197,17 +197,7 @@
         <div class="section-header">
           <div class="section-title">学期日程</div>
         </div>
-        <div class="date-selector">
-          <div class="date-nav">
-            <button class="date-nav-btn" onclick="changeWeek(-1)" aria-label="上一周"><span data-icon="ChevronLeftIcon"></span></button>
-            <span class="date-current">
-              <div class="date-week-label" id="dateWeekLabel">本周</div>
-              <div class="date-week-range" id="dateWeekRange">--</div>
-            </span>
-            <button class="date-nav-btn" onclick="changeWeek(1)" aria-label="下一周"><span data-icon="ChevronRightIcon"></span></button>
-          </div>
-          <button class="date-today" onclick="goToCurrentWeek()">本周</button>
-        </div>
+        <div id="scheduleRulesWeekSwitcher"></div>
         <div id="dayGrid" class="empty-state">请先选择学期</div>
       </section>
     </div>
@@ -215,23 +205,24 @@
     <!-- 设置共读类型 Modal -->
     <div class="modal-overlay" id="ruleModal">
       <div class="modal">
-        <div class="modal-title">共读类型岗位设置</div>
+        <div class="modal-title" id="ruleModalTitle">共读类型岗位设置</div>
         <div class="type-settings-layout">
           <aside class="type-sidebar">
             <div class="type-sidebar-title">共读类型</div>
             <div class="reading-type-tabs" id="readingTypeTabs"></div>
-            <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;" onclick="showTypeEditor()">添加</button>
+            <button class="btn btn-secondary btn-sm" id="addReadingTypeBtn" style="width:100%;margin-top:8px;" onclick="showTypeEditor()">添加</button>
           </aside>
           <div class="type-main">
             <div class="type-toolbar">
               <span class="type-scope-note" id="selectedTypeScope"></span>
               <div class="type-toolbar-actions">
-                <button class="btn btn-secondary btn-sm" onclick="showTypeEditor(selectedReadingTypeId)">编辑类型</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteReadingType()">删除类型</button>
+                <button class="btn btn-secondary btn-sm" id="restoreInheritedPositionsBtn" style="display:none;" onclick="restoreInheritedTypePositions()">恢复继承</button>
+                <button class="btn btn-secondary btn-sm" id="editReadingTypeBtn" onclick="showTypeEditor(selectedReadingTypeId)">编辑类型</button>
+                <button class="btn btn-danger btn-sm" id="deleteReadingTypeBtn" onclick="deleteReadingType()">删除类型</button>
               </div>
             </div>
             <div id="typeListContainer"></div>
-            <button class="btn btn-secondary" style="width:100%;margin-top:10px;" onclick="addTypePosition()">+ 添加岗位</button>
+            <button class="btn btn-secondary" id="addTypePositionBtn" style="width:100%;margin-top:10px;" onclick="addTypePosition()">+ 添加岗位</button>
           </div>
         </div>
         <div class="modal-actions" style="margin-top:16px;">
@@ -297,8 +288,17 @@
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=17"></script>
-    <script src="js/study-workflow.js?v=11"></script>
+    <script src="js/components.js?v=18"></script>
+    <script>
+      mountWeekSwitcher('scheduleRulesWeekSwitcher', {
+        labelId: 'dateWeekLabel',
+        rangeId: 'dateWeekRange',
+        onPrevious: 'changeWeek(-1)',
+        onNext: 'changeWeek(1)',
+        onCurrent: 'goToCurrentWeek()'
+      });
+    </script>
+    <script src="js/study-workflow.js?v=12"></script>
     <script>
       var rulePageParams = new URLSearchParams(location.search);
       var ruleEmbedded = rulePageParams.get('embedded') === '1';
@@ -385,6 +385,24 @@
         document.getElementById('scheduleClsSelect').innerHTML = '<option value="">全部班级</option>';
         document.getElementById('scheduleGrpSelect').innerHTML = '<option value="">全部小组</option>';
         await onScheduleBcChange(false);
+        var requestedOrg = requestedOrgId ? StudyWorkflow.getOrg(allOrgs, requestedOrgId) : null;
+        if (requestedOrg && requestedOrg.level !== '大班') {
+          var requestedClassId = requestedOrg.level === '班级' ? requestedOrg.id : requestedOrg.parent_id;
+          var classSelect = document.getElementById('scheduleClsSelect');
+          if (requestedClassId && Array.from(classSelect.options).some(function(option) { return Number(option.value) === Number(requestedClassId); })) {
+            classSelect.value = String(requestedClassId);
+            onScheduleClsChange();
+          }
+          if (requestedOrg.level === '小组') {
+            var groupSelect = document.getElementById('scheduleGrpSelect');
+            if (Array.from(groupSelect.options).some(function(option) { return Number(option.value) === Number(requestedOrg.id); })) {
+              groupSelect.value = String(requestedOrg.id);
+            }
+          }
+          filterByOrg(false);
+          await loadReadingTypes();
+          await loadRules();
+        }
       }
 
       async function onScheduleBcChange(loadSchedules) {
@@ -431,9 +449,39 @@
       var typePositions = [];
       var deletedPositionIds = [];
       var selectedReadingTypeId = null;
+      var typePositionsInherited = false;
 
       function getActiveTypes() {
         return readingTypes.filter(function(type) { return type.is_active !== false; });
+      }
+
+      function getSelectedOrg() {
+        return selectedOrgId ? StudyWorkflow.getOrg(allOrgs, selectedOrgId) : null;
+      }
+
+      function getVisibleReadingTypes() {
+        var selectedOrg = getSelectedOrg();
+        if (!selectedOrg || selectedOrg.level === '大班') return readingTypes.slice();
+        return readingTypes.filter(function(type) {
+          return type.scope_level === selectedOrg.level;
+        });
+      }
+
+      function getPositionSettingsOrgId(type) {
+        var selectedOrg = getSelectedOrg();
+        if (!type || !selectedOrg || selectedOrg.level === '大班') return Number(selectedBigClassId) || null;
+        return type.scope_level === selectedOrg.level ? Number(selectedOrg.id) : Number(selectedBigClassId) || null;
+      }
+
+      function canEditSelectedTypePositions() {
+        var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
+        var settingsOrgId = getPositionSettingsOrgId(selectedType);
+        return !!settingsOrgId && StudyWorkflow.canManageOrg(studyContext, settingsOrgId, allOrgs);
+      }
+
+      function canManageReadingTypes() {
+        var selectedOrg = getSelectedOrg();
+        return !!selectedOrg && selectedOrg.level === '大班' && canEditSelectedRules();
       }
 
       function getPositionAssignmentScope(position) {
@@ -450,13 +498,29 @@
 
       function renderTypeList() {
         var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
+        var visibleTypes = getVisibleReadingTypes();
+        var settingsOrgId = getPositionSettingsOrgId(selectedType);
+        var settingsOrg = settingsOrgId ? StudyWorkflow.getOrg(allOrgs, settingsOrgId) : null;
+        var isLowerOverride = settingsOrgId && Number(settingsOrgId) !== Number(selectedBigClassId);
         document.getElementById('selectedTypeScope').textContent = selectedType
-          ? selectedType.type_name + ' · ' + selectedType.scope_level + '层级'
+          ? selectedType.type_name + ' · ' + selectedType.scope_level + '层级' +
+            (isLowerOverride
+              ? typePositionsInherited
+                ? ' · 当前继承大班模板，保存后仅作用于' + (settingsOrg ? settingsOrg.name : '本组织')
+                : ' · ' + (settingsOrg ? settingsOrg.name : '本组织') + '自定义'
+              : ' · 大班默认模板')
           : '请先新增共读类型';
-        document.getElementById('readingTypeTabs').innerHTML = readingTypes.map(function(type) {
+        document.getElementById('readingTypeTabs').innerHTML = visibleTypes.map(function(type) {
           return '<button class="reading-type-tab' + (Number(type.id) === Number(selectedReadingTypeId) ? ' active' : '') +
             '" onclick="selectReadingType(' + type.id + ')">' + escapeHtml(type.type_name) + '</button>';
         }).join('');
+        document.getElementById('addReadingTypeBtn').style.display = canManageReadingTypes() ? '' : 'none';
+        document.getElementById('editReadingTypeBtn').style.display = canManageReadingTypes() ? '' : 'none';
+        document.getElementById('deleteReadingTypeBtn').style.display = canManageReadingTypes() ? '' : 'none';
+        document.getElementById('restoreInheritedPositionsBtn').style.display =
+          isLowerOverride && !typePositionsInherited && canEditSelectedTypePositions() ? '' : 'none';
+        document.getElementById('addTypePositionBtn').style.display = canEditSelectedTypePositions() ? '' : 'none';
+        document.getElementById('saveTypeRolesBtn').style.display = canEditSelectedTypePositions() ? '' : 'none';
         var container = document.getElementById('typeListContainer');
         if (!selectedType) {
           container.innerHTML = '<div class="empty-state">暂无共读类型。</div>';
@@ -488,9 +552,12 @@
 
       async function showRuleModal() {
         if (!currentSemesterId) { showToast('请先选择学期', 'error'); return; }
-        if (!canEditSelectedRules()) { showToast('只有平台管理员或本大班学委可维护共读类型', 'error'); return; }
         if (!readingTypes.length) await loadReadingTypes();
+        if (!canEditSelectedTypePositions()) { showToast('当前账号无权维护该组织的共读岗位', 'error'); return; }
         await loadTypePositions();
+        var selectedOrg = getSelectedOrg();
+        document.getElementById('ruleModalTitle').textContent =
+          (selectedOrg ? selectedOrg.name + ' · ' : '') + '共读岗位设置';
         renderTypeList();
         document.getElementById('ruleModal').classList.add('show');
       }
@@ -515,15 +582,19 @@
           return;
         }
         readingTypes = result.data || [];
-        if (!readingTypes.some(function(type) { return Number(type.id) === Number(selectedReadingTypeId); })) {
-          selectedReadingTypeId = readingTypes.length ? Number(readingTypes[0].id) : null;
+        var visibleTypes = getVisibleReadingTypes();
+        if (!visibleTypes.some(function(type) { return Number(type.id) === Number(selectedReadingTypeId); })) {
+          selectedReadingTypeId = visibleTypes.length ? Number(visibleTypes[0].id) : null;
         }
       }
 
       async function loadTypePositions() {
         typePositions = [];
         deletedPositionIds = [];
+        typePositionsInherited = false;
         if (!selectedReadingTypeId) return;
+        var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
+        var settingsOrgId = getPositionSettingsOrgId(selectedType);
         var result = await window.db
           .from('study_reading_type_positions')
           .select('*')
@@ -534,7 +605,18 @@
           showToast('加载类型岗位失败', 'error');
           return;
         }
-        typePositions = result.data || [];
+        var rows = result.data || [];
+        var ownRows = rows.filter(function(position) { return Number(position.org_id) === Number(settingsOrgId); });
+        var fallbackRows = rows.filter(function(position) { return Number(position.org_id) === Number(selectedBigClassId); });
+        typePositionsInherited = Number(settingsOrgId) !== Number(selectedBigClassId) && !ownRows.length;
+        typePositions = (typePositionsInherited ? fallbackRows : ownRows).map(function(position) {
+          if (!typePositionsInherited) return position;
+          return Object.assign({}, position, {
+            id: null,
+            org_id: Number(settingsOrgId),
+            inherited_from_id: Number(position.id)
+          });
+        });
       }
 
       async function selectReadingType(typeId) {
@@ -545,9 +627,12 @@
 
       function addTypePosition() {
         if (!selectedReadingTypeId) { showToast('请先新增共读类型', 'error'); return; }
+        if (!canEditSelectedTypePositions()) { showToast('当前账号无权添加本级岗位', 'error'); return; }
+        var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
         typePositions.push({
           id: null,
           reading_type_id: selectedReadingTypeId,
+          org_id: getPositionSettingsOrgId(selectedType),
           role_name: '',
           required_count: 1,
           assignment_scope: 'all_participants',
@@ -584,6 +669,16 @@
 
       async function saveTypePositionSettings() {
         var button = document.getElementById('saveTypeRolesBtn');
+        if (!canEditSelectedTypePositions()) {
+          showToast('当前账号无权保存本级岗位', 'error');
+          return;
+        }
+        var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
+        var settingsOrgId = getPositionSettingsOrgId(selectedType);
+        if (Number(settingsOrgId) !== Number(selectedBigClassId) && !typePositions.length) {
+          showToast('本级自定义至少保留一个岗位；如需使用大班模板，请点击恢复继承', 'error');
+          return;
+        }
         if (typePositions.some(function(position) { return !String(position.role_name || '').trim(); })) {
           showToast('请填写岗位名称', 'error');
           return;
@@ -599,6 +694,7 @@
             var position = typePositions[i];
             var payload = {
               reading_type_id: selectedReadingTypeId,
+              org_id: settingsOrgId,
               role_name: String(position.role_name).trim(),
               required_count: Math.max(1, Number(position.required_count) || 1),
               assignment_scope: getPositionAssignmentScope(position),
@@ -625,7 +721,30 @@
         }
       }
 
+      async function restoreInheritedTypePositions() {
+        var selectedType = readingTypes.find(function(type) { return Number(type.id) === Number(selectedReadingTypeId); });
+        var settingsOrgId = getPositionSettingsOrgId(selectedType);
+        if (!selectedType || !settingsOrgId || Number(settingsOrgId) === Number(selectedBigClassId) ||
+            !canEditSelectedTypePositions()) return;
+        var settingsOrg = StudyWorkflow.getOrg(allOrgs, settingsOrgId);
+        var confirmed = await showConfirm('恢复继承后，“' + (settingsOrg ? settingsOrg.name : '本组织') + '”将重新使用大班岗位模板，是否继续？');
+        if (!confirmed) return;
+        var deleted = await window.db
+          .from('study_reading_type_positions')
+          .delete()
+          .eq('reading_type_id', selectedType.id)
+          .eq('org_id', settingsOrgId);
+        if (deleted.error) {
+          showToast('恢复继承失败：' + (deleted.error.message || '未知错误'), 'error');
+          return;
+        }
+        await loadTypePositions();
+        renderTypeList();
+        showToast('已恢复继承大班岗位模板', 'success');
+      }
+
       function showTypeEditor(typeId) {
+        if (!canManageReadingTypes()) { showToast('只有大班层级可维护共读类型', 'error'); return; }
         var type = readingTypes.find(function(item) { return Number(item.id) === Number(typeId); });
         document.getElementById('typeEditorId').value = type ? type.id : '';
         document.getElementById('typeEditorTitle').textContent = type ? '编辑共读类型' : '新增共读类型';
@@ -639,6 +758,7 @@
       }
 
       async function saveReadingType() {
+        if (!canManageReadingTypes()) { showToast('只有大班层级可维护共读类型', 'error'); return; }
         var id = Number(document.getElementById('typeEditorId').value) || null;
         var name = document.getElementById('typeNameInput').value.trim();
         if (!name) { showToast('请填写类型名称', 'error'); return; }
@@ -688,6 +808,7 @@
       }
 
       async function deleteReadingType() {
+        if (!canManageReadingTypes()) { showToast('只有大班层级可维护共读类型', 'error'); return; }
         var type = readingTypes.find(function(item) { return Number(item.id) === Number(selectedReadingTypeId); });
         if (!type) return;
         var ok = await showConfirm('确定删除“' + type.type_name + '”吗？该类型的岗位设置会一并删除，已生成的历史日程保留。');
@@ -714,8 +835,12 @@
         var hint = document.getElementById('ruleScopeHint');
         var btn = document.getElementById('typeManageBtn');
         var bc = selectedBigClassId ? StudyWorkflow.getOrg(allOrgs, selectedBigClassId) : null;
+        var selectedOrg = getSelectedOrg();
         var canEdit = canEditSelectedRules();
-        if (btn) btn.style.display = canEdit ? '' : 'none';
+        if (btn) {
+          btn.style.display = canEditSelectedTypePositions() ? '' : 'none';
+          btn.textContent = selectedOrg && selectedOrg.level !== '大班' ? '岗位设置' : '+ 设置';
+        }
         if (!hint) return;
         if (!selectedBigClassId) {
           hint.textContent = '请选择一个大班后设置规则。';
@@ -723,6 +848,10 @@
         }
         if (!rulesOrgScoped) {
           hint.textContent = '远端数据库尚未执行学委 v2 迁移，当前临时使用旧版全局规则；执行 20260625102913_study_workflow_v2.sql 后会自动切换为按大班规则。';
+          return;
+        }
+        if (selectedOrg && selectedOrg.level !== '大班') {
+          hint.textContent = '每周共读规则继承自' + (bc ? bc.name : '所属大班') + '；可在“岗位设置”中维护仅作用于' + selectedOrg.name + '的' + selectedOrg.level + '共读岗位。';
           return;
         }
         hint.textContent = canEdit

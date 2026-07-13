@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>宣委汇总 - 宣委管理</title>
-    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/common.css?v=10" />
     <link rel="stylesheet" href="css/weekly-summary.css?v=3" />
   </head>
   <body class="app-loading" data-summary-mode="publicity">
@@ -71,21 +71,7 @@
 
       <section class="summary-section week-section" aria-labelledby="weekRange">
         <div class="week-toolbar">
-          <div class="week-switcher">
-            <div class="week-nav">
-              <button class="week-nav-btn" id="previousWeekBtn" type="button" aria-label="上一周">
-                <span data-icon="ChevronLeftIcon"></span>
-              </button>
-              <div class="week-center">
-                <div class="week-position-label" id="weekPositionLabel">本周</div>
-                <div class="week-range" id="weekRange">--</div>
-              </div>
-              <button class="week-nav-btn" id="nextWeekBtn" type="button" aria-label="下一周">
-                <span data-icon="ChevronRightIcon"></span>
-              </button>
-            </div>
-            <button class="today-btn" id="currentWeekBtn" type="button">本周</button>
-          </div>
+          <div id="publicityWeekSwitcher"></div>
           <div class="week-actions">
             <span class="week-summary-text" id="weekSummaryText">正在加载...</span>
             <span class="week-caption">点击日程查看全部内容</span>
@@ -114,7 +100,16 @@
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=17"></script>
+    <script src="js/components.js?v=18"></script>
+    <script>
+      mountWeekSwitcher('publicityWeekSwitcher', {
+        previousId: 'previousWeekBtn',
+        nextId: 'nextWeekBtn',
+        currentId: 'currentWeekBtn',
+        labelId: 'weekPositionLabel',
+        rangeId: 'weekRange'
+      });
+    </script>
     <script src="js/excellent-homework.js?v=2"></script>
     <script src="js/reading-media.js?v=2"></script>
     <script src="js/weekly-summary.js?v=3"></script>

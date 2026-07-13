@@ -183,6 +183,16 @@ var StudyWorkflow = (function () {
     return context.manageableOrgIds.indexOf(Number(orgId)) !== -1;
   }
 
+  function swfCanManageOrg(context, orgId, orgs) {
+    var id = swfNumber(orgId);
+    if (!context || !id) return false;
+    if (context.fullStudyAccess || context.isPlatformAdmin) return true;
+    var ancestorIds = swfGetAncestorIds(id, orgs);
+    return context.membershipOrgIds.some(function(membershipOrgId) {
+      return ancestorIds.indexOf(Number(membershipOrgId)) !== -1;
+    });
+  }
+
   function swfCanEditRulesForBigClass(context, bigClassId) {
     var id = swfNumber(bigClassId);
     if (!context || !id) return false;
@@ -444,6 +454,7 @@ var StudyWorkflow = (function () {
     sortOrgs: swfSortOrgs,
     loadContext: swfLoadContext,
     canViewOrg: swfCanViewOrg,
+    canManageOrg: swfCanManageOrg,
     canEditRulesForBigClass: swfCanEditRulesForBigClass,
     canEditContent: swfCanEditContent,
     canManageDemand: swfCanManageDemand,

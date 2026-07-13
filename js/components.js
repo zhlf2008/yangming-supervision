@@ -698,3 +698,56 @@ document.addEventListener('click', function (event) {
 function appIcon(name, className) {
   return '<span class="' + (className || 'app-icon') + '" data-icon="' + name + '"></span>';
 }
+
+function mountWeekSwitcher(target, options) {
+  var container = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!container) return null;
+
+  var config = options || {};
+
+  function attribute(name, value) {
+    if (!value) return '';
+    return ' ' + name + '="' + String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;') + '"';
+  }
+
+  container.classList.add('app-week-switcher-host');
+  if (config.flush) container.classList.add('app-week-switcher-host--flush');
+
+  var labelHtml = config.showLabel === false ? '' :
+    '<div class="app-week-label"' + attribute('id', config.labelId) + '>' +
+      (config.labelText || '本周') +
+    '</div>';
+  var currentButton = config.showCurrent === false ? '' :
+    '<button class="app-week-today" type="button"' +
+      attribute('id', config.currentId) +
+      attribute('onclick', config.onCurrent) +
+    '>' + (config.currentText || '本周') + '</button>';
+
+  container.innerHTML =
+    '<div class="app-week-switcher">' +
+      '<div class="app-week-nav">' +
+        '<button class="app-week-arrow" type="button" aria-label="上一周"' +
+          attribute('id', config.previousId) +
+          attribute('onclick', config.onPrevious) +
+        '>' + appIcon('ChevronLeftIcon', 'app-week-arrow-icon') + '</button>' +
+        '<div class="app-week-current">' +
+          labelHtml +
+          '<div class="app-week-range"' + attribute('id', config.rangeId) + '>' +
+            (config.rangeText || '--') +
+          '</div>' +
+          (config.caption ? '<div class="app-week-caption">' + config.caption + '</div>' : '') +
+        '</div>' +
+        '<button class="app-week-arrow" type="button" aria-label="下一周"' +
+          attribute('id', config.nextId) +
+          attribute('onclick', config.onNext) +
+        '>' + appIcon('ChevronRightIcon', 'app-week-arrow-icon') + '</button>' +
+      '</div>' +
+      '<div class="app-week-actions">' + currentButton + (config.actionsHtml || '') + '</div>' +
+    '</div>';
+
+  return container;
+}

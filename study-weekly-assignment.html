@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>晨读安排 - 每周安排</title>
-    <link rel="stylesheet" href="css/common.css?v=9" />
+    <link rel="stylesheet" href="css/common.css?v=10" />
     <style>
       .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); padding: 11px 12px; color: var(--ink-dark); font-size: 14px; font-family: inherit; }
       .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -94,17 +94,7 @@
 
       <!-- Week navigation -->
       <section class="section">
-        <div class="date-selector" id="weekNav">
-          <div class="date-nav">
-            <button class="date-nav-btn" data-icon="ChevronLeftIcon" aria-label="上一周" onclick="changeWeek(-1)"></button>
-            <span class="date-current">
-              <div class="date-week-label" id="dateWeekLabel">--</div>
-              <div class="date-week-range" id="dateWeekRange">--</div>
-            </span>
-            <button class="date-nav-btn" data-icon="ChevronRightIcon" aria-label="下一周" onclick="changeWeek(1)"></button>
-          </div>
-          <button class="date-today" onclick="goToCurrentWeek()">&#26412;&#21608;</button>
-        </div>
+        <div id="weeklyAssignmentWeekSwitcher"></div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
           <button class="btn btn-secondary btn-sm" onclick="toggleView()" id="viewToggleBtn" style="flex:1;"> 日历视图</button>
           <button class="btn btn-secondary btn-sm" onclick="generateRoster()" style="flex:1;"> 生成排班表</button>
@@ -240,8 +230,16 @@
 
     <script src="js/supabase-config.js?v=11"></script>
     <script src="js/utils.js?v=12"></script>
-    <script src="js/components.js?v=17"></script>
+    <script src="js/components.js?v=18"></script>
     <script>
+      mountWeekSwitcher('weeklyAssignmentWeekSwitcher', {
+        labelId: 'dateWeekLabel',
+        rangeId: 'dateWeekRange',
+        labelText: '--',
+        onPrevious: 'changeWeek(-1)',
+        onNext: 'changeWeek(1)',
+        onCurrent: 'goToCurrentWeek()'
+      });
       var weeklyPageParams = new URLSearchParams(location.search);
       var weeklyEmbedded = weeklyPageParams.get('embedded') === '1';
       if (weeklyEmbedded) document.body.classList.add('embedded-page');

@@ -110,6 +110,7 @@
       <header class="page-header">
         <a class="back-btn" href="publicity-dashboard.html" aria-label="返回宣委管理首页"></a>
         <h1 class="page-title">每日共读影像</h1>
+        <a class="reading-btn primary" href="study-reading-media.html?module=publicity&from=publicity-dashboard">提交影像</a>
       </header>
 
       <div class="header-card">
@@ -294,7 +295,7 @@
     <script src="js/utils.js?v=12"></script>
     <script src="js/components.js?v=17"></script>
     <script src="js/reading-media.js?v=3"></script>
-    <script src="js/publicity-reading-poster.js?v=14"></script>
+    <script src="js/publicity-reading-poster.js?v=15"></script>
     <script>
       renderModuleBottomNav('publicity', 'media');
 
@@ -646,7 +647,10 @@
         savedItems.forEach(function (item) {
           savedMap[Number(item.asset_id)] = item;
         });
-        var featureAssetId = null;
+        var coverAsset = selectedBundle.assets.find(function (asset) {
+          return asset.asset_kind === 'moment' && asset.caption === '封面图';
+        });
+        var featureAssetId = coverAsset ? Number(coverAsset.id) : null;
 
         legacyCropFrameItems = [];
         currentItems = selectedBundle.assets.map(function (asset, index) {
@@ -816,6 +820,7 @@
           return (item.role_name_override || asset.role_name_snapshot || '岗位') + ' · ' + (item.person_name_override || asset.person_name_snapshot || '未命名人员');
         }
         if (asset.asset_kind === 'overview') return '全员画面';
+        if (asset.asset_kind === 'moment' && asset.caption === '封面图') return '封面图';
         if (asset.asset_kind === 'moment') return '现场花絮';
         return '其他素材';
       }

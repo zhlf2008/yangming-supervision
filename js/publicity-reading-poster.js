@@ -23,6 +23,7 @@ var PublicityReadingPoster = (function () {
   function getItemSlot(item) {
     var asset = getItemAsset(item);
     if (item.slot_kind && item.slot_kind !== 'auto') return item.slot_kind;
+    if (asset.asset_kind === 'moment' && asset.caption === '封面图') return 'feature';
     if (asset.asset_kind === 'role') return 'role';
     if (asset.asset_kind === 'overview') return 'overview';
     if (asset.asset_kind === 'moment') return 'moment';
