@@ -189,10 +189,10 @@ async function validateProfileOrganization(organizationId, caller) {
   if (caller.currentSemesterId && Number(org.semester_id) !== Number(caller.currentSemesterId)) {
     return '登录账号归属组织必须属于当前学期';
   }
-  if (org.level !== '小组') return '登录账号归属组织必须是小组';
+  if (org.level !== '小组' && org.level !== '班级') return '登录账号归属组织必须是班级或小组';
   if (!caller.isAdmin &&
       !(await canCallerManageOrganization(caller, caller.currentSemesterId, organizationId))) {
-    return '无权管理该小组的登录账号';
+    return '无权管理该组织的登录账号';
   }
   return null;
 }
