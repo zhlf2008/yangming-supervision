@@ -270,7 +270,7 @@
       .field { margin-bottom: 14px; }
       .field:last-child { margin-bottom: 0; }
       .field label { display: block; margin-bottom: 6px; color: var(--ink-light); font-size: 12px; font-weight: 600; }
-      .field input, .field textarea {
+      .field input, .field textarea, .field select {
         width: 100%;
         padding: 10px 11px;
         border: 1px solid var(--manager-line);
@@ -284,6 +284,11 @@
       .notice-options { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 12px 0 16px; }
       .notice-option { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-light); font-size: 13px; }
       .notice-option input { accent-color: var(--manager-red); }
+      .notice-section { margin-bottom: 18px; padding-bottom: 4px; border-bottom: 1px solid var(--manager-line); }
+      .notice-section:last-of-type { border-bottom: 0; }
+      .notice-section-title { margin-bottom: 12px; color: var(--manager-ink); font-size: 14px; font-weight: 700; }
+      .notice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+      .notice-help { margin: -4px 0 14px; color: var(--ink-muted); font-size: 12px; line-height: 1.6; }
       .save-notice-btn {
         width: 100%;
         min-height: 40px;
@@ -350,31 +355,27 @@
       var allOrgs = [];
       var studyContext = null;
       var currentOrg = null;
-      var currentTab = 'schedule';
+      var currentTab = 'week';
       var listLevel = '大班';
       var listParentId = null;
       var params = new URLSearchParams(location.search);
-      var FEATURE_BUILD = '20260714-26';
+      var FEATURE_BUILD = '20260716-27';
       var applyingHistoryState = false;
 
       var TAB_CONFIG = {
         '大班': [
           { key: 'rules', label: '规则' },
-          { key: 'course', label: '课程' },
-          { key: 'schedule', label: '岗位' },
+          { key: 'week', label: '日程' },
           { key: 'notice', label: '通知' }
         ],
         '班级': [
           { key: 'rules', label: '规则' },
-          { key: 'course', label: '课程' },
-          { key: 'schedule', label: '岗位' },
+          { key: 'week', label: '日程' },
           { key: 'notice', label: '通知' }
         ],
         '小组': [
           { key: 'rules', label: '规则' },
           { key: 'week', label: '日程' },
-          { key: 'course', label: '课程' },
-          { key: 'schedule', label: '岗位' },
           { key: 'notice', label: '通知' }
         ]
       };
@@ -385,7 +386,7 @@
         var url = new URL(location.href);
         if (opts.orgId) {
           url.searchParams.set('org_id', String(opts.orgId));
-          url.searchParams.set('tab', opts.tab || currentTab || 'schedule');
+          url.searchParams.set('tab', opts.tab || currentTab || 'week');
         } else {
           url.searchParams.delete('org_id');
           url.searchParams.delete('tab');
@@ -442,7 +443,7 @@
         studyContext = await StudyWorkflow.loadContext(currentSemesterId, allOrgs);
 
         var requestedOrg = Number(params.get('org_id')) || null;
-        var requestedTab = params.get('tab') || 'schedule';
+        var requestedTab = params.get('tab') || 'week';
         if (requestedOrg) {
           var org = StudyWorkflow.getOrg(allOrgs, requestedOrg);
           if (org && StudyWorkflow.canViewOrg(studyContext, org.id)) {
@@ -515,7 +516,7 @@
         currentOrg = org;
         var tabs = TAB_CONFIG[org.level] || [];
         var preferredTab = options && options.tab;
-        currentTab = tabs.some(function(tab) { return tab.key === preferredTab; }) ? preferredTab : 'schedule';
+        currentTab = tabs.some(function(tab) { return tab.key === preferredTab; }) ? preferredTab : 'week';
         renderOrgDetail();
         updateRoute({ orgId: org.id, tab: currentTab, replace: options && options.replace });
       }
@@ -577,7 +578,7 @@
         var orgId = Number(route.get('org_id')) || null;
         applyingHistoryState = true;
         if (orgId && StudyWorkflow.getOrg(allOrgs, orgId) && StudyWorkflow.canViewOrg(studyContext, orgId)) {
-          openOrg(orgId, { tab: route.get('tab') || 'schedule', replace: true });
+          openOrg(orgId, { tab: route.get('tab') || 'week', replace: true });
         } else {
           renderOrgList('大班', null, { replace: true });
         }
@@ -597,17 +598,13 @@
         if (currentTab === 'rules') {
           src = 'study-schedule-rules.html?embedded=1&org_id=' + currentOrg.id;
           title = currentOrg.level + '规则设置';
-        } else if (currentTab === 'course') {
-          src = 'study-org-schedule.html?embedded=1&view=course&org_id=' + currentOrg.id;
-          title = '周切换课程设置';
         } else if (currentTab === 'week') {
           src = 'study-org-schedule.html?embedded=1&view=week&org_id=' + currentOrg.id;
-          title = '小组周表';
+          title = '周日程与人员安排';
         } else {
-          src = 'study-org-schedule.html?embedded=1&view=schedule&org_id=' + currentOrg.id;
-          title = '周切换排班设置';
+          return;
         }
-        var isScheduleFeature = currentTab === 'course' || currentTab === 'schedule' || currentTab === 'week';
+        var isScheduleFeature = currentTab === 'week';
         var existingFrame = isScheduleFeature
           ? area.querySelector('.feature-frame[data-feature-kind="org-schedule"][data-org-id="' + currentOrg.id + '"]')
           : null;
@@ -630,24 +627,65 @@
 
       async function renderNoticeEditor() {
         var area = document.getElementById('featureArea');
+        var defaults = getNoticeDefaults();
+        var classScheduleFields = currentOrg.level === '班级'
+          ? '<div class="notice-section"><div class="notice-section-title">自动推送时间</div>' +
+              '<div class="notice-help">此处设置生成时间；是否推送仍由秘书处组织架构中的班级推送开关控制。</div>' +
+              '<div class="notice-grid">' +
+                '<div class="field"><label for="noticeDailySendTime">每日通知发送时间</label><input id="noticeDailySendTime" type="time" value="20:00" /></div>' +
+                '<div class="field"><label for="noticeDailyLeadDays">提前天数</label><input id="noticeDailyLeadDays" type="number" min="0" max="7" value="1" /></div>' +
+                '<div class="field"><label for="noticeWeeklyCourseWeekday">课程安排发送日</label><select id="noticeWeeklyCourseWeekday">' + noticeWeekdayOptions(7) + '</select></div>' +
+                '<div class="field"><label for="noticeWeeklyCourseTime">课程安排发送时间</label><input id="noticeWeeklyCourseTime" type="time" value="20:00" /></div>' +
+                '<div class="field"><label for="noticeWeeklyAssignmentWeekday">人员排班发送日</label><select id="noticeWeeklyAssignmentWeekday">' + noticeWeekdayOptions(4) + '</select></div>' +
+                '<div class="field"><label for="noticeWeeklyAssignmentTime">人员排班发送时间</label><input id="noticeWeeklyAssignmentTime" type="time" value="20:00" /></div>' +
+              '</div></div>'
+          : '';
         area.innerHTML =
-          '<div class="feature-heading"><div class="feature-title">' + (currentTab === 'push' ? '通知推送排版' : '通知排版设置') + '</div><div class="feature-org">' + escapeHtml(currentOrg.name) + '</div></div>' +
+          '<div class="feature-heading"><div class="feature-title">' + escapeHtml(currentOrg.level) + '晨读通知设置</div><div class="feature-org">' + escapeHtml(currentOrg.name) + '</div></div>' +
           '<div class="notice-editor">' +
             '<div class="notice-controls">' +
-              '<div class="field"><label for="noticeTitleInput">通知标题</label><input id="noticeTitleInput" value="【{组织}】第{周次}周共读安排" oninput="updateNoticePreview()" /></div>' +
-              '<div class="field"><label for="noticeIntroInput">开场文案</label><textarea id="noticeIntroInput" oninput="updateNoticePreview()">请各位同学提前查看本周学习安排，按时参加共读。</textarea></div>' +
-              '<div class="notice-options">' +
-                '<label class="notice-option"><input type="checkbox" id="showCourseInput" checked onchange="updateNoticePreview()" />课程内容</label>' +
-                '<label class="notice-option"><input type="checkbox" id="showRosterInput" checked onchange="updateNoticePreview()" />岗位排班</label>' +
-                '<label class="notice-option"><input type="checkbox" id="showQuestionInput" checked onchange="updateNoticePreview()" />思考题</label>' +
+              classScheduleFields +
+              '<div class="notice-section"><div class="notice-section-title">晨读通知内容</div>' +
+                '<div class="field"><label for="noticeTitleInput">通知标题</label><input id="noticeTitleInput" value="' + escapeHtml(defaults.title) + '" oninput="updateNoticePreview()" /></div>' +
+                '<div class="notice-help">可用变量：{组织}、{大班}、{期数}、{日期}、{星期}</div>' +
+                '<div class="field"><label for="noticeIntroInput">开场文案</label><textarea id="noticeIntroInput" oninput="updateNoticePreview()"></textarea></div>' +
+                '<div class="notice-grid">' +
+                  '<div class="field"><label for="noticeStartTime">共读开始时间</label><input id="noticeStartTime" type="time" value="06:00" onchange="updateNoticePreview()" /></div>' +
+                  '<div class="field"><label for="noticeEndTime">共读结束时间</label><input id="noticeEndTime" type="time" value="' + defaults.endTime + '" onchange="updateNoticePreview()" /></div>' +
+                '</div>' +
+                '<div class="field"><label for="noticeCovenantTitle">固定教约名称</label><input id="noticeCovenantTitle" value="传习课堂教约" oninput="updateNoticePreview()" /></div>' +
+                '<div class="field"><label for="noticeCovenantUrl">固定教约链接</label><input id="noticeCovenantUrl" value="https://mp.weixin.qq.com/s/yOoMV5TEOacQMBVK8JDwVQ" oninput="updateNoticePreview()" /></div>' +
+                '<div class="field"><label for="noticeMeetingInfo">会议地址或说明</label><textarea id="noticeMeetingInfo" oninput="updateNoticePreview()"></textarea></div>' +
+                '<div class="notice-options">' +
+                  '<label class="notice-option"><input type="checkbox" id="showCourseInput" checked onchange="updateNoticePreview()" />显示课程内容</label>' +
+                  '<label class="notice-option"><input type="checkbox" id="showRosterInput" checked onchange="updateNoticePreview()" />显示岗位排班</label>' +
+                '</div>' +
+                '<div class="field"><label for="noticeClosingInput">温馨提示</label><textarea id="noticeClosingInput" oninput="updateNoticePreview()">' + escapeHtml(defaults.closing) + '</textarea></div>' +
               '</div>' +
-              '<div class="field"><label for="noticeClosingInput">结尾文案</label><textarea id="noticeClosingInput" oninput="updateNoticePreview()">请相关岗位提前做好准备，如需调整请及时联系本级学委。</textarea></div>' +
-              '<button class="save-notice-btn" id="saveNoticeBtn" type="button" onclick="saveNoticeTemplate()">保存排版</button>' +
+              '<button class="save-notice-btn" id="saveNoticeBtn" type="button" onclick="saveNoticeTemplate()">保存通知设置</button>' +
             '</div>' +
             '<div class="notice-preview"><div class="notice-preview-title">通知预览</div><div class="notice-paper" id="noticePreview"></div></div>' +
           '</div>';
         await loadNoticeTemplate();
         updateNoticePreview();
+      }
+
+      function noticeWeekdayOptions(selected) {
+        return ['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map(function(label, index) {
+          var value = index + 1;
+          return '<option value="' + value + '"' + (value === selected ? ' selected' : '') + '>' + label + '</option>';
+        }).join('');
+      }
+
+      function getNoticeDefaults() {
+        var level = currentOrg ? currentOrg.level : '班级';
+        return {
+          title: level === '大班'
+            ? '【{组织} · 联合共读】'
+            : (level === '班级' ? '【{组织} · 班级共读】' : '【{期数}期 · {组织} · 晨读】'),
+          endTime: level === '大班' ? '07:30' : '07:00',
+          closing: '分享人员请提前准备；请提前5至10分钟进入会议室，穿班服、统一背景、全程开启摄像头。'
+        };
       }
 
       function currentWeekText() {
@@ -663,13 +701,26 @@
         if (!preview || !currentOrg) return;
         var title = document.getElementById('noticeTitleInput').value
           .replace(/\{组织\}/g, currentOrg.name)
-          .replace(/\{周次\}/g, currentWeekText());
-        var text = title + '\n\n' + document.getElementById('noticeIntroInput').value.trim();
-        if (document.getElementById('showCourseInput').checked) text += '\n\n【课程内容】\n待课程设置完成后自动带入';
-        if (document.getElementById('showRosterInput').checked) text += '\n\n【岗位排班】\n待排班设置完成后自动带入';
-        if (document.getElementById('showQuestionInput').checked) text += '\n\n【本周思考】\n待课程思考题设置完成后自动带入';
+          .replace(/\{大班\}/g, StudyWorkflow.getAncestors(currentOrg.id, allOrgs).find(function(org) { return org.level === '大班'; })?.name || currentOrg.name)
+          .replace(/\{期数\}/g, (currentSemester && currentSemester.semester_name.match(/(\d+)\s*期/))?.[1] || '')
+          .replace(/\{日期\}/g, '2026年7月16日')
+          .replace(/\{星期\}/g, '星期四');
+        var text = title;
+        var intro = document.getElementById('noticeIntroInput').value.trim();
+        if (intro) text += '\n\n' + intro;
+        text += '\n\n日期：2026年7月16日 星期四';
+        text += '\n时间：' + document.getElementById('noticeStartTime').value + '—' + document.getElementById('noticeEndTime').value;
+        if (document.getElementById('showCourseInput').checked) {
+          text += '\n\n共读内容\n1. ' + document.getElementById('noticeCovenantTitle').value.trim();
+          var covenantUrl = document.getElementById('noticeCovenantUrl').value.trim();
+          if (covenantUrl) text += '\n' + covenantUrl;
+          text += '\n2. 待课程安排自动带入';
+        }
+        if (document.getElementById('showRosterInput').checked) text += '\n\n岗位安排\n待晨读排班自动带入';
+        var meeting = document.getElementById('noticeMeetingInfo').value.trim();
+        if (meeting) text += '\n\n会议地点\n' + meeting;
         var closing = document.getElementById('noticeClosingInput').value.trim();
-        if (closing) text += '\n\n' + closing;
+        if (closing) text += '\n\n温馨提示\n' + closing;
         preview.textContent = text;
       }
 
@@ -693,10 +744,46 @@
         document.getElementById('noticeClosingInput').value = row.closing_text || '';
         document.getElementById('showCourseInput').checked = row.show_course !== false;
         document.getElementById('showRosterInput').checked = row.show_roster !== false;
-        document.getElementById('showQuestionInput').checked = row.show_question !== false;
+        var settings = row.notice_settings && typeof row.notice_settings === 'object' ? row.notice_settings : {};
+        document.getElementById('noticeStartTime').value = settings.default_start_time || '06:00';
+        document.getElementById('noticeEndTime').value = settings.default_end_time || getNoticeDefaults().endTime;
+        document.getElementById('noticeCovenantTitle').value = settings.teaching_covenant_title || '传习课堂教约';
+        document.getElementById('noticeCovenantUrl').value = settings.teaching_covenant_url || 'https://mp.weixin.qq.com/s/yOoMV5TEOacQMBVK8JDwVQ';
+        document.getElementById('noticeMeetingInfo').value = settings.meeting_info || '';
+        if (currentOrg.level === '班级') {
+          document.getElementById('noticeDailySendTime').value = settings.daily_send_time || '20:00';
+          document.getElementById('noticeDailyLeadDays').value = Number.isInteger(Number(settings.daily_lead_days)) ? Number(settings.daily_lead_days) : 1;
+          document.getElementById('noticeWeeklyCourseWeekday').value = Number(settings.weekly_course_weekday || 7);
+          document.getElementById('noticeWeeklyCourseTime').value = settings.weekly_course_send_time || '20:00';
+          document.getElementById('noticeWeeklyAssignmentWeekday').value = Number(settings.weekly_assignment_weekday || 4);
+          document.getElementById('noticeWeeklyAssignmentTime').value = settings.weekly_assignment_send_time || '20:00';
+        }
       }
 
       async function saveNoticeTemplate() {
+        var startTime = document.getElementById('noticeStartTime').value;
+        var endTime = document.getElementById('noticeEndTime').value;
+        if (!startTime || !endTime || startTime >= endTime) {
+          showToast('共读结束时间必须晚于开始时间', 'error');
+          return;
+        }
+        var noticeSettings = {
+          default_start_time: startTime,
+          default_end_time: endTime,
+          teaching_covenant_title: document.getElementById('noticeCovenantTitle').value.trim(),
+          teaching_covenant_url: document.getElementById('noticeCovenantUrl').value.trim(),
+          meeting_info: document.getElementById('noticeMeetingInfo').value.trim()
+        };
+        if (currentOrg.level === '班级') {
+          Object.assign(noticeSettings, {
+            daily_send_time: document.getElementById('noticeDailySendTime').value,
+            daily_lead_days: Number(document.getElementById('noticeDailyLeadDays').value || 1),
+            weekly_course_weekday: Number(document.getElementById('noticeWeeklyCourseWeekday').value || 7),
+            weekly_course_send_time: document.getElementById('noticeWeeklyCourseTime').value,
+            weekly_assignment_weekday: Number(document.getElementById('noticeWeeklyAssignmentWeekday').value || 4),
+            weekly_assignment_send_time: document.getElementById('noticeWeeklyAssignmentTime').value
+          });
+        }
         var button = document.getElementById('saveNoticeBtn');
         button.disabled = true;
         button.textContent = '保存中...';
@@ -708,17 +795,17 @@
           closing_text: document.getElementById('noticeClosingInput').value.trim(),
           show_course: document.getElementById('showCourseInput').checked,
           show_roster: document.getElementById('showRosterInput').checked,
-          show_question: document.getElementById('showQuestionInput').checked,
+          notice_settings: noticeSettings,
           updated_by: getCurrentUser().id,
           updated_at: new Date().toISOString()
         }, { onConflict: 'semester_id,org_id' });
         button.disabled = false;
-        button.textContent = '保存排版';
+        button.textContent = '保存通知设置';
         if (result.error) {
           showToast('保存通知排版失败：' + result.error.message, 'error');
           return;
         }
-        showToast('通知排版已保存', 'success');
+        showToast('通知设置已保存', 'success');
       }
 
       function arrowSvg(direction) {

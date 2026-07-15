@@ -187,12 +187,6 @@
       .week-roster-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 42px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); }
       .week-roster-role { font-weight: 700; color: var(--ink-dark); }
       .week-roster-name { color: var(--green); text-align: right; }
-      .roster-header-actions { display: flex; align-items: center; gap: 6px; }
-      .roster-toggle { display: inline-flex; align-items: center; gap: 4px; }
-      .roster-toggle-icon { display: inline-flex; width: 16px; height: 16px; transition: transform .18s ease; }
-      .roster-toggle-icon svg { width: 16px; height: 16px; }
-      #rosterSection.collapsed .roster-output { display: none; }
-      #rosterSection.collapsed .roster-toggle-icon { transform: rotate(-90deg); }
       .demand-list { margin-top: 12px; display: grid; gap: 8px; }
       .demand-item { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); }
       .demand-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
@@ -211,7 +205,6 @@
       .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
       .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
       .modal-actions .btn { flex: 1; }
-      .roster-output { white-space: pre-wrap; font-size: 13px; line-height: 1.8; color: var(--ink-dark); background: var(--bg-primary); padding: 14px; border-radius: 10px; border: 1px solid var(--border); max-height: 420px; overflow-y: auto; }
       body.embedded-page { min-height: 0; padding-bottom: 0; background: transparent; }
       body.embedded-page > .container { max-width: none; padding: 0; }
       body.embedded-page .page-header,
@@ -222,14 +215,11 @@
       body.embedded-page #scheduleSection { margin-bottom: 0; }
       body.embedded-page #scheduleSection .section-header a { display: none; }
       body.view-course #roleSection,
-      body.view-course #rosterSection,
       body.view-course .demand-list,
       body.view-course .demand-actions,
-      body.view-course .demand-add-action,
-      body.view-course #rosterButton { display: none !important; }
+      body.view-course .demand-add-action { display: none !important; }
       body.view-schedule #roleSection { display: none !important; }
-      body.view-week #roleSection,
-      body.view-week #rosterButton { display: none !important; }
+      body.view-week #roleSection { display: none !important; }
       body.view-schedule .course-content-area,
       body.view-schedule .content-edit-action { display: none !important; }
       @media (max-width: 520px) {
@@ -288,20 +278,6 @@
           <button class="btn btn-primary btn-sm" onclick="showRoleModal()">新增岗位</button>
         </div>
         <div id="roleList" class="role-list"></div>
-      </section>
-
-      <section class="section" id="rosterSection" style="display:none;">
-        <div class="section-header">
-          <div class="section-title">排班表</div>
-          <div class="roster-header-actions">
-            <button class="btn btn-sm btn-secondary" type="button" onclick="copyRoster()">复制</button>
-            <button class="btn btn-sm btn-secondary roster-toggle" id="rosterToggleButton" type="button" aria-expanded="true" onclick="toggleRoster()">
-              <span class="roster-toggle-icon" data-icon="ChevronDownIcon"></span>
-              <span id="rosterToggleText">收起</span>
-            </button>
-          </div>
-        </div>
-        <pre class="roster-output" id="rosterOutput"></pre>
       </section>
 
       <section class="section" id="scheduleSection">
@@ -416,15 +392,14 @@
         labelText: '--',
         onPrevious: 'changeWeek(-1)',
         onNext: 'changeWeek(1)',
-        onCurrent: 'goToCurrentWeek()',
-        actionsHtml: '<button class="btn btn-secondary btn-sm" id="rosterButton" onclick="generateRoster()">生成排班表</button>'
+        onCurrent: 'goToCurrentWeek()'
       });
     </script>
     <script src="js/study-workflow.js?v=12"></script>
     <script>
       var schedulePageParams = new URLSearchParams(location.search);
       var scheduleEmbedded = schedulePageParams.get('embedded') === '1';
-      var scheduleView = schedulePageParams.get('view') || 'schedule';
+      var scheduleView = schedulePageParams.get('view') || 'week';
       if (scheduleEmbedded) document.body.classList.add('embedded-page');
       document.body.classList.add('view-' + scheduleView);
       if (!scheduleEmbedded) renderModuleBottomNav('study', 'weekly');
@@ -1206,44 +1181,46 @@
           html += '<span class="scope-tag ' + schedule.scope_level + '">' + escapeHtml(schedule.is_semester_template ? '学期课程表' : getScheduleTypeLabel(schedule)) + '</span>';
           html += isReadonlySchedule ? '</div><div class="schedule-body">' : '</summary><div class="schedule-body">';
           if (scheduleView === 'schedule') html += renderScheduleWorkNote(schedule, dayDemands, accessMode);
-          if (scheduleView === 'course') {
-            html += '<div class="course-content-area">';
-            if (canEditContent) {
-              html += '<div class="course-content-toolbar"><button class="btn btn-secondary btn-sm content-edit-action" onclick="showContentModal(' + schedule.id + ')">编辑内容</button></div>';
-            }
-            html += '<div class="course-stack">';
-            if (!resolvedItems.length) {
-              html += '<div class="empty-state" style="padding:8px 0;text-align:left;">未设置课程</div>';
-            } else {
-              resolvedItems.forEach(function(item, index) {
-                var heading = item.course_group_title || item.title || '未命名课程';
-                var subheading = item.chapter_title || item.theme || '';
-                html += '<details class="course-summary"' + (index === 0 ? ' open' : '') + '><summary><span class="course-summary-copy">' +
-                  '<span class="content-title">课程 ' + (index + 1) + ' · ' + escapeHtml(heading) + '</span>' +
-                  (subheading ? '<span class="content-line">' + escapeHtml(subheading) + '</span>' : '') +
-                  '</span></summary><div class="course-detail-collapse"><div class="course-detail-body"><div class="course-detail-inner">';
-                html += '<div class="course-meta">' +
-                  (item.theme ? '<span>主题：' + escapeHtml(item.theme) + '</span>' : '') +
-                  (item.paper_pages ? '<span>页码：' + escapeHtml(item.paper_pages) + '</span>' : '') +
-                  (item.ebook_url && /^https?:\/\//i.test(item.ebook_url)
-                    ? '<a class="ebook-link" href="' + escapeHtml(item.ebook_url) + '" target="_blank" rel="noopener">打开电子书</a>'
-                    : (item.ebook_url ? '<span>电子书：' + escapeHtml(item.ebook_url) + '</span>' : '')) +
-                  '</div>';
-                if (item.content) html += '<div class="content-line">' + escapeHtml(item.content) + '</div>';
-                if (item.question) html += '<div class="content-line muted">思考题：' + escapeHtml(item.question) + '</div>';
-                html += '<div class="content-source">内容来源：' + escapeHtml(item.source_org_name || '本组织') + '</div></div></div></div></details>';
-              });
-            }
-            html += '</div>';
-            html += '</div>';
-          } else if (scheduleView === 'week') {
-            html += renderGroupWeekRoster(dayDemands);
-          } else {
+          if (scheduleView === 'course' || scheduleView === 'week') {
+            html += renderCourseSchedule(schedule, resolvedItems, canEditContent);
+          }
+          if (scheduleView === 'schedule' || scheduleView === 'week') {
             html += renderRoleSchedule(schedule, dayDemands, canManageDemand, accessMode);
           }
           html += isReadonlySchedule ? '</div></article>' : '</div></details>';
         });
         container.innerHTML = html;
+      }
+
+      function renderCourseSchedule(schedule, resolvedItems, canEditContent) {
+        var html = '<div class="course-content-area">';
+        if (canEditContent) {
+          html += '<div class="course-content-toolbar"><button class="btn btn-secondary btn-sm content-edit-action" onclick="showContentModal(' + schedule.id + ')">编辑内容</button></div>';
+        }
+        html += '<div class="course-stack">';
+        if (!resolvedItems.length) {
+          html += '<div class="empty-state" style="padding:8px 0;text-align:left;">未设置课程</div>';
+        } else {
+          resolvedItems.forEach(function(item, index) {
+            var heading = item.course_group_title || item.title || '未命名课程';
+            var subheading = item.chapter_title || item.theme || '';
+            html += '<details class="course-summary"' + (index === 0 ? ' open' : '') + '><summary><span class="course-summary-copy">' +
+              '<span class="content-title">课程 ' + (index + 1) + ' · ' + escapeHtml(heading) + '</span>' +
+              (subheading ? '<span class="content-line">' + escapeHtml(subheading) + '</span>' : '') +
+              '</span></summary><div class="course-detail-collapse"><div class="course-detail-body"><div class="course-detail-inner">';
+            html += '<div class="course-meta">' +
+              (item.theme ? '<span>主题：' + escapeHtml(item.theme) + '</span>' : '') +
+              (item.paper_pages ? '<span>页码：' + escapeHtml(item.paper_pages) + '</span>' : '') +
+              (item.ebook_url && /^https?:\/\//i.test(item.ebook_url)
+                ? '<a class="ebook-link" href="' + escapeHtml(item.ebook_url) + '" target="_blank" rel="noopener">打开电子书</a>'
+                : (item.ebook_url ? '<span>电子书：' + escapeHtml(item.ebook_url) + '</span>' : '')) +
+              '</div>';
+            if (item.content) html += '<div class="content-line">' + escapeHtml(item.content) + '</div>';
+            if (item.question) html += '<div class="content-line muted">思考题：' + escapeHtml(item.question) + '</div>';
+            html += '<div class="content-source">内容来源：' + escapeHtml(item.source_org_name || '本组织') + '</div></div></div></div></details>';
+          });
+        }
+        return html + '</div></div>';
       }
 
       function renderScheduleWorkNote(schedule, dayDemands, accessMode) {
@@ -2588,66 +2565,6 @@
         var result = await window.db.from('study_roles').update({ is_active: false }).eq('id', id);
         if (result.error) { showToast('停用失败', 'error'); return; }
         await loadRoles();
-      }
-
-      function generateRoster() {
-        if (!visibleSchedules.length) { showToast('本周暂无日程', 'error'); return; }
-        var week = getWeekRange();
-        var org = StudyWorkflow.getOrg(orgs, selectedOrgId);
-        var lines = ['【' + (org ? org.name : '组织') + ' ' + week.label + '学习排班表】', week.start + ' ~ ' + week.end, ''];
-        visibleSchedules.forEach(function (schedule) {
-          var weekday = StudyWorkflow.getWeekday(schedule.schedule_date);
-          lines.push(formatDateDisplay(schedule.schedule_date) + ' ' + WEEKDAY_NAMES[weekday] + ' · ' + getScheduleTypeLabel(schedule));
-          var orgLevel = StudyWorkflow.getOrgLevel(selectedOrgId, orgs);
-          var relevant = demands.filter(function (demand) {
-            if (!isDemandRelevantToSchedule(demand, schedule)) return false;
-            if (orgLevel === '大班') {
-              return !demand.parent_demand_id && Number(demand.from_org_id) === Number(selectedOrgId);
-            }
-            if (orgLevel === '班级') {
-              return !demand.parent_demand_id && Number(demand.target_org_id) === Number(selectedOrgId);
-            }
-            return Number(demand.target_org_id) === Number(selectedOrgId);
-          });
-          if (!relevant.length) {
-            lines.push('  暂未安排');
-          } else {
-            relevant.forEach(function (demand) {
-              var names = getAssignedNamesForDemand(demand.id).join('、') || '待定';
-              lines.push('  ' + demand.role_name + '（' + StudyWorkflow.getOrgPath(demand.target_org_id, orgs) + '）：' + names);
-            });
-          }
-          lines.push('');
-        });
-        document.getElementById('rosterOutput').textContent = lines.join('\n');
-        document.getElementById('rosterSection').style.display = '';
-        setRosterCollapsed(false);
-        document.getElementById('rosterSection').scrollIntoView({ behavior: 'smooth' });
-      }
-
-      function setRosterCollapsed(collapsed) {
-        var section = document.getElementById('rosterSection');
-        var button = document.getElementById('rosterToggleButton');
-        var text = document.getElementById('rosterToggleText');
-        if (!section || !button || !text) return;
-        section.classList.toggle('collapsed', collapsed);
-        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        text.textContent = collapsed ? '展开' : '收起';
-      }
-
-      function toggleRoster() {
-        var section = document.getElementById('rosterSection');
-        if (!section) return;
-        setRosterCollapsed(!section.classList.contains('collapsed'));
-      }
-
-      function copyRoster() {
-        var text = document.getElementById('rosterOutput').textContent;
-        navigator.clipboard.writeText(text).then(function () {
-          showToast('已复制', 'success');
-        }).catch(function () {
-          showToast('复制失败，请手动复制', 'error');
-        });
       }
 
       init().finally(notifyEmbeddedReady);

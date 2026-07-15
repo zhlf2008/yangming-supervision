@@ -32,7 +32,18 @@ type StudyNoticeSettings = {
   group_meeting_info: string;
   class_meeting_info: string;
   bigclass_meeting_info: string;
+  meeting_info: string;
   footer: string;
+};
+
+type StudyNotificationTemplate = {
+  org_id: number;
+  title_template: string | null;
+  intro_text: string | null;
+  closing_text: string | null;
+  show_course: boolean;
+  show_roster: boolean;
+  notice_settings: Record<string, unknown> | null;
 };
 
 type ClassStudyConfig = {
@@ -148,6 +159,7 @@ type StudyData = {
   demandsBySchedule: Map<number, Demand[]>;
   childDemands: Map<number, Demand[]>;
   peopleByDemand: Map<number, AssignmentPerson[]>;
+  templatesByOrg: Map<number, StudyNotificationTemplate>;
 };
 
 type NotificationCandidate = {
@@ -182,6 +194,7 @@ const DEFAULT_SETTINGS: StudyNoticeSettings = {
   group_meeting_info: '',
   class_meeting_info: '',
   bigclass_meeting_info: '',
+  meeting_info: '',
   footer: '分享人员请提前准备；请提前5至10分钟进入会议室，穿班服、统一背景、全程开启摄像头。'
 };
 
@@ -247,8 +260,20 @@ function resolveSettings(raw: Record<string, unknown> | null): StudyNoticeSettin
     group_meeting_info: cleanText(value.group_meeting_info),
     class_meeting_info: cleanText(value.class_meeting_info),
     bigclass_meeting_info: cleanText(value.bigclass_meeting_info),
+    meeting_info: cleanText(value.meeting_info),
     footer: cleanText(value.footer) || DEFAULT_SETTINGS.footer
   };
+}
+
+function resolveTaskSettings(
+  config: ClassStudyConfig,
+  templatesByOrg: Map<number, StudyNotificationTemplate>
+): StudyNoticeSettings {
+  const template = templatesByOrg.get(Number(config.org_id));
+  return resolveSettings({
+    ...(config.study_notice_settings || {}),
+    ...(template?.notice_settings || {})
+  });
 }
 
 function timeToMinutes(value: string): number {
@@ -522,6 +547,7 @@ function formatAssignments(entries: AssignmentEntry[], scopeLevel: string, data:
 function getMeetingInfo(scopeLevel: string, settings: StudyNoticeSettings, courseItems: CourseItem[]): string {
   const contentNote = courseItems.map((item) => item.note).find(Boolean);
   if (contentNote) return contentNote;
+  if (settings.meeting_info) return settings.meeting_info;
   if (scopeLevel === '大班') return settings.bigclass_meeting_info;
   if (scopeLevel === '班级') return settings.class_meeting_info;
   return settings.group_meeting_info;
@@ -540,28 +566,46 @@ function buildDailyCandidate(
   let assignments = collectAssignments(schedule.id, data);
   if (classFilterId) assignments = filterAssignmentsForClass(assignments, classFilterId, data);
   const sourceOrg = data.orgMap.get(Number(schedule.org_id)) || classOrg;
+  const template = data.templatesByOrg.get(Number(sourceOrg.id));
+  const sourceSettings = resolveSettings({
+    ...settings,
+    ...(template?.notice_settings || {})
+  });
   const semesterNumber = (data.semesterName.match(/(\d+)\s*期/) || [])[1] || '';
-  let title = '晨读通知';
+  let defaultTitle = '晨读通知';
   if (schedule.scope_level === '大班') {
-    title = '【' + bigClassOrg.name + ' · 联合共读】';
+    defaultTitle = '【' + bigClassOrg.name + ' · 联合共读】';
   } else if (schedule.scope_level === '班级') {
-    title = '【' + classOrg.name + ' · 班级共读】';
+    defaultTitle = '【' + classOrg.name + ' · 班级共读】';
   } else {
-    title = '【' + (semesterNumber ? semesterNumber + '期 · ' : '') + sourceOrg.name + ' · 晨读】';
+    defaultTitle = '【' + (semesterNumber ? semesterNumber + '期 · ' : '') + sourceOrg.name + ' · 晨读】';
   }
-  const endTime = schedule.scope_level === '大班' ? settings.bigclass_end_time : settings.default_end_time;
-  const meetingInfo = getMeetingInfo(schedule.scope_level, settings, courseItems);
+  const title = (cleanText(template?.title_template) || defaultTitle)
+    .replace(/\{组织\}/g, sourceOrg.name)
+    .replace(/\{大班\}/g, bigClassOrg.name)
+    .replace(/\{期数\}/g, semesterNumber)
+    .replace(/\{日期\}/g, formatDate(schedule.schedule_date))
+    .replace(/\{星期\}/g, WEEKDAY_NAMES[getWeekday(schedule.schedule_date)]);
+  const endTime = schedule.scope_level === '大班' && !template
+    ? sourceSettings.bigclass_end_time
+    : sourceSettings.default_end_time;
+  const meetingInfo = getMeetingInfo(schedule.scope_level, sourceSettings, courseItems);
+  const introText = cleanText(template?.intro_text);
+  const closingText = template ? cleanText(template.closing_text) : sourceSettings.footer;
+  const showCourse = template?.show_course !== false;
+  const showRoster = template?.show_roster !== false;
   const content = [
+    introText,
     '📅 日期：' + formatDate(schedule.schedule_date) + ' ' + WEEKDAY_NAMES[getWeekday(schedule.schedule_date)],
-    '⏰ 时间：' + settings.default_start_time + '—' + endTime,
+    '⏰ 时间：' + sourceSettings.default_start_time + '—' + endTime,
     '',
-    '📖 **共读内容**',
-    formatCourseItems(courseItems, settings),
+    showCourse ? '📖 **共读内容**' : '',
+    showCourse ? formatCourseItems(courseItems, sourceSettings) : '',
     '',
-    '📋 **岗位安排**',
-    formatAssignments(assignments, schedule.scope_level, data),
+    showRoster ? '📋 **岗位安排**' : '',
+    showRoster ? formatAssignments(assignments, schedule.scope_level, data) : '',
     meetingInfo ? '\n📍 **会议地点**\n' + meetingInfo : '',
-    settings.footer ? '\n📌 **温馨提示**\n' + settings.footer : ''
+    closingText ? '\n📌 **温馨提示**\n' + closingText : ''
   ]
     .filter(Boolean)
     .join('\n');
@@ -570,7 +614,7 @@ function buildDailyCandidate(
     eventKey: 'study_daily_notice',
     title,
     content,
-    dedupeKey: 'study-daily:' + schedule.schedule_date + ':' + schedule.scope_level + ':' + schedule.org_id + ':v1'
+    dedupeKey: 'study-daily:' + schedule.schedule_date + ':' + schedule.scope_level + ':' + schedule.org_id + ':v2'
   };
 }
 
@@ -761,6 +805,7 @@ async function loadStudyData(
   semesterId: number,
   semesterName: string,
   configs: ClassStudyConfig[],
+  templatesByOrg: Map<number, StudyNotificationTemplate>,
   startDate: string,
   endDate: string
 ): Promise<StudyData> {
@@ -913,14 +958,19 @@ async function loadStudyData(
     demands,
     demandsBySchedule,
     childDemands,
-    peopleByDemand
+    peopleByDemand,
+    templatesByOrg
   };
 }
 
-function buildTasks(configs: ClassStudyConfig[], now: BeijingNow): StudyTask[] {
+function buildTasks(
+  configs: ClassStudyConfig[],
+  templatesByOrg: Map<number, StudyNotificationTemplate>,
+  now: BeijingNow
+): StudyTask[] {
   const tasks: StudyTask[] = [];
   configs.forEach((config) => {
-    const settings = resolveSettings(config.study_notice_settings);
+    const settings = resolveTaskSettings(config, templatesByOrg);
     if (config.study_daily_enabled && now.minuteOfDay >= timeToMinutes(settings.daily_send_time)) {
       tasks.push({
         kind: 'daily',
@@ -949,8 +999,12 @@ function buildTasks(configs: ClassStudyConfig[], now: BeijingNow): StudyTask[] {
   return tasks;
 }
 
-function buildPreviewTasks(config: ClassStudyConfig, targetDate: string): StudyTask[] {
-  const settings = resolveSettings(config.study_notice_settings);
+function buildPreviewTasks(
+  config: ClassStudyConfig,
+  templatesByOrg: Map<number, StudyNotificationTemplate>,
+  targetDate: string
+): StudyTask[] {
+  const settings = resolveTaskSettings(config, templatesByOrg);
   const weekMonday = getWeekday(targetDate) === 1 ? targetDate : addDays(targetDate, 1 - getWeekday(targetDate));
   return [
     { kind: 'daily', config, settings, targetDate },
@@ -1023,14 +1077,32 @@ async function getStudyConfigs(
   return (result.data || []) as ClassStudyConfig[];
 }
 
+async function getStudyTemplates(
+  client: SupabaseClientLike,
+  semesterId: number
+): Promise<Map<number, StudyNotificationTemplate>> {
+  const result = await client
+    .from('study_notification_templates')
+    .select('org_id,title_template,intro_text,closing_text,show_course,show_roster,notice_settings')
+    .eq('semester_id', semesterId);
+  if (result.error) throw result.error;
+  return new Map(
+    ((result.data || []) as StudyNotificationTemplate[]).map((template) => [Number(template.org_id), template])
+  );
+}
+
 export async function produceStudyNotifications(
   client: SupabaseClientLike,
   now: BeijingNow
 ): Promise<{ eligible: number; candidates: number; created: number; duplicates: number }> {
   const semester = await getCurrentSemester(client);
   if (!semester) return { eligible: 0, candidates: 0, created: 0, duplicates: 0 };
-  const configs = await getStudyConfigs(client, Number(semester.id));
-  const tasks = buildTasks(configs, now);
+  const semesterId = Number(semester.id);
+  const [configs, templatesByOrg] = await Promise.all([
+    getStudyConfigs(client, semesterId),
+    getStudyTemplates(client, semesterId)
+  ]);
+  const tasks = buildTasks(configs, templatesByOrg, now);
   if (!tasks.length) return { eligible: configs.length, candidates: 0, created: 0, duplicates: 0 };
   const range = getTaskDateRange(tasks);
   const data = await loadStudyData(
@@ -1038,6 +1110,7 @@ export async function produceStudyNotifications(
     Number(semester.id),
     String(semester.semester_name || ''),
     configs,
+    templatesByOrg,
     range.startDate,
     range.endDate
   );
@@ -1076,15 +1149,20 @@ export async function previewStudyNotifications(
 }> {
   const semester = await getCurrentSemester(client);
   if (!semester) return { orgId, targetDate, notifications: [] };
-  const configs = await getStudyConfigs(client, Number(semester.id), orgId);
+  const semesterId = Number(semester.id);
+  const [configs, templatesByOrg] = await Promise.all([
+    getStudyConfigs(client, semesterId, orgId),
+    getStudyTemplates(client, semesterId)
+  ]);
   if (!configs.length) return { orgId, targetDate, notifications: [] };
-  const tasks = buildPreviewTasks(configs[0], targetDate);
+  const tasks = buildPreviewTasks(configs[0], templatesByOrg, targetDate);
   const range = getTaskDateRange(tasks);
   const data = await loadStudyData(
     client,
     Number(semester.id),
     String(semester.semester_name || ''),
     configs,
+    templatesByOrg,
     range.startDate,
     range.endDate
   );
