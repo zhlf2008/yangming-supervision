@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { previewStudyNotifications, produceStudyNotifications } from './study-notifications.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE_ROLE_KEY = Deno.env.get('SB_SERVICE_ROLE_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -343,9 +344,30 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || 'produce_and_dispatch');
-    const production =
-      action === 'dispatch_only' ? { eligible: 0, created: 0, duplicates: 0 } : await produceClassFillReminders();
-    if (action === 'produce_only') {
+    if (action === 'preview_study') {
+      const orgId = Number(body.org_id || 0);
+      const targetDate = String(body.target_date || getBeijingNow().date);
+      if (!orgId || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+        return new Response(JSON.stringify({ success: false, error: '缺少有效的班级和预览日期' }), {
+          status: 400,
+          headers
+        });
+      }
+      const preview = await previewStudyNotifications(adminClient, orgId, targetDate);
+      return new Response(JSON.stringify({ success: true, preview }), { headers });
+    }
+
+    const emptyProduction = { eligible: 0, created: 0, duplicates: 0 };
+    const fillProduction =
+      action === 'dispatch_only' || action === 'produce_study_only'
+        ? emptyProduction
+        : await produceClassFillReminders();
+    const studyProduction =
+      action === 'dispatch_only' || action === 'produce_fill_only'
+        ? { ...emptyProduction, candidates: 0 }
+        : await produceStudyNotifications(adminClient, getBeijingNow());
+    const production = { ...fillProduction, study: studyProduction };
+    if (action === 'produce_only' || action === 'produce_study_only' || action === 'produce_fill_only') {
       return new Response(JSON.stringify({ success: true, production }), { headers });
     }
     const requestedBatchSize = Number(body.batch_size || 20);
