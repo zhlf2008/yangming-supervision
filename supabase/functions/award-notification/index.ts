@@ -277,13 +277,18 @@ async function getWinners(includeClassNotifications = false) {
   const { data: configs } = await adminClient.from('reminder_configs').select('*').eq('award_enabled', true);
 
   const awardConfigMap = new Map((configs || []).map((c) => [c.org_id, c]));
-  let classWebhookConfigs: Array<{ org_id: number; webhook_url: string }> = [];
+  let classWebhookConfigs: Array<{
+    org_id: number;
+    webhook_url: string;
+    include_group_awards: boolean;
+  }> = [];
   if (includeClassNotifications) {
     const { data, error } = await adminClient
       .from('organization_webhook_configs')
-      .select('org_id,webhook_url')
+      .select('org_id,webhook_url,include_group_awards')
       .eq('semester_id', semester.id)
-      .eq('enabled', true);
+      .eq('enabled', true)
+      .eq('award_enabled', true);
     if (error) throw error;
     classWebhookConfigs = data || [];
   }
@@ -599,7 +604,7 @@ async function getWinners(includeClassNotifications = false) {
     groupWinners: Winner[];
   }> = [];
   const weekdayLabel = computeWeekLabel(monday, semester);
-  const classWebhookMap = new Map(classWebhookConfigs.map((config) => [Number(config.org_id), config.webhook_url]));
+  const classWebhookMap = new Map(classWebhookConfigs.map((config) => [Number(config.org_id), config]));
 
   for (const bc of bigClasses) {
     const cfg = awardConfigMap.get(bc.id);
@@ -664,27 +669,30 @@ async function getWinners(includeClassNotifications = false) {
       }
     }
 
-    if (!includeClassNotifications || !cfg) continue;
+    if (!includeClassNotifications) continue;
 
     for (const cls of classes) {
-      const webhookUrl = classWebhookMap.get(Number(cls.id));
-      if (!webhookUrl) continue;
+      const classConfig = classWebhookMap.get(Number(cls.id));
+      if (!classConfig) continue;
+      const webhookUrl = classConfig.webhook_url;
 
       const classWinners = topClasses.map((ranking, index) => buildClassWinner(ranking, index, webhookUrl));
-      const groupRankings = getGroupsOfClass(cls.id, orgs!)
-        .map((group) => ({ group, stats: groupStats[group.id] }))
-        .filter((ranking) => ranking.stats && ranking.stats.attendanceAvg !== null)
-        .sort((a, b) => {
-          if (a.stats!.attendanceAvg !== b.stats!.attendanceAvg) {
-            return b.stats!.attendanceAvg! - a.stats!.attendanceAvg!;
-          }
-          const orderA = a.stats!.orderScore || 9999;
-          const orderB = b.stats!.orderScore || 9999;
-          if (orderA !== orderB) return orderA - orderB;
-          if (a.stats!.filledDays !== b.stats!.filledDays) return b.stats!.filledDays - a.stats!.filledDays;
-          return a.group.id - b.group.id;
-        })
-        .slice(0, 3);
+      const groupRankings = classConfig.include_group_awards
+        ? getGroupsOfClass(cls.id, orgs!)
+            .map((group) => ({ group, stats: groupStats[group.id] }))
+            .filter((ranking) => ranking.stats && ranking.stats.attendanceAvg !== null)
+            .sort((a, b) => {
+              if (a.stats!.attendanceAvg !== b.stats!.attendanceAvg) {
+                return b.stats!.attendanceAvg! - a.stats!.attendanceAvg!;
+              }
+              const orderA = a.stats!.orderScore || 9999;
+              const orderB = b.stats!.orderScore || 9999;
+              if (orderA !== orderB) return orderA - orderB;
+              if (a.stats!.filledDays !== b.stats!.filledDays) return b.stats!.filledDays - a.stats!.filledDays;
+              return a.group.id - b.group.id;
+            })
+            .slice(0, 3)
+        : [];
       const classAbbr = pinyin(cls.name || '', { pattern: 'first', toneType: 'none' })
         .replace(/\s+/g, '')
         .toUpperCase()

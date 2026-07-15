@@ -30,12 +30,11 @@ type Organization = {
   parent_id: number | null;
 };
 
-type ReminderConfig = {
-  id: number;
+type ClassNotificationConfig = {
   org_id: number;
-  start_time: string | null;
-  end_time: string | null;
-  interval_minutes: number | null;
+  reminder_start_time: string | null;
+  reminder_end_time: string | null;
+  reminder_interval_minutes: number | null;
 };
 
 async function sha256(value: string): Promise<string> {
@@ -105,30 +104,33 @@ async function produceClassFillReminders() {
   if (!semesters?.length) return { eligible: 0, created: 0, duplicates: 0 };
   const semesterId = Number(semesters[0].id);
 
-  const [organizationResult, webhookResult, reminderResult, assessmentResult] = await Promise.all([
+  const [organizationResult, webhookResult, assessmentResult] = await Promise.all([
     adminClient
       .from('organizations')
       .select('id,name,level,parent_id')
       .eq('semester_id', semesterId)
       .eq('is_active', true),
-    adminClient.from('organization_webhook_configs').select('org_id').eq('semester_id', semesterId).eq('enabled', true),
-    adminClient.from('reminder_configs').select('id,org_id,start_time,end_time,interval_minutes').eq('enabled', true),
+    adminClient
+      .from('organization_webhook_configs')
+      .select('org_id,reminder_start_time,reminder_end_time,reminder_interval_minutes')
+      .eq('semester_id', semesterId)
+      .eq('enabled', true)
+      .eq('reminder_enabled', true),
     adminClient.from('assessment_types').select('id,fields').eq('semester_id', semesterId)
   ]);
 
   if (organizationResult.error) throw organizationResult.error;
   if (webhookResult.error) throw webhookResult.error;
-  if (reminderResult.error) throw reminderResult.error;
   if (assessmentResult.error) throw assessmentResult.error;
 
   const organizations = (organizationResult.data || []) as Organization[];
-  const enabledClassIds = new Set((webhookResult.data || []).map((config) => Number(config.org_id)));
-  const reminderConfigMap = new Map(
-    ((reminderResult.data || []) as ReminderConfig[]).map((config) => [Number(config.org_id), config])
+  const classConfigMap = new Map(
+    ((webhookResult.data || []) as ClassNotificationConfig[]).map((config) => [Number(config.org_id), config])
   );
   const eligibleClasses = organizations.filter((organization) => {
-    if (organization.level !== '班级' || !enabledClassIds.has(Number(organization.id))) return false;
-    return organization.parent_id && reminderConfigMap.has(Number(organization.parent_id));
+    return (
+      organization.level === '班级' && organization.parent_id !== null && classConfigMap.has(Number(organization.id))
+    );
   });
   if (!eligibleClasses.length) return { eligible: 0, created: 0, duplicates: 0 };
 
@@ -176,14 +178,14 @@ async function produceClassFillReminders() {
 
   for (const classOrganization of eligibleClasses) {
     const bigClassId = Number(classOrganization.parent_id);
-    const config = reminderConfigMap.get(bigClassId)!;
-    const startTime = config.start_time || '12:00';
-    const endTime = config.end_time || '20:00';
+    const config = classConfigMap.get(Number(classOrganization.id))!;
+    const startTime = config.reminder_start_time || '12:00';
+    const endTime = config.reminder_end_time || '20:00';
     const startMinute = timeToMinutes(startTime);
     const endMinute = timeToMinutes(endTime);
     if (now.minuteOfDay < startMinute || now.minuteOfDay >= endMinute) continue;
 
-    const intervalMinutes = Math.max(Number(config.interval_minutes) || 60, 15);
+    const intervalMinutes = Math.max(Number(config.reminder_interval_minutes) || 60, 15);
     const intervalBucket = Math.floor((now.minuteOfDay - startMinute) / intervalMinutes);
     const classSchedules = schedules.filter((schedule) => Number(schedule.org_id) === bigClassId);
     const classScheduleIds = new Set(classSchedules.map((schedule) => Number(schedule.id)));
