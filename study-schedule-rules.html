@@ -55,11 +55,17 @@
       .type-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
       .type-scope-note { font-size: 12px; color: var(--ink-muted); }
       .role-setting-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-      .role-setting-header, .role-setting-row { display: grid; grid-template-columns: minmax(92px, 1fr) 96px minmax(122px, 150px) 52px 40px; align-items: center; justify-content: start; gap: 8px; }
+      .role-setting-header, .role-setting-row { display: grid; grid-template-columns: 28px minmax(92px, 1fr) 96px minmax(122px, 150px) 52px 40px; align-items: center; justify-content: start; gap: 8px; }
       .role-setting-header { min-height: 34px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--bg-primary); color: var(--ink-muted); font-size: 11px; font-weight: 600; }
       .role-setting-header span:not(:first-child) { text-align: center; }
       .role-setting-row { min-height: 54px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
       .role-setting-row:last-child { border-bottom: 0; }
+      .role-setting-row[draggable="true"] { cursor: grab; }
+      .role-setting-row[draggable="true"]:active { cursor: grabbing; }
+      .role-setting-row.dragging { opacity: 0.42; background: var(--bg-primary); }
+      .role-setting-row.drag-over { box-shadow: inset 0 3px 0 var(--vermillion); }
+      .role-drag-handle { display: inline-flex; width: 28px; height: 34px; align-items: center; justify-content: center; color: var(--ink-muted); font-size: 18px; line-height: 1; user-select: none; cursor: grab; }
+      .role-drag-handle:active { cursor: grabbing; }
       .role-setting-name { width: 100%; min-width: 0; min-height: 34px; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; font-weight: 600; color: var(--ink-dark); background: transparent; }
       .role-setting-name:focus { border-color: var(--border); background: var(--bg-card); outline: none; }
       .role-assignment-scope { width: 100%; min-width: 0; min-height: 34px; padding: 6px 28px 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--ink-dark); font-size: 12px; }
@@ -133,7 +139,8 @@
         .reading-type-tabs { display:flex; gap:5px; overflow-x:auto; scrollbar-width:thin; }
         .reading-type-tab { width:auto; min-width:max-content; }
         .type-sidebar .btn { width:auto !important; margin-top:0 !important; }
-        .role-setting-header, .role-setting-row { grid-template-columns:minmax(68px,1fr) 86px minmax(100px,1fr) 42px 34px; gap:4px; }
+        .role-setting-header, .role-setting-row { grid-template-columns:24px minmax(68px,1fr) 86px minmax(100px,1fr) 42px 34px; gap:4px; }
+        .role-drag-handle { width:24px; }
         .role-setting-header, .role-setting-row { padding-left:6px; padding-right:6px; }
         .count-stepper { grid-template-columns:25px 36px 25px; width:86px; }
         .count-stepper input { width:36px; }
@@ -531,9 +538,10 @@
           return;
         }
         container.innerHTML = '<div class="type-scope-note" style="margin:0 0 8px;line-height:1.55;">承办组织安排：在日程中选定承办班级/小组后自动落给该组织；全体参与组织安排：为每个参与班级/小组生成相同名额。</div><div class="role-setting-list">' +
-          '<div class="role-setting-header" aria-hidden="true"><span>岗位</span><span>人数</span><span>安排范围</span><span>开关</span><span>删除</span></div>' +
+          '<div class="role-setting-header" aria-hidden="true"><span></span><span>岗位</span><span>人数</span><span>安排范围</span><span>开关</span><span>删除</span></div>' +
           typePositions.map(function(position, index) {
-          return '<div class="role-setting-row">' +
+          return '<div class="role-setting-row" draggable="true" data-position-index="' + index + '">' +
+            '<span class="role-drag-handle" title="拖动调整岗位顺序" aria-label="拖动调整岗位顺序">⠿</span>' +
             '<input class="role-setting-name" value="' + escapeHtml(position.role_name || '') + '" placeholder="岗位名称" oninput="updateTypePosition(' + index + ',\'role_name\',this.value)" />' +
             '<div class="count-stepper">' +
             '<button onclick="stepPositionCount(' + index + ',-1)" aria-label="减少人数">−</button>' +
@@ -548,6 +556,43 @@
             '<button class="icon-danger" onclick="removeTypePosition(' + index + ')" aria-label="删除岗位">×</button>' +
             '</div>';
           }).join('') + '</div>';
+        bindTypePositionDragAndDrop(container);
+      }
+
+      function bindTypePositionDragAndDrop(container) {
+        var draggedIndex = null;
+        container.querySelectorAll('.role-setting-row[draggable="true"]').forEach(function(row) {
+          row.addEventListener('dragstart', function(event) {
+            draggedIndex = Number(row.dataset.positionIndex);
+            row.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', String(draggedIndex));
+          });
+          row.addEventListener('dragover', function(event) {
+            event.preventDefault();
+            if (Number(row.dataset.positionIndex) !== draggedIndex) row.classList.add('drag-over');
+            event.dataTransfer.dropEffect = 'move';
+          });
+          row.addEventListener('dragleave', function() { row.classList.remove('drag-over'); });
+          row.addEventListener('drop', function(event) {
+            event.preventDefault();
+            var targetIndex = Number(row.dataset.positionIndex);
+            if (draggedIndex !== null && targetIndex !== draggedIndex) moveTypePosition(draggedIndex, targetIndex);
+          });
+          row.addEventListener('dragend', function() {
+            draggedIndex = null;
+            container.querySelectorAll('.role-setting-row').forEach(function(item) {
+              item.classList.remove('dragging', 'drag-over');
+            });
+          });
+        });
+      }
+
+      function moveTypePosition(fromIndex, toIndex) {
+        var position = typePositions.splice(fromIndex, 1)[0];
+        if (!position) return;
+        typePositions.splice(toIndex, 0, position);
+        renderTypeList();
       }
 
       async function showRuleModal() {
