@@ -746,6 +746,30 @@ function calcFormula(formula, fieldMap) {
   }
 }
 
+// ---- 班级群通知队列 ----
+
+async function queueOrganizationNotification(options) {
+  options = options || {};
+  var semesterId = Number(options.semesterId || 0);
+  var orgId = Number(options.orgId || 0);
+  var moduleKey = String(options.moduleKey || '').trim();
+  var eventKey = String(options.eventKey || '').trim();
+  var content = String(options.content || '').trim();
+  if (!semesterId || !orgId || !moduleKey || !eventKey || !content) {
+    return { error: new Error('班级通知参数不完整') };
+  }
+  return window.db.from('organization_notification_outbox').insert({
+    semester_id: semesterId,
+    org_id: orgId,
+    module_key: moduleKey,
+    event_key: eventKey,
+    title: String(options.title || '').trim(),
+    content: content,
+    dedupe_key: options.dedupeKey ? String(options.dedupeKey) : null,
+    available_at: options.availableAt || new Date().toISOString()
+  });
+}
+
 // ---- 自动刷新用户数据 ----
 
 (function () {
