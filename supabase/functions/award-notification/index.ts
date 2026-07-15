@@ -1,7 +1,8 @@
 // Supabase Edge Function: award-notification
 // 每周获奖推送：获取获奖名单 + 推送证书图片到企业微信群
 //
-// action=get_winners → 返回获奖名单及证书数据
+// action=get_winners → 返回大班群获奖名单及证书数据
+// action=get_class_winners → 返回班级群获奖名单及证书数据
 // action=send → 接收 base64 图片并推送到企业微信
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -25,6 +26,9 @@ const AWARD_SECRET =
   Deno.env.get('REMINDER_CRON_SECRET') ||
   Deno.env.get('CRON_SECRET') ||
   '';
+const CLASS_NOTIFICATION_SECRET_SHA256 =
+  Deno.env.get('ORGANIZATION_NOTIFICATION_SECRET_SHA256') ||
+  'd360e8eee3f98a474bc9934335939b6d78f769c9ab0b2dd3c064c8b9e4149082';
 
 function getBearerToken(req: Request): string {
   const authHeader = req.headers.get('Authorization') || '';
@@ -32,17 +36,24 @@ function getBearerToken(req: Request): string {
 }
 
 function getRequestSecret(req: Request, body: Record<string, unknown>): string {
-  return String(
-    req.headers.get('x-cron-secret') ||
-    req.headers.get('x-award-secret') ||
-    body.secret ||
-    ''
-  ).trim();
+  return String(req.headers.get('x-cron-secret') || req.headers.get('x-award-secret') || body.secret || '').trim();
 }
 
 function hasValidAwardSecret(req: Request, body: Record<string, unknown>): boolean {
   const supplied = getRequestSecret(req, body);
   return !!AWARD_SECRET && !!supplied && supplied === AWARD_SECRET;
+}
+
+async function sha256(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function hasValidClassNotificationSecret(req: Request): Promise<boolean> {
+  const supplied = String(req.headers.get('x-dispatcher-secret') || '').trim();
+  if (!supplied || !CLASS_NOTIFICATION_SECRET_SHA256) return false;
+  return (await sha256(supplied)) === CLASS_NOTIFICATION_SECRET_SHA256;
 }
 
 async function requireAdmin(req: Request) {
@@ -111,37 +122,51 @@ function formatDateCN(d: Date) {
 }
 
 interface Org {
-  id: number; name: string; level: string; parent_id: number | null;
-  semester_id: number; archived_at?: string | null;
+  id: number;
+  name: string;
+  level: string;
+  parent_id: number | null;
+  semester_id: number;
+  archived_at?: string | null;
 }
 
 interface Schedule {
-  id: number; schedule_date: string; org_id: number; is_valid: number;
+  id: number;
+  schedule_date: string;
+  org_id: number;
+  is_valid: number;
   item_ids?: string | null;
 }
 
 interface AttendanceRec {
-  organization_id: number; schedule_id: number;
-  fill_data?: Record<string, any>; created_at?: string;
-  att_submitted_at?: string | null; hw_submitted_at?: string | null;
+  organization_id: number;
+  schedule_id: number;
+  fill_data?: Record<string, any>;
+  created_at?: string;
+  att_submitted_at?: string | null;
+  hw_submitted_at?: string | null;
 }
 
 interface AssessmentType {
-  id: number; type_name: string; formula?: string | null;
+  id: number;
+  type_name: string;
+  formula?: string | null;
 }
 
 // 获取大班下所有小组（递归）
 function getGroupsOfClass(classId: number, orgs: Org[]): Org[] {
-  return orgs.filter(o => o.parent_id === classId && o.level === '小组');
+  return orgs.filter((o) => o.parent_id === classId && o.level === '小组');
 }
 
 function getClassesOfBigClass(bigClassId: number, orgs: Org[]): Org[] {
-  return orgs.filter(o => o.parent_id === bigClassId && o.level === '班级');
+  return orgs.filter((o) => o.parent_id === bigClassId && o.level === '班级');
 }
 
 // ---- formula calculation (mirrors frontend calcFormula) ----
 
-function hasMult100(f: string) { return f.includes('*100') || f.includes('×100'); }
+function hasMult100(f: string) {
+  return f.includes('*100') || f.includes('×100');
+}
 
 function calcFormula(formula: string, fields: Record<string, number>): number | null {
   if (!formula) return null;
@@ -168,10 +193,12 @@ function calcFormula(formula: string, fields: Record<string, number>): number | 
 function guessFormulas(itemIds: string, assessmentTypes: AssessmentType[]) {
   const ids = itemIds.split(',').map(Number).filter(Boolean);
   const formulas: { online: string | null; video: string | null; hw: string | null } = {
-    online: null, video: null, hw: null
+    online: null,
+    video: null,
+    hw: null
   };
   for (const id of ids) {
-    const at = assessmentTypes.find(t => t.id === id);
+    const at = assessmentTypes.find((t) => t.id === id);
     if (!at || !at.formula) continue;
     const name = at.type_name || '';
     if (name.includes('上线率')) formulas.online = at.formula;
@@ -181,11 +208,16 @@ function guessFormulas(itemIds: string, assessmentTypes: AssessmentType[]) {
   return formulas;
 }
 
-function calcRates(fd: Record<string, any>, formulas: { online: string | null; video: string | null; hw: string | null }) {
+function calcRates(
+  fd: Record<string, any>,
+  formulas: { online: string | null; video: string | null; hw: string | null }
+) {
   const fields: Record<string, number> = {};
   for (const k of Object.keys(fd)) fields[k] = parseInt(fd[k]) || 0;
 
-  let online: number | null = null, video: number | null = null, hw: number | null = null;
+  let online: number | null = null,
+    video: number | null = null,
+    hw: number | null = null;
   if (formulas.online) {
     const r = calcFormula(formulas.online, fields);
     online = r != null ? r * (hasMult100(formulas.online) ? 1 : 100) : 0;
@@ -208,7 +240,7 @@ function calcRates(fd: Record<string, any>, formulas: { online: string | null; v
 
 // ---- main winner computation ----
 
-async function getWinners() {
+async function getWinners(includeClassNotifications = false) {
   // 1. Get current semester
   const { data: semesters } = await adminClient
     .from('semesters')
@@ -238,16 +270,23 @@ async function getWinners() {
 
   if (!orgs?.length) return { error: '无组织数据' };
 
-  const orgsMap = new Map(orgs.map(o => [o.id, o]));
-  const bigClasses = orgs.filter(o => o.level === '大班');
+  const orgsMap = new Map(orgs.map((o) => [o.id, o]));
+  const bigClasses = orgs.filter((o) => o.level === '大班');
 
   // 5. Get reminder configs with award_enabled
-  const { data: configs } = await adminClient
-    .from('reminder_configs')
-    .select('*')
-    .eq('award_enabled', true);
+  const { data: configs } = await adminClient.from('reminder_configs').select('*').eq('award_enabled', true);
 
-  const awardConfigMap = new Map((configs || []).map(c => [c.org_id, c]));
+  const awardConfigMap = new Map((configs || []).map((c) => [c.org_id, c]));
+  let classWebhookConfigs: Array<{ org_id: number; webhook_url: string }> = [];
+  if (includeClassNotifications) {
+    const { data, error } = await adminClient
+      .from('organization_webhook_configs')
+      .select('org_id,webhook_url')
+      .eq('semester_id', semester.id)
+      .eq('enabled', true);
+    if (error) throw error;
+    classWebhookConfigs = data || [];
+  }
 
   // 6. Get schedules for this week
   const { data: weekSchedules } = await adminClient
@@ -259,7 +298,7 @@ async function getWinners() {
 
   if (!weekSchedules?.length) return { error: '本周无考核日程', monday, sunday };
 
-  const scheduleIds = weekSchedules.map(s => s.id);
+  const scheduleIds = weekSchedules.map((s) => s.id);
   const schedulesByDaban: Record<number, Schedule[]> = {};
   for (const s of weekSchedules) {
     if (!schedulesByDaban[s.org_id]) schedulesByDaban[s.org_id] = [];
@@ -273,7 +312,7 @@ async function getWinners() {
     .in('schedule_id', scheduleIds);
 
   const recsByGroup: Record<number, AttendanceRec[]> = {};
-  for (const r of (records || [])) {
+  for (const r of records || []) {
     if (!recsByGroup[r.organization_id]) recsByGroup[r.organization_id] = [];
     recsByGroup[r.organization_id].push(r);
   }
@@ -292,21 +331,28 @@ async function getWinners() {
 
   // 9. Compute group stats
   const today = getBeijingNow().date;
-  const groupStats: Record<number, {
-    attendanceAvg: number | null; filledDays: number; totalDays: number;
-    earliestCompletedAt: string | null;
-    orderScore?: number;
-  }> = {};
+  const groupStats: Record<
+    number,
+    {
+      attendanceAvg: number | null;
+      filledDays: number;
+      totalDays: number;
+      earliestCompletedAt: string | null;
+      orderScore?: number;
+    }
+  > = {};
 
-  const allGroups = orgs.filter(o => o.level === '小组');
+  const allGroups = orgs.filter((o) => o.level === '小组');
   // 每日小组完成时间: groupDayTime[groupId][dateStr] = completionTime
   const groupDayTime: Record<number, Record<string, string>> = {};
-  for (const g of allGroups) { groupDayTime[g.id] = {}; }
+  for (const g of allGroups) {
+    groupDayTime[g.id] = {};
+  }
   for (const g of allGroups) {
     const recs = recsByGroup[g.id] || [];
-    const recMap = new Map(recs.map(r => [r.schedule_id, r]));
+    const recMap = new Map(recs.map((r) => [r.schedule_id, r]));
     const dabanId = groupDabanMap[g.id];
-    const schedules = dabanId ? (schedulesByDaban[dabanId] || []) : [];
+    const schedules = dabanId ? schedulesByDaban[dabanId] || [] : [];
     const groupArchivedDate = g.archived_at ? String(g.archived_at).substring(0, 10) : null;
 
     let totalDays = 0;
@@ -318,8 +364,12 @@ async function getWinners() {
     }
     if (totalDays === 0) continue;
 
-    let onlineSum = 0, onlineN = 0, hwSum = 0, hwN = 0;
-    let attSum = 0, attN = 0;
+    let onlineSum = 0,
+      onlineN = 0,
+      hwSum = 0,
+      hwN = 0;
+    let attSum = 0,
+      attN = 0;
     let filledDays = 0;
     let earliestCompletedAt: string | null = null;
 
@@ -357,14 +407,24 @@ async function getWinners() {
       }
 
       const rates = calcRates(fd, formulas);
-      if (formulas.online) { onlineSum += rates.online ?? 0; onlineN++; }
-      if (formulas.hw) { hwSum += rates.hw ?? 0; hwN++; }
-      if (formulas.online || formulas.hw) { attSum += rates.attendance ?? 0; attN++; }
+      if (formulas.online) {
+        onlineSum += rates.online ?? 0;
+        onlineN++;
+      }
+      if (formulas.hw) {
+        hwSum += rates.hw ?? 0;
+        hwN++;
+      }
+      if (formulas.online || formulas.hw) {
+        attSum += rates.attendance ?? 0;
+        attN++;
+      }
     }
 
     groupStats[g.id] = {
       attendanceAvg: attN > 0 ? attSum / attN : null,
-      filledDays, totalDays,
+      filledDays,
+      totalDays,
       earliestCompletedAt
     };
   }
@@ -415,7 +475,8 @@ async function getWinners() {
         return 0;
       });
 
-      let prevTime: string | null = null, prevRank = 0;
+      let prevTime: string | null = null,
+        prevRank = 0;
       for (let idx = 0; idx < ranked.length; idx++) {
         const item = ranked[idx];
         let rank: number;
@@ -457,7 +518,8 @@ async function getWinners() {
       return 0;
     });
 
-    let prevCt: string | null = null, prevCr = 0;
+    let prevCt: string | null = null,
+      prevCr = 0;
     for (let idx = 0; idx < classTimes.length; idx++) {
       const item = classTimes[idx];
       let rank: number;
@@ -487,7 +549,11 @@ async function getWinners() {
   // 11. Compute class stats
   function getClassStats(classId: number) {
     const groups = getGroupsOfClass(classId, orgs!);
-    let attSum = 0, attCnt = 0, filledSum = 0, groupCnt = 0, totalDays = 0;
+    let attSum = 0,
+      attCnt = 0,
+      filledSum = 0,
+      groupCnt = 0,
+      totalDays = 0;
     for (const g of groups) {
       const gs = groupStats[g.id];
       if (!gs || gs.attendanceAvg === null) continue;
@@ -511,9 +577,11 @@ async function getWinners() {
   const titleNames = ['冠军', '亚军', '季军'];
 
   interface Winner {
+    orgId: number;
     orgName: string;
     rank: number;
     title: string;
+    scope: 'class' | 'group';
     bigClassName: string;
     parentName: string;
     attRate: string;
@@ -522,13 +590,19 @@ async function getWinners() {
   }
 
   const winners: Winner[] = [];
+  const classNotifications: Array<{
+    orgId: number;
+    orgName: string;
+    bigClassName: string;
+    webhookUrl: string;
+    classWinners: Winner[];
+    groupWinners: Winner[];
+  }> = [];
   const weekdayLabel = computeWeekLabel(monday, semester);
+  const classWebhookMap = new Map(classWebhookConfigs.map((config) => [Number(config.org_id), config.webhook_url]));
 
   for (const bc of bigClasses) {
     const cfg = awardConfigMap.get(bc.id);
-    if (!cfg || !cfg.webhook_url) continue;
-
-    // Top 3 classes
     const classes = getClassesOfBigClass(bc.id, orgs!);
     const classRankings: { id: number; name: string; stats: ReturnType<typeof getClassStats> }[] = [];
     for (const cls of classes) {
@@ -547,26 +621,118 @@ async function getWinners() {
     });
 
     const abbr = pinyin(bc.name || '', { pattern: 'first', toneType: 'none' })
-      .replace(/\s+/g, '').toUpperCase().substring(0, 8);
-    for (let i = 0; i < Math.min(3, classRankings.length); i++) {
-      const r = classRankings[i];
-      const rank = i + 1;
-      winners.push({
-        orgName: r.name, rank, title: titleNames[i],
-        bigClassName: bc.name, parentName: bc.name,
+      .replace(/\s+/g, '')
+      .toUpperCase()
+      .substring(0, 8);
+    const buildClassWinner = (r: (typeof classRankings)[number], index: number, webhookUrl: string): Winner => {
+      const rank = index + 1;
+      return {
+        orgId: r.id,
+        orgName: r.name,
+        rank,
+        title: titleNames[index],
+        scope: 'class',
+        bigClassName: bc.name,
+        parentName: bc.name,
         attRate: r.stats!.attendanceAvg.toFixed(2) + '%',
-        webhookUrl: cfg.webhook_url,
+        webhookUrl,
         certParams: {
           name: r.name,
           context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + bc.name,
-          rank: rankNames[i], title: titleNames[i] + '班级',
+          rank: rankNames[index],
+          title: titleNames[index] + '班级',
           date: formatDateCN(sundayDate),
-          serial: 'YMXX-' + String(semester.semester_name || '').replace(/[^0-9]/g, '') + '-' + weekdayLabel.replace(/[^0-9]/g, '') + '-' + abbr + '-0' + rank,
-          sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E', sealName: bc.name
+          serial:
+            'YMXX-' +
+            String(semester.semester_name || '').replace(/[^0-9]/g, '') +
+            '-' +
+            weekdayLabel.replace(/[^0-9]/g, '') +
+            '-' +
+            abbr +
+            '-0' +
+            rank,
+          sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E',
+          sealName: bc.name
         }
-      });
+      };
+    };
+
+    const topClasses = classRankings.slice(0, 3);
+    if (cfg?.webhook_url) {
+      for (let index = 0; index < topClasses.length; index++) {
+        winners.push(buildClassWinner(topClasses[index], index, cfg.webhook_url));
+      }
     }
 
+    if (!includeClassNotifications || !cfg) continue;
+
+    for (const cls of classes) {
+      const webhookUrl = classWebhookMap.get(Number(cls.id));
+      if (!webhookUrl) continue;
+
+      const classWinners = topClasses.map((ranking, index) => buildClassWinner(ranking, index, webhookUrl));
+      const groupRankings = getGroupsOfClass(cls.id, orgs!)
+        .map((group) => ({ group, stats: groupStats[group.id] }))
+        .filter((ranking) => ranking.stats && ranking.stats.attendanceAvg !== null)
+        .sort((a, b) => {
+          if (a.stats!.attendanceAvg !== b.stats!.attendanceAvg) {
+            return b.stats!.attendanceAvg! - a.stats!.attendanceAvg!;
+          }
+          const orderA = a.stats!.orderScore || 9999;
+          const orderB = b.stats!.orderScore || 9999;
+          if (orderA !== orderB) return orderA - orderB;
+          if (a.stats!.filledDays !== b.stats!.filledDays) return b.stats!.filledDays - a.stats!.filledDays;
+          return a.group.id - b.group.id;
+        })
+        .slice(0, 3);
+      const classAbbr = pinyin(cls.name || '', { pattern: 'first', toneType: 'none' })
+        .replace(/\s+/g, '')
+        .toUpperCase()
+        .substring(0, 8);
+      const groupWinners = groupRankings.map((ranking, index): Winner => {
+        const rank = index + 1;
+        return {
+          orgId: ranking.group.id,
+          orgName: ranking.group.name,
+          rank,
+          title: titleNames[index],
+          scope: 'group',
+          bigClassName: bc.name,
+          parentName: cls.name,
+          attRate: ranking.stats!.attendanceAvg!.toFixed(2) + '%',
+          webhookUrl,
+          certParams: {
+            name: ranking.group.name,
+            context: semester.semester_name + ' ' + weekdayLabel + ' 的 ' + cls.name,
+            rank: rankNames[index],
+            title: titleNames[index] + '小组',
+            date: formatDateCN(sundayDate),
+            serial:
+              'YMXX-' +
+              String(semester.semester_name || '').replace(/[^0-9]/g, '') +
+              '-' +
+              weekdayLabel.replace(/[^0-9]/g, '') +
+              '-' +
+              classAbbr +
+              '-G0' +
+              rank,
+            sealColor: rank <= 3 ? '#C41E3A' : '#5B2C8E',
+            sealName: cls.name
+          }
+        };
+      });
+
+      if (classWinners.length || groupWinners.length) {
+        classNotifications.push({
+          orgId: cls.id,
+          orgName: cls.name,
+          bigClassName: bc.name,
+          webhookUrl,
+          classWinners,
+          groupWinners
+        });
+      }
+    }
   }
 
   return {
@@ -576,15 +742,15 @@ async function getWinners() {
     sundayDate: formatDateCN(sundayDate),
     weekdayLabel,
     winnerCount: winners.length,
-    winners
+    winners,
+    classNotificationCount: classNotifications.length,
+    classNotifications
   };
 }
 
 function computeWeekLabel(weekMondayStr: string, semester: any) {
   const wm = new Date(weekMondayStr + 'T00:00:00+08:00');
-  const trialStart = semester.trial_start_date
-    ? new Date(semester.trial_start_date + 'T00:00:00+08:00')
-    : null;
+  const trialStart = semester.trial_start_date ? new Date(semester.trial_start_date + 'T00:00:00+08:00') : null;
   const formalStart = new Date(semester.start_date + 'T00:00:00+08:00');
   const formalMonday = getMonday(semester.start_date);
   const isTrial = trialStart && wm < formalStart;
@@ -606,7 +772,8 @@ Deno.serve(async (req) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Cron-Secret, X-Award-Secret'
+        'Access-Control-Allow-Headers':
+          'Content-Type, Authorization, X-Cron-Secret, X-Award-Secret, X-Dispatcher-Secret'
       }
     });
   }
@@ -617,10 +784,14 @@ Deno.serve(async (req) => {
   };
 
   try {
-    const body = await req.json() as any;
+    const body = (await req.json()) as any;
     const { action = 'get_winners' } = body;
 
-    if (!hasValidAwardSecret(req, body)) {
+    const isClassNotificationAction = action === 'get_class_winners';
+    const hasValidSecret = isClassNotificationAction
+      ? await hasValidClassNotificationSecret(req)
+      : hasValidAwardSecret(req, body);
+    if (!hasValidSecret) {
       const auth = await requireAdmin(req);
       if (auth.error) {
         return new Response(JSON.stringify({ error: auth.error }), { headers, status: auth.status || 401 });
@@ -628,7 +799,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'get_winners') {
-      const result = await getWinners();
+      const result = await getWinners(false);
+      return new Response(JSON.stringify(result), { headers });
+    }
+
+    if (action === 'get_class_winners') {
+      const result = await getWinners(true);
       return new Response(JSON.stringify(result), { headers });
     }
 
@@ -656,12 +832,14 @@ Deno.serve(async (req) => {
         try {
           const j = JSON.parse(mdText);
           if (j.errcode !== 0) errors.push('祝贺消息失败: errcode=' + j.errcode + ' ' + (j.errmsg || ''));
-        } catch { /* non-JSON response, ignore */ }
+        } catch {
+          /* non-JSON response, ignore */
+        }
       }
 
       // Send image message
       if (image_base64) {
-        const rawBytes = Uint8Array.from(atob(image_base64), c => c.charCodeAt(0));
+        const rawBytes = Uint8Array.from(atob(image_base64), (c) => c.charCodeAt(0));
         const md5Hash = md5(rawBytes);
 
         const imgRes = await fetch(webhook_url, {
@@ -679,7 +857,9 @@ Deno.serve(async (req) => {
         try {
           const j = JSON.parse(imgText);
           if (j.errcode !== 0) errors.push('证书图片失败: errcode=' + j.errcode + ' ' + (j.errmsg || ''));
-        } catch { /* non-JSON response, ignore */ }
+        } catch {
+          /* non-JSON response, ignore */
+        }
       }
 
       if (errors.length > 0) {
