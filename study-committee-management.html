@@ -640,11 +640,20 @@
                 '<div class="field"><label for="noticeWeeklyAssignmentTime">人员排班发送时间</label><input id="noticeWeeklyAssignmentTime" type="time" value="20:00" /></div>' +
               '</div></div>'
           : '';
+        var groupWeeklyFields = currentOrg.level === '小组'
+          ? '<div class="notice-section"><div class="notice-section-title">每周小组排班通知</div>' +
+              '<div class="notice-help">根据周切换器中的课程类型和人员排班自动生成，通过所属班级的企业微信群机器人推送。</div>' +
+              '<div class="field"><label for="weeklyGroupTitleInput">通知标题</label><input id="weeklyGroupTitleInput" value="📋 下周晨读安排 · {组织}" oninput="updateNoticePreview()" /></div>' +
+              '<div class="field"><label for="weeklyGroupIntroInput">开场文案</label><textarea id="weeklyGroupIntroInput" oninput="updateNoticePreview()">请各位家人确认下周名单，周四前完成。</textarea></div>' +
+              '<div class="field"><label for="weeklyGroupClosingInput">结尾文案</label><textarea id="weeklyGroupClosingInput" oninput="updateNoticePreview()">以上是下周晨读安排，请各位学长查收。\n如有调整请告知，我们再协调。\n感恩大家！\n\n确认无误，请回复：收到</textarea></div>' +
+            '</div>'
+          : '';
         area.innerHTML =
           '<div class="feature-heading"><div class="feature-title">' + escapeHtml(currentOrg.level) + '晨读通知设置</div><div class="feature-org">' + escapeHtml(currentOrg.name) + '</div></div>' +
           '<div class="notice-editor">' +
             '<div class="notice-controls">' +
               classScheduleFields +
+              groupWeeklyFields +
               '<div class="notice-section"><div class="notice-section-title">晨读通知内容</div>' +
                 '<div class="field"><label for="noticeTitleInput">通知标题</label><input id="noticeTitleInput" value="' + escapeHtml(defaults.title) + '" oninput="updateNoticePreview()" /></div>' +
                 '<div class="notice-help">可用变量：{组织}、{大班}、{期数}、{日期}、{星期}</div>' +
@@ -664,7 +673,9 @@
               '</div>' +
               '<button class="save-notice-btn" id="saveNoticeBtn" type="button" onclick="saveNoticeTemplate()">保存通知设置</button>' +
             '</div>' +
-            '<div class="notice-preview"><div class="notice-preview-title">通知预览</div><div class="notice-paper" id="noticePreview"></div></div>' +
+            '<div class="notice-preview"><div class="notice-preview-title">晨读通知预览</div><div class="notice-paper" id="noticePreview"></div>' +
+              (currentOrg.level === '小组' ? '<div class="notice-preview-title" style="margin-top:18px;">每周排班通知预览</div><div class="notice-paper" id="weeklyGroupPreview"></div>' : '') +
+            '</div>' +
           '</div>';
         await loadNoticeTemplate();
         updateNoticePreview();
@@ -722,6 +733,25 @@
         var closing = document.getElementById('noticeClosingInput').value.trim();
         if (closing) text += '\n\n温馨提示\n' + closing;
         preview.textContent = text;
+        updateWeeklyGroupPreview();
+      }
+
+      function updateWeeklyGroupPreview() {
+        var preview = document.getElementById('weeklyGroupPreview');
+        if (!preview || !currentOrg) return;
+        var title = document.getElementById('weeklyGroupTitleInput').value.replace(/\{组织\}/g, currentOrg.name);
+        var intro = document.getElementById('weeklyGroupIntroInput').value.trim();
+        var closing = document.getElementById('weeklyGroupClosingInput').value.trim();
+        preview.textContent = [
+          title,
+          intro,
+          '──────────────',
+          '周一 · 班级共读\n领读：待周日程自动带入\n分享：待周日程自动带入',
+          '周二 · 小组共读\n主持人：待周日程自动带入\n分享：待周日程自动带入',
+          '周四 · 大班共读\n领读：待周日程自动带入',
+          '──────────────',
+          closing
+        ].filter(Boolean).join('\n\n');
       }
 
       async function loadNoticeTemplate() {
@@ -750,6 +780,11 @@
         document.getElementById('noticeCovenantTitle').value = settings.teaching_covenant_title || '传习课堂教约';
         document.getElementById('noticeCovenantUrl').value = settings.teaching_covenant_url || 'https://mp.weixin.qq.com/s/yOoMV5TEOacQMBVK8JDwVQ';
         document.getElementById('noticeMeetingInfo').value = settings.meeting_info || '';
+        if (currentOrg.level === '小组') {
+          document.getElementById('weeklyGroupTitleInput').value = settings.weekly_assignment_title || '📋 下周晨读安排 · {组织}';
+          document.getElementById('weeklyGroupIntroInput').value = settings.weekly_assignment_intro || '请各位家人确认下周名单，周四前完成。';
+          document.getElementById('weeklyGroupClosingInput').value = settings.weekly_assignment_closing || '以上是下周晨读安排，请各位学长查收。\n如有调整请告知，我们再协调。\n感恩大家！\n\n确认无误，请回复：收到';
+        }
         if (currentOrg.level === '班级') {
           document.getElementById('noticeDailySendTime').value = settings.daily_send_time || '20:00';
           document.getElementById('noticeDailyLeadDays').value = Number.isInteger(Number(settings.daily_lead_days)) ? Number(settings.daily_lead_days) : 1;
@@ -774,6 +809,13 @@
           teaching_covenant_url: document.getElementById('noticeCovenantUrl').value.trim(),
           meeting_info: document.getElementById('noticeMeetingInfo').value.trim()
         };
+        if (currentOrg.level === '小组') {
+          Object.assign(noticeSettings, {
+            weekly_assignment_title: document.getElementById('weeklyGroupTitleInput').value.trim(),
+            weekly_assignment_intro: document.getElementById('weeklyGroupIntroInput').value.trim(),
+            weekly_assignment_closing: document.getElementById('weeklyGroupClosingInput').value.trim()
+          });
+        }
         if (currentOrg.level === '班级') {
           Object.assign(noticeSettings, {
             daily_send_time: document.getElementById('noticeDailySendTime').value,

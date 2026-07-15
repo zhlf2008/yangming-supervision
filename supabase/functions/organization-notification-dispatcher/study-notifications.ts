@@ -499,6 +499,49 @@ function filterAssignmentsForClass(entries: AssignmentEntry[], classId: number, 
   });
 }
 
+function filterAssignmentsForGroup(entries: AssignmentEntry[], groupId: number, data: StudyData): AssignmentEntry[] {
+  return entries.filter((entry) => {
+    if (!entry.orgId) return false;
+    const groupOrganization = getAncestorAtLevel(entry.orgId, '小组', data.orgMap);
+    return Number(groupOrganization?.id || 0) === Number(groupId);
+  });
+}
+
+function formatGroupWeeklyAssignments(entries: AssignmentEntry[]): string {
+  if (!entries.length) return '岗位安排：暂未录入';
+  const roleMap = new Map<string, AssignmentEntry[]>();
+  entries.forEach((entry) => {
+    const rows = roleMap.get(entry.roleName) || [];
+    rows.push(entry);
+    roleMap.set(entry.roleName, rows);
+  });
+  return Array.from(roleMap.keys())
+    .sort((left, right) => roleOrder(left) - roleOrder(right) || left.localeCompare(right, 'zh-CN'))
+    .map((roleName) => {
+      const names = (roleMap.get(roleName) || [])
+        .sort((left, right) => left.slotIndex - right.slotIndex)
+        .map((entry, index, rows) => (rows.length > 1 ? String(index + 1) + '.' : '') + entry.personName)
+        .join(' ');
+      const icon = roleName.includes('主持')
+        ? '🎤'
+        : roleName.includes('领读')
+          ? '📖'
+          : roleName.includes('聆听')
+            ? '👂'
+            : roleName.includes('分享')
+              ? '💬'
+              : roleName.includes('回应')
+                ? '🎯'
+                : roleName.includes('总结')
+                  ? '🙌'
+                  : roleName.includes('拍照') || roleName.includes('播控')
+                    ? '📸'
+                    : '•';
+      return icon + ' **' + roleName + '**：' + names;
+    })
+    .join('\n');
+}
+
 function formatAssignments(entries: AssignmentEntry[], scopeLevel: string, data: StudyData): string {
   if (!entries.length) return '岗位安排：暂未录入';
   const roleMap = new Map<string, AssignmentEntry[]>();
@@ -679,69 +722,66 @@ function buildWeeklyCourseCandidate(task: StudyTask, data: StudyData): Notificat
   };
 }
 
-function buildWeeklyAssignmentCandidate(task: StudyTask, data: StudyData): NotificationCandidate | null {
+function buildWeeklyAssignmentCandidates(task: StudyTask, data: StudyData): NotificationCandidate[] {
   const classOrg = data.orgMap.get(Number(task.config.org_id));
-  if (!classOrg || !task.weekMonday || !task.weekSunday) return null;
+  if (!classOrg || !task.weekMonday || !task.weekSunday) return [];
   const bigClassOrg = getAncestorAtLevel(classOrg.id, '大班', data.orgMap);
-  if (!bigClassOrg) return null;
-  const sections: string[] = [];
-  for (let offset = 0; offset < 7; offset++) {
-    const dateValue = addDays(task.weekMonday, offset);
-    const classSchedule = data.schedules.find(
-      (schedule) => schedule.schedule_date === dateValue && Number(schedule.org_id) === Number(classOrg.id)
-    );
-    if (!classSchedule) continue;
-    const heading =
-      '🔷 ' +
-      SHORT_WEEKDAY_NAMES[getWeekday(dateValue)] +
-      ' · ' +
-      (classSchedule.scope_level === '大班'
-        ? '大班共读'
-        : classSchedule.scope_level === '班级'
-          ? '班级共读'
-          : '小组共读');
-    const detailLines: string[] = [heading];
-    if (classSchedule.scope_level === '小组') {
-      const groups = sortOrganizations(
-        data.organizations.filter(
-          (organization) => organization.level === '小组' && Number(organization.parent_id) === Number(classOrg.id)
-        )
+  if (!bigClassOrg) return [];
+  const groups = sortOrganizations(
+    data.organizations.filter(
+      (organization) => organization.level === '小组' && Number(organization.parent_id) === Number(classOrg.id)
+    )
+  );
+  return groups.map((group) => {
+    const sections: string[] = [];
+    for (let offset = 0; offset < 7; offset++) {
+      const dateValue = addDays(task.weekMonday!, offset);
+      const classSchedule = data.schedules.find(
+        (schedule) => schedule.schedule_date === dateValue && Number(schedule.org_id) === Number(classOrg.id)
       );
-      groups.forEach((group) => {
+      if (!classSchedule) continue;
+      const heading =
+        '🔷 ' +
+        SHORT_WEEKDAY_NAMES[getWeekday(dateValue)] +
+        ' · ' +
+        (classSchedule.scope_level === '大班'
+          ? bigClassOrg.name + '共读'
+          : classSchedule.scope_level === '班级'
+            ? '班级共读'
+            : '小组共读');
+      let assignments: AssignmentEntry[] = [];
+      if (classSchedule.scope_level === '小组') {
         const groupSchedule = data.scheduleMap.get(scheduleKey(dateValue, '小组', Number(group.id)));
-        if (!groupSchedule) return;
-        detailLines.push(
-          '',
-          '**' + group.name + '**',
-          formatAssignments(collectAssignments(groupSchedule.id, data), '小组', data)
-        );
-      });
-    } else {
-      const canonicalOrgId = classSchedule.scope_level === '大班' ? Number(bigClassOrg.id) : Number(classOrg.id);
-      const canonicalSchedule =
-        data.scheduleMap.get(scheduleKey(dateValue, classSchedule.scope_level, canonicalOrgId)) || classSchedule;
-      let assignments = collectAssignments(canonicalSchedule.id, data);
-      if (classSchedule.scope_level === '大班') {
-        assignments = filterAssignmentsForClass(assignments, Number(classOrg.id), data);
+        assignments = groupSchedule ? collectAssignments(groupSchedule.id, data) : [];
+      } else {
+        const canonicalOrgId = classSchedule.scope_level === '大班' ? Number(bigClassOrg.id) : Number(classOrg.id);
+        const canonicalSchedule =
+          data.scheduleMap.get(scheduleKey(dateValue, classSchedule.scope_level, canonicalOrgId)) || classSchedule;
+        assignments = filterAssignmentsForGroup(collectAssignments(canonicalSchedule.id, data), Number(group.id), data);
       }
-      detailLines.push(formatAssignments(assignments, classSchedule.scope_level, data));
+      sections.push([heading, formatGroupWeeklyAssignments(assignments)].join('\n'));
     }
-    sections.push(detailLines.join('\n'));
-  }
-  if (!sections.length) return null;
-  return {
-    orgId: Number(classOrg.id),
-    eventKey: 'study_weekly_assignment',
-    title: '下周晨读安排 · ' + classOrg.name,
-    content: [
-      '请各位家人确认下周名单，如有调整请及时协调。',
-      '',
-      sections.join('\n\n──────────────\n\n'),
-      '',
-      '以上是下周晨读安排，请各位学长查收。确认无误请回复：收到'
-    ].join('\n'),
-    dedupeKey: 'study-weekly-assignment:' + task.weekMonday + ':v1'
-  };
+    if (!sections.length) return null;
+    const template = data.templatesByOrg.get(Number(group.id));
+    const noticeSettings = template?.notice_settings || {};
+    const title = (cleanText(noticeSettings.weekly_assignment_title) || '📋 下周晨读安排 · {组织}')
+      .replace(/\{组织\}/g, group.name)
+      .replace(/\{班级\}/g, classOrg.name);
+    const intro = (cleanText(noticeSettings.weekly_assignment_intro) || '请各位家人确认下周名单，周四前完成。')
+      .replace(/\{组织\}/g, group.name)
+      .replace(/\{班级\}/g, classOrg.name);
+    const closing = (cleanText(noticeSettings.weekly_assignment_closing) ||
+      '以上是下周晨读安排，请各位学长查收。\n如有调整请告知，我们再协调。\n感恩大家！\n\n确认无误，请回复：收到')
+      .replace(/\{组织\}/g, group.name)
+      .replace(/\{班级\}/g, classOrg.name);
+    return {
+      orgId: Number(classOrg.id),
+      eventKey: 'study_weekly_group_assignment',
+      title,
+      content: [intro, '', '──────────────', '', sections.join('\n\n'), '', '──────────────', '', closing].join('\n'),
+      dedupeKey: 'study-weekly-group-assignment:' + task.weekMonday + ':' + group.id + ':v1'
+    };
+  }).filter((candidate): candidate is NotificationCandidate => Boolean(candidate));
 }
 
 function splitContent(content: string, maximumLength = 3500): string[] {
@@ -1043,8 +1083,7 @@ function buildCandidates(tasks: StudyTask[], data: StudyData): NotificationCandi
       const candidate = buildWeeklyCourseCandidate(task, data);
       return candidate ? [candidate] : [];
     }
-    const candidate = buildWeeklyAssignmentCandidate(task, data);
-    return candidate ? [candidate] : [];
+    return buildWeeklyAssignmentCandidates(task, data);
   });
 }
 
